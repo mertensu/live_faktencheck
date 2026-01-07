@@ -1,0 +1,19 @@
+[project]
+name = "fact-check"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "langchain>=0.3.18",
+    "langchain-mistralai>=0.2.6",
+    "langchain-ollama>=0.2.3",
+    "pyaudio>=0.2.14",
+    "pynput>=1.8.1",
+    "flask>=3.0.0",
+    "flask-cors>=4.0.0",
+    "requests>=2.31.0",
+    "silero-vad>=4.0.0",
+    "torch>=2.0.0",
+    "numpy>=1.24.0",
+]
