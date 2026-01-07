@@ -473,6 +473,47 @@
   line-height: 1.6;
 }
 
+/* Editierbare Felder im Admin-Modus */
+.claim-speaker-edit {
+  width: 100%;
+  padding: 0.5rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #667eea;
+  margin-bottom: 0.5rem;
+  background: white;
+  transition: border-color 0.2s;
+}
+
+.claim-speaker-edit:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.claim-text-edit {
+  width: 100%;
+  padding: 0.5rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 1rem;
+  color: #333;
+  line-height: 1.6;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 60px;
+  background: white;
+  transition: border-color 0.2s;
+}
+
+.claim-text-edit:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .speakers-container,

@@ -46,3 +46,6 @@ frontend/dist/
 *.wav
 *.mp3
 *.flac
+
+# Data files für GitHub Pages (werden committed)
+# frontend/public/data/*.json

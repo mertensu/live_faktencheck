@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom'
 import './App.css'
 
-// Konfiguration: Hier können die Sprecher angepasst werden
-const SPEAKERS = [
+// Konfiguration: Sprecher werden vom Backend geladen (siehe FactCheckPage)
+// Fallback-Sprecher falls Backend nicht erreichbar ist
+const DEFAULT_SPEAKERS = [
   'Sandra Maischberger',
   'Gitta Connemann',
   'Katharina Dröge'
@@ -14,8 +15,10 @@ const N8N_VERIFIED_WEBHOOK = "http://localhost:5678/webhook/verified-claims"
 
 // Backend URL - wird basierend auf Environment angepasst
 const getBackendUrl = () => {
-  // In Produktion: Backend URL (wird später konfiguriert)
+  // In Produktion: Backend URL über ngrok/Cloudflare Tunnel
+  // Setze VITE_BACKEND_URL in .env oder als Environment Variable
   if (import.meta.env.PROD) {
+    // Versuche Environment Variable, sonst Fallback auf localhost (für lokale Tests)
     return import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000'
   }
   // In Entwicklung: localhost
@@ -25,14 +28,41 @@ const getBackendUrl = () => {
 const BACKEND_URL = getBackendUrl()
 
 function App() {
+  const [shows, setShows] = useState(['test', 'maischberger', 'miosga'])  // Fallback
+  
+  // Lade Shows dynamisch vom Backend für Routes
+  useEffect(() => {
+    const loadShows = async () => {
+      try {
+        const response = await fetch(`${BACKEND_URL}/api/config/shows`)
+        if (response.ok) {
+          const data = await response.json()
+          if (data.shows && data.shows.length > 0) {
+            setShows(data.shows)
+          }
+        }
+      } catch (error) {
+        console.error('❌ Fehler beim Laden der Shows für Routes:', error)
+      }
+    }
+    loadShows()
+  }, [])
+  
   return (
     <BrowserRouter basename={import.meta.env.PROD ? '/live_faktencheck' : ''}>
       <div className="app">
         <Navigation />
         <Routes>
           <Route path="/" element={<HomePage />} />
-          <Route path="/test" element={<FactCheckPage showName="Test" />} />
-          <Route path="/maischberger" element={<FactCheckPage showName="Maischberger" />} />
+          <Route path="/test" element={<FactCheckPage showName="Test" showKey="test" episodeKey="test" />} />
+          {/* Dynamische Routes für alle Shows */}
+          {shows.filter(s => s !== 'test').map(show => (
+            <Route 
+              key={show} 
+              path={`/${show}/:episode?`} 
+              element={<ShowPage showKey={show} />} 
+            />
+          ))}
         </Routes>
       </div>
     </BrowserRouter>
@@ -41,18 +71,40 @@ function App() {
 
 function Navigation() {
   const location = useLocation()
+  const [shows, setShows] = useState(['test', 'maischberger', 'miosga'])  // Fallback
+  
+  // Lade Shows dynamisch vom Backend
+  useEffect(() => {
+    const loadShows = async () => {
+      try {
+        const response = await fetch(`${BACKEND_URL}/api/config/shows`)
+        if (response.ok) {
+          const data = await response.json()
+          if (data.shows && data.shows.length > 0) {
+            setShows(data.shows)
+          }
+        }
+      } catch (error) {
+        console.error('❌ Fehler beim Laden der Shows für Navigation:', error)
+      }
+    }
+    loadShows()
+  }, [])
   
   return (
     <nav className="main-navigation">
       <div className="nav-container">
         <Link to="/" className="nav-logo">🔍 Live Fakten-Check</Link>
         <div className="nav-links">
-          <Link to="/test" className={location.pathname === '/test' ? 'active' : ''}>
-            Test
-          </Link>
-          <Link to="/maischberger" className={location.pathname === '/maischberger' ? 'active' : ''}>
-            Maischberger
-          </Link>
+          {shows.map(show => (
+            <Link 
+              key={show} 
+              to={`/${show}`} 
+              className={location.pathname.startsWith(`/${show}`) ? 'active' : ''}
+            >
+              {show.charAt(0).toUpperCase() + show.slice(1)}
+            </Link>
+          ))}
         </div>
       </div>
     </nav>
@@ -60,6 +112,23 @@ function Navigation() {
 }
 
 function HomePage() {
+  const [shows, setShows] = useState([])
+  
+  useEffect(() => {
+    const loadShows = async () => {
+      try {
+        const response = await fetch(`${BACKEND_URL}/api/config/shows`)
+        if (response.ok) {
+          const data = await response.json()
+          setShows(data.shows || [])
+        }
+      } catch (error) {
+        console.error('❌ Fehler beim Laden der Shows:', error)
+      }
+    }
+    loadShows()
+  }, [])
+  
   return (
     <div className="home-page">
       <header className="app-header">
@@ -72,23 +141,149 @@ function HomePage() {
             <h2>Test</h2>
             <p>Test-Umgebung für Fact-Checks</p>
           </Link>
-          <Link to="/maischberger" className="show-card">
-            <h2>Maischberger</h2>
-            <p>Fact-Checks der Maischberger Sendung</p>
-          </Link>
+          {shows.filter(s => s !== 'test').map(show => (
+            <Link key={show} to={`/${show}`} className="show-card">
+              <h2>{show.charAt(0).toUpperCase() + show.slice(1)}</h2>
+              <p>Fact-Checks der {show.charAt(0).toUpperCase() + show.slice(1)} Sendung</p>
+            </Link>
+          ))}
         </div>
       </main>
     </div>
   )
 }
 
-function FactCheckPage({ showName }) {
+function ShowPage({ showKey }) {
+  const location = useLocation()
+  const [episodes, setEpisodes] = useState([])
+  const [selectedEpisode, setSelectedEpisode] = useState(null)
+  const [showName, setShowName] = useState(showKey.charAt(0).toUpperCase() + showKey.slice(1))
+  
+  // Lade Episoden für diese Show
+  useEffect(() => {
+    const loadEpisodes = async () => {
+      try {
+        const response = await fetch(`${BACKEND_URL}/api/config/shows/${showKey}/episodes`)
+        if (response.ok) {
+          const data = await response.json()
+          const episodesList = data.episodes || []
+          setEpisodes(episodesList)
+          
+          // Setze erste Episode als Standard oder die aus der URL
+          const episodeFromUrl = location.pathname.split('/').pop()
+          if (episodeFromUrl && episodeFromUrl !== showKey) {
+            const found = episodesList.find(e => e.key === episodeFromUrl)
+            if (found) {
+              setSelectedEpisode(found.key)
+              setShowName(found.config.name || showName)
+            } else if (episodesList.length > 0) {
+              setSelectedEpisode(episodesList[0].key)
+              setShowName(episodesList[0].config.name || showName)
+            }
+          } else if (episodesList.length > 0) {
+            setSelectedEpisode(episodesList[0].key)
+            setShowName(episodesList[0].config.name || showName)
+            // Navigiere zur ersten Episode
+            window.history.replaceState(null, '', `/${showKey}/${episodesList[0].key}`)
+          }
+        }
+      } catch (error) {
+        console.error('❌ Fehler beim Laden der Episoden:', error)
+      }
+    }
+    loadEpisodes()
+  }, [showKey, location.pathname])
+  
+  const handleEpisodeChange = (episodeKey) => {
+    setSelectedEpisode(episodeKey)
+    const episode = episodes.find(e => e.key === episodeKey)
+    if (episode) {
+      setShowName(episode.config.name || showName)
+      window.history.replaceState(null, '', `/${showKey}/${episodeKey}`)
+    }
+  }
+  
+  if (!selectedEpisode) {
+    return <div>Lade Episoden...</div>
+  }
+  
+  return (
+    <>
+      <div style={{ padding: '1rem', background: '#f5f5f5', borderBottom: '1px solid #ddd' }}>
+        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+          Episode auswählen:
+        </label>
+        <select
+          value={selectedEpisode}
+          onChange={(e) => handleEpisodeChange(e.target.value)}
+          style={{
+            padding: '0.5rem',
+            fontSize: '1rem',
+            borderRadius: '4px',
+            border: '1px solid #ccc',
+            minWidth: '300px'
+          }}
+        >
+          {episodes.map(episode => (
+            <option key={episode.key} value={episode.key}>
+              {episode.name}
+            </option>
+          ))}
+        </select>
+      </div>
+      <FactCheckPage 
+        showName={showName} 
+        showKey={showKey} 
+        episodeKey={selectedEpisode}
+      />
+    </>
+  )
+}
+
+function FactCheckPage({ showName, showKey, episodeKey }) {
+  // Admin-Modus verfügbar wenn:
+  // 1. Nicht in Produktion (Entwicklung) ODER
+  // 2. Lokal auf localhost (auch bei Production-Build)
   const isProduction = import.meta.env.PROD
+  const isLocalhost = typeof window !== 'undefined' && 
+    (window.location.hostname === 'localhost' || 
+     window.location.hostname === '127.0.0.1' ||
+     window.location.hostname.startsWith('192.168.'))
+  const showAdminMode = !isProduction || isLocalhost
+  
   const [isAdminMode, setIsAdminMode] = useState(false)
   const [factChecks, setFactChecks] = useState([])
   const [expandedIds, setExpandedIds] = useState(new Set())
   const [pendingBlocks, setPendingBlocks] = useState([])
   const [selectedClaims, setSelectedClaims] = useState(new Set())
+  const [editedClaims, setEditedClaims] = useState({})  // Speichert bearbeitete Claims: { "blockId-index": { name, claim } }
+  const [speakers, setSpeakers] = useState(DEFAULT_SPEAKERS)  // Lädt Config vom Backend
+  
+  // Lade Episode-Konfiguration vom Backend
+  useEffect(() => {
+    const loadEpisodeConfig = async () => {
+      // Verwende episodeKey (z.B. "maischberger-2025-09-19") oder showKey als Fallback
+      const key = episodeKey || showKey || showName.toLowerCase()
+      try {
+        const response = await fetch(`${BACKEND_URL}/api/config/${key}`)
+        if (response.ok) {
+          const config = await response.json()
+          if (config.speakers && config.speakers.length > 0) {
+            setSpeakers(config.speakers)
+            console.log(`✅ Config geladen für ${key}:`, config)
+          } else {
+            console.warn(`⚠️ Keine Sprecher in Config für ${key}, verwende Fallback`)
+          }
+        } else {
+          console.warn(`⚠️ Konnte Config nicht laden für ${key}, verwende Fallback`)
+        }
+      } catch (error) {
+        console.error(`❌ Fehler beim Laden der Config für ${key}:`, error)
+      }
+    }
+    
+    loadEpisodeConfig()
+  }, [showName, showKey, episodeKey])
 
   // Polling für Fact-Checks (nur im normalen Modus)
   useEffect(() => {
@@ -96,26 +291,60 @@ function FactCheckPage({ showName }) {
 
     const fetchFactChecks = async () => {
       try {
-        const response = await fetch(`${BACKEND_URL}/api/fact-checks`)
+        // Lade immer vom Backend (auch in Produktion, wenn Backend über ngrok/Cloudflare Tunnel erreichbar ist)
+        const url = episodeKey 
+          ? `${BACKEND_URL}/api/fact-checks?episode=${episodeKey}`
+          : `${BACKEND_URL}/api/fact-checks`
+        
+        const response = await fetch(url)
         if (!response.ok) {
+          // Fallback: Versuche JSON-Datei zu laden (wenn Backend nicht erreichbar)
+          if (import.meta.env.PROD && episodeKey) {
+            try {
+              const jsonResponse = await fetch(`/live_faktencheck/data/${episodeKey}.json`)
+              if (jsonResponse.ok) {
+                const data = await jsonResponse.json()
+                console.log(`📊 Geladene Fakten-Checks (Fallback JSON): ${data.length}`, data)
+                setFactChecks(data)
+                return
+              }
+            } catch (e) {
+              console.warn('⚠️ Auch JSON-Fallback fehlgeschlagen')
+            }
+          }
           throw new Error(`HTTP error! status: ${response.status}`)
         }
+        
         const data = await response.json()
-        console.log(`📊 Geladene Fakten-Checks: ${data.length}`, data)
+        console.log(`📊 Geladene Fakten-Checks (Live): ${data.length}`, data)
         setFactChecks(data)
       } catch (error) {
         console.error('❌ Fehler beim Laden der Fakten-Checks:', error)
+        // In Produktion: Versuche JSON-Fallback
+        if (import.meta.env.PROD && episodeKey) {
+          try {
+            const jsonResponse = await fetch(`/live_faktencheck/data/${episodeKey}.json`)
+            if (jsonResponse.ok) {
+              const data = await jsonResponse.json()
+              console.log(`📊 Geladene Fakten-Checks (Fallback JSON): ${data.length}`, data)
+              setFactChecks(data)
+            }
+          } catch (e) {
+            // Ignoriere Fallback-Fehler
+          }
+        }
       }
     }
 
     fetchFactChecks()
+    // Polling in allen Umgebungen (auch Produktion für Live-Updates)
     const interval = setInterval(fetchFactChecks, 2000)
     return () => clearInterval(interval)
-  }, [isAdminMode])
+  }, [isAdminMode, episodeKey])
 
   // Polling für Pending Claims (nur im Admin-Modus und nur lokal)
   useEffect(() => {
-    if (!isAdminMode || isProduction) return
+    if (!isAdminMode || !showAdminMode) return
 
     const fetchPendingClaims = async () => {
       try {
@@ -175,12 +404,32 @@ function FactCheckPage({ showName }) {
     setSelectedClaims(newSelected)
   }
 
+  const updateEditedClaim = (blockId, claimIndex, field, value) => {
+    const key = `${blockId}-${claimIndex}`
+    setEditedClaims(prev => ({
+      ...prev,
+      [key]: {
+        ...prev[key],
+        [field]: value
+      }
+    }))
+  }
+
   const sendApprovedClaims = async (blockId) => {
     const block = pendingBlocks.find(b => b.block_id === blockId)
     if (!block) return
 
     const approved = block.claims
-      .map((claim, index) => ({ ...claim, _index: index }))
+      .map((claim, index) => {
+        const key = `${blockId}-${index}`
+        const edited = editedClaims[key]
+        // Verwende bearbeitete Werte falls vorhanden, sonst Original
+        return {
+          name: edited?.name !== undefined ? edited.name : (claim.name || ''),
+          claim: edited?.claim !== undefined ? edited.claim : (claim.claim || ''),
+          _index: index
+        }
+      })
       .filter((_, index) => selectedClaims.has(`${blockId}-${index}`))
 
     if (approved.length === 0) {
@@ -207,12 +456,16 @@ function FactCheckPage({ showName }) {
       console.log('✅ Claims gesendet:', result)
       alert(`✅ ${approved.length} Claims erfolgreich an N8N gesendet!`)
       
-      // Entferne ausgewählte Claims
+      // Entferne ausgewählte Claims und Bearbeitungen
       const newSelected = new Set(selectedClaims)
+      const newEdited = { ...editedClaims }
       approved.forEach((_, index) => {
-        newSelected.delete(`${blockId}-${index}`)
+        const key = `${blockId}-${index}`
+        newSelected.delete(key)
+        delete newEdited[key]
       })
       setSelectedClaims(newSelected)
+      setEditedClaims(newEdited)
     } catch (error) {
       console.error('❌ Fehler beim Senden:', error)
       alert(`❌ Fehler beim Senden: ${error.message}`)
@@ -220,7 +473,7 @@ function FactCheckPage({ showName }) {
   }
 
   // Gruppiere Fakten-Checks nach Sprecher
-  const groupedBySpeaker = SPEAKERS.reduce((acc, speaker) => {
+  const groupedBySpeaker = speakers.reduce((acc, speaker) => {
     acc[speaker] = factChecks.filter(fc => fc.sprecher === speaker)
     return acc
   }, {})
@@ -233,7 +486,7 @@ function FactCheckPage({ showName }) {
             <h1>🔍 Fakten-Check - {showName}</h1>
             <p className="subtitle">{isAdminMode ? 'Admin-Modus: Claim-Überprüfung' : 'Live Fact-Checking Dashboard'}</p>
           </div>
-          {!isProduction && (
+          {showAdminMode && (
             <button
               className="admin-toggle"
               onClick={() => {
@@ -252,7 +505,9 @@ function FactCheckPage({ showName }) {
           <AdminView
             pendingBlocks={pendingBlocks}
             selectedClaims={selectedClaims}
+            editedClaims={editedClaims}
             onToggleClaim={toggleClaimSelection}
+            onUpdateClaim={updateEditedClaim}
             onSelectAll={selectAllClaims}
             onDeselectAll={deselectAllClaims}
             onSendApproved={sendApprovedClaims}
@@ -261,7 +516,7 @@ function FactCheckPage({ showName }) {
           <>
             {/* Sprecher Header - nebeneinander */}
             <div className="speakers-container">
-              {SPEAKERS.map((speaker) => {
+              {speakers.map((speaker) => {
                 const count = groupedBySpeaker[speaker]?.length || 0
                 return (
                   <div key={speaker} className="speaker-column">
@@ -276,7 +531,7 @@ function FactCheckPage({ showName }) {
 
             {/* Behauptungen unter den Sprechern */}
             <div className="claims-container">
-              {SPEAKERS.map((speaker) => {
+              {speakers.map((speaker) => {
                 const claims = groupedBySpeaker[speaker] || []
                 return (
                   <div key={speaker} className="speaker-claims-column">
@@ -303,7 +558,7 @@ function FactCheckPage({ showName }) {
   )
 }
 
-function AdminView({ pendingBlocks, selectedClaims, onToggleClaim, onSelectAll, onDeselectAll, onSendApproved }) {
+function AdminView({ pendingBlocks, selectedClaims, editedClaims, onToggleClaim, onUpdateClaim, onSelectAll, onDeselectAll, onSendApproved }) {
   if (pendingBlocks.length === 0) {
     return (
       <div className="admin-empty">
@@ -353,6 +608,9 @@ function AdminView({ pendingBlocks, selectedClaims, onToggleClaim, onSelectAll, 
               {block.claims.map((claim, index) => {
                 const claimKey = `${block.block_id}-${index}`
                 const isSelected = selectedClaims.has(claimKey)
+                const edited = editedClaims[claimKey] || {}
+                const displayName = edited.name !== undefined ? edited.name : (claim.name || 'Unbekannt')
+                const displayClaim = edited.claim !== undefined ? edited.claim : (claim.claim || '')
 
                 return (
                   <div key={index} className={`admin-claim-item ${isSelected ? 'selected' : ''}`}>
@@ -363,8 +621,22 @@ function AdminView({ pendingBlocks, selectedClaims, onToggleClaim, onSelectAll, 
                         onChange={() => onToggleClaim(block.block_id, index)}
                       />
                       <div className="claim-content">
-                        <div className="claim-speaker">{claim.name || 'Unbekannt'}</div>
-                        <div className="claim-text">{claim.claim}</div>
+                        <input
+                          type="text"
+                          className="claim-speaker-edit"
+                          value={displayName}
+                          onChange={(e) => onUpdateClaim(block.block_id, index, 'name', e.target.value)}
+                          placeholder="Sprecher"
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                        <textarea
+                          className="claim-text-edit"
+                          value={displayClaim}
+                          onChange={(e) => onUpdateClaim(block.block_id, index, 'claim', e.target.value)}
+                          placeholder="Claim"
+                          rows={3}
+                          onClick={(e) => e.stopPropagation()}
+                        />
                       </div>
                     </label>
                   </div>

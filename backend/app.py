@@ -3,6 +3,23 @@ from flask_cors import CORS
 from datetime import datetime
 import json
 import requests
+import sys
+import os
+from pathlib import Path
+
+# Füge Projekt-Root zum Python-Pfad hinzu, damit config.py importiert werden kann
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+try:
+    from config import get_show_config, get_all_shows, get_episodes_for_show
+except ImportError:
+    print("⚠️ config.py nicht gefunden. Verwende Standard-Konfiguration.")
+    def get_show_config(episode_key=None):
+        return {"speakers": [], "guests": "", "name": "Unknown", "description": ""}
+    def get_all_shows():
+        return []
+    def get_episodes_for_show(show_key):
+        return []
 
 app = Flask(__name__)
 CORS(app)  # Erlaubt Cross-Origin Requests vom Frontend
@@ -12,9 +29,49 @@ CORS(app)  # Erlaubt Cross-Origin Requests vom Frontend
 fact_checks = []
 pending_claims_blocks = []  # Speichert die Vorab-Listen von Claims
 
+# Pfad für JSON-Dateien (für GitHub Pages)
+DATA_DIR = Path(__file__).parent.parent / "frontend" / "public" / "data"
+DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+@app.route('/api/config/<episode_key>', methods=['GET'])
+def get_episode_config_endpoint(episode_key):
+    """Gibt die Konfiguration für eine Episode zurück"""
+    try:
+        config = get_show_config(episode_key)
+        return jsonify(config)
+    except Exception as e:
+        print(f"❌ Fehler beim Laden der Config für {episode_key}: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/config/shows', methods=['GET'])
+def get_all_shows_endpoint():
+    """Gibt alle verfügbaren Shows zurück"""
+    try:
+        shows = get_all_shows()
+        return jsonify({"shows": shows})
+    except Exception as e:
+        print(f"❌ Fehler beim Laden der Shows: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/config/shows/<show_key>/episodes', methods=['GET'])
+def get_episodes_for_show_endpoint(show_key):
+    """Gibt alle Episoden für eine Show zurück"""
+    try:
+        episodes = get_episodes_for_show(show_key)
+        return jsonify({"episodes": episodes})
+    except Exception as e:
+        print(f"❌ Fehler beim Laden der Episoden für {show_key}: {e}")
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/api/fact-checks', methods=['GET'])
 def get_fact_checks():
     """Gibt alle Fakten-Checks zurück, gruppiert nach Sprecher"""
+    # Optional: Filter nach episode_key aus Query-Parameter
+    episode_key = request.args.get('episode')
+    if episode_key:
+        # Filtere nach Episode (basierend auf timestamp oder einem episode-Feld)
+        filtered = [fc for fc in fact_checks if fc.get('episode_key') == episode_key]
+        return jsonify(filtered)
     return jsonify(fact_checks)
 
 @app.route('/api/fact-checks', methods=['POST'])
@@ -77,6 +134,9 @@ def receive_fact_check():
             else:
                 quellen = [quellen] if quellen else []
         
+        # Versuche episode_key aus den Daten zu extrahieren
+        episode_key = data.get("episode_key") or data.get("episode") or None
+        
         fact_check = {
             "id": len(fact_checks) + 1,
             "sprecher": sprecher,
@@ -84,7 +144,8 @@ def receive_fact_check():
             "urteil": urteil,
             "begruendung": begruendung,
             "quellen": quellen if isinstance(quellen, list) else [],
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
+            "episode_key": episode_key  # Speichere Episode-Key für Gruppierung
         }
         
         fact_checks.append(fact_check)
@@ -93,6 +154,10 @@ def receive_fact_check():
         print(f"   Sprecher: {fact_check['sprecher']}")
         print(f"   Behauptung: {fact_check['behauptung'][:60]}...")
         print(f"   Urteil: {fact_check['urteil']}\n")
+        
+        # Speichere in JSON-Datei für GitHub Pages (wenn episode_key vorhanden)
+        if episode_key:
+            save_fact_checks_to_file(episode_key)
         
         return jsonify({"status": "success", "id": fact_check["id"]}), 201
         
@@ -107,10 +172,17 @@ def handle_verified_claims(data):
     try:
         verified_claims_list = data.get("verified_claims", [])
         processed_count = 0
+        episode_keys_processed = set()  # Track welche Episoden verarbeitet wurden
+        
+        # Versuche episode_key aus dem Root-Level zu extrahieren (falls N8N es dort sendet)
+        root_episode_key = data.get("episode_key") or data.get("episode") or None
         
         # Iteriere über alle verified_claims Gruppen
         for verified_group in verified_claims_list:
             claim_data_list = verified_group.get("claim_data", [])
+            
+            # Versuche episode_key aus der Gruppe zu extrahieren
+            group_episode_key = verified_group.get("episode_key") or verified_group.get("episode") or root_episode_key
             
             # Iteriere über alle Claims in der Gruppe
             for claim_item in claim_data_list:
@@ -131,7 +203,8 @@ def handle_verified_claims(data):
                     "urteil": urteil,
                     "begruendung": begruendung,
                     "quellen": quellen if isinstance(quellen, list) else [],
-                    "timestamp": datetime.now().isoformat()
+                    "timestamp": datetime.now().isoformat(),
+                    "episode_key": group_episode_key  # Speichere Episode-Key für Gruppierung
                 }
                 
                 fact_checks.append(fact_check)
@@ -142,6 +215,13 @@ def handle_verified_claims(data):
                 print(f"   Sprecher: {fact_check['sprecher']}")
                 print(f"   Behauptung: {fact_check['behauptung'][:60]}...")
                 print(f"   Urteil: {fact_check['urteil']}")
+                if group_episode_key:
+                    print(f"   Episode: {group_episode_key}")
+            
+            # Speichere in JSON-Datei für GitHub Pages (wenn episode_key vorhanden)
+            if group_episode_key and group_episode_key not in episode_keys_processed:
+                save_fact_checks_to_file(group_episode_key)
+                episode_keys_processed.add(group_episode_key)
         
         print(f"\n✅ {processed_count} Fact-Checks aus verified_claims verarbeitet\n")
         return jsonify({"status": "success", "processed_count": processed_count}), 201
@@ -222,6 +302,29 @@ def receive_pending_claims():
         import traceback
         traceback.print_exc()
         return jsonify({"status": "error", "message": str(e)}), 400
+
+def save_fact_checks_to_file(episode_key):
+    """Speichert alle Fact-Checks einer Episode als JSON-Datei für GitHub Pages"""
+    try:
+        # Filtere Fact-Checks für diese Episode
+        episode_checks = [fc for fc in fact_checks if fc.get('episode_key') == episode_key]
+        
+        if not episode_checks:
+            print(f"⚠️ Keine Fact-Checks für Episode {episode_key} gefunden")
+            return
+        
+        # Speichere als JSON-Datei
+        json_file = DATA_DIR / f"{episode_key}.json"
+        with open(json_file, 'w', encoding='utf-8') as f:
+            json.dump(episode_checks, f, indent=2, ensure_ascii=False)
+        
+        print(f"💾 Fact-Checks für {episode_key} gespeichert: {json_file} ({len(episode_checks)} Einträge)")
+        print(f"   📝 Datei kann jetzt committed werden für GitHub Pages")
+        
+    except Exception as e:
+        print(f"❌ Fehler beim Speichern der Fact-Checks für {episode_key}: {e}")
+        import traceback
+        traceback.print_exc()
 
 @app.route('/api/pending-claims', methods=['GET'])
 def get_pending_claims():
