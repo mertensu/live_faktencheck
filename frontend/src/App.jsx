@@ -83,6 +83,7 @@ function HomePage() {
 }
 
 function FactCheckPage({ showName }) {
+  const isProduction = import.meta.env.PROD
   const [isAdminMode, setIsAdminMode] = useState(false)
   const [factChecks, setFactChecks] = useState([])
   const [expandedIds, setExpandedIds] = useState(new Set())
@@ -112,9 +113,9 @@ function FactCheckPage({ showName }) {
     return () => clearInterval(interval)
   }, [isAdminMode])
 
-  // Polling für Pending Claims (nur im Admin-Modus)
+  // Polling für Pending Claims (nur im Admin-Modus und nur lokal)
   useEffect(() => {
-    if (!isAdminMode) return
+    if (!isAdminMode || isProduction) return
 
     const fetchPendingClaims = async () => {
       try {
@@ -133,7 +134,7 @@ function FactCheckPage({ showName }) {
     fetchPendingClaims()
     const interval = setInterval(fetchPendingClaims, 2000)
     return () => clearInterval(interval)
-  }, [isAdminMode])
+  }, [isAdminMode, isProduction])
 
   const toggleExpand = (id) => {
     const newExpanded = new Set(expandedIds)
@@ -232,15 +233,17 @@ function FactCheckPage({ showName }) {
             <h1>🔍 Fakten-Check - {showName}</h1>
             <p className="subtitle">{isAdminMode ? 'Admin-Modus: Claim-Überprüfung' : 'Live Fact-Checking Dashboard'}</p>
           </div>
-          <button
-            className="admin-toggle"
-            onClick={() => {
-              setIsAdminMode(!isAdminMode)
-              setSelectedClaims(new Set())
-            }}
-          >
-            {isAdminMode ? '👤 Normal-Modus' : '⚙️ Admin-Modus'}
-          </button>
+          {!isProduction && (
+            <button
+              className="admin-toggle"
+              onClick={() => {
+                setIsAdminMode(!isAdminMode)
+                setSelectedClaims(new Set())
+              }}
+            >
+              {isAdminMode ? '👤 Normal-Modus' : '⚙️ Admin-Modus'}
+            </button>
+          )}
         </div>
       </header>
 
