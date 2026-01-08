@@ -64,6 +64,7 @@ function App() {
             />
           ))}
         </Routes>
+        <Footer />
       </div>
     </BrowserRouter>
   )
@@ -717,6 +718,25 @@ function ClaimCard({ claim, isExpanded, onToggle }) {
         </div>
       )}
     </div>
+  )
+}
+
+function Footer() {
+  return (
+    <footer className="app-footer">
+      <div className="footer-content">
+        <p className="footer-disclaimer">
+          <strong>Hinweis:</strong> Die hier dargestellten Fakten-Checks werden automatisch mit Hilfe von 
+          Künstlicher Intelligenz (KI) generiert. Die Inhalte können Fehler enthalten und sollten nicht 
+          als alleinige Grundlage für Entscheidungen verwendet werden. Wir übernehmen keine Gewähr für 
+          die Richtigkeit, Vollständigkeit oder Aktualität der Informationen.
+        </p>
+        <p className="footer-meta">
+          Diese Seite dient ausschließlich zu Informationszwecken. Bei Fragen oder Anmerkungen kontaktieren 
+          Sie bitte den Betreiber dieser Seite.
+        </p>
+      </div>
+    </footer>
   )
 }
 

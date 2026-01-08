@@ -514,6 +514,36 @@
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
+/* Footer */
+.app-footer {
+  margin-top: 4rem;
+  padding: 2rem 1rem;
+  background: #f9fafb;
+  border-top: 1px solid #e5e7eb;
+}
+
+.footer-content {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.footer-disclaimer {
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: #666;
+  margin-bottom: 1rem;
+}
+
+.footer-disclaimer strong {
+  color: #333;
+}
+
+.footer-meta {
+  font-size: 0.8rem;
+  color: #999;
+  line-height: 1.5;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .speakers-container,

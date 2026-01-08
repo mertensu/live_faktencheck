@@ -28,6 +28,7 @@ CORS(app)  # Erlaubt Cross-Origin Requests vom Frontend
 # In Produktion sollte man eine Datenbank verwenden
 fact_checks = []
 pending_claims_blocks = []  # Speichert die Vorab-Listen von Claims
+current_episode_key = None  # Aktuelle Episode (wird vom Listener gesetzt)
 
 # Pfad für JSON-Dateien (für GitHub Pages)
 DATA_DIR = Path(__file__).parent.parent / "frontend" / "public" / "data"
@@ -134,8 +135,8 @@ def receive_fact_check():
             else:
                 quellen = [quellen] if quellen else []
         
-        # Versuche episode_key aus den Daten zu extrahieren
-        episode_key = data.get("episode_key") or data.get("episode") or None
+        # Versuche episode_key aus den Daten zu extrahieren, sonst verwende aktuelle Episode
+        episode_key = data.get("episode_key") or data.get("episode") or current_episode_key
         
         fact_check = {
             "id": len(fact_checks) + 1,
@@ -174,8 +175,8 @@ def handle_verified_claims(data):
         processed_count = 0
         episode_keys_processed = set()  # Track welche Episoden verarbeitet wurden
         
-        # Versuche episode_key aus dem Root-Level zu extrahieren (falls N8N es dort sendet)
-        root_episode_key = data.get("episode_key") or data.get("episode") or None
+        # Versuche episode_key aus dem Root-Level zu extrahieren, sonst verwende aktuelle Episode
+        root_episode_key = data.get("episode_key") or data.get("episode") or current_episode_key
         
         # Iteriere über alle verified_claims Gruppen
         for verified_group in verified_claims_list:
@@ -383,10 +384,27 @@ def approve_claims():
         traceback.print_exc()
         return jsonify({"status": "error", "message": str(e)}), 400
 
+@app.route('/api/set-episode', methods=['POST'])
+def set_current_episode():
+    """Setzt die aktuelle Episode (wird vom Listener aufgerufen)"""
+    global current_episode_key
+    try:
+        data = request.get_json()
+        episode_key = data.get("episode_key") or data.get("episode")
+        if episode_key:
+            current_episode_key = episode_key
+            print(f"📺 Aktuelle Episode gesetzt: {episode_key}")
+            return jsonify({"status": "success", "episode_key": episode_key})
+        else:
+            return jsonify({"status": "error", "message": "episode_key fehlt"}), 400
+    except Exception as e:
+        print(f"❌ Fehler beim Setzen der Episode: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 400
+
 @app.route('/api/health', methods=['GET'])
 def health():
     """Health Check Endpoint"""
-    return jsonify({"status": "ok"})
+    return jsonify({"status": "ok", "current_episode": current_episode_key})
 
 if __name__ == '__main__':
     print("🚀 Backend startet auf http://0.0.0.0:5000")

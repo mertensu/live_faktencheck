@@ -47,5 +47,8 @@ frontend/dist/
 *.mp3
 *.flac
 
+# Debug audio files
+debug_audio/
+
 # Data files für GitHub Pages (werden committed)
 # frontend/public/data/*.json
