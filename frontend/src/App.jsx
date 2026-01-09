@@ -529,8 +529,16 @@ function FactCheckPage({ showName, showKey, episodeKey }) {
   }
 
   // Gruppiere Fakten-Checks nach Sprecher
+  // Unterstützt exakte Übereinstimmung und Teilübereinstimmung (z.B. "Connemann" passt zu "Gitta Connemann")
   const groupedBySpeaker = speakers.reduce((acc, speaker) => {
-    acc[speaker] = factChecks.filter(fc => fc.sprecher === speaker)
+    acc[speaker] = factChecks.filter(fc => {
+      const factCheckSpeaker = fc.sprecher || ''
+      // Exakte Übereinstimmung
+      if (factCheckSpeaker === speaker) return true
+      // Teilübereinstimmung: Wenn der Config-Sprecher den Fact-Check-Sprecher enthält oder umgekehrt
+      if (speaker.includes(factCheckSpeaker) || factCheckSpeaker.includes(speaker)) return true
+      return false
+    })
     return acc
   }, {})
 

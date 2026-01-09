@@ -249,9 +249,20 @@ def handle_verified_claims(data):
 def handle_pending_claims(data):
     """Behandelt Vorab-Listen von Claims"""
     try:
-        block_id = data.get("block_id") or f"block_{int(datetime.now().timestamp() * 1000)}"
+        # Stelle sicher, dass block_id eindeutig ist
+        base_block_id = data.get("block_id") or f"block_{int(datetime.now().timestamp() * 1000)}"
         timestamp = data.get("timestamp") or datetime.now().isoformat()
         claims = data.get("claims", [])
+        
+        # Wenn block_id bereits existiert, mache sie eindeutig
+        existing_block_ids = [b.get("block_id") for b in pending_claims_blocks]
+        block_id = base_block_id
+        counter = 1
+        while block_id in existing_block_ids:
+            block_id = f"{base_block_id}_{counter}"
+            counter += 1
+        if block_id != base_block_id:
+            print(f"⚠️ Block-ID {base_block_id} existiert bereits, verwende {block_id}")
         
         pending_block = {
             "block_id": block_id,
@@ -261,8 +272,23 @@ def handle_pending_claims(data):
             "status": "pending"
         }
         
-        pending_claims_blocks.append(pending_block)
+        # Prüfe ob Block mit gleicher block_id bereits existiert
+        existing_index = None
+        for i, existing_block in enumerate(pending_claims_blocks):
+            if existing_block.get("block_id") == block_id:
+                existing_index = i
+                break
+        
+        if existing_index is not None:
+            # Ersetze existierenden Block (falls N8N aktualisierte Claims sendet)
+            print(f"⚠️ Block {block_id} existiert bereits, ersetze mit neuen Daten")
+            pending_claims_blocks[existing_index] = pending_block
+        else:
+            # Neuer Block, hinzufügen
+            pending_claims_blocks.append(pending_block)
+        
         print(f"✅ Vorab-Liste gespeichert: {block_id} mit {len(claims)} Claims")
+        print(f"   📊 Gesamt: {len(pending_claims_blocks)} Blöcke im Backend")
         
         return jsonify({"status": "success", "block_id": block_id, "claims_count": len(claims), "type": "pending_claims"}), 201
     except Exception as e:
@@ -294,9 +320,20 @@ def receive_pending_claims():
             data = data['json']
         
         # Erwartetes Format: { block_id, timestamp, claims_count, claims: [{name, claim, ...}] }
-        block_id = data.get("block_id") or f"block_{int(datetime.now().timestamp() * 1000)}"
+        # Stelle sicher, dass block_id eindeutig ist
+        base_block_id = data.get("block_id") or f"block_{int(datetime.now().timestamp() * 1000)}"
         timestamp = data.get("timestamp") or datetime.now().isoformat()
         claims = data.get("claims", [])
+        
+        # Wenn block_id bereits existiert, mache sie eindeutig
+        existing_block_ids = [b.get("block_id") for b in pending_claims_blocks]
+        block_id = base_block_id
+        counter = 1
+        while block_id in existing_block_ids:
+            block_id = f"{base_block_id}_{counter}"
+            counter += 1
+        if block_id != base_block_id:
+            print(f"⚠️ Block-ID {base_block_id} existiert bereits, verwende {block_id}")
         
         pending_block = {
             "block_id": block_id,
@@ -306,8 +343,23 @@ def receive_pending_claims():
             "status": "pending"
         }
         
-        pending_claims_blocks.append(pending_block)
+        # Prüfe ob Block mit gleicher block_id bereits existiert
+        existing_index = None
+        for i, existing_block in enumerate(pending_claims_blocks):
+            if existing_block.get("block_id") == block_id:
+                existing_index = i
+                break
+        
+        if existing_index is not None:
+            # Ersetze existierenden Block (falls N8N aktualisierte Claims sendet)
+            print(f"⚠️ Block {block_id} existiert bereits, ersetze mit neuen Daten")
+            pending_claims_blocks[existing_index] = pending_block
+        else:
+            # Neuer Block, hinzufügen
+            pending_claims_blocks.append(pending_block)
+        
         print(f"✅ Vorab-Liste gespeichert: {block_id} mit {len(claims)} Claims")
+        print(f"   📊 Gesamt: {len(pending_claims_blocks)} Blöcke im Backend")
         
         return jsonify({"status": "success", "block_id": block_id, "claims_count": len(claims)}), 201
         
