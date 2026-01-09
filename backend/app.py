@@ -22,7 +22,20 @@ except ImportError:
         return []
 
 app = Flask(__name__)
-CORS(app)  # Erlaubt Cross-Origin Requests vom Frontend
+# CORS konfigurieren: Erlaube Anfragen von GitHub Pages und localhost
+CORS(app, resources={
+    r"/api/*": {
+        "origins": [
+            "https://mertensu.github.io",
+            "http://localhost:3000",
+            "http://localhost:5173",
+            "http://127.0.0.1:3000",
+            "http://127.0.0.1:5173"
+        ],
+        "methods": ["GET", "POST", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Authorization", "Accept"]
+    }
+})
 
 # In-Memory Storage für die Fakten-Check Daten
 # In Produktion sollte man eine Datenbank verwenden
@@ -218,11 +231,11 @@ def handle_verified_claims(data):
                 print(f"   Urteil: {fact_check['urteil']}")
                 if group_episode_key:
                     print(f"   Episode: {group_episode_key}")
-            
-            # Speichere in JSON-Datei für GitHub Pages (wenn episode_key vorhanden)
-            if group_episode_key and group_episode_key not in episode_keys_processed:
-                save_fact_checks_to_file(group_episode_key)
-                episode_keys_processed.add(group_episode_key)
+        
+        # Speichere in JSON-Datei für GitHub Pages (nach ALLEN Claims, nicht nur beim ersten)
+        # Wichtig: Speichere bei jedem Block, damit neue Blöcke auch in die Datei geschrieben werden
+        if root_episode_key:
+            save_fact_checks_to_file(root_episode_key)
         
         print(f"\n✅ {processed_count} Fact-Checks aus verified_claims verarbeitet\n")
         return jsonify({"status": "success", "processed_count": processed_count}), 201

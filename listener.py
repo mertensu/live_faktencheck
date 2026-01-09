@@ -427,32 +427,57 @@ if __name__ == "__main__":
     
     recorder = VADRecorder()
     
-    # Terminal-basierte Eingabe für manuelles Senden (funktioniert zuverlässiger als globaler Keyboard-Listener)
+    # Terminal-basierte Eingabe für manuelles Senden (robustere Lösung für macOS)
     def stdin_listener():
-        """Liest Eingaben vom Terminal (nicht-blockierend)"""
-        import select
+        """Liest Eingaben vom Terminal (blockierend in separatem Thread)"""
         import sys
         
         print("\n⌨️ Terminal-Eingabe aktiviert:")
         print("   Tippe 's' + Enter für manuelles Senden eines Audio-Blocks")
-        print("   (Aufnahme läuft danach weiter)\n")
+        print("   Tippe 'q' + Enter zum Beenden")
+        print("   (Aufnahme läuft danach weiter)")
+        print("   💡 Wichtig: Stelle sicher, dass das Terminal-Fenster fokussiert ist!\n")
         
-        while recorder.is_recording:
-            # Prüfe ob Eingabe verfügbar ist (nicht-blockierend)
-            if select.select([sys.stdin], [], [], 0.1)[0]:
+        # Prüfe ob stdin verfügbar ist
+        if not sys.stdin.isatty():
+            print("⚠️ Warnung: stdin ist nicht im TTY-Modus. Terminal-Eingabe könnte nicht funktionieren.")
+        
+        try:
+            while recorder.is_recording:
                 try:
-                    line = sys.stdin.readline().strip().lower()
+                    # Blockierend lesen (funktioniert zuverlässig)
+                    # Wichtig: Terminal-Fenster muss fokussiert sein!
+                    if DEBUG_MODE:
+                        print("🐛 Debug: Warte auf Eingabe...")
+                    line = input().strip().lower()
+                    if DEBUG_MODE:
+                        print(f"🐛 Debug: Eingabe empfangen: '{line}'")
+                    
                     if line == 's':
+                        print("⌨️ 's' erkannt - sende Block...")
                         recorder.manual_send()
                     elif line == 'q' or line == 'quit':
                         print("\n⚠️ Beende durch Benutzereingabe...")
                         recorder.is_recording = False
                         break
+                    elif line:
+                        print(f"💡 Unbekannter Befehl: '{line}'. Verwende 's' zum Senden oder 'q' zum Beenden.")
                 except (EOFError, KeyboardInterrupt):
+                    if DEBUG_MODE:
+                        print("🐛 Debug: EOF oder KeyboardInterrupt in stdin_listener")
                     break
                 except Exception as e:
+                    print(f"⚠️ Fehler bei Eingabe: {e}")
                     if DEBUG_MODE:
-                        print(f"🐛 Debug: Fehler bei Eingabe: {e}")
+                        import traceback
+                        traceback.print_exc()
+                    # Bei Fehler kurz warten und weiter versuchen
+                    time.sleep(0.1)
+        except Exception as e:
+            print(f"⚠️ Terminal-Eingabe-Listener beendet: {e}")
+            if DEBUG_MODE:
+                import traceback
+                traceback.print_exc()
     
     # Versuche auch globalen Keyboard-Listener (falls Berechtigungen vorhanden)
     keyboard_listener = None
