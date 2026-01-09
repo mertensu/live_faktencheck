@@ -130,6 +130,9 @@ if command -v gh &> /dev/null; then
         if gh secret set VITE_BACKEND_URL --body "$TUNNEL_URL" 2>/dev/null; then
             print_success "GitHub Secret aktualisiert: $TUNNEL_URL"
             SECRET_UPDATED=true
+            # Warte kurz, damit GitHub das Secret vollständig aktualisiert hat
+            print_info "Warte 2 Sekunden, damit GitHub das Secret vollständig aktualisiert..."
+            sleep 2
         else
             print_warning "Konnte GitHub Secret nicht aktualisieren (möglicherweise keine Berechtigung)"
             print_info "Bitte manuell setzen: GitHub → Settings → Secrets → VITE_BACKEND_URL = $TUNNEL_URL"
@@ -143,27 +146,48 @@ else
     print_info "Bitte manuell setzen: GitHub → Settings → Secrets → VITE_BACKEND_URL = $TUNNEL_URL"
 fi
 
-# Frage immer ob Deployment ausgelöst werden soll (unabhängig vom Secret-Update)
+# Deployment auslösen (automatisch wenn Secret aktualisiert wurde, sonst fragen)
 echo ""
 if command -v gh &> /dev/null && gh auth status &>/dev/null; then
-    read -p "Möchtest du das GitHub Pages Deployment jetzt auslösen? (j/n): " -n 1 -r
-    echo ""
-    if [[ $REPLY =~ ^[JjYy]$ ]]; then
-        print_info "Löse GitHub Actions Workflow aus..."
+    if [ "$SECRET_UPDATED" = true ]; then
+        # Secret wurde aktualisiert → Deployment automatisch auslösen
+        print_info "Secret wurde aktualisiert. Löse Deployment automatisch aus..."
+        # Zusätzliche kurze Verzögerung, damit GitHub Actions das Secret sicher lesen kann
+        sleep 1
         if gh workflow run "Deploy to GitHub Pages" 2>/dev/null; then
-            print_success "Deployment ausgelöst! Prüfe Status: gh run list"
-            print_info "Workflow läuft jetzt auf GitHub und baut mit dem Secret."
+            print_success "✅ Deployment automatisch ausgelöst!"
+            print_info "   Workflow läuft jetzt auf GitHub und baut mit der neuen URL."
+            print_info "   Prüfe Status: gh run list"
+            print_info "   Oder: https://github.com/mertensu/live_faktencheck/actions"
         else
-            print_warning "Konnte Workflow nicht auslösen. Bitte manuell:"
+            print_warning "Konnte Workflow nicht automatisch auslösen. Bitte manuell:"
             print_info "   GitHub → Actions → 'Deploy to GitHub Pages' → Run workflow"
         fi
     else
-        print_info "Deployment übersprungen. Du kannst es später manuell auslösen:"
-        print_info "   GitHub → Actions → 'Deploy to GitHub Pages' → Run workflow"
+        # Secret wurde nicht aktualisiert → Frage ob Deployment ausgelöst werden soll
+        print_warning "Secret wurde nicht aktualisiert. Möglicherweise verwendet GitHub Pages noch die alte URL."
+        read -p "Möchtest du das GitHub Pages Deployment trotzdem auslösen? (j/n): " -n 1 -r
+        echo ""
+        if [[ $REPLY =~ ^[JjYy]$ ]]; then
+            print_info "Löse GitHub Actions Workflow aus..."
+            if gh workflow run "Deploy to GitHub Pages" 2>/dev/null; then
+                print_success "Deployment ausgelöst! Prüfe Status: gh run list"
+                print_info "Workflow läuft jetzt auf GitHub und baut mit dem Secret."
+            else
+                print_warning "Konnte Workflow nicht auslösen. Bitte manuell:"
+                print_info "   GitHub → Actions → 'Deploy to GitHub Pages' → Run workflow"
+            fi
+        else
+            print_info "Deployment übersprungen. Du kannst es später manuell auslösen:"
+            print_info "   GitHub → Actions → 'Deploy to GitHub Pages' → Run workflow"
+        fi
     fi
 else
-    print_info "Deployment kann nicht automatisch ausgelöst werden (GitHub CLI nicht verfügbar/authentifiziert)"
-    print_info "Bitte manuell auslösen: GitHub → Actions → 'Deploy to GitHub Pages' → Run workflow"
+    print_warning "⚠️  WICHTIG: GitHub CLI nicht verfügbar/authentifiziert"
+    print_info "Das GitHub Secret wurde NICHT automatisch aktualisiert!"
+    print_info "Bitte manuell:"
+    print_info "   1. GitHub → Settings → Secrets → VITE_BACKEND_URL = $TUNNEL_URL"
+    print_info "   2. GitHub → Actions → 'Deploy to GitHub Pages' → Run workflow"
 fi
 
 # Schritt 4: Frontend bauen (lokal mit Environment Variable)

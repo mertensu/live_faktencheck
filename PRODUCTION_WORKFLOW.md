@@ -16,10 +16,13 @@ Das Script führt automatisch aus:
 1. ✅ Cloudflare Tunnel starten (falls nicht läuft)
 2. ✅ Cloudflare Tunnel URL extrahieren
 3. ✅ GitHub Secret aktualisieren (falls GitHub CLI installiert)
-4. ✅ Frontend mit korrekter URL bauen
-5. ✅ Backend starten
-6. ✅ Episode im Backend setzen
-7. ✅ Dev-Frontend starten (für Admin-Modus)
+4. ✅ **Deployment automatisch auslösen** (wenn Secret aktualisiert wurde)
+5. ✅ Frontend mit korrekter URL bauen
+6. ✅ Backend starten
+7. ✅ Episode im Backend setzen
+8. ✅ Dev-Frontend starten (für Admin-Modus)
+
+**⚠️ Wichtig:** Cloudflare Tunnel URLs ändern sich bei jedem Neustart. Das Script aktualisiert automatisch das GitHub Secret und löst das Deployment aus, damit GitHub Pages immer die aktuelle URL verwendet.
 
 **Beenden:**
 ```bash
@@ -58,13 +61,23 @@ git push
 cloudflared tunnel --url http://localhost:5000
 ```
 
-**Wichtig:** Kopiere die HTTPS-URL (z.B. `https://xxxxx.trycloudflare.com`)
-**Hinweis:** Cloudflare Tunnel zeigt keine Warning-Seite im Browser (im Gegensatz zu ngrok)
+**Wichtig:** 
+- Kopiere die HTTPS-URL (z.B. `https://xxxxx.trycloudflare.com`)
+- **⚠️ Die URL ändert sich bei jedem Neustart!**
+- Cloudflare Tunnel zeigt keine Warning-Seite im Browser (im Gegensatz zu ngrok)
 
-### Schritt 3: GitHub Secret aktualisieren (falls Tunnel-URL sich geändert hat)
+### Schritt 3: GitHub Secret aktualisieren und Deployment auslösen
+**⚠️ WICHTIG:** Nach jedem Neustart des Cloudflare Tunnels muss:
+1. Das GitHub Secret `VITE_BACKEND_URL` aktualisiert werden
+2. Das GitHub Pages Deployment neu ausgelöst werden
+
+**Automatisch (empfohlen):**
+- Das `start_production.sh` Script macht das automatisch, wenn GitHub CLI installiert und authentifiziert ist
+
+**Manuell:**
 - GitHub Repository → Settings → Secrets and variables → Actions
-- Bearbeite `VITE_BACKEND_URL` mit der neuen ngrok-URL
-- ODER: Verwende die URL direkt beim Build (siehe Schritt 4)
+- Bearbeite `VITE_BACKEND_URL` mit der neuen Tunnel-URL
+- GitHub → Actions → 'Deploy to GitHub Pages' → Run workflow
 
 ### Schritt 4: Production-Frontend bauen und deployen
 
