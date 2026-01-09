@@ -237,7 +237,7 @@ class VADRecorder:
         wf.setframerate(DEVICE_RATE)
         wf.writeframes(b''.join(frames_to_send))
         wf.close()
-
+        
         audio_content = buffer.getvalue()
         
         # Debug-Modus: Speichere als lokale WAV-Datei
@@ -271,7 +271,7 @@ class VADRecorder:
         if not self.is_recording:
             print("⚠️ Aufnahme nicht aktiv, kann nicht senden.")
             return
-        
+            
         with self.lock:
             if not self.frames:
                 print("⚠️ Keine Daten zum Senden (noch keine Frames aufgenommen).")
