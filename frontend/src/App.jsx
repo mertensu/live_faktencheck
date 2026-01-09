@@ -15,7 +15,7 @@ const N8N_VERIFIED_WEBHOOK = "http://localhost:5678/webhook/verified-claims"
 
 // Backend URL - wird basierend auf Environment angepasst
 const getBackendUrl = () => {
-  // In Produktion: Backend URL über ngrok/Cloudflare Tunnel
+  // In Produktion: Backend URL über Cloudflare Tunnel
   // Setze VITE_BACKEND_URL in .env oder als Environment Variable
   if (import.meta.env.PROD) {
     // Versuche Environment Variable, sonst Fallback auf localhost (für lokale Tests)
@@ -27,6 +27,42 @@ const getBackendUrl = () => {
 
 const BACKEND_URL = getBackendUrl()
 
+// Helper: Erstellt fetch-Headers
+const getFetchHeaders = () => {
+  return {
+    'Accept': 'application/json',
+    'Content-Type': 'application/json'
+  }
+}
+
+// Helper: Prüft ob Response JSON ist (nicht HTML)
+const isJsonResponse = (response) => {
+  const contentType = response.headers.get('content-type')
+  return contentType && contentType.includes('application/json')
+}
+
+// Helper: Safe JSON parsing mit Fehlerbehandlung
+const safeJsonParse = async (response, errorContext = '') => {
+  if (!isJsonResponse(response)) {
+    const text = await response.text()
+    if (text.trim().startsWith('<!DOCTYPE') || text.includes('<html')) {
+      console.error(`❌ ${errorContext}: Backend antwortet mit HTML statt JSON`)
+      console.error(`   URL: ${response.url}`)
+      console.error(`   Status: ${response.status}`)
+      console.error(`   Response (erste 200 Zeichen): ${text.substring(0, 200)}`)
+      throw new Error('Backend antwortet mit HTML statt JSON. Prüfe ob Backend läuft und erreichbar ist.')
+    }
+  }
+  try {
+    return await response.json()
+  } catch (error) {
+    console.error(`❌ ${errorContext}: Fehler beim Parsen der JSON-Response`)
+    console.error(`   URL: ${response.url}`)
+    console.error(`   Fehler: ${error.message}`)
+    throw error
+  }
+}
+
 function App() {
   const [shows, setShows] = useState(['test', 'maischberger', 'miosga'])  // Fallback
   
@@ -34,7 +70,7 @@ function App() {
   useEffect(() => {
     const loadShows = async () => {
       try {
-        const response = await fetch(`${BACKEND_URL}/api/config/shows`)
+        const response = await fetch(`${BACKEND_URL}/api/config/shows`, { headers: getFetchHeaders() })
         if (response.ok) {
           const data = await response.json()
           if (data.shows && data.shows.length > 0) {
@@ -78,9 +114,9 @@ function Navigation() {
   useEffect(() => {
     const loadShows = async () => {
       try {
-        const response = await fetch(`${BACKEND_URL}/api/config/shows`)
+        const response = await fetch(`${BACKEND_URL}/api/config/shows`, { headers: getFetchHeaders() })
         if (response.ok) {
-          const data = await response.json()
+          const data = await safeJsonParse(response, 'Fehler beim Laden der Shows für Navigation')
           if (data.shows && data.shows.length > 0) {
             setShows(data.shows)
           }
@@ -118,9 +154,9 @@ function HomePage() {
   useEffect(() => {
     const loadShows = async () => {
       try {
-        const response = await fetch(`${BACKEND_URL}/api/config/shows`)
+        const response = await fetch(`${BACKEND_URL}/api/config/shows`, { headers: getFetchHeaders() })
         if (response.ok) {
-          const data = await response.json()
+          const data = await safeJsonParse(response, 'Fehler beim Laden der Shows')
           setShows(data.shows || [])
         }
       } catch (error) {
@@ -164,9 +200,9 @@ function ShowPage({ showKey }) {
   useEffect(() => {
     const loadEpisodes = async () => {
       try {
-        const response = await fetch(`${BACKEND_URL}/api/config/shows/${showKey}/episodes`)
+        const response = await fetch(`${BACKEND_URL}/api/config/shows/${showKey}/episodes`, { headers: getFetchHeaders() })
         if (response.ok) {
-          const data = await response.json()
+          const data = await safeJsonParse(response, 'Fehler beim Laden der Episoden')
           const episodesList = data.episodes || []
           setEpisodes(episodesList)
           
@@ -266,9 +302,9 @@ function FactCheckPage({ showName, showKey, episodeKey }) {
       // Verwende episodeKey (z.B. "maischberger-2025-09-19") oder showKey als Fallback
       const key = episodeKey || showKey || showName.toLowerCase()
       try {
-        const response = await fetch(`${BACKEND_URL}/api/config/${key}`)
+        const response = await fetch(`${BACKEND_URL}/api/config/${key}`, { headers: getFetchHeaders() })
         if (response.ok) {
-          const config = await response.json()
+          const config = await safeJsonParse(response, `Fehler beim Laden der Config für ${key}`)
           if (config.speakers && config.speakers.length > 0) {
             setSpeakers(config.speakers)
             console.log(`✅ Config geladen für ${key}:`, config)
@@ -291,48 +327,63 @@ function FactCheckPage({ showName, showKey, episodeKey }) {
     if (isAdminMode) return
 
     const fetchFactChecks = async () => {
-      try {
-        // Lade immer vom Backend (auch in Produktion, wenn Backend über ngrok/Cloudflare Tunnel erreichbar ist)
-        const url = episodeKey 
-          ? `${BACKEND_URL}/api/fact-checks?episode=${episodeKey}`
-          : `${BACKEND_URL}/api/fact-checks`
-        
-        const response = await fetch(url)
-        if (!response.ok) {
-          // Fallback: Versuche JSON-Datei zu laden (wenn Backend nicht erreichbar)
-          if (import.meta.env.PROD && episodeKey) {
-            try {
-              const jsonResponse = await fetch(`/live_faktencheck/data/${episodeKey}.json`)
-              if (jsonResponse.ok) {
-                const data = await jsonResponse.json()
-                console.log(`📊 Geladene Fakten-Checks (Fallback JSON): ${data.length}`, data)
-                setFactChecks(data)
-                return
-              }
-            } catch (e) {
-              console.warn('⚠️ Auch JSON-Fallback fehlgeschlagen')
-            }
+      // In Produktion: Versuche zuerst Backend, dann JSON-Fallback
+      // In Entwicklung: Nur Backend
+      const useBackend = !import.meta.env.PROD || BACKEND_URL !== 'http://localhost:5000'
+      
+      if (useBackend) {
+        try {
+          // Lade immer vom Backend (auch in Produktion, wenn Backend über Cloudflare Tunnel erreichbar ist)
+          const url = episodeKey 
+            ? `${BACKEND_URL}/api/fact-checks?episode=${episodeKey}`
+            : `${BACKEND_URL}/api/fact-checks`
+          
+          console.log(`🔍 Lade Fact-Checks von: ${url}`)
+          console.log(`   Backend URL: ${BACKEND_URL}`)
+          console.log(`   Episode Key: ${episodeKey}`)
+          
+          const controller = new AbortController()
+          const timeoutId = setTimeout(() => controller.abort(), 5000)
+          
+          const response = await fetch(url, { 
+            headers: getFetchHeaders(),
+            signal: controller.signal
+          })
+          
+          clearTimeout(timeoutId)
+          console.log(`📡 Response Status: ${response.status} ${response.statusText}`)
+          
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`)
           }
-          throw new Error(`HTTP error! status: ${response.status}`)
+          
+          const data = await safeJsonParse(response, 'Fehler beim Laden der Fakten-Checks')
+          console.log(`✅ Geladene Fakten-Checks (Live): ${data.length}`, data)
+          setFactChecks(data)
+          return // Erfolgreich geladen, kein Fallback nötig
+        } catch (error) {
+          console.error('❌ Fehler beim Laden vom Backend:', error)
+          console.error(`   Backend URL: ${BACKEND_URL}`)
+          console.error(`   Episode Key: ${episodeKey}`)
+          // Weiter zu JSON-Fallback
         }
-        
-        const data = await response.json()
-        console.log(`📊 Geladene Fakten-Checks (Live): ${data.length}`, data)
-        setFactChecks(data)
-      } catch (error) {
-        console.error('❌ Fehler beim Laden der Fakten-Checks:', error)
-        // In Produktion: Versuche JSON-Fallback
-        if (import.meta.env.PROD && episodeKey) {
-          try {
-            const jsonResponse = await fetch(`/live_faktencheck/data/${episodeKey}.json`)
-            if (jsonResponse.ok) {
-              const data = await jsonResponse.json()
-              console.log(`📊 Geladene Fakten-Checks (Fallback JSON): ${data.length}`, data)
-              setFactChecks(data)
-            }
-          } catch (e) {
-            // Ignoriere Fallback-Fehler
+      }
+      
+      // Fallback: JSON-Datei laden (wenn Backend nicht erreichbar oder in Produktion)
+      if (import.meta.env.PROD && episodeKey) {
+        try {
+          const jsonUrl = `/live_faktencheck/data/${episodeKey}.json`
+          console.log(`📂 Lade Fact-Checks aus JSON-Datei: ${jsonUrl}`)
+          const jsonResponse = await fetch(jsonUrl)
+          if (jsonResponse.ok) {
+            const data = await jsonResponse.json()
+            console.log(`✅ Geladene Fakten-Checks (JSON): ${data.length}`, data)
+            setFactChecks(data)
+          } else {
+            console.error(`❌ JSON-Datei nicht gefunden: Status ${jsonResponse.status}`)
           }
+        } catch (e) {
+          console.error('❌ JSON-Fallback Fehler:', e)
         }
       }
     }
@@ -349,11 +400,11 @@ function FactCheckPage({ showName, showKey, episodeKey }) {
 
     const fetchPendingClaims = async () => {
       try {
-        const response = await fetch(`${BACKEND_URL}/api/pending-claims`)
+        const response = await fetch(`${BACKEND_URL}/api/pending-claims`, { headers: getFetchHeaders() })
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`)
         }
-        const data = await response.json()
+        const data = await safeJsonParse(response, 'Fehler beim Laden der Pending Claims')
         console.log(`📋 Geladene Pending Blocks: ${data.length}`, data)
         setPendingBlocks(data)
       } catch (error) {
@@ -439,9 +490,13 @@ function FactCheckPage({ showName, showKey, episodeKey }) {
     }
 
     try {
+      const headers = {
+        'Content-Type': 'application/json',
+        ...getFetchHeaders()
+      }
       const response = await fetch(`${BACKEND_URL}/api/approve-claims`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           block_id: blockId,
           claims: approved,
@@ -453,7 +508,7 @@ function FactCheckPage({ showName, showKey, episodeKey }) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
 
-      const result = await response.json()
+      const result = await safeJsonParse(response, 'Fehler beim Senden der Claims')
       console.log('✅ Claims gesendet:', result)
       alert(`✅ ${approved.length} Claims erfolgreich an N8N gesendet!`)
       

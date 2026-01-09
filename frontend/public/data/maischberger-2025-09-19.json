@@ -1,0 +1,74 @@
+[
+  {
+    "id": 1,
+    "sprecher": "Gitta Connemann",
+    "behauptung": "Deutschland importiert (Stand September 2025) aus dem Ausland mehr Energie, als es exportiert.",
+    "urteil": "Unbelegt",
+    "begruendung": "Es konnten keine offiziellen primären Energiebilanzdaten oder Prognosen von deutschen Regierungsbehörden oder Forschungsinstituten für September 2025 gefunden werden, die den gesamten Import und Export von Energie (nicht nur Strom) gegenüberstellen. Die gefundenen Destatis-Daten beziehen sich hauptsächlich auf die Stromerzeugung und den Stromhandel für bestimmte Quartale in 2025 und 2024, ermöglichen jedoch keine Aussage über die gesamte Energiebilanz für den spezifischen Monat September 2025.",
+    "quellen": [
+      "https://www.destatis.de/DE/Presse/Pressemitteilungen/2025/09/PD25_326_43312.html",
+      "https://www.destatis.de/DE/Presse/Pressemitteilungen/2025/12/PD25_436_43312.html"
+    ],
+    "timestamp": "2026-01-09T09:31:19.345920",
+    "episode_key": "maischberger-2025-09-19"
+  },
+  {
+    "id": 2,
+    "sprecher": "Gitta Connemann",
+    "behauptung": "Wenn Deutschland Energie exportiert, dann ist es (Stand September 2025) subventionierte Energie, weil Deutschland (Stand September 2025) Energie unabhängig von den Bedarfen erzeugt.",
+    "urteil": "Teilweise Richtig",
+    "begruendung": "Die Behauptung ist teilweise richtig. Deutschland exportiert Energie, die aufgrund bestehender Förderinstrumente, insbesondere für erneuerbare Energien (z.B. durch das Erneuerbare-Energien-Gesetz – EEG), als subventioniert angesehen werden kann (vgl. Ifo Schnelldienst 04/2014, Destatis zu Energiebesteuerungsentlastungen). Wenn diese Energie, insbesondere bei hoher Produktion aus fluktuierenden Quellen wie Wind und Sonne, die inländische Nachfrage übersteigt, wird sie exportiert (vgl. DIW Politikberatung kompakt 129). Die Formulierung „unabhängig von den Bedarfen erzeugt“ ist eine Vereinfachung. Obwohl das deutsche Energiesystem darauf ausgelegt ist, Angebot und Nachfrage zu balancieren, führen die physikalischen Eigenschaften und die vorrangige Einspeisung erneuerbarer Energien dazu, dass die Produktion zu bestimmten Zeiten die aktuelle Nachfrage übertreffen kann, was zu Exporten führt. Diese Mechanismen sind auch für September 2025 relevant, da die Förderpolitik für erneuerbare Energien fortbesteht und der Ausbau weiter voranschreitet.",
+    "quellen": [
+      "https://www.ifo.de/DocDL/SD-4-14.pdf",
+      "https://www.destatis.de/DE/Themen/Gesellschaft-Umwelt/Umwelt/UGR/umweltschutzausgaben/Publikationen/Downloads/fostering-coherence-environmental-economic-accounting-1-2023312.pdf?__blob=publicationFile",
+      "https://www.diw.de/documents/publikationen/73/diw_01.c.598424.de/diwkompakt_2018-129.pdf"
+    ],
+    "timestamp": "2026-01-09T09:31:19.345949",
+    "episode_key": "maischberger-2025-09-19"
+  },
+  {
+    "id": 3,
+    "sprecher": "Gitta Connemann",
+    "behauptung": "Deutschland lebt (Stand September 2025) von der Kernenergie, weil Deutschland (Stand September 2025) einen Energiemix aus dem Ausland bekommt, der auf Kernenergie basiert.",
+    "urteil": "Falsch",
+    "begruendung": "Deutschland hat den Ausstieg aus der Kernenergie im April 2023 vollzogen. Seitdem wird in Deutschland keine elektrische Energie mehr aus Kernkraftwerken erzeugt. Die Behauptung, Deutschland lebe (Stand September 2025) von der Kernenergie, ist daher falsch. Die inländischen Stromerzeugungsstatistiken des Statistischen Bundesamtes für das Jahr 2025 zeigen für Kernenergie einen Anteil von 0,0 %. Auch wenn Deutschland Strom importiert, was in den Pressemitteilungen des Statistischen Bundesamtes für 2025 erwähnt wird, gibt es keine Belege dafür, dass dieser importierte Energiemix hauptsächlich auf Kernenergie basiert und Deutschland dadurch \"von\" der Kernenergie lebt.",
+    "quellen": [
+      "https://www.destatis.de/DE/Presse/Pressemitteilungen/2025/06/PD25_200_43312.html",
+      "https://www.destatis.de/DE/Presse/Pressemitteilungen/2025/09/PD25_326_43312.html",
+      "https://www.destatis.de/SiteGlobals/Forms/Suche/Servicesuche_Formular.html?input_=214056&resourceId=2414&submit.x=0&submit.y=0&templateQueryString=Strom&pageLocale=de"
+    ],
+    "timestamp": "2026-01-09T09:33:06.835772",
+    "episode_key": "maischberger-2025-09-19"
+  },
+  {
+    "id": 4,
+    "sprecher": "Gitta Connemann",
+    "behauptung": "Kernenergie aus dem Ausland ist (Stand September 2025) unter anderem grundlastfähige Energie.",
+    "urteil": "Richtig",
+    "begruendung": "Kernenergie ist grundsätzlich eine grundlastfähige Energiequelle, die für eine kontinuierliche und stabile Stromversorgung ausgelegt ist. Dies gilt unabhängig vom Herkunftsland. Deutschland importiert bereits Strom aus dem europäischen Ausland, darunter auch aus Ländern, die Kernenergie zur Stromerzeugung nutzen. Obwohl die spezifische Importmenge an Kernenergie im September 2025 nicht vorhergesagt werden kann, bleibt die technische Eigenschaft der Kernenergie als grundlastfähiger Energieträger bestehen und ist für den europäischen Stromverbund relevant.",
+    "quellen": [
+      "https://www.ifo.de/DocDL/ifo_Forschungsberichte_61.pdf",
+      "https://www.diw.de/documents/dokumentenarchiv/17/63381/diwkompakt_2007-031.pdf",
+      "https://www.diw.de/documents/publikationen/73/diw_01.c.843998.de/diwkompakt_2022-181.pdf"
+    ],
+    "timestamp": "2026-01-09T09:33:06.835807",
+    "episode_key": "maischberger-2025-09-19"
+  },
+  {
+    "id": 5,
+    "sprecher": "Katharina Dröge",
+    "behauptung": "Die Experten sagen (Stand September 2025) eindeutig, der Weg ist, die erneuerbaren Energien schnell auszubauen.",
+    "urteil": "Richtig",
+    "begruendung": "Offizielle Dokumente des Bundesrates sowie Studien des Deutschen Instituts für Wirtschaftsforschung (DIW) und des ifo Instituts zeigen einen klaren Konsens bezüglich der Notwendigkeit und des schnellen Ausbaus erneuerbarer Energien. Der Bundesrat hat den Ausbau erneuerbarer Energien als „überragendes öffentliches Interesse“ eingestuft und verfolgt einen Ausbaukorridor von 40 bis 45 Prozent Anteil erneuerbarer Energien bis 2025. Diskussionspapiere und Empfehlungen aus dem Jahr 2025 sowie Forschungsprojekte, die ab September 2025 starten, unterstreichen die fortlaufende und dringende Priorisierung des Themas durch Fachexperten und politische Entscheidungsträger.",
+    "quellen": [
+      "https://www.diw.de/documents/dokumentenarchiv/17/diw_01.c.41605.de/2025-publicationskemfert_en.645008.pdf",
+      "https://www.bundesrat.de/SharedDocs/drucksachen/2025/0601-0700/680-25.pdf?__blob=publicationFile&v=1",
+      "https://www.bundesrat.de/SharedDocs/downloads/DE/plenarprotokolle/2025/Plenarprotokoll-1057.pdf?__blob=publicationFile&v=2",
+      "https://www.bundesrat.de/DE/plenum/bundesrat-kompakt/16/947/057.html?selectedTab=section-8",
+      "https://www.ifo.de/forschung/ifo-zentrum-fuer-energie-klima-und-ressourcen",
+      "https://www.ifo.de/DocDL/ifo-Bericht-2025-Weiterentwicklung-Soziale-Marktwirtschaft.pdf"
+    ],
+    "timestamp": "2026-01-09T09:33:06.835818",
+    "episode_key": "maischberger-2025-09-19"
+  }
+]

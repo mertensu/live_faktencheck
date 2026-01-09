@@ -52,3 +52,11 @@ debug_audio/
 
 # Data files für GitHub Pages (werden committed)
 # frontend/public/data/*.json
+
+# Production Scripts (PID files, logs)
+.cloudflared_pid
+.cloudflared_tunnel.log
+.backend_pid
+.frontend_pid
+backend.log
+frontend_dev.log
