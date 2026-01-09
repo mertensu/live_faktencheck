@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom'
 import './App.css'
 
 // Konfiguration: Sprecher werden vom Backend geladen (siehe FactCheckPage)
@@ -192,6 +192,7 @@ function HomePage() {
 
 function ShowPage({ showKey }) {
   const location = useLocation()
+  const navigate = useNavigate()
   const [episodes, setEpisodes] = useState([])
   const [selectedEpisode, setSelectedEpisode] = useState(null)
   const [showName, setShowName] = useState(showKey.charAt(0).toUpperCase() + showKey.slice(1))
@@ -220,8 +221,8 @@ function ShowPage({ showKey }) {
           } else if (episodesList.length > 0) {
             setSelectedEpisode(episodesList[0].key)
             setShowName(episodesList[0].config.name || showName)
-            // Navigiere zur ersten Episode
-            window.history.replaceState(null, '', `/${showKey}/${episodesList[0].key}`)
+            // Navigiere zur ersten Episode (mit React Router, respektiert basename)
+            navigate(`/${showKey}/${episodesList[0].key}`, { replace: true })
           }
         }
       } catch (error) {
@@ -236,7 +237,8 @@ function ShowPage({ showKey }) {
     const episode = episodes.find(e => e.key === episodeKey)
     if (episode) {
       setShowName(episode.config.name || showName)
-      window.history.replaceState(null, '', `/${showKey}/${episodeKey}`)
+      // Navigiere mit React Router (respektiert basename)
+      navigate(`/${showKey}/${episodeKey}`, { replace: true })
     }
   }
   
