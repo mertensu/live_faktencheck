@@ -114,6 +114,13 @@ def receive_fact_check():
         if isinstance(data, dict) and 'json' in data:
             data = data['json']
         
+        # Debug: Zeige was nach dem Parsen übrig bleibt
+        print(f"🔍 Nach Parsing - data type: {type(data)}")
+        if isinstance(data, dict):
+            print(f"   Keys in data: {list(data.keys())[:10]}")
+            print(f"   'verified_claims' in data: {'verified_claims' in data}")
+            print(f"   'claims' in data: {'claims' in data}")
+        
         # Prüfe ob es verified_claims von N8N ist (Phase 2: Verifizierte Claims zurück)
         # Format: { verified_claims: [{ claim_data: [{ output: { speaker, original_claim, verdict, evidence, sources } }] }] }
         if isinstance(data, dict) and 'verified_claims' in data:

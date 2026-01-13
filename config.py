@@ -25,7 +25,7 @@ SHOW_CONFIG = {
     "maischberger-2025-09-19": {
         "name": "Maischberger",
         "description": "Sendung vom 19. September 2025",
-        "guests": "Sandra Maischberger interviewt Gitta Connemann und Katharina Dröge. Sendung vom 19.September 2025",
+        "guests": "Sandra Maischberger interviewt Gitta Connemann (CDU) und Katharina Dröge (B90/Grüne). Sendung vom 19.September 2025",
         "speakers": [
             "Sandra Maischberger",
             "Gitta Connemann",
@@ -48,7 +48,7 @@ SHOW_CONFIG = {
     "miosga-2025-10": {
         "name": "Miosga",
         "description": "Sendung vom Oktober 2025",
-        "guests": "Caren Miosga interviewt Heidi Reichinnek. Sendung vom Oktober 2025",
+        "guests": "Caren Miosga interviewt Heidi Reichinnek (Linke). Sendung vom Oktober 2025",
         "speakers": [
             "Caren Miosga",
             "Heidi Reichinnek"
