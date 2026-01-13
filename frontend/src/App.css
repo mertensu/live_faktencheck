@@ -209,10 +209,32 @@
   padding: 1.5rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   transition: box-shadow 0.2s;
+  border-left: 4px solid transparent;
 }
 
 .claim-card:hover {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Farbige Boxen basierend auf Urteil */
+.claim-card.verdict-richtig {
+  background: #f0fdf4;
+  border-left-color: #86efac;
+}
+
+.claim-card.verdict-falsch {
+  background: #fef2f2;
+  border-left-color: #fca5a5;
+}
+
+.claim-card.verdict-teilweise {
+  background: #fffbeb;
+  border-left-color: #fde047;
+}
+
+.claim-card.verdict-unbelegt {
+  background: #f9fafb;
+  border-left-color: #d1d5db;
 }
 
 .claim-header {
@@ -293,10 +315,28 @@
   font-size: 0.95rem;
 }
 
+.begruendung-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
 .begruendung-text {
   color: #555;
   line-height: 1.7;
   font-size: 1rem;
+  margin: 0;
+}
+
+.begruendung-link {
+  color: #667eea;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.begruendung-link:hover {
+  color: #5568d3;
+  text-decoration: underline;
 }
 
 .sources-list {

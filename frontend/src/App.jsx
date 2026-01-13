@@ -371,18 +371,21 @@ function FactCheckPage({ showName, showKey, episodeKey }) {
         }
       }
       
-      // Fallback: JSON-Datei laden (wenn Backend nicht erreichbar oder in Produktion)
-      if (import.meta.env.PROD && episodeKey) {
+      // Fallback: JSON-Datei laden (wenn Backend nicht erreichbar oder leer)
+      if (episodeKey) {
         try {
-          const jsonUrl = `/live_faktencheck/data/${episodeKey}.json`
-          console.log(`📂 Lade Fact-Checks aus JSON-Datei: ${jsonUrl}`)
+          // In Produktion: /live_faktencheck/data/, in Dev: /data/
+          const jsonUrl = import.meta.env.PROD 
+            ? `/live_faktencheck/data/${episodeKey}.json`
+            : `/data/${episodeKey}.json`
+          console.log(`📂 Lade Fact-Checks aus JSON-Datei (Fallback): ${jsonUrl}`)
           const jsonResponse = await fetch(jsonUrl)
           if (jsonResponse.ok) {
             const data = await jsonResponse.json()
-            console.log(`✅ Geladene Fakten-Checks (JSON): ${data.length}`, data)
+            console.log(`✅ Geladene Fakten-Checks (JSON-Fallback): ${data.length}`, data)
             setFactChecks(data)
           } else {
-            console.error(`❌ JSON-Datei nicht gefunden: Status ${jsonResponse.status}`)
+            console.warn(`⚠️ JSON-Datei nicht gefunden: Status ${jsonResponse.status}`)
           }
         } catch (e) {
           console.error('❌ JSON-Fallback Fehler:', e)
@@ -725,8 +728,132 @@ function ClaimCard({ claim, isExpanded, onToggle }) {
     return '#6b7280'
   }
 
+  const getVerdictClass = (urteil) => {
+    const lower = urteil?.toLowerCase() || ''
+    if (lower.includes('wahr') || lower.includes('richtig')) return 'verdict-richtig'
+    if (lower.includes('falsch') || lower.includes('unwahr')) return 'verdict-falsch'
+    if (lower.includes('teilweise')) return 'verdict-teilweise'
+    return 'verdict-unbelegt'
+  }
+
+  // Formatiert Begründung: Zeilenumbrüche und einfaches Markdown
+  const formatBegruendung = (text) => {
+    if (!text) return null
+    
+    // Ersetze \n\n durch Absätze
+    const paragraphs = text.split(/\n\n+/).filter(p => p.trim())
+    
+    return paragraphs.map((para, idx) => {
+      // Ersetze einzelne \n durch <br>
+      const lines = para.split('\n')
+      return (
+        <p key={idx} className="begruendung-text">
+          {lines.map((line, lineIdx) => (
+            <React.Fragment key={lineIdx}>
+              {lineIdx > 0 && <br />}
+              {formatMarkdown(line)}
+            </React.Fragment>
+          ))}
+        </p>
+      )
+    })
+  }
+
+  // Einfaches Markdown-Formatting (fett, kursiv, Links)
+  const formatMarkdown = (text) => {
+    if (!text) return text
+    
+    // Einfache Markdown-Patterns
+    // **bold** -> <strong>
+    // *italic* -> <em>
+    // [text](url) -> <a>
+    
+    let result = text
+    const parts = []
+    let lastIndex = 0
+    
+    // Pattern für **bold**
+    const boldPattern = /\*\*(.+?)\*\*/g
+    let match
+    const matches = []
+    
+    while ((match = boldPattern.exec(text)) !== null) {
+      matches.push({
+        type: 'bold',
+        start: match.index,
+        end: match.index + match[0].length,
+        content: match[1]
+      })
+    }
+    
+    // Pattern für *italic*
+    const italicPattern = /(?<!\*)\*([^*]+?)\*(?!\*)/g
+    while ((match = italicPattern.exec(text)) !== null) {
+      matches.push({
+        type: 'italic',
+        start: match.index,
+        end: match.index + match[0].length,
+        content: match[1]
+      })
+    }
+    
+    // Pattern für [text](url)
+    const linkPattern = /\[([^\]]+)\]\(([^)]+)\)/g
+    while ((match = linkPattern.exec(text)) !== null) {
+      matches.push({
+        type: 'link',
+        start: match.index,
+        end: match.index + match[0].length,
+        text: match[1],
+        url: match[2]
+      })
+    }
+    
+    // Sortiere Matches nach Position
+    matches.sort((a, b) => a.start - b.start)
+    
+    // Baue React-Elemente
+    if (matches.length === 0) {
+      return text
+    }
+    
+    const elements = []
+    let currentIndex = 0
+    
+    matches.forEach((match, idx) => {
+      // Text vor dem Match
+      if (match.start > currentIndex) {
+        elements.push(text.substring(currentIndex, match.start))
+      }
+      
+      // Das Match selbst
+      if (match.type === 'bold') {
+        elements.push(<strong key={`bold-${idx}`}>{match.content}</strong>)
+      } else if (match.type === 'italic') {
+        elements.push(<em key={`italic-${idx}`}>{match.content}</em>)
+      } else if (match.type === 'link') {
+        elements.push(
+          <a key={`link-${idx}`} href={match.url} target="_blank" rel="noopener noreferrer" className="begruendung-link">
+            {match.text}
+          </a>
+        )
+      }
+      
+      currentIndex = match.end
+    })
+    
+    // Rest des Textes
+    if (currentIndex < text.length) {
+      elements.push(text.substring(currentIndex))
+    }
+    
+    return elements.length > 0 ? <>{elements}</> : text
+  }
+
+  const verdictClass = getVerdictClass(claim.urteil)
+
   return (
-    <div className="claim-card">
+    <div className={`claim-card ${verdictClass}`}>
       <div className="claim-header">
         <div className="claim-text">{claim.behauptung}</div>
         <button
@@ -753,7 +880,9 @@ function ClaimCard({ claim, isExpanded, onToggle }) {
           <div className="detail-section">
             <h3>Begründung</h3>
             {claim.begruendung ? (
-              <p className="begruendung-text">{claim.begruendung}</p>
+              <div className="begruendung-container">
+                {formatBegruendung(claim.begruendung)}
+              </div>
             ) : (
               <p className="begruendung-text" style={{ color: '#999', fontStyle: 'italic' }}>
                 Keine Begründung verfügbar
