@@ -1,19 +1,27 @@
 [project]
 name = "fact-check"
-version = "0.1.0"
-description = "Add your description here"
+version = "2.0.0"
+description = "Live fact-checking application for German TV shows"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "langchain>=0.3.18",
-    "langchain-mistralai>=0.2.6",
-    "langchain-ollama>=0.2.3",
+    # Audio processing
     "pyaudio>=0.2.14",
-    "pynput>=1.8.1",
-    "flask>=3.0.0",
-    "flask-cors>=4.0.0",
-    "requests>=2.31.0",
     "silero-vad>=4.0.0",
     "torch>=2.0.0",
     "numpy>=1.24.0",
+    "pynput>=1.8.1",
+
+    # Web framework
+    "flask>=3.0.0",
+    "flask-cors>=4.0.0",
+    "requests>=2.31.0",
+
+    # AI Services
+    "assemblyai>=0.37.0",
+    "google-genai>=1.0.0",
+    "tavily-python>=0.5.0",
+
+    # Utilities
+    "python-dotenv>=1.0.0",
 ]

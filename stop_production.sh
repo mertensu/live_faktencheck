@@ -1,11 +1,11 @@
 #!/bin/bash
 
 # Production Stop Script
-# Stoppt alle gestarteten Prozesse (Cloudflare Tunnel, Backend)
+# Stops all processes and optionally commits fact-check data
 
 set -e
 
-# Farben
+# Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -25,118 +25,125 @@ print_warning() {
 }
 
 echo -e "\n${BLUE}════════════════════════════════════════${NC}"
-echo -e "${BLUE}🛑 Stoppe Production-Prozesse${NC}"
+echo -e "${BLUE}🛑 Stopping Production Processes${NC}"
 echo -e "${BLUE}════════════════════════════════════════${NC}\n"
 
-# Stoppe Cloudflare Tunnel
+# Stop Cloudflare Tunnel
 if [ -f .cloudflared_pid ]; then
     TUNNEL_PID=$(cat .cloudflared_pid)
     if kill -0 $TUNNEL_PID 2>/dev/null; then
         kill $TUNNEL_PID 2>/dev/null || true
-        print_success "Cloudflare Tunnel gestoppt (PID: $TUNNEL_PID)"
+        print_success "Cloudflare Tunnel stopped (PID: $TUNNEL_PID)"
     else
-        print_warning "Cloudflare Tunnel Prozess nicht gefunden"
+        print_warning "Cloudflare Tunnel process not found"
     fi
     rm -f .cloudflared_pid
     rm -f .cloudflared_tunnel.log
 else
-    # Fallback: Suche nach cloudflared Tunnel Prozess
     if pgrep -f "cloudflared.*tunnel" > /dev/null; then
         pkill -f "cloudflared.*tunnel" || true
-        print_success "Cloudflare Tunnel gestoppt"
+        print_success "Cloudflare Tunnel stopped"
     else
-        print_info "Cloudflare Tunnel läuft nicht"
+        print_info "Cloudflare Tunnel not running"
     fi
 fi
 
-# Stoppe Backend
+# Stop Backend
 if [ -f .backend_pid ]; then
     BACKEND_PID=$(cat .backend_pid)
     if kill -0 $BACKEND_PID 2>/dev/null; then
         kill $BACKEND_PID 2>/dev/null || true
-        print_success "Backend gestoppt (PID: $BACKEND_PID)"
+        print_success "Backend stopped (PID: $BACKEND_PID)"
     else
-        print_warning "Backend Prozess nicht gefunden"
+        print_warning "Backend process not found"
     fi
     rm -f .backend_pid
 else
-    # Fallback: Suche nach Backend Prozess
-    if pgrep -f "python.*backend/app.py" > /dev/null; then
-        pkill -f "python.*backend/app.py" || true
-        print_success "Backend gestoppt"
+    if pgrep -f "python.*backend.app" > /dev/null; then
+        pkill -f "python.*backend.app" || true
+        print_success "Backend stopped"
     else
-        print_info "Backend läuft nicht"
+        print_info "Backend not running"
     fi
 fi
 
-# Stoppe Dev-Frontend
+# Stop Dev Frontend
 if [ -f .frontend_pid ]; then
     FRONTEND_PID=$(cat .frontend_pid)
     if kill -0 $FRONTEND_PID 2>/dev/null; then
         kill $FRONTEND_PID 2>/dev/null || true
-        print_success "Dev-Frontend gestoppt (PID: $FRONTEND_PID)"
+        print_success "Dev frontend stopped (PID: $FRONTEND_PID)"
     else
-        print_warning "Dev-Frontend Prozess nicht gefunden"
+        print_warning "Dev frontend process not found"
     fi
     rm -f .frontend_pid
 else
-    # Fallback: Suche nach Vite/Dev-Server Prozess
     if pgrep -f "vite.*dev" > /dev/null || lsof -ti:3000 > /dev/null 2>&1; then
         lsof -ti:3000 | xargs kill -9 2>/dev/null || true
         pkill -f "vite.*dev" || true
-        print_success "Dev-Frontend gestoppt"
+        print_success "Dev frontend stopped"
     else
-        print_info "Dev-Frontend läuft nicht"
+        print_info "Dev frontend not running"
     fi
 fi
 
-# Frage ob Fact-Checks committed werden sollen
+# Ask about committing fact-checks (IMPORTANT for production workflow)
 DATA_DIR="frontend/public/data"
 if [ -d "$DATA_DIR" ] && [ -n "$(ls -A $DATA_DIR/*.json 2>/dev/null)" ]; then
     echo ""
-    print_info "Gefundene Fact-Check JSON-Dateien:"
+    echo -e "${BLUE}════════════════════════════════════════${NC}"
+    echo -e "${BLUE}📊 Fact-Check Data${NC}"
+    echo -e "${BLUE}════════════════════════════════════════${NC}"
+    echo ""
+    print_info "Found fact-check JSON files:"
     for file in $DATA_DIR/*.json; do
         if [ -f "$file" ]; then
             episode=$(basename "$file" .json)
             count=$(python3 -c "import json; data=json.load(open('$file')); print(len(data))" 2>/dev/null || echo "?")
-            echo "   - $episode: $count Fact-Checks"
+            echo "   - $episode: $count fact-checks"
         fi
     done
-    
+
     echo ""
-    read -p "Möchtest du die Fact-Check JSON-Dateien committen und pushen? (j/n): " -n 1 -r
+    echo -e "${YELLOW}Note: Committing makes fact-checks permanent on GitHub Pages.${NC}"
+    echo -e "${YELLOW}      For testing, you probably want to skip this.${NC}"
     echo ""
-    
+    read -p "Do you want to commit and push fact-check JSON files? (y/n): " -n 1 -r
+    echo ""
+
     if [[ $REPLY =~ ^[JjYy]$ ]]; then
-        print_info "Füge JSON-Dateien zu Git hinzu..."
+        print_info "Adding JSON files to git..."
         git add $DATA_DIR/*.json
-        
+
         if git diff --staged --quiet; then
-            print_warning "Keine Änderungen zum Committen."
+            print_warning "No changes to commit."
         else
             EPISODE_KEYS=$(ls $DATA_DIR/*.json 2>/dev/null | xargs -n1 basename | sed 's/.json$//' | tr '\n' ',' | sed 's/,$//')
             COMMIT_MSG="Update fact checks: $EPISODE_KEYS"
-            
-            print_info "Committte mit Nachricht: $COMMIT_MSG"
+
+            print_info "Committing: $COMMIT_MSG"
             git commit -m "$COMMIT_MSG"
-            
+
             echo ""
-            read -p "Möchtest du die Änderungen pushen? (j/n): " -n 1 -r
+            read -p "Do you want to push to GitHub? (y/n): " -n 1 -r
             echo ""
-            
+
             if [[ $REPLY =~ ^[JjYy]$ ]]; then
-                print_info "Pushe zu GitHub..."
+                print_info "Pushing to GitHub..."
                 git push
-                print_success "Fact-Checks wurden zu GitHub gepusht!"
-                print_info "Die Dateien sind jetzt auf GitHub Pages verfügbar (auch wenn Backend offline ist)."
+                print_success "Fact-checks pushed to GitHub!"
+                print_info "Files are now available on GitHub Pages (even when backend is offline)."
             else
-                print_info "Nicht gepusht. Du kannst später mit 'git push' pushen."
+                print_info "Not pushed. You can push later with 'git push'."
             fi
         fi
     else
-        print_info "Fact-Checks nicht committed. Du kannst später mit './commit_fact_checks.sh' committen."
+        print_info "Fact-checks not committed."
+        print_info "Data remains in: $DATA_DIR/"
+        print_info "You can commit later manually if needed."
     fi
 fi
 
 echo ""
-print_success "Alle Prozesse gestoppt!"
+print_success "All processes stopped!"
+echo ""

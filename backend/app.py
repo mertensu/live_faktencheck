@@ -1,28 +1,85 @@
+"""
+Fact-Check Backend API
+
+Flask server that handles:
+- Audio block processing (transcription + claim extraction)
+- Pending claims management
+- Fact-check processing and storage
+- Episode configuration
+"""
+
+import os
+import sys
+import json
+import logging
+import tempfile
+import threading
+from pathlib import Path
+from datetime import datetime
+from concurrent.futures import ThreadPoolExecutor
+
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from datetime import datetime
-import json
-import requests
-import sys
-import os
-from pathlib import Path
+from dotenv import load_dotenv
 
-# Füge Projekt-Root zum Python-Pfad hinzu, damit config.py importiert werden kann
+# Load environment variables
+load_dotenv()
+
+# Configure logging
+log_level = os.getenv("LOG_LEVEL", "INFO")
+logging.basicConfig(
+    level=getattr(logging, log_level),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
+# Add project root to path for config import
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 try:
-    from config import get_show_config, get_all_shows, get_episodes_for_show
+    from config import get_show_config, get_all_shows, get_episodes_for_show, get_guests
 except ImportError:
-    print("⚠️ config.py nicht gefunden. Verwende Standard-Konfiguration.")
+    logger.warning("config.py not found. Using default configuration.")
     def get_show_config(episode_key=None):
         return {"speakers": [], "guests": "", "name": "Unknown", "description": ""}
     def get_all_shows():
         return []
     def get_episodes_for_show(show_key):
         return []
+    def get_guests(episode_key=None):
+        return ""
 
+# Import services (lazy loading to avoid import errors if env vars not set)
+_transcription_service = None
+_claim_extractor = None
+_fact_checker = None
+
+def get_transcription_service():
+    global _transcription_service
+    if _transcription_service is None:
+        from backend.services.transcription import TranscriptionService
+        _transcription_service = TranscriptionService()
+    return _transcription_service
+
+def get_claim_extractor():
+    global _claim_extractor
+    if _claim_extractor is None:
+        from backend.services.claim_extraction import ClaimExtractor
+        _claim_extractor = ClaimExtractor()
+    return _claim_extractor
+
+def get_fact_checker():
+    global _fact_checker
+    if _fact_checker is None:
+        from backend.services.fact_checker import FactChecker
+        _fact_checker = FactChecker()
+    return _fact_checker
+
+
+# Flask app
 app = Flask(__name__)
-# CORS konfigurieren: Erlaube Anfragen von GitHub Pages und localhost
+
+# CORS configuration
 CORS(app, resources={
     r"/api/*": {
         "origins": [
@@ -37,127 +94,274 @@ CORS(app, resources={
     }
 })
 
-# In-Memory Storage für die Fakten-Check Daten
-# In Produktion sollte man eine Datenbank verwenden
+# In-memory storage
 fact_checks = []
-pending_claims_blocks = []  # Speichert die Vorab-Listen von Claims
-current_episode_key = None  # Aktuelle Episode (wird vom Listener gesetzt)
+pending_claims_blocks = []
+current_episode_key = None
+processing_lock = threading.Lock()
 
-# Pfad für JSON-Dateien (für GitHub Pages)
+# Background executor for async processing
+executor = ThreadPoolExecutor(max_workers=5)
+
+# Path for JSON files (for GitHub Pages)
 DATA_DIR = Path(__file__).parent.parent / "frontend" / "public" / "data"
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
-@app.route('/api/config/<episode_key>', methods=['GET'])
-def get_episode_config_endpoint(episode_key):
-    """Gibt die Konfiguration für eine Episode zurück"""
-    try:
-        config = get_show_config(episode_key)
-        return jsonify(config)
-    except Exception as e:
-        print(f"❌ Fehler beim Laden der Config für {episode_key}: {e}")
-        return jsonify({"error": str(e)}), 500
 
-@app.route('/api/config/shows', methods=['GET'])
-def get_all_shows_endpoint():
-    """Gibt alle verfügbaren Shows zurück"""
-    try:
-        shows = get_all_shows()
-        return jsonify({"shows": shows})
-    except Exception as e:
-        print(f"❌ Fehler beim Laden der Shows: {e}")
-        return jsonify({"error": str(e)}), 500
+# =============================================================================
+# Audio Processing Pipeline
+# =============================================================================
 
-@app.route('/api/config/shows/<show_key>/episodes', methods=['GET'])
-def get_episodes_for_show_endpoint(show_key):
-    """Gibt alle Episoden für eine Show zurück"""
+@app.route('/api/audio-block', methods=['POST'])
+def receive_audio_block():
+    """
+    Receive audio block from listener.py and start processing pipeline.
+
+    Expected: multipart form data with:
+    - audio: WAV file
+    - episode_key: Episode identifier
+    - guests: (optional) Guest information override
+    """
     try:
-        episodes = get_episodes_for_show(show_key)
-        return jsonify({"episodes": episodes})
+        # Check for audio file
+        if 'audio' not in request.files:
+            return jsonify({"status": "error", "message": "No audio file provided"}), 400
+
+        audio_file = request.files['audio']
+        episode_key = request.form.get('episode_key', current_episode_key or 'test')
+        guests = request.form.get('guests') or get_guests(episode_key)
+
+        # Read audio data
+        audio_data = audio_file.read()
+
+        logger.info(f"Received audio block: {len(audio_data)} bytes, episode: {episode_key}")
+
+        # Start background processing
+        executor.submit(process_audio_pipeline, audio_data, episode_key, guests)
+
+        return jsonify({
+            "status": "processing",
+            "message": "Audio received, processing started",
+            "episode_key": episode_key
+        }), 202
+
     except Exception as e:
-        print(f"❌ Fehler beim Laden der Episoden für {show_key}: {e}")
-        return jsonify({"error": str(e)}), 500
+        logger.error(f"Error receiving audio block: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 400
+
+
+def process_audio_pipeline(audio_data: bytes, episode_key: str, guests: str):
+    """
+    Background pipeline: audio -> transcription -> claim extraction -> pending claims
+    """
+    block_id = f"block_{int(datetime.now().timestamp() * 1000)}"
+
+    try:
+        logger.info(f"[{block_id}] Starting audio processing pipeline...")
+
+        # Step 1: Transcription
+        logger.info(f"[{block_id}] Step 1: Transcribing audio...")
+        transcription_service = get_transcription_service()
+        transcript = transcription_service.transcribe(audio_data)
+        logger.info(f"[{block_id}] Transcription complete: {len(transcript)} chars")
+
+        # Step 2: Claim extraction
+        logger.info(f"[{block_id}] Step 2: Extracting claims...")
+        claim_extractor = get_claim_extractor()
+        claims = claim_extractor.extract(transcript, guests)
+        logger.info(f"[{block_id}] Extracted {len(claims)} claims")
+
+        if not claims:
+            logger.info(f"[{block_id}] No claims extracted, skipping")
+            return
+
+        # Step 3: Store as pending claims
+        with processing_lock:
+            pending_block = {
+                "block_id": block_id,
+                "timestamp": datetime.now().isoformat(),
+                "claims_count": len(claims),
+                "claims": claims,
+                "status": "pending",
+                "episode_key": episode_key,
+                "transcript_preview": transcript[:200] + "..." if len(transcript) > 200 else transcript
+            }
+            pending_claims_blocks.append(pending_block)
+
+        logger.info(f"[{block_id}] Pipeline complete. {len(claims)} claims added to pending.")
+
+    except Exception as e:
+        logger.error(f"[{block_id}] Pipeline error: {e}")
+        import traceback
+        traceback.print_exc()
+
+
+# =============================================================================
+# Pending Claims Management
+# =============================================================================
+
+@app.route('/api/pending-claims', methods=['GET'])
+def get_pending_claims():
+    """Return all pending claim blocks (newest first)"""
+    sorted_blocks = sorted(
+        pending_claims_blocks,
+        key=lambda x: x.get("timestamp", ""),
+        reverse=True
+    )
+    return jsonify(sorted_blocks)
+
+
+@app.route('/api/pending-claims', methods=['POST'])
+def receive_pending_claims():
+    """Receive pending claims (for manual testing or external sources)"""
+    try:
+        data = request.get_json()
+
+        block_id = data.get("block_id") or f"block_{int(datetime.now().timestamp() * 1000)}"
+        timestamp = data.get("timestamp") or datetime.now().isoformat()
+        claims = data.get("claims", [])
+        episode_key = data.get("episode_key", current_episode_key)
+
+        # Ensure unique block_id
+        existing_ids = [b.get("block_id") for b in pending_claims_blocks]
+        if block_id in existing_ids:
+            counter = 1
+            base_id = block_id
+            while block_id in existing_ids:
+                block_id = f"{base_id}_{counter}"
+                counter += 1
+
+        pending_block = {
+            "block_id": block_id,
+            "timestamp": timestamp,
+            "claims_count": len(claims),
+            "claims": claims,
+            "status": "pending",
+            "episode_key": episode_key
+        }
+
+        with processing_lock:
+            pending_claims_blocks.append(pending_block)
+
+        logger.info(f"Pending claims received: {block_id} with {len(claims)} claims")
+
+        return jsonify({
+            "status": "success",
+            "block_id": block_id,
+            "claims_count": len(claims)
+        }), 201
+
+    except Exception as e:
+        logger.error(f"Error receiving pending claims: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 400
+
+
+@app.route('/api/approve-claims', methods=['POST'])
+def approve_claims():
+    """
+    Approve selected claims and start fact-checking.
+
+    No longer sends to N8N - uses local FactChecker service.
+    """
+    try:
+        data = request.get_json()
+        selected_claims = data.get("claims", [])
+        block_id = data.get("block_id")
+        episode_key = data.get("episode_key", current_episode_key)
+
+        if not selected_claims:
+            return jsonify({"status": "error", "message": "No claims selected"}), 400
+
+        logger.info(f"Approving {len(selected_claims)} claims from block {block_id}")
+
+        # Start fact-checking in background
+        executor.submit(process_fact_checks, selected_claims, episode_key)
+
+        return jsonify({
+            "status": "processing",
+            "message": f"{len(selected_claims)} claims submitted for fact-checking",
+            "claims_count": len(selected_claims)
+        }), 202
+
+    except Exception as e:
+        logger.error(f"Error approving claims: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 400
+
+
+def process_fact_checks(claims: list, episode_key: str):
+    """
+    Background task: fact-check claims using FactChecker service.
+    """
+    try:
+        logger.info(f"Starting fact-check for {len(claims)} claims...")
+
+        fact_checker = get_fact_checker()
+        results = fact_checker.check_claims(claims)
+
+        # Store results
+        with processing_lock:
+            for result in results:
+                fact_check = {
+                    "id": len(fact_checks) + 1,
+                    "sprecher": result.get("speaker", ""),
+                    "behauptung": result.get("original_claim", ""),
+                    "urteil": result.get("verdict", "Unbelegt"),
+                    "begruendung": result.get("evidence", ""),
+                    "quellen": result.get("sources", []),
+                    "timestamp": datetime.now().isoformat(),
+                    "episode_key": episode_key
+                }
+                fact_checks.append(fact_check)
+
+                logger.info(f"Fact-check complete: {fact_check['sprecher']} - {fact_check['urteil']}")
+
+        # Save to JSON file for GitHub Pages
+        if episode_key:
+            save_fact_checks_to_file(episode_key)
+
+        logger.info(f"Fact-checking complete. {len(results)} results stored.")
+
+    except Exception as e:
+        logger.error(f"Error in fact-check processing: {e}")
+        import traceback
+        traceback.print_exc()
+
+
+# =============================================================================
+# Fact-Check Storage
+# =============================================================================
 
 @app.route('/api/fact-checks', methods=['GET'])
 def get_fact_checks():
-    """Gibt alle Fakten-Checks zurück, gruppiert nach Sprecher"""
-    # Optional: Filter nach episode_key aus Query-Parameter
+    """Return fact-checks, optionally filtered by episode"""
     episode_key = request.args.get('episode')
     if episode_key:
-        # Filtere nach Episode (basierend auf timestamp oder einem episode-Feld)
         filtered = [fc for fc in fact_checks if fc.get('episode_key') == episode_key]
         return jsonify(filtered)
     return jsonify(fact_checks)
 
+
 @app.route('/api/fact-checks', methods=['POST'])
 def receive_fact_check():
-    """Empfängt neue Fakten-Check Daten von N8N"""
+    """Receive fact-check results (for manual testing or external sources)"""
     try:
-        # Debug: Zeige was ankommt
-        raw_data = request.get_json()
-        print(f"\n📥 Empfangene Daten von N8N:")
-        print(f"   Content-Type: {request.content_type}")
-        print(f"   Raw JSON: {json.dumps(raw_data, indent=2, ensure_ascii=False)}")
-        
-        # N8N sendet manchmal die Daten in einem 'body' Objekt oder direkt
-        data = raw_data
-        if isinstance(raw_data, dict) and 'body' in raw_data:
-            # Wenn N8N die Daten in 'body' packt
-            if isinstance(raw_data['body'], str):
-                try:
-                    data = json.loads(raw_data['body'])
-                except:
-                    data = raw_data
-            else:
-                data = raw_data['body']
-        
-        # Auch 'json' als Wrapper prüfen (manche N8N Konfigurationen)
-        if isinstance(data, dict) and 'json' in data:
-            data = data['json']
-        
-        # Debug: Zeige was nach dem Parsen übrig bleibt
-        print(f"🔍 Nach Parsing - data type: {type(data)}")
-        if isinstance(data, dict):
-            print(f"   Keys in data: {list(data.keys())[:10]}")
-            print(f"   'verified_claims' in data: {'verified_claims' in data}")
-            print(f"   'claims' in data: {'claims' in data}")
-        
-        # Prüfe ob es verified_claims von N8N ist (Phase 2: Verifizierte Claims zurück)
-        # Format: { verified_claims: [{ claim_data: [{ output: { speaker, original_claim, verdict, evidence, sources } }] }] }
-        if isinstance(data, dict) and 'verified_claims' in data:
-            print("📋 Erkenne verified_claims von N8N - verarbeite Fact-Check Ergebnisse...")
-            return handle_verified_claims(data)
-        
-        # Prüfe ob es eine Liste von Claims zur Überprüfung ist (Admin-Modus / Phase 1)
-        # Format: { block_id, timestamp, claims_count, claims: [...] }
-        if isinstance(data, dict) and 'claims' in data and isinstance(data.get('claims'), list):
-            # Es ist eine Vorab-Liste von Claims
-            print("📋 Erkenne Vorab-Liste von Claims - leite an pending_claims weiter...")
-            return handle_pending_claims(data)
-        
-        # Sonst: Einzelner Fact-Check
-        # Extrahiere die Felder (unterstütze verschiedene Feldnamen)
-        # Unterstütze sowohl deutsche als auch englische Keys
-        sprecher = data.get("sprecher") or data.get("Sprecher") or data.get("speaker") or ""
-        behauptung = data.get("behauptung") or data.get("Behauptung") or data.get("claim") or data.get("original_claim") or ""
-        urteil = data.get("urteil") or data.get("Urteil") or data.get("verdict") or ""
-        begruendung = data.get("evidence") or data.get("begruendung") or data.get("Begründung") or data.get("Begruendung") or data.get("begründung") or data.get("reasoning") or ""
-        quellen = data.get("quellen") or data.get("Quellen") or data.get("sources") or []
-        
-        # Wenn quellen ein String ist, in Liste umwandeln
-        if isinstance(quellen, str):
-            # Prüfe ob es ein JSON-String ist (z.B. '["url1", "url2"]')
-            if quellen.strip().startswith('[') or quellen.strip().startswith('"'):
-                try:
-                    quellen = json.loads(quellen)
-                except:
-                    # Falls Parsing fehlschlägt, als einzelnes Element behandeln
-                    quellen = [quellen] if quellen else []
-            else:
-                quellen = [quellen] if quellen else []
-        
-        # Versuche episode_key aus den Daten zu extrahieren, sonst verwende aktuelle Episode
+        data = request.get_json()
+
+        # Support both German and English field names
+        sprecher = data.get("sprecher") or data.get("speaker") or ""
+        behauptung = data.get("behauptung") or data.get("original_claim") or data.get("claim") or ""
+        urteil = data.get("urteil") or data.get("verdict") or ""
+        begruendung = data.get("begruendung") or data.get("evidence") or ""
+        quellen = data.get("quellen") or data.get("sources") or []
         episode_key = data.get("episode_key") or data.get("episode") or current_episode_key
-        
+
+        # Handle string sources
+        if isinstance(quellen, str):
+            try:
+                quellen = json.loads(quellen)
+            except:
+                quellen = [quellen] if quellen else []
+
         fact_check = {
             "id": len(fact_checks) + 1,
             "sprecher": sprecher,
@@ -166,322 +370,129 @@ def receive_fact_check():
             "begruendung": begruendung,
             "quellen": quellen if isinstance(quellen, list) else [],
             "timestamp": datetime.now().isoformat(),
-            "episode_key": episode_key  # Speichere Episode-Key für Gruppierung
+            "episode_key": episode_key
         }
-        
-        fact_checks.append(fact_check)
-        print(f"✅ Neuer Fakten-Check gespeichert:")
-        print(f"   ID: {fact_check['id']}")
-        print(f"   Sprecher: {fact_check['sprecher']}")
-        print(f"   Behauptung: {fact_check['behauptung'][:60]}...")
-        print(f"   Urteil: {fact_check['urteil']}\n")
-        
-        # Speichere in JSON-Datei für GitHub Pages (wenn episode_key vorhanden)
+
+        with processing_lock:
+            fact_checks.append(fact_check)
+
+        logger.info(f"Fact-check stored: ID {fact_check['id']} - {sprecher} - {urteil}")
+
         if episode_key:
             save_fact_checks_to_file(episode_key)
-        
+
         return jsonify({"status": "success", "id": fact_check["id"]}), 201
-        
+
     except Exception as e:
-        print(f"❌ Fehler beim Empfangen: {e}")
-        import traceback
-        traceback.print_exc()
+        logger.error(f"Error receiving fact-check: {e}")
         return jsonify({"status": "error", "message": str(e)}), 400
 
-def handle_verified_claims(data):
-    """Behandelt verified_claims von N8N mit Fact-Check Ergebnissen (Phase 2)"""
-    try:
-        verified_claims_list = data.get("verified_claims", [])
-        processed_count = 0
-        episode_keys_processed = set()  # Track welche Episoden verarbeitet wurden
-        
-        # Versuche episode_key aus dem Root-Level zu extrahieren, sonst verwende aktuelle Episode
-        root_episode_key = data.get("episode_key") or data.get("episode") or current_episode_key
-        
-        # Iteriere über alle verified_claims Gruppen
-        for verified_group in verified_claims_list:
-            claim_data_list = verified_group.get("claim_data", [])
-            
-            # Versuche episode_key aus der Gruppe zu extrahieren
-            group_episode_key = verified_group.get("episode_key") or verified_group.get("episode") or root_episode_key
-            
-            # Iteriere über alle Claims in der Gruppe
-            for claim_item in claim_data_list:
-                output = claim_item.get("output", {})
-                
-                # Extrahiere die Felder
-                sprecher = output.get("speaker", "")
-                behauptung = output.get("original_claim", "")
-                urteil = output.get("verdict", "")
-                begruendung = output.get("evidence", "")
-                quellen = output.get("sources", [])
-                
-                # Erstelle Fact-Check Eintrag
-                fact_check = {
-                    "id": len(fact_checks) + 1,
-                    "sprecher": sprecher,
-                    "behauptung": behauptung,
-                    "urteil": urteil,
-                    "begruendung": begruendung,
-                    "quellen": quellen if isinstance(quellen, list) else [],
-                    "timestamp": datetime.now().isoformat(),
-                    "episode_key": group_episode_key  # Speichere Episode-Key für Gruppierung
-                }
-                
-                fact_checks.append(fact_check)
-                processed_count += 1
-                
-                print(f"✅ Fact-Check gespeichert:")
-                print(f"   ID: {fact_check['id']}")
-                print(f"   Sprecher: {fact_check['sprecher']}")
-                print(f"   Behauptung: {fact_check['behauptung'][:60]}...")
-                print(f"   Urteil: {fact_check['urteil']}")
-                if group_episode_key:
-                    print(f"   Episode: {group_episode_key}")
-        
-        # Speichere in JSON-Datei für GitHub Pages (nach ALLEN Claims, nicht nur beim ersten)
-        # Wichtig: Speichere bei jedem Block, damit neue Blöcke auch in die Datei geschrieben werden
-        if root_episode_key:
-            save_fact_checks_to_file(root_episode_key)
-        
-        print(f"\n✅ {processed_count} Fact-Checks aus verified_claims verarbeitet\n")
-        return jsonify({"status": "success", "processed_count": processed_count}), 201
-        
-    except Exception as e:
-        print(f"❌ Fehler beim Verarbeiten der verified_claims: {e}")
-        import traceback
-        traceback.print_exc()
-        return jsonify({"status": "error", "message": str(e)}), 400
 
-def handle_pending_claims(data):
-    """Behandelt Vorab-Listen von Claims"""
+def save_fact_checks_to_file(episode_key: str):
+    """Save fact-checks for an episode to JSON file for GitHub Pages"""
     try:
-        # Stelle sicher, dass block_id eindeutig ist
-        base_block_id = data.get("block_id") or f"block_{int(datetime.now().timestamp() * 1000)}"
-        timestamp = data.get("timestamp") or datetime.now().isoformat()
-        claims = data.get("claims", [])
-        
-        # Wenn block_id bereits existiert, mache sie eindeutig
-        existing_block_ids = [b.get("block_id") for b in pending_claims_blocks]
-        block_id = base_block_id
-        counter = 1
-        while block_id in existing_block_ids:
-            block_id = f"{base_block_id}_{counter}"
-            counter += 1
-        if block_id != base_block_id:
-            print(f"⚠️ Block-ID {base_block_id} existiert bereits, verwende {block_id}")
-        
-        pending_block = {
-            "block_id": block_id,
-            "timestamp": timestamp,
-            "claims_count": len(claims),
-            "claims": claims,
-            "status": "pending"
-        }
-        
-        # Prüfe ob Block mit gleicher block_id bereits existiert
-        existing_index = None
-        for i, existing_block in enumerate(pending_claims_blocks):
-            if existing_block.get("block_id") == block_id:
-                existing_index = i
-                break
-        
-        if existing_index is not None:
-            # Ersetze existierenden Block (falls N8N aktualisierte Claims sendet)
-            print(f"⚠️ Block {block_id} existiert bereits, ersetze mit neuen Daten")
-            pending_claims_blocks[existing_index] = pending_block
-        else:
-            # Neuer Block, hinzufügen
-            pending_claims_blocks.append(pending_block)
-        
-        print(f"✅ Vorab-Liste gespeichert: {block_id} mit {len(claims)} Claims")
-        print(f"   📊 Gesamt: {len(pending_claims_blocks)} Blöcke im Backend")
-        
-        return jsonify({"status": "success", "block_id": block_id, "claims_count": len(claims), "type": "pending_claims"}), 201
-    except Exception as e:
-        print(f"❌ Fehler beim Verarbeiten der Vorab-Liste: {e}")
-        import traceback
-        traceback.print_exc()
-        return jsonify({"status": "error", "message": str(e)}), 400
-
-@app.route('/api/pending-claims', methods=['POST'])
-def receive_pending_claims():
-    """Empfängt Vorab-Liste von Claims von N8N zur Überprüfung"""
-    try:
-        raw_data = request.get_json()
-        print(f"\n📋 Empfange Vorab-Liste von Claims:")
-        print(f"   Raw JSON: {json.dumps(raw_data, indent=2, ensure_ascii=False)}")
-        
-        # N8N sendet manchmal die Daten in einem 'body' Objekt oder direkt
-        data = raw_data
-        if isinstance(raw_data, dict) and 'body' in raw_data:
-            if isinstance(raw_data['body'], str):
-                try:
-                    data = json.loads(raw_data['body'])
-                except:
-                    data = raw_data
-            else:
-                data = raw_data['body']
-        
-        if isinstance(data, dict) and 'json' in data:
-            data = data['json']
-        
-        # Erwartetes Format: { block_id, timestamp, claims_count, claims: [{name, claim, ...}] }
-        # Stelle sicher, dass block_id eindeutig ist
-        base_block_id = data.get("block_id") or f"block_{int(datetime.now().timestamp() * 1000)}"
-        timestamp = data.get("timestamp") or datetime.now().isoformat()
-        claims = data.get("claims", [])
-        
-        # Wenn block_id bereits existiert, mache sie eindeutig
-        existing_block_ids = [b.get("block_id") for b in pending_claims_blocks]
-        block_id = base_block_id
-        counter = 1
-        while block_id in existing_block_ids:
-            block_id = f"{base_block_id}_{counter}"
-            counter += 1
-        if block_id != base_block_id:
-            print(f"⚠️ Block-ID {base_block_id} existiert bereits, verwende {block_id}")
-        
-        pending_block = {
-            "block_id": block_id,
-            "timestamp": timestamp,
-            "claims_count": len(claims),
-            "claims": claims,
-            "status": "pending"
-        }
-        
-        # Prüfe ob Block mit gleicher block_id bereits existiert
-        existing_index = None
-        for i, existing_block in enumerate(pending_claims_blocks):
-            if existing_block.get("block_id") == block_id:
-                existing_index = i
-                break
-        
-        if existing_index is not None:
-            # Ersetze existierenden Block (falls N8N aktualisierte Claims sendet)
-            print(f"⚠️ Block {block_id} existiert bereits, ersetze mit neuen Daten")
-            pending_claims_blocks[existing_index] = pending_block
-        else:
-            # Neuer Block, hinzufügen
-            pending_claims_blocks.append(pending_block)
-        
-        print(f"✅ Vorab-Liste gespeichert: {block_id} mit {len(claims)} Claims")
-        print(f"   📊 Gesamt: {len(pending_claims_blocks)} Blöcke im Backend")
-        
-        return jsonify({"status": "success", "block_id": block_id, "claims_count": len(claims)}), 201
-        
-    except Exception as e:
-        print(f"❌ Fehler beim Empfangen der Vorab-Liste: {e}")
-        import traceback
-        traceback.print_exc()
-        return jsonify({"status": "error", "message": str(e)}), 400
-
-def save_fact_checks_to_file(episode_key):
-    """Speichert alle Fact-Checks einer Episode als JSON-Datei für GitHub Pages"""
-    try:
-        # Filtere Fact-Checks für diese Episode
         episode_checks = [fc for fc in fact_checks if fc.get('episode_key') == episode_key]
-        
+
         if not episode_checks:
-            print(f"⚠️ Keine Fact-Checks für Episode {episode_key} gefunden")
+            logger.warning(f"No fact-checks for episode {episode_key}")
             return
-        
-        # Speichere als JSON-Datei
+
         json_file = DATA_DIR / f"{episode_key}.json"
         with open(json_file, 'w', encoding='utf-8') as f:
             json.dump(episode_checks, f, indent=2, ensure_ascii=False)
-        
-        print(f"💾 Fact-Checks für {episode_key} gespeichert: {json_file} ({len(episode_checks)} Einträge)")
-        print(f"   📝 Datei kann jetzt committed werden für GitHub Pages")
-        
+
+        logger.info(f"Saved {len(episode_checks)} fact-checks to {json_file}")
+
     except Exception as e:
-        print(f"❌ Fehler beim Speichern der Fact-Checks für {episode_key}: {e}")
-        import traceback
-        traceback.print_exc()
+        logger.error(f"Error saving fact-checks for {episode_key}: {e}")
 
-@app.route('/api/pending-claims', methods=['GET'])
-def get_pending_claims():
-    """Gibt alle pending Claims zurück"""
-    # Sortiere nach Timestamp (neueste zuerst)
-    sorted_blocks = sorted(pending_claims_blocks, key=lambda x: x.get("timestamp", ""), reverse=True)
-    return jsonify(sorted_blocks)
 
-@app.route('/api/approve-claims', methods=['POST'])
-def approve_claims():
-    """Sendet ausgewählte Claims zurück an N8N für weitere Analyse"""
+# =============================================================================
+# Configuration Endpoints
+# =============================================================================
+
+@app.route('/api/config/<episode_key>', methods=['GET'])
+def get_episode_config_endpoint(episode_key):
+    """Return configuration for an episode"""
     try:
-        data = request.get_json()
-        selected_claims = data.get("claims", [])
-        block_id = data.get("block_id")
-        n8n_webhook_url = data.get("n8n_webhook_url", "http://localhost:5678/webhook/verified-claims")
-        
-        if not selected_claims:
-            return jsonify({"status": "error", "message": "Keine Claims ausgewählt"}), 400
-        
-        print(f"\n✅ Sende {len(selected_claims)} ausgewählte Claims an N8N...")
-        print(f"   Block ID: {block_id}")
-        print(f"   N8N Webhook: {n8n_webhook_url}")
-        
-        # Sende ausgewählte Claims an N8N zur Verifizierung
-        # Format: Nur name und claim für jeden Claim (NOCH NICHT verifiziert!)
-        claims_to_verify = []
-        for claim in selected_claims:
-            claims_to_verify.append({
-                "name": claim.get("name", ""),
-                "claim": claim.get("claim", "")
-            })
-        
-        import requests
-        response = requests.post(
-            n8n_webhook_url,
-            json={
-                "block_id": block_id,
-                "claims": claims_to_verify,
-                "timestamp": datetime.now().isoformat()
-            },
-            timeout=30
-        )
-        
-        if response.status_code in [200, 201]:
-            # Block bleibt pending, damit weitere Claims gesendet werden können
-            print(f"✅ Claims erfolgreich an N8N gesendet")
-            return jsonify({"status": "success", "sent_count": len(selected_claims)}), 200
-        else:
-            print(f"❌ N8N antwortete mit Status {response.status_code}: {response.text}")
-            return jsonify({"status": "error", "message": f"N8N Error: {response.status_code}"}), 500
-            
+        config = get_show_config(episode_key)
+        return jsonify(config)
     except Exception as e:
-        print(f"❌ Fehler beim Senden an N8N: {e}")
-        import traceback
-        traceback.print_exc()
-        return jsonify({"status": "error", "message": str(e)}), 400
+        logger.error(f"Error loading config for {episode_key}: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/config/shows', methods=['GET'])
+def get_all_shows_endpoint():
+    """Return all available shows"""
+    try:
+        shows = get_all_shows()
+        return jsonify({"shows": shows})
+    except Exception as e:
+        logger.error(f"Error loading shows: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/config/shows/<show_key>/episodes', methods=['GET'])
+def get_episodes_for_show_endpoint(show_key):
+    """Return all episodes for a show"""
+    try:
+        episodes = get_episodes_for_show(show_key)
+        return jsonify({"episodes": episodes})
+    except Exception as e:
+        logger.error(f"Error loading episodes for {show_key}: {e}")
+        return jsonify({"error": str(e)}), 500
+
 
 @app.route('/api/set-episode', methods=['POST'])
 def set_current_episode():
-    """Setzt die aktuelle Episode (wird vom Listener aufgerufen)"""
+    """Set the current episode (called by listener)"""
     global current_episode_key
     try:
         data = request.get_json()
         episode_key = data.get("episode_key") or data.get("episode")
         if episode_key:
             current_episode_key = episode_key
-            print(f"📺 Aktuelle Episode gesetzt: {episode_key}")
+            logger.info(f"Current episode set: {episode_key}")
             return jsonify({"status": "success", "episode_key": episode_key})
         else:
-            return jsonify({"status": "error", "message": "episode_key fehlt"}), 400
+            return jsonify({"status": "error", "message": "episode_key missing"}), 400
     except Exception as e:
-        print(f"❌ Fehler beim Setzen der Episode: {e}")
+        logger.error(f"Error setting episode: {e}")
         return jsonify({"status": "error", "message": str(e)}), 400
+
 
 @app.route('/api/health', methods=['GET'])
 def health():
-    """Health Check Endpoint"""
-    return jsonify({"status": "ok", "current_episode": current_episode_key})
+    """Health check endpoint"""
+    return jsonify({
+        "status": "ok",
+        "current_episode": current_episode_key,
+        "pending_blocks": len(pending_claims_blocks),
+        "fact_checks": len(fact_checks)
+    })
+
+
+# =============================================================================
+# Main
+# =============================================================================
 
 if __name__ == '__main__':
-    print("🚀 Backend startet auf http://0.0.0.0:5000")
-    print("📡 Webhook-Endpoint: http://localhost:5000/api/fact-checks (POST)")
-    print("📡 Für N8N in Docker: http://host.docker.internal:5000/api/fact-checks")
-    print("📡 Für N8N lokal: http://localhost:5000/api/fact-checks")
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    port = int(os.getenv("FLASK_PORT", 5000))
 
+    print(f"""
+╔══════════════════════════════════════════════════════════════╗
+║  Fact-Check Backend                                          ║
+╠══════════════════════════════════════════════════════════════╣
+║  Server:     http://0.0.0.0:{port}                            ║
+║                                                              ║
+║  Endpoints:                                                  ║
+║    POST /api/audio-block     - Receive audio from listener   ║
+║    GET  /api/pending-claims  - Get pending claims            ║
+║    POST /api/approve-claims  - Approve claims for checking   ║
+║    GET  /api/fact-checks     - Get completed fact-checks     ║
+║    GET  /api/health          - Health check                  ║
+╚══════════════════════════════════════════════════════════════╝
+    """)
+
+    app.run(debug=True, host='0.0.0.0', port=port)

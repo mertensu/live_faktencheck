@@ -1,3 +1,10 @@
+"""
+Audio Listener for Live Fact-Checking
+
+Captures audio from BlackHole virtual audio device, uses Silero VAD
+for speech detection, and sends audio blocks to the backend for processing.
+"""
+
 import pyaudio
 import wave
 import threading
@@ -7,112 +14,103 @@ import io
 import numpy as np
 from pathlib import Path
 
-# Silero VAD importieren
+# Silero VAD
 try:
     import torch
     from silero_vad import load_silero_vad, get_speech_timestamps
 except ImportError:
-    print("❌ silero-vad oder torch nicht gefunden. Installiere mit: uv sync")
+    print("❌ silero-vad or torch not found. Install with: uv sync")
     exit(1)
 
-# Keyboard-Listener für manuelles Senden
+# Keyboard listener for manual sending
 try:
     from pynput import keyboard
 except ImportError:
-    print("❌ pynput nicht gefunden. Installiere mit: uv sync")
+    print("❌ pynput not found. Install with: uv sync")
     exit(1)
 
-# --- KONFIGURATION ---
+# --- CONFIGURATION ---
 import sys
 import os
 from config import get_guests, DEFAULT_SHOW
 
-N8N_WEBHOOK_URL = "http://localhost:5678/webhook/fact-check-audio"
-MIN_RECORDING_TIME = 60  # Mindestens 2 Minuten (120 Sekunden)
-VAD_CHECK_INTERVAL = 1.0  # Alle 1 Sekunde prüfen (besser für Performance)
-VAD_BUFFER_SIZE = 1.5  # 1.5 Sekunden Audio für VAD-Analyse (bessere Genauigkeit)
-SILENCE_THRESHOLD = 2.0  # 3 Sekunden Stille bevor gesendet wird (natürlichere Pausen)
-FORMAT = pyaudio.paInt16
-CHANNELS = 1  # BlackHole 2ch reicht, wir nutzen Mono
-DEVICE_RATE = 48000  # BlackHole läuft i.d.R. auf 48 kHz
-VAD_RATE = 16000  # Silero VAD erwartet 16 kHz
-CHUNK = 1024  # Größeres Chunk für 48 kHz Input
+# Backend URL (no more N8N!)
+BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:5000")
+AUDIO_ENDPOINT = f"{BACKEND_URL}/api/audio-block"
 
-# Sendungsdetails aus zentraler Config
-# Kann über Kommandozeilen-Parameter oder Umgebungsvariable gesetzt werden
-# Beispiel: uv run python listener.py test
-# Oder: SHOW=test uv run python listener.py
+# Recording settings
+MIN_RECORDING_TIME = 60  # Minimum 60 seconds before VAD triggers
+VAD_CHECK_INTERVAL = 1.0  # Check every 1 second
+VAD_BUFFER_SIZE = 1.5  # 1.5 seconds of audio for VAD analysis
+SILENCE_THRESHOLD = 2.0  # 2 seconds of silence before sending
+FORMAT = pyaudio.paInt16
+CHANNELS = 1  # Mono
+DEVICE_RATE = 48000  # BlackHole runs at 48 kHz
+VAD_RATE = 16000  # Silero VAD expects 16 kHz
+CHUNK = 1024
+
+
 def get_current_show():
-    """Bestimmt die aktuelle Sendung aus Parameter, Umgebungsvariable oder Default"""
-    # 1. Kommandozeilen-Parameter (z.B. python listener.py test)
-    if len(sys.argv) > 1:
+    """Determine current show from parameter, env var, or default"""
+    # 1. Command line parameter (e.g., python listener.py test)
+    if len(sys.argv) > 1 and not sys.argv[1].startswith('--'):
         show_key = sys.argv[1].lower()
-        print(f"📺 Sendung aus Parameter: {show_key}")
+        print(f"📺 Show from parameter: {show_key}")
         return show_key
-    
-    # 2. Umgebungsvariable (z.B. SHOW=test python listener.py)
+
+    # 2. Environment variable (e.g., SHOW=test python listener.py)
     env_show = os.environ.get('SHOW')
     if env_show:
         show_key = env_show.lower()
-        print(f"📺 Sendung aus Umgebungsvariable: {show_key}")
+        print(f"📺 Show from environment: {show_key}")
         return show_key
-    
-    # 3. Fallback: DEFAULT_SHOW aus config.py
-    print(f"📺 Verwende Standard-Sendung: {DEFAULT_SHOW}")
+
+    # 3. Fallback: DEFAULT_SHOW from config.py
+    print(f"📺 Using default show: {DEFAULT_SHOW}")
     return DEFAULT_SHOW
 
+
 CURRENT_SHOW = get_current_show()
-GUESTS = get_guests(CURRENT_SHOW)  # Lädt automatisch die Gäste-Beschreibung für die gewählte Sendung
+GUESTS = get_guests(CURRENT_SHOW)
 
-# Debug-Modus: Speichere jeden Block als WAV-Datei
-# Aktivieren mit: DEBUG=true uv run python listener.py
-# Oder: uv run python listener.py --debug
+# Debug mode: Save each block as WAV file
 DEBUG_MODE = os.environ.get('DEBUG', '').lower() in ('true', '1', 'yes') or '--debug' in sys.argv
 DEBUG_OUTPUT_DIR = Path(__file__).parent / "debug_audio"
 if DEBUG_MODE:
     DEBUG_OUTPUT_DIR.mkdir(exist_ok=True)
-    print(f"🐛 Debug-Modus aktiviert. Audio-Blöcke werden gespeichert in: {DEBUG_OUTPUT_DIR}")
+    print(f"🐛 Debug mode enabled. Audio blocks saved to: {DEBUG_OUTPUT_DIR}")
 
-# Debug-Modus: Speichere jeden Block als WAV-Datei
-# Aktivieren mit: DEBUG=true uv run python listener.py
-# Oder: uv run python listener.py --debug
-DEBUG_MODE = os.environ.get('DEBUG', '').lower() in ('true', '1', 'yes') or '--debug' in sys.argv
-DEBUG_OUTPUT_DIR = Path(__file__).parent / "debug_audio"
-if DEBUG_MODE:
-    DEBUG_OUTPUT_DIR.mkdir(exist_ok=True)
-    print(f"🐛 Debug-Modus aktiviert. Audio-Blöcke werden gespeichert in: {DEBUG_OUTPUT_DIR}")
 
 class VADRecorder:
     def __init__(self):
-        print("🔧 Initialisiere Silero VAD...")
-        # Silero VAD Modell laden
+        print("🔧 Initializing Silero VAD...")
         try:
             self.model = load_silero_vad()
-            print("✅ Silero VAD Modell erfolgreich geladen")
+            print("✅ Silero VAD model loaded successfully")
         except Exception as e:
-            print(f"❌ Fehler beim Laden von Silero VAD: {e}")
+            print(f"❌ Error loading Silero VAD: {e}")
             import traceback
             traceback.print_exc()
             exit(1)
-        
+
         self.audio = pyaudio.PyAudio()
         self.frames = []
         self.is_recording = True
         self.chunk_count = 1
-        self.lock = threading.Lock()  # Lock für Thread-sichere Zugriffe auf frames
-        
-        # Finde BlackHole Device
+        self.lock = threading.Lock()
+
+        # Find BlackHole device
         blackhole_index = self.find_blackhole_device()
         if blackhole_index is None:
-            print("⚠️ BlackHole nicht gefunden. Verwende Standard-Input-Device.")
-            print("💡 Verfügbare Devices:")
+            print("⚠️ BlackHole not found. Using default input device.")
+            print("💡 Available devices:")
             self.list_audio_devices()
-            input_device = None  # Standard-Device verwenden
+            input_device = None
         else:
-            print(f"✅ BlackHole Device gefunden (Index: {blackhole_index})")
+            print(f"✅ BlackHole device found (index: {blackhole_index})")
             input_device = blackhole_index
-        
-        # Audio-Stream öffnen
+
+        # Open audio stream
         self.stream = self.audio.open(
             format=FORMAT,
             channels=CHANNELS,
@@ -121,32 +119,32 @@ class VADRecorder:
             input_device_index=input_device,
             frames_per_buffer=CHUNK
         )
-        
-        print(f"🔴 Aufnahme läuft...")
-        print(f"📺 Sendung: {CURRENT_SHOW}")
-        print(f"👥 Gäste: {GUESTS}")
-        print(f"📋 Mindestaufnahmezeit: {MIN_RECORDING_TIME} Sekunden")
-        print(f"🔍 VAD-Prüfung alle {VAD_CHECK_INTERVAL} Sekunden nach Mindestzeit")
-        print(f"📊 VAD-Buffer: {VAD_BUFFER_SIZE} Sekunden")
-        print(f"🔇 Stille-Schwelle: {SILENCE_THRESHOLD} Sekunden")
+
+        print(f"🔴 Recording started...")
+        print(f"📺 Show: {CURRENT_SHOW}")
+        print(f"👥 Guests: {GUESTS}")
+        print(f"📋 Minimum recording time: {MIN_RECORDING_TIME} seconds")
+        print(f"🔍 VAD check every {VAD_CHECK_INTERVAL} seconds after minimum time")
+        print(f"📊 VAD buffer: {VAD_BUFFER_SIZE} seconds")
+        print(f"🔇 Silence threshold: {SILENCE_THRESHOLD} seconds")
+        print(f"📡 Backend: {BACKEND_URL}")
 
     def find_blackhole_device(self):
-        """Findet das BlackHole Audio-Device"""
+        """Find the BlackHole audio device"""
         try:
             device_count = self.audio.get_device_count()
             for i in range(device_count):
                 device_info = self.audio.get_device_info_by_index(i)
                 device_name = device_info.get('name', '').lower()
-                # Suche nach "blackhole" im Device-Namen
                 if 'blackhole' in device_name and device_info.get('maxInputChannels', 0) > 0:
                     return i
             return None
         except Exception as e:
-            print(f"⚠️ Fehler beim Suchen nach BlackHole: {e}")
+            print(f"⚠️ Error finding BlackHole: {e}")
             return None
-    
+
     def list_audio_devices(self):
-        """Listet alle verfügbaren Audio-Input-Devices auf"""
+        """List all available audio input devices"""
         try:
             device_count = self.audio.get_device_count()
             for i in range(device_count):
@@ -156,80 +154,90 @@ class VADRecorder:
                           f"({device_info.get('maxInputChannels', 0)} channels, "
                           f"{int(device_info.get('defaultSampleRate', 0))} Hz)")
         except Exception as e:
-            print(f"⚠️ Fehler beim Auflisten der Devices: {e}")
+            print(f"⚠️ Error listing devices: {e}")
 
     def convert_to_float32(self, audio_data):
-        """Konvertiert Int16 Audio-Daten zu Float32 für Silero VAD"""
+        """Convert Int16 audio data to Float32 for Silero VAD"""
         audio_array = np.frombuffer(audio_data, dtype=np.int16)
-        # Normalisiere auf [-1.0, 1.0]
         audio_float = audio_array.astype(np.float32) / 32768.0
         return audio_float
 
     def check_speech_activity(self, audio_chunk):
-        """Prüft ob in einem Audio-Chunk Sprache erkannt wird"""
+        """Check if speech is detected in an audio chunk"""
         try:
-            # Konvertiere zu Float32 (48 kHz)
+            # Convert to Float32 (48 kHz)
             audio_float = self.convert_to_float32(audio_chunk)
-            
-            # Downsample von 48 kHz auf 16 kHz (einfaches Decimation)
+
+            # Downsample from 48 kHz to 16 kHz
             audio_float_16k = audio_float[::3]
-            
-            # Konvertiere zu PyTorch Tensor
+
+            # Convert to PyTorch tensor
             audio_tensor = torch.from_numpy(audio_float_16k)
-            
-            # Silero VAD anwenden (16 kHz)
+
+            # Apply Silero VAD (16 kHz)
             speech_timestamps = get_speech_timestamps(
                 audio_tensor,
                 self.model,
                 sampling_rate=VAD_RATE,
-                threshold=0.5,  # Threshold für Sprach-Erkennung
-                min_speech_duration_ms=250,  # Mindestdauer für Sprache
-                min_silence_duration_ms=100  # Mindestdauer für Stille
+                threshold=0.5,
+                min_speech_duration_ms=250,
+                min_silence_duration_ms=100
             )
-            
-            # Wenn Timestamps gefunden wurden, gibt es Sprache
+
             return len(speech_timestamps) > 0
         except Exception as e:
-            print(f"⚠️ Fehler bei VAD-Prüfung: {e}")
-            import traceback
-            traceback.print_exc()
-            # Bei Fehler annehmen, dass Sprache vorhanden ist (sicherer)
-            return True
+            print(f"⚠️ Error in VAD check: {e}")
+            return True  # Assume speech on error (safer)
 
-    def send_to_n8n(self, audio_data, sequence_num):
-        """Sendet Audio-Daten an N8N"""
-        print(f"📤 Sende Block {sequence_num} an n8n...")
+    def send_to_backend(self, audio_data, sequence_num):
+        """Send audio data to the backend for processing"""
+        print(f"📤 Sending block {sequence_num} to backend...")
         try:
-            files = {'data': (f'chunk_{sequence_num}.wav', audio_data, 'audio/wav')}
+            files = {
+                'audio': (f'chunk_{sequence_num}.wav', audio_data, 'audio/wav')
+            }
+            data = {
+                'episode_key': CURRENT_SHOW,
+                'guests': GUESTS
+            }
+
             response = requests.post(
-                N8N_WEBHOOK_URL,
+                AUDIO_ENDPOINT,
                 files=files,
-                data={'seq': sequence_num, "guests": GUESTS}
+                data=data,
+                timeout=30
             )
-            print(f"✅ Block {sequence_num} erfolgreich gesendet.")
+
+            if response.ok:
+                result = response.json()
+                print(f"✅ Block {sequence_num} sent successfully: {result.get('message', 'OK')}")
+            else:
+                print(f"❌ Backend error: {response.status_code} - {response.text}")
+
+        except requests.exceptions.ConnectionError:
+            print(f"❌ Cannot connect to backend at {BACKEND_URL}")
+            print(f"   Make sure the backend is running: ./backend/run.sh")
         except Exception as e:
-            print(f"❌ Fehler beim Senden: {e}")
+            print(f"❌ Error sending: {e}")
 
     def save_and_send(self, reset_frames=True):
-        """Speichert die aktuellen Frames als WAV und sendet sie"""
+        """Save current frames as WAV and send to backend"""
         with self.lock:
             if not self.frames:
-                print("⚠️ Keine Daten zum Senden.")
+                print("⚠️ No data to send.")
                 return
 
-            # Kopiere Frames für Thread-sichere Verarbeitung
             frames_to_send = self.frames.copy()
-            
-            # Reset frames wenn gewünscht (für manuelles Senden während laufender Aufnahme)
+
             if reset_frames:
                 self.frames = []
 
-        print(f"💾 Speichere {len(frames_to_send)} Chunks...")
-        
+        print(f"💾 Saving {len(frames_to_send)} chunks...")
+
         seq_num = self.chunk_count
         self.chunk_count += 1
 
-        # Erstelle WAV-Datei im Speicher
+        # Create WAV file in memory
         buffer = io.BytesIO()
         wf = wave.open(buffer, 'wb')
         wf.setnchannels(CHANNELS)
@@ -237,10 +245,10 @@ class VADRecorder:
         wf.setframerate(DEVICE_RATE)
         wf.writeframes(b''.join(frames_to_send))
         wf.close()
-        
+
         audio_content = buffer.getvalue()
-        
-        # Debug-Modus: Speichere als lokale WAV-Datei
+
+        # Debug mode: Save as local WAV file
         if DEBUG_MODE:
             timestamp = time.strftime("%Y%m%d_%H%M%S")
             filename = f"{CURRENT_SHOW}_block_{seq_num:03d}_{timestamp}.wav"
@@ -249,262 +257,225 @@ class VADRecorder:
                 with open(filepath, 'wb') as f:
                     f.write(audio_content)
                 duration = len(frames_to_send) * CHUNK / DEVICE_RATE
-                print(f"🐛 Debug: Block gespeichert als {filename} ({duration:.1f}s)")
+                print(f"🐛 Debug: Block saved as {filename} ({duration:.1f}s)")
             except Exception as e:
-                print(f"⚠️ Debug: Fehler beim Speichern: {e}")
-        
-        # Sende in separatem Thread (nicht daemon, damit wir darauf warten können)
+                print(f"⚠️ Debug: Error saving: {e}")
+
+        # Send in separate thread
         send_thread = threading.Thread(
-            target=self.send_to_n8n,
+            target=self.send_to_backend,
             args=(audio_content, seq_num),
             daemon=False
         )
         send_thread.start()
-        
-        # Warte auf Abschluss des Sendens (mit Timeout)
-        send_thread.join(timeout=30)  # Maximal 30 Sekunden warten
+
+        # Wait for completion with timeout
+        send_thread.join(timeout=30)
         if send_thread.is_alive():
-            print("⚠️ Send-Timeout erreicht, aber Thread läuft weiter im Hintergrund")
-    
+            print("⚠️ Send timeout reached, but thread continues in background")
+
     def manual_send(self):
-        """Sendet manuell die aktuellen Frames (wird von Keyboard-Listener aufgerufen)"""
+        """Manually send current frames (called by keyboard listener)"""
         if not self.is_recording:
-            print("⚠️ Aufnahme nicht aktiv, kann nicht senden.")
+            print("⚠️ Recording not active, cannot send.")
             return
-            
+
         with self.lock:
             if not self.frames:
-                print("⚠️ Keine Daten zum Senden (noch keine Frames aufgenommen).")
+                print("⚠️ No data to send (no frames recorded yet).")
                 return
-        
-        print("\n⌨️ Manueller Send-Befehl empfangen...")
-        # Sende aktuellen Stand, reset frames damit nicht doppelt gesendet wird
-        # reset_frames=True, aber is_recording bleibt True (läuft weiter)
+
+        print("\n⌨️ Manual send command received...")
         self.save_and_send(reset_frames=True)
-        print("✅ Manueller Block gesendet. Aufnahme läuft weiter...\n")
+        print("✅ Manual block sent. Recording continues...\n")
 
     def record(self):
-        """Hauptaufnahme-Loop mit VAD"""
+        """Main recording loop with VAD"""
         start_time = time.time()
-        last_speech_time = None  # Wird gesetzt wenn Mindestzeit erreicht ist
-        vad_buffer = []  # Buffer für VAD-Analyse
-        last_vad_check = None  # Zeitpunkt der letzten VAD-Prüfung
+        last_speech_time = None
+        vad_buffer = []
+        last_vad_check = None
         last_progress_time = 0
-        consecutive_silence_checks = 0  # Zähler für aufeinanderfolgende Stille-Erkennungen
-        
-        print(f"🎙️ Starte Aufnahme...")
-        
+        consecutive_silence_checks = 0
+
+        print(f"🎙️ Starting recording...")
+
         try:
             while self.is_recording:
-                # Audio-Chunk lesen
+                # Read audio chunk
                 data = self.stream.read(CHUNK, exception_on_overflow=False)
                 with self.lock:
                     self.frames.append(data)
-                
+
                 current_time = time.time()
                 elapsed_time = current_time - start_time
-                
-                # Mindestzeit noch nicht erreicht
+
+                # Minimum time not reached yet
                 if elapsed_time < MIN_RECORDING_TIME:
-                    # Zeige Fortschritt alle 10 Sekunden
                     if int(elapsed_time) % 10 == 0 and int(elapsed_time) != last_progress_time:
                         remaining = MIN_RECORDING_TIME - elapsed_time
-                        print(f"⏳ Mindestzeit: {remaining:.0f}s verbleibend...")
+                        print(f"⏳ Minimum time: {remaining:.0f}s remaining...")
                         last_progress_time = int(elapsed_time)
                     continue
-                
-                # Wenn Mindestzeit gerade erreicht wurde, initialisiere last_speech_time
+
+                # Initialize last_speech_time when minimum time reached
                 if last_speech_time is None:
                     last_speech_time = current_time
                     last_vad_check = current_time
-                    print(f"✅ Mindestzeit erreicht. Starte VAD-Überwachung...")
-                
-                # Sammle Audio für VAD-Buffer (rolling window)
+                    print(f"✅ Minimum time reached. Starting VAD monitoring...")
+
+                # Collect audio for VAD buffer (rolling window)
                 vad_buffer.append(data)
-                
-                # Begrenze Buffer auf VAD_BUFFER_SIZE Sekunden
+
+                # Limit buffer to VAD_BUFFER_SIZE seconds
                 max_buffer_chunks = int((DEVICE_RATE / CHUNK) * VAD_BUFFER_SIZE)
                 if len(vad_buffer) > max_buffer_chunks:
-                    vad_buffer.pop(0)  # Ältester Chunk entfernen
-                
-                # Prüfe alle VAD_CHECK_INTERVAL Sekunden
+                    vad_buffer.pop(0)
+
+                # Check every VAD_CHECK_INTERVAL seconds
                 if last_vad_check is None or (current_time - last_vad_check) >= VAD_CHECK_INTERVAL:
-                    # Verwende die letzten VAD_BUFFER_SIZE Sekunden für Analyse
                     audio_chunk = b''.join(vad_buffer[-max_buffer_chunks:])
                     has_speech = self.check_speech_activity(audio_chunk)
-                    
+
                     if has_speech:
-                        # Sprache erkannt: Aktualisiere Zeitpunkt der letzten Sprache
                         last_speech_time = current_time
                         consecutive_silence_checks = 0
-                        print("🗣️ Sprache erkannt")
+                        print("🗣️ Speech detected")
                     else:
-                        # Keine Sprache in den letzten 1.5 Sekunden
                         consecutive_silence_checks += 1
-                        
+
                         if last_speech_time:
-                            # Berechne wie lange es still ist seit der letzten erkannten Sprache
                             silence_duration = current_time - last_speech_time
-                            print(f"🔇 Keine Sprache in letzten 1.5s | Stille seit letzter Sprache: {silence_duration:.1f}s ({consecutive_silence_checks}x Prüfung)")
-                            
-                            # Wenn Stille-Schwelle überschritten (z.B. 2 Sekunden)
-                            # Das bedeutet: Wir haben 2 Sekunden lang keine Sprache mehr erkannt
+                            print(f"🔇 No speech in last 1.5s | Silence since last speech: {silence_duration:.1f}s ({consecutive_silence_checks}x check)")
+
                             if silence_duration >= SILENCE_THRESHOLD:
-                                print(f"✅ Stille-Schwelle ({SILENCE_THRESHOLD}s) erreicht. Sende Block...")
-                                # Sende Block, aber setze is_recording NICHT auf False
-                                # Aufnahme läuft kontinuierlich weiter
+                                print(f"✅ Silence threshold ({SILENCE_THRESHOLD}s) reached. Sending block...")
                                 self.save_and_send(reset_frames=True)
-                                # Reset VAD-Tracking für nächsten Block
+                                # Reset for next block
+                                start_time = time.time()
                                 last_speech_time = None
                                 consecutive_silence_checks = 0
-                                print("🔄 Aufnahme läuft weiter...")
+                                last_progress_time = 0
+                                print("🔄 Recording continues...")
                                 continue
-                        else:
-                            # Sollte nicht passieren, aber falls doch
-                            print("⚠️ Kein last_speech_time gesetzt")
-                    
+
                     last_vad_check = current_time
-                
+
         except KeyboardInterrupt:
-            print("\n⚠️ Aufnahme durch Benutzer unterbrochen")
+            print("\n⚠️ Recording interrupted by user")
             self.is_recording = False
-            # Bei vorzeitigem Beenden: Frage ob gesendet werden soll
             if self.frames:
                 total_duration = time.time() - start_time
-                print(f"\n📊 Aufnahme beendet nach {total_duration:.1f} Sekunden")
-                print(f"📦 Gesammelte Chunks: {len(self.frames)}")
-                print("💡 Daten wurden nicht gesendet (vorzeitiges Beenden)")
-                # Optional: Hier könnte man fragen ob gesendet werden soll
-                # self.save_and_send()
-            return  # Beende sofort ohne zu senden
+                print(f"\n📊 Recording ended after {total_duration:.1f} seconds")
+                print(f"📦 Collected chunks: {len(self.frames)}")
+                print("💡 Data was not sent (early termination)")
+            return
         except Exception as e:
-            print(f"❌ Fehler während der Aufnahme: {e}")
+            print(f"❌ Error during recording: {e}")
             self.is_recording = False
-        
-        # Nur wenn is_recording auf False gesetzt wurde (z.B. durch KeyboardInterrupt)
-        # wird hier die Aufnahme beendet
+
         if not self.is_recording:
             total_duration = time.time() - start_time
-            print(f"\n📊 Aufnahme beendet nach {total_duration:.1f} Sekunden")
-            print(f"📦 Gesammelte Chunks: {len(self.frames)}")
-            
-            # Sende verbleibende Daten nur wenn explizit beendet wurde
+            print(f"\n📊 Recording ended after {total_duration:.1f} seconds")
+            print(f"📦 Collected chunks: {len(self.frames)}")
+
             with self.lock:
                 if self.frames:
-                    print("💾 Sende verbleibende Daten...")
+                    print("💾 Sending remaining data...")
                     self.save_and_send(reset_frames=False)
-            
-            # Cleanup
+
             self.stop()
 
     def stop(self):
-        """Beendet die Aufnahme und räumt auf"""
+        """Stop recording and cleanup"""
         self.is_recording = False
         if hasattr(self, 'stream') and self.stream:
             self.stream.stop_stream()
             self.stream.close()
         if hasattr(self, 'audio') and self.audio:
             self.audio.terminate()
-        print("⏹ Aufnahme beendet und Ressourcen freigegeben.")
+        print("⏹ Recording stopped and resources released.")
 
-# --- HAUPT-PROGRAMM ---
+
+# --- MAIN PROGRAM ---
 if __name__ == "__main__":
-    # Setze aktuelle Episode im Backend
+    # Set current episode in backend
     try:
-        import requests
         response = requests.post(
-            "http://localhost:5000/api/set-episode",
+            f"{BACKEND_URL}/api/set-episode",
             json={"episode_key": CURRENT_SHOW},
             timeout=5
         )
         if response.ok:
-            print(f"✅ Episode im Backend gesetzt: {CURRENT_SHOW}")
+            print(f"✅ Episode set in backend: {CURRENT_SHOW}")
         else:
-            print(f"⚠️ Konnte Episode nicht im Backend setzen: {response.status_code}")
+            print(f"⚠️ Could not set episode in backend: {response.status_code}")
     except Exception as e:
-        print(f"⚠️ Konnte Episode nicht im Backend setzen: {e}")
-        print("   (Backend läuft möglicherweise nicht)")
-    
+        print(f"⚠️ Could not set episode in backend: {e}")
+        print("   (Backend may not be running)")
+
     recorder = VADRecorder()
-    
-    # Terminal-basierte Eingabe für manuelles Senden (robustere Lösung für macOS)
+
+    # Terminal input for manual sending
     def stdin_listener():
-        """Liest Eingaben vom Terminal (blockierend in separatem Thread)"""
-        import sys
-        
-        print("\n⌨️ Terminal-Eingabe aktiviert:")
-        print("   Tippe 's' + Enter für manuelles Senden eines Audio-Blocks")
-        print("   Tippe 'q' + Enter zum Beenden")
-        print("   (Aufnahme läuft danach weiter)")
-        print("   💡 Wichtig: Stelle sicher, dass das Terminal-Fenster fokussiert ist!\n")
-        
-        # Prüfe ob stdin verfügbar ist
+        """Read input from terminal (blocking in separate thread)"""
+        print("\n⌨️ Terminal input enabled:")
+        print("   Type 's' + Enter to manually send an audio block")
+        print("   Type 'q' + Enter to quit")
+        print("   (Recording continues after sending)")
+        print("   💡 Important: Make sure the terminal window is focused!\n")
+
         if not sys.stdin.isatty():
-            print("⚠️ Warnung: stdin ist nicht im TTY-Modus. Terminal-Eingabe könnte nicht funktionieren.")
-        
+            print("⚠️ Warning: stdin not in TTY mode. Terminal input may not work.")
+
         try:
             while recorder.is_recording:
                 try:
-                    # Blockierend lesen (funktioniert zuverlässig)
-                    # Wichtig: Terminal-Fenster muss fokussiert sein!
-                    if DEBUG_MODE:
-                        print("🐛 Debug: Warte auf Eingabe...")
                     line = input().strip().lower()
-                    if DEBUG_MODE:
-                        print(f"🐛 Debug: Eingabe empfangen: '{line}'")
-                    
+
                     if line == 's':
-                        print("⌨️ 's' erkannt - sende Block...")
+                        print("⌨️ 's' detected - sending block...")
                         recorder.manual_send()
                     elif line == 'q' or line == 'quit':
-                        print("\n⚠️ Beende durch Benutzereingabe...")
+                        print("\n⚠️ Quitting by user input...")
                         recorder.is_recording = False
                         break
                     elif line:
-                        print(f"💡 Unbekannter Befehl: '{line}'. Verwende 's' zum Senden oder 'q' zum Beenden.")
+                        print(f"💡 Unknown command: '{line}'. Use 's' to send or 'q' to quit.")
                 except (EOFError, KeyboardInterrupt):
-                    if DEBUG_MODE:
-                        print("🐛 Debug: EOF oder KeyboardInterrupt in stdin_listener")
                     break
                 except Exception as e:
-                    print(f"⚠️ Fehler bei Eingabe: {e}")
-                    if DEBUG_MODE:
-                        import traceback
-                        traceback.print_exc()
-                    # Bei Fehler kurz warten und weiter versuchen
+                    print(f"⚠️ Input error: {e}")
                     time.sleep(0.1)
         except Exception as e:
-            print(f"⚠️ Terminal-Eingabe-Listener beendet: {e}")
-            if DEBUG_MODE:
-                import traceback
-                traceback.print_exc()
-    
-    # Versuche auch globalen Keyboard-Listener (falls Berechtigungen vorhanden)
+            print(f"⚠️ Terminal input listener ended: {e}")
+
+    # Try global keyboard listener (if permissions available)
     keyboard_listener = None
     try:
         def on_press(key):
             try:
                 if key == keyboard.Key.f10:
-                    print("⌨️ F10 erkannt (global)")
+                    print("⌨️ F10 detected (global)")
                     recorder.manual_send()
             except:
                 pass
-        
+
         keyboard_listener = keyboard.Listener(on_press=on_press)
         keyboard_listener.start()
-        print("⌨️ Globaler Keyboard-Listener aktiviert (F10)")
+        print("⌨️ Global keyboard listener enabled (F10)")
     except Exception as e:
-        print(f"⚠️ Globaler Keyboard-Listener nicht verfügbar: {e}")
-        print("   (Verwende Terminal-Eingabe stattdessen)")
-    
-    # Starte Terminal-Eingabe-Listener in separatem Thread
+        print(f"⚠️ Global keyboard listener not available: {e}")
+        print("   (Using terminal input instead)")
+
+    # Start terminal input listener in separate thread
     stdin_thread = threading.Thread(target=stdin_listener, daemon=True)
     stdin_thread.start()
-    
-    # Starte Aufnahme (blockierend)
+
+    # Start recording (blocking)
     recorder.record()
-    
+
     # Cleanup
     if keyboard_listener:
         keyboard_listener.stop()
-    print("👋 Programm beendet.")
+    print("👋 Program ended.")

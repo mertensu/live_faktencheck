@@ -20,7 +20,7 @@ SHOW_CONFIG = {
         "show": "test",  # Zu welcher Show gehört diese Episode
         "episode_name": "Test Episode"
     },
-    
+
     # Maischberger Episoden
     "maischberger-2025-09-19": {
         "name": "Maischberger",
@@ -34,16 +34,7 @@ SHOW_CONFIG = {
         "show": "maischberger",
         "episode_name": "19. September 2025 - Gitta Connemann & Katharina Dröge"
     },
-    # Weitere Maischberger Episoden können hier hinzugefügt werden:
-    # "maischberger-2025-10-15": {
-    #     "name": "Maischberger",
-    #     "description": "Sendung vom 15. Oktober 2025",
-    #     "guests": "...",
-    #     "speakers": [...],
-    #     "show": "maischberger",
-    #     "episode_name": "15. Oktober 2025 - ..."
-    # },
-    
+
     # Miosga Episoden
     "miosga-2025-10": {
         "name": "Miosga",
@@ -56,12 +47,10 @@ SHOW_CONFIG = {
         "show": "miosga",
         "episode_name": "Oktober 2025 - Heidi Reichinnek"
     },
-    # Weitere Miosga Episoden können hier hinzugefügt werden
 }
 
 # Standard-Sendung (für listener.py wenn keine spezifische Sendung gewählt wird)
-# Wird verwendet wenn weder Kommandozeilen-Parameter noch Umgebungsvariable gesetzt sind
-DEFAULT_SHOW = "test"  # Sollte mit der Route im Frontend übereinstimmen
+DEFAULT_SHOW = "test"
 
 def get_show_config(episode_key=None):
     """Gibt die Konfiguration für eine Episode zurück"""
@@ -83,7 +72,7 @@ def get_all_shows():
     """Gibt alle verfügbaren Shows zurück (z.B. ['maischberger', 'miosga', 'test'])"""
     shows = set()
     for episode_key, config in SHOW_CONFIG.items():
-        show = config.get("show", episode_key.split("-")[0])  # Fallback: erster Teil des Keys
+        show = config.get("show", episode_key.split("-")[0])
         shows.add(show)
     return sorted(list(shows))
 
@@ -98,10 +87,8 @@ def get_episodes_for_show(show_key):
                 "description": config.get("description", ""),
                 "config": config
             })
-    # Sortiere nach Key (normalerweise chronologisch wenn Datum im Key)
-    return sorted(episodes, key=lambda x: x["key"], reverse=True)  # Neueste zuerst
+    return sorted(episodes, key=lambda x: x["key"], reverse=True)
 
 def get_all_episodes():
     """Gibt alle verfügbaren Episoden zurück"""
     return list(SHOW_CONFIG.keys())
-
