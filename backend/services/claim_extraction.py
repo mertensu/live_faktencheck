@@ -12,11 +12,21 @@ from pathlib import Path
 from typing import List, Dict, Any
 
 from google import genai
+from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 
 # Default model if not specified in environment
 DEFAULT_MODEL = "gemini-2.5-flash"
+
+class ExtractedClaim(BaseModel):
+    """A standalone, decontextualized factual claim."""
+    name: str = Field(description="Full name of the speaker (proper noun).")
+    claim: str = Field(description="The German decontextualized claim (Atomic Claim).")
+
+class ClaimList(BaseModel):
+    """List of extracted factual claims."""
+    claims: List[ExtractedClaim]
 
 
 class ClaimExtractor:
@@ -56,7 +66,7 @@ class ClaimExtractor:
             f"Could not find claim_extraction.md prompt file. Tried: {possible_paths}"
         )
 
-    def extract(self, transcript: str, guests: str) -> List[Dict[str, str]]:
+    def extract(self, transcript: str, guests: str) -> List[ExtractedClaim]:
         """
         Extract verifiable claims from a transcript.
 
@@ -71,62 +81,24 @@ class ClaimExtractor:
             Exception: If extraction fails
         """
         logger.info(f"Extracting claims from transcript ({len(transcript)} chars)")
-
-        # Build prompt from template (use replace to avoid issues with JSON braces)
+        
         prompt = self.prompt_template.replace("{guests}", guests).replace("{transcript}", transcript)
 
         try:
+            # Native Structured Output Call
             response = self.client.models.generate_content(
                 model=self.model_name,
-                contents=prompt
+                contents=prompt,
+                config={
+                    'response_mime_type': 'application/json',
+                    'response_schema': ClaimList, # Forces the model to adhere
+                }
             )
-            claims = self._parse_response(response.text)
-
-            logger.info(f"Extracted {len(claims)} claims")
-            return claims
+            
+            # The SDK automatically parses the JSON into your Pydantic model
+            # No more Regex needed!
+            return response.parsed.claims
 
         except Exception as e:
-            logger.error(f"Claim extraction failed: {e}")
+            logger.error(f"Structured extraction failed: {e}")
             raise
-
-    def _parse_response(self, response_text: str) -> List[Dict[str, str]]:
-        """
-        Parse the Gemini response and extract claims JSON.
-
-        Args:
-            response_text: Raw text response from Gemini
-
-        Returns:
-            List of claim dictionaries
-        """
-        # Clean up response - remove markdown code blocks if present
-        cleaned = response_text.strip()
-        cleaned = re.sub(r"```json\s*", "", cleaned)
-        cleaned = re.sub(r"```\s*$", "", cleaned)
-        cleaned = cleaned.strip()
-
-        try:
-            claims = json.loads(cleaned)
-
-            # Validate structure
-            if not isinstance(claims, list):
-                logger.warning("Response is not a list, wrapping in list")
-                claims = [claims] if claims else []
-
-            # Ensure each claim has required fields
-            validated_claims = []
-            for claim in claims:
-                if isinstance(claim, dict) and "name" in claim and "claim" in claim:
-                    validated_claims.append({
-                        "name": str(claim["name"]),
-                        "claim": str(claim["claim"])
-                    })
-                else:
-                    logger.warning(f"Skipping invalid claim structure: {claim}")
-
-            return validated_claims
-
-        except json.JSONDecodeError as e:
-            logger.error(f"Failed to parse JSON response: {e}")
-            logger.error(f"Response was: {cleaned[:500]}...")
-            return []

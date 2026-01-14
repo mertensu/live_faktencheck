@@ -9,13 +9,15 @@ import json
 import logging
 import re
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Literal
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
+from pydantic import BaseModel, Field
+
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_tavily import TavilySearch
-from langgraph.prebuilt import create_react_agent
+from langchain.agents import create_agent
 
 logger = logging.getLogger(__name__)
 
@@ -59,6 +61,13 @@ TRUSTED_DOMAINS = [
     "sueddeutsche.de",
 ]
 
+# 1. Define the Data Structure
+class FactCheckResponse(BaseModel):
+    speaker: str
+    original_claim: str
+    verdict: Literal["Richtig", "Falsch", "Teilweise Richtig", "Unbelegt"]
+    evidence: str = Field(description="Detailed German explanation")
+    sources: List[str] = Field(description="URLs to primary sources")
 
 class FactChecker:
     """Service for fact-checking claims using LangGraph ReAct agent with Gemini and Tavily."""
@@ -86,10 +95,12 @@ class FactChecker:
 
         # Initialize Tavily search tool with domain restrictions
         self.search_tool = TavilySearch(
+            name="fact_checker_search",
+            description="Search the web to verify claims.",
             max_results=5,
             search_depth="basic",
             include_domains=TRUSTED_DOMAINS,
-        )
+)
 
         # Load prompt template
         self.prompt_template = self._load_prompt_template()
@@ -145,15 +156,16 @@ class FactChecker:
 
         try:
             # Create the ReAct agent graph
-            agent = create_react_agent(
+            agent = create_agent(
                 model=self.llm,
                 tools=[self.search_tool],
                 prompt=system_prompt,
+                response_format=FactCheckResponse
             )
 
             # Run the agent
             result = agent.invoke({
-                "messages": [{"role": "user", "content": f"Überprüfe diese Behauptung: {claim}"}]
+                "messages": [{"role": "user", "content": f"Check this claim: {claim}"}]
             })
 
             # Extract the final response from messages
