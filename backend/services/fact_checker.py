@@ -1,9 +1,7 @@
 """
-Fact Checker Service using Google Gemini and Tavily Search
+Fact Checker Service using LangChain with Gemini and Tavily Search
 
-Verifies claims against authoritative German sources.
-Uses Gemini's function calling to let the model search multiple times.
-Supports both sequential and parallel processing.
+Verifies claims against authoritative German sources using a robust agent loop.
 """
 
 import os
@@ -15,9 +13,10 @@ from typing import List, Dict, Any
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from google import genai
-from google.genai import types
-from tavily import TavilyClient
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_tavily import TavilySearch
+from langchain.agents import create_tool_calling_agent, AgentExecutor
+from langchain_core.prompts import ChatPromptTemplate
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +33,7 @@ TRUSTED_DOMAINS = [
     "bundeshaushalt.de",
     "uba.de",
     "bundesbank.de",
-    "publikationen-bundesregierung.de",  
+    "publikationen-bundesregierung.de",
     # Research Institutes
     "diw.de",
     "ifo.de",
@@ -63,25 +62,35 @@ TRUSTED_DOMAINS = [
 
 
 class FactChecker:
-    """Service for fact-checking claims using Gemini with Tavily as a tool."""
+    """Service for fact-checking claims using LangChain with Gemini and Tavily."""
 
     def __init__(self):
-        # Initialize Gemini - new SDK supports both env var names
+        # Get API keys
         google_api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
         if not google_api_key:
             raise ValueError("GEMINI_API_KEY or GOOGLE_API_KEY environment variable not set")
 
-        self.client = genai.Client(api_key=google_api_key)
-
-        # Get model from environment (allows easy experimentation)
-        self.model_name = os.getenv("GEMINI_MODEL_FACT_CHECKER", DEFAULT_MODEL)
-
-        # Initialize Tavily
         tavily_api_key = os.getenv("TAVILY_API_KEY")
         if not tavily_api_key:
             raise ValueError("TAVILY_API_KEY environment variable not set")
 
-        self.tavily = TavilyClient(api_key=tavily_api_key)
+        # Get model from environment
+        self.model_name = os.getenv("GEMINI_MODEL_FACT_CHECKER", DEFAULT_MODEL)
+
+        # Initialize LangChain components
+        self.llm = ChatGoogleGenerativeAI(
+            model=self.model_name,
+            google_api_key=google_api_key,
+            temperature=0,
+            max_retries=2,
+        )
+
+        # Initialize Tavily search tool with domain restrictions
+        self.search_tool = TavilySearch(
+            max_results=5,
+            search_depth="basic",
+            include_domains=TRUSTED_DOMAINS,
+        )
 
         # Load prompt template
         self.prompt_template = self._load_prompt_template()
@@ -112,50 +121,9 @@ class FactChecker:
             f"Could not find fact_checker.md prompt file. Tried: {possible_paths}"
         )
 
-    def search_web(self, query: str) -> str:
-        """
-        Search the web for information using Tavily.
-
-        This function is used as a tool by the Gemini model.
-        The model can call this multiple times with different queries.
-
-        Args:
-            query: The search query in German. Should be specific and factual.
-
-        Returns:
-            A JSON string containing search results with titles, URLs, and content snippets.
-        """
-        logger.info(f"Tavily search: {query}")
-
-        try:
-            results = self.tavily.search(
-                query=query,
-                search_depth="basic",
-                include_domains=TRUSTED_DOMAINS,
-                max_results=5
-            )
-
-            # Format results for the model
-            formatted_results = []
-            for result in results.get("results", []):
-                formatted_results.append({
-                    "title": result.get("title", ""),
-                    "url": result.get("url", ""),
-                    "content": result.get("content", "")[:500]  # Truncate long content
-                })
-
-            logger.info(f"Found {len(formatted_results)} results")
-            return json.dumps(formatted_results, ensure_ascii=False, indent=2)
-
-        except Exception as e:
-            logger.warning(f"Tavily search failed: {e}")
-            return json.dumps({"error": str(e)})
-
     def check_claim(self, speaker: str, claim: str) -> Dict[str, Any]:
         """
-        Fact-check a single claim using Gemini with Tavily as a tool.
-
-        The model can call the search tool multiple times to gather evidence.
+        Fact-check a single claim using LangChain agent with Tavily search.
 
         Args:
             speaker: Name of the person who made the claim
@@ -168,7 +136,7 @@ class FactChecker:
 
         current_date = datetime.now().strftime("%B %Y")
 
-        # Build system prompt from template (use replace to avoid issues with JSON braces)
+        # Build system prompt from template
         system_prompt = (
             self.prompt_template
             .replace("{current_date}", current_date)
@@ -176,25 +144,39 @@ class FactChecker:
             .replace("{claim}", claim)
         )
 
-        user_prompt = f"This is the claim to check: {claim}"
-
         try:
-            # Configure the model with the search tool
-            config = types.GenerateContentConfig(
-                tools=[self.search_web],
-                system_instruction=system_prompt,
+            # Create the agent prompt
+            prompt = ChatPromptTemplate.from_messages([
+                ("system", system_prompt),
+                ("human", "{input}"),
+                ("placeholder", "{agent_scratchpad}"),
+            ])
+
+            # Create the agent with tools
+            agent = create_tool_calling_agent(
+                llm=self.llm,
+                tools=[self.search_tool],
+                prompt=prompt,
             )
 
-            # Let Gemini handle the agentic loop (automatic function calling)
-            response = self.client.models.generate_content(
-                model=self.model_name,
-                contents=user_prompt,
-                config=config,
+            # Create the executor
+            agent_executor = AgentExecutor(
+                agent=agent,
+                tools=[self.search_tool],
+                verbose=False,
+                max_iterations=10,
+                handle_parsing_errors=True,
             )
 
-            result = self._parse_response(response.text, speaker, claim)
-            logger.info(f"Claim checked: verdict = {result.get('verdict', 'unknown')}")
-            return result
+            # Run the agent
+            result = agent_executor.invoke({
+                "input": f"Überprüfe diese Behauptung: {claim}"
+            })
+
+            # Parse the response
+            parsed = self._parse_response(result.get("output", ""), speaker, claim)
+            logger.info(f"Claim checked: verdict = {parsed.get('verdict', 'unknown')}")
+            return parsed
 
         except Exception as e:
             logger.error(f"Fact-check failed for claim: {e}")
@@ -243,10 +225,9 @@ class FactChecker:
 
     def _check_claims_parallel(self, claims: List[Dict[str, str]]) -> List[Dict[str, Any]]:
         """Process claims concurrently using ThreadPoolExecutor."""
-        results = [None] * len(claims)  # Preserve order
+        results = [None] * len(claims)
 
         with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
-            # Submit all tasks
             future_to_index = {
                 executor.submit(
                     self.check_claim,
@@ -256,7 +237,6 @@ class FactChecker:
                 for i, claim_data in enumerate(claims)
             }
 
-            # Collect results as they complete
             for future in as_completed(future_to_index):
                 index = future_to_index[future]
                 try:
@@ -281,26 +261,41 @@ class FactChecker:
         claim: str
     ) -> Dict[str, Any]:
         """
-        Parse Gemini response into structured fact-check result.
+        Parse agent response into structured fact-check result.
 
         Args:
-            response_text: Raw Gemini response
+            response_text: Raw agent response
             speaker: Fallback speaker name
             claim: Fallback claim text
 
         Returns:
             Parsed fact-check dictionary
         """
-        # Clean up response - remove markdown code blocks
+        if not response_text:
+            return {
+                "speaker": speaker,
+                "original_claim": claim,
+                "verdict": "Unbelegt",
+                "evidence": "Keine Antwort vom Modell erhalten.",
+                "sources": []
+            }
+
+        # Try to extract JSON from the response
         cleaned = response_text.strip()
+
+        # Remove markdown code blocks if present
         cleaned = re.sub(r"```json\s*", "", cleaned)
         cleaned = re.sub(r"```\s*$", "", cleaned)
         cleaned = cleaned.strip()
 
+        # Try to find JSON object in the response
+        json_match = re.search(r'\{[^{}]*"verdict"[^{}]*\}', cleaned, re.DOTALL)
+        if json_match:
+            cleaned = json_match.group()
+
         try:
             result = json.loads(cleaned)
 
-            # Validate and ensure required fields
             return {
                 "speaker": result.get("speaker", speaker),
                 "original_claim": result.get("original_claim", claim),
@@ -310,13 +305,19 @@ class FactChecker:
             }
 
         except json.JSONDecodeError as e:
-            logger.error(f"Failed to parse verdict JSON: {e}")
-            logger.error(f"Response was: {cleaned[:500]}...")
+            logger.warning(f"Could not parse JSON, extracting verdict from text: {e}")
+
+            # Try to extract verdict from plain text
+            verdict = "Unbelegt"
+            for v in ["Richtig", "Falsch", "Teilweise Richtig"]:
+                if v.lower() in response_text.lower():
+                    verdict = v
+                    break
 
             return {
                 "speaker": speaker,
                 "original_claim": claim,
-                "verdict": "Unbelegt",
-                "evidence": "Fehler beim Parsen der KI-Antwort.",
+                "verdict": verdict,
+                "evidence": response_text,
                 "sources": []
             }
