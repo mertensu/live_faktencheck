@@ -1,7 +1,7 @@
 """
-Fact Checker Service using LangChain with Gemini and Tavily Search
+Fact Checker Service using LangGraph with Gemini and Tavily Search
 
-Verifies claims against authoritative German sources using a robust agent loop.
+Verifies claims against authoritative German sources using a robust ReAct agent loop.
 """
 
 import os
@@ -15,8 +15,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_tavily import TavilySearch
-from langchain.agents import create_tool_calling_agent, AgentExecutor
-from langchain_core.prompts import ChatPromptTemplate
+from langgraph.prebuilt import create_react_agent
 
 logger = logging.getLogger(__name__)
 
@@ -62,7 +61,7 @@ TRUSTED_DOMAINS = [
 
 
 class FactChecker:
-    """Service for fact-checking claims using LangChain with Gemini and Tavily."""
+    """Service for fact-checking claims using LangGraph ReAct agent with Gemini and Tavily."""
 
     def __init__(self):
         # Get API keys
@@ -123,7 +122,7 @@ class FactChecker:
 
     def check_claim(self, speaker: str, claim: str) -> Dict[str, Any]:
         """
-        Fact-check a single claim using LangChain agent with Tavily search.
+        Fact-check a single claim using LangGraph ReAct agent with Tavily search.
 
         Args:
             speaker: Name of the person who made the claim
@@ -145,36 +144,28 @@ class FactChecker:
         )
 
         try:
-            # Create the agent prompt
-            prompt = ChatPromptTemplate.from_messages([
-                ("system", system_prompt),
-                ("human", "{input}"),
-                ("placeholder", "{agent_scratchpad}"),
-            ])
-
-            # Create the agent with tools
-            agent = create_tool_calling_agent(
-                llm=self.llm,
+            # Create the ReAct agent graph
+            agent = create_react_agent(
+                model=self.llm,
                 tools=[self.search_tool],
-                prompt=prompt,
-            )
-
-            # Create the executor
-            agent_executor = AgentExecutor(
-                agent=agent,
-                tools=[self.search_tool],
-                verbose=False,
-                max_iterations=10,
-                handle_parsing_errors=True,
+                prompt=system_prompt,
             )
 
             # Run the agent
-            result = agent_executor.invoke({
-                "input": f"Überprüfe diese Behauptung: {claim}"
+            result = agent.invoke({
+                "messages": [{"role": "user", "content": f"Überprüfe diese Behauptung: {claim}"}]
             })
 
+            # Extract the final response from messages
+            final_message = ""
+            if result and "messages" in result:
+                for msg in reversed(result["messages"]):
+                    if hasattr(msg, "content") and msg.content:
+                        final_message = msg.content
+                        break
+
             # Parse the response
-            parsed = self._parse_response(result.get("output", ""), speaker, claim)
+            parsed = self._parse_response(final_message, speaker, claim)
             logger.info(f"Claim checked: verdict = {parsed.get('verdict', 'unknown')}")
             return parsed
 
