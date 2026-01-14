@@ -159,7 +159,7 @@ class FactChecker:
             agent = create_agent(
                 model=self.llm,
                 tools=[self.search_tool],
-                prompt=system_prompt,
+                system_prompt=system_prompt,
                 response_format=FactCheckResponse
             )
 
