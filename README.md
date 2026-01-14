@@ -7,15 +7,17 @@ Real-time fact-checking system for German TV talk shows. Captures audio, extract
 ```
 Audio Capture → Transcription → Claim Extraction → Human Review → Fact-Checking → Live Display
      │              │                  │                │              │              │
- BlackHole      AssemblyAI         Gemini AI       Admin UI       Gemini +       GitHub
-  + VAD                                                           Tavily         Pages
+ BlackHole      AssemblyAI         Gemini AI       Admin UI       LangChain      GitHub
+  + VAD                                                          Agent Loop      Pages
+                                                                 (Gemini +
+                                                                  Tavily)
 ```
 
 1. **Audio Capture**: Listener captures audio via BlackHole virtual audio device
 2. **Transcription**: AssemblyAI transcribes with speaker detection
 3. **Claim Extraction**: Gemini extracts verifiable factual claims
 4. **Human Review**: Admin UI allows editing and approval of claims
-5. **Fact-Checking**: Gemini + Tavily search verifies claims against trusted German sources
+5. **Fact-Checking**: LangChain agent with Gemini + Tavily verifies claims against trusted German sources
 6. **Display**: Results shown on GitHub Pages (public) and local admin UI
 
 ## Requirements
@@ -100,7 +102,7 @@ cd frontend && npm run dev
 │   └── services/
 │       ├── transcription.py   # AssemblyAI integration
 │       ├── claim_extraction.py # Gemini claim extraction
-│       └── fact_checker.py    # Gemini + Tavily fact-checking
+│       └── fact_checker.py    # LangChain agent with Gemini + Tavily
 ├── frontend/
 │   ├── src/App.jsx            # React frontend
 │   └── public/data/           # Persisted fact-checks (JSON)
@@ -147,6 +149,25 @@ Fact-checking searches are restricted to authoritative German sources:
 - EU: ec.europa.eu
 
 See `backend/services/fact_checker.py` for the full list.
+
+## How Fact-Checking Works
+
+The fact-checker uses a LangChain ReAct agent that iteratively searches for evidence:
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                  LangChain Agent Loop                   │
+├─────────────────────────────────────────────────────────┤
+│  1. LLM receives claim + conversation history           │
+│  2. LLM decides: search for more evidence OR respond    │
+│  3. If search: Execute Tavily → append results → repeat │
+│  4. If respond: Return verdict + evidence + sources     │
+└─────────────────────────────────────────────────────────┘
+```
+
+- **Tavily Search**: Searches the web, filtered to trusted domains only
+- **Max 10 iterations**: Safety limit to prevent infinite loops
+- **Robust handling**: LangChain guarantees a final response (no silent failures)
 
 ## Environment Variables
 
