@@ -5,9 +5,7 @@ Verifies claims against authoritative German sources using a robust ReAct agent 
 """
 
 import os
-import json
 import logging
-import re
 from pathlib import Path
 from typing import List, Dict, Any, Literal
 from datetime import datetime
@@ -94,13 +92,15 @@ class FactChecker:
         )
 
         # Initialize Tavily search tool with domain restrictions
+        self.search_depth = os.getenv("TAVILY_SEARCH_DEPTH", "basic")
+        self.max_results = int(os.getenv("TAVILY_MAX_RESULTS", "5"))
         self.search_tool = TavilySearch(
             name="fact_checker_search",
             description="Search the web to verify claims.",
-            max_results=5,
-            search_depth="basic",
+            max_results=self.max_results,
+            search_depth=self.search_depth,
             include_domains=TRUSTED_DOMAINS,
-)
+        )
 
         # Load prompt template
         self.prompt_template = self._load_prompt_template()
@@ -111,6 +111,7 @@ class FactChecker:
 
         logger.info(
             f"FactChecker initialized with model: {self.model_name}, "
+            f"search_depth: {self.search_depth}, max_results: {self.max_results}, "
             f"parallel: {self.parallel_enabled}, max_workers: {self.max_workers}"
         )
 
@@ -146,7 +147,6 @@ class FactChecker:
 
         current_date = datetime.now().strftime("%B %Y")
 
-        # Build system prompt from template
         system_prompt = (
             self.prompt_template
             .replace("{current_date}", current_date)
@@ -155,7 +155,6 @@ class FactChecker:
         )
 
         try:
-            # Create the ReAct agent graph
             agent = create_agent(
                 model=self.llm,
                 tools=[self.search_tool],
@@ -163,21 +162,12 @@ class FactChecker:
                 response_format=FactCheckResponse
             )
 
-            # Run the agent
             result = agent.invoke({
                 "messages": [{"role": "user", "content": f"Check this claim: {claim}"}]
             })
 
-            # Extract the final response from messages
-            final_message = ""
-            if result and "messages" in result:
-                for msg in reversed(result["messages"]):
-                    if hasattr(msg, "content") and msg.content:
-                        final_message = msg.content
-                        break
-
-            # Parse the response
-            parsed = self._parse_response(final_message, speaker, claim)
+            structured = result["structured_response"]
+            parsed = structured.model_dump()
             logger.info(f"Claim checked: verdict = {parsed.get('verdict', 'unknown')}")
             return parsed
 
@@ -257,70 +247,3 @@ class FactChecker:
 
         return results
 
-    def _parse_response(
-        self,
-        response_text: str,
-        speaker: str,
-        claim: str
-    ) -> Dict[str, Any]:
-        """
-        Parse agent response into structured fact-check result.
-
-        Args:
-            response_text: Raw agent response
-            speaker: Fallback speaker name
-            claim: Fallback claim text
-
-        Returns:
-            Parsed fact-check dictionary
-        """
-        if not response_text:
-            return {
-                "speaker": speaker,
-                "original_claim": claim,
-                "verdict": "Unbelegt",
-                "evidence": "Keine Antwort vom Modell erhalten.",
-                "sources": []
-            }
-
-        # Try to extract JSON from the response
-        cleaned = response_text.strip()
-
-        # Remove markdown code blocks if present
-        cleaned = re.sub(r"```json\s*", "", cleaned)
-        cleaned = re.sub(r"```\s*$", "", cleaned)
-        cleaned = cleaned.strip()
-
-        # Try to find JSON object in the response
-        json_match = re.search(r'\{[^{}]*"verdict"[^{}]*\}', cleaned, re.DOTALL)
-        if json_match:
-            cleaned = json_match.group()
-
-        try:
-            result = json.loads(cleaned)
-
-            return {
-                "speaker": result.get("speaker", speaker),
-                "original_claim": result.get("original_claim", claim),
-                "verdict": result.get("verdict", "Unbelegt"),
-                "evidence": result.get("evidence", ""),
-                "sources": result.get("sources", [])
-            }
-
-        except json.JSONDecodeError as e:
-            logger.warning(f"Could not parse JSON, extracting verdict from text: {e}")
-
-            # Try to extract verdict from plain text
-            verdict = "Unbelegt"
-            for v in ["Richtig", "Falsch", "Teilweise Richtig"]:
-                if v.lower() in response_text.lower():
-                    verdict = v
-                    break
-
-            return {
-                "speaker": speaker,
-                "original_claim": claim,
-                "verdict": verdict,
-                "evidence": response_text,
-                "sources": []
-            }
