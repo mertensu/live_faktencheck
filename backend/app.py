@@ -12,7 +12,6 @@ import os
 import sys
 import json
 import logging
-import tempfile
 import threading
 from pathlib import Path
 from datetime import datetime
@@ -100,6 +99,11 @@ pending_claims_blocks = []
 current_episode_key = None
 processing_lock = threading.Lock()
 
+
+def to_dict(obj):
+    """Convert Pydantic model to dict, or return as-is if already a dict."""
+    return obj.model_dump() if hasattr(obj, "model_dump") else obj
+
 # Background executor for async processing
 executor = ThreadPoolExecutor(max_workers=5)
 
@@ -176,20 +180,12 @@ def process_audio_pipeline(audio_data: bytes, episode_key: str, guests: str):
             return
 
         # Step 3: Store as pending claims
-        # Convert Pydantic models to dicts for JSON serialization
-        claims_dicts = [
-            claim.model_dump() if hasattr(claim, "model_dump") else 
-            claim.dict() if hasattr(claim, "dict") else 
-            claim
-            for claim in claims
-        ]
-        
         with processing_lock:
             pending_block = {
                 "block_id": block_id,
                 "timestamp": datetime.now().isoformat(),
                 "claims_count": len(claims),
-                "claims": claims_dicts,
+                "claims": [to_dict(c) for c in claims],
                 "status": "pending",
                 "episode_key": episode_key,
                 "transcript_preview": transcript[:200] + "..." if len(transcript) > 200 else transcript
@@ -216,22 +212,7 @@ def get_pending_claims():
         key=lambda x: x.get("timestamp", ""),
         reverse=True
     )
-    
-    # Convert Pydantic models to dicts for JSON serialization
-    serializable_blocks = []
-    for block in sorted_blocks:
-        serializable_block = block.copy()
-        # Convert ExtractedClaim objects to dicts
-        if "claims" in serializable_block:
-            serializable_block["claims"] = [
-                claim.model_dump() if hasattr(claim, "model_dump") else 
-                claim.dict() if hasattr(claim, "dict") else 
-                claim
-                for claim in serializable_block["claims"]
-            ]
-        serializable_blocks.append(serializable_block)
-    
-    return jsonify(serializable_blocks)
+    return jsonify(sorted_blocks)
 
 
 @app.route('/api/pending-claims', methods=['POST'])
@@ -324,35 +305,20 @@ def process_fact_checks(claims: list, episode_key: str):
         # Store results
         with processing_lock:
             for result in results:
-                # Convert result to dict if it's a Pydantic model
-                if hasattr(result, "model_dump"):
-                    result_dict = result.model_dump()
-                elif hasattr(result, "dict"):
-                    result_dict = result.dict()
-                else:
-                    result_dict = result
-                
-                # Ensure sources/quellen is a list of strings, not Pydantic models
+                result_dict = to_dict(result)
                 sources = result_dict.get("sources", [])
-                sources_list = [
-                    source.model_dump() if hasattr(source, "model_dump") else 
-                    source.dict() if hasattr(source, "dict") else 
-                    str(source)
-                    for source in sources
-                ] if sources else []
-                
+
                 fact_check = {
                     "id": len(fact_checks) + 1,
                     "sprecher": result_dict.get("speaker", ""),
                     "behauptung": result_dict.get("original_claim", ""),
                     "urteil": result_dict.get("verdict", "Unbelegt"),
                     "begruendung": result_dict.get("evidence", ""),
-                    "quellen": sources_list,
+                    "quellen": [to_dict(s) for s in sources] if sources else [],
                     "timestamp": datetime.now().isoformat(),
                     "episode_key": episode_key
                 }
                 fact_checks.append(fact_check)
-
                 logger.info(f"Fact-check complete: {fact_check['sprecher']} - {fact_check['urteil']}")
 
         # Save to JSON file for GitHub Pages
@@ -376,26 +342,8 @@ def get_fact_checks():
     """Return fact-checks, optionally filtered by episode"""
     episode_key = request.args.get('episode')
     if episode_key:
-        filtered = [fc for fc in fact_checks if fc.get('episode_key') == episode_key]
-        checks_to_return = filtered
-    else:
-        checks_to_return = fact_checks
-    
-    # Convert any Pydantic models to dicts for JSON serialization (safety check)
-    serializable_checks = []
-    for check in checks_to_return:
-        serializable_check = check.copy() if isinstance(check, dict) else dict(check)
-        # Convert any nested Pydantic models
-        if "quellen" in serializable_check and serializable_check["quellen"]:
-            serializable_check["quellen"] = [
-                source.model_dump() if hasattr(source, "model_dump") else 
-                source.dict() if hasattr(source, "dict") else 
-                source
-                for source in serializable_check["quellen"]
-            ]
-        serializable_checks.append(serializable_check)
-    
-    return jsonify(serializable_checks)
+        return jsonify([fc for fc in fact_checks if fc.get('episode_key') == episode_key])
+    return jsonify(fact_checks)
 
 
 @app.route('/api/fact-checks', methods=['POST'])
