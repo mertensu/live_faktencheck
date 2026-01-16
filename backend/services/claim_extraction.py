@@ -5,11 +5,11 @@ Extracts verifiable factual claims from German transcripts.
 """
 
 import os
-import json
+import asyncio
 import logging
-import re
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import List
+from datetime import datetime
 
 from google import genai
 from pydantic import BaseModel, Field
@@ -75,30 +75,43 @@ class ClaimExtractor:
             guests: Context information about the show/guests
 
         Returns:
-            List of claim dictionaries with 'name' and 'claim' keys
+            List of ExtractedClaim objects
 
         Raises:
             Exception: If extraction fails
         """
         logger.info(f"Extracting claims from transcript ({len(transcript)} chars)")
-        
-        prompt = self.prompt_template.replace("{guests}", guests).replace("{transcript}", transcript)
 
+        current_date = datetime.now().strftime("%B %Y")
+
+        prompt = (
+            self.prompt_template
+            .replace("{current_date}", current_date)
+            .replace("{guests}", guests)
+            .replace("{transcript}", transcript)
+        )
+
+        # Use async API (sync client hangs in some environments)
+        return asyncio.run(self._extract_async(prompt))
+
+    async def _extract_async(self, prompt: str) -> List[ExtractedClaim]:
+        """Async implementation of claim extraction."""
         try:
-            # Native Structured Output Call
-            response = self.client.models.generate_content(
+            response = await self.client.aio.models.generate_content(
                 model=self.model_name,
                 contents=prompt,
                 config={
                     'response_mime_type': 'application/json',
-                    'response_schema': ClaimList, # Forces the model to adhere
+                    'response_schema': ClaimList,
                 }
             )
-            
-            # The SDK automatically parses the JSON into your Pydantic model
-            # No more Regex needed!
-            return response.parsed.claims
+
+            claims = response.parsed.claims
+            logger.info(f"Extraction complete: {len(claims)} claims found")
+            return claims
 
         except Exception as e:
             logger.error(f"Structured extraction failed: {e}")
+            import traceback
+            traceback.print_exc()
             raise
