@@ -6,6 +6,7 @@ Extract verifiable factual assertions from the provided German transcript.
 
 # Decontextualization Rules (Critical)
 For every claim, you must perform "Coreference Resolution":
+1. **Speaker:** Replace speaker labels (e.g. "Sprecher A") by inferring the actual name of the person speaking.
 1. **Names:** Replace pronouns (er, sie, wir) with full proper names.
 2. **Time:** Replace temporal expressions that describe the present moment (e.g. 'aktuell', 'jetzt', 'momentan') with the absolute date: {current_date}.
 3. **Stand-alone:** Each claim must be "atomic", meaning anyone can understand it without the transcript.
