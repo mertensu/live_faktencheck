@@ -56,7 +56,9 @@ print_header "🚀 Production Startup for: $EPISODE_KEY"
 
 # Load .env file if exists
 if [ -f .env ]; then
-    export $(grep -v '^#' .env | xargs)
+    set -a
+    source .env
+    set +a
     print_success "Loaded .env file"
 else
     print_warning "No .env file found. Make sure API keys are set!"
@@ -111,24 +113,94 @@ print_header "Step 3: GitHub Secret & Deployment"
 
 SECRET_UPDATED=false
 if command -v gh &> /dev/null; then
+    # Check if GH_TOKEN is set (for automation)
+    if [ -n "$GH_TOKEN" ]; then
+        print_info "Using GH_TOKEN from environment for authentication"
+        export GH_TOKEN
+    fi
+    
+    # Check authentication status and verify token has required scopes
     if gh auth status &>/dev/null; then
+        # Verify token has required scopes
+        AUTH_STATUS=$(gh auth status 2>&1)
+        if echo "$AUTH_STATUS" | grep -q "repo.*workflow"; then
+            print_success "GitHub CLI authenticated with required scopes"
+        else
+            print_warning "Token may be missing required scopes. Checking..."
+            if ! echo "$AUTH_STATUS" | grep -q "repo"; then
+                print_error "Token missing 'repo' scope!"
+            fi
+            if ! echo "$AUTH_STATUS" | grep -q "workflow"; then
+                print_error "Token missing 'workflow' scope!"
+            fi
+        fi
         print_info "Updating GitHub Secret..."
-        if gh secret set VITE_BACKEND_URL --body "$TUNNEL_URL" 2>/dev/null; then
+        # Try to update secret and capture both stdout and stderr
+        if OUTPUT=$(gh secret set VITE_BACKEND_URL --body "$TUNNEL_URL" 2>&1); then
             print_success "GitHub Secret updated: $TUNNEL_URL"
             SECRET_UPDATED=true
             sleep 2
 
+            # Verify the secret was actually set
+            print_info "Verifying secret was updated..."
+            sleep 1
+            if gh secret list | grep -q "VITE_BACKEND_URL"; then
+                print_success "Secret verified in GitHub"
+            else
+                print_warning "Secret may not be visible (this is normal for security reasons)"
+            fi
+
             # Auto-trigger deployment
-            if gh workflow run "Deploy to GitHub Pages" 2>/dev/null; then
+            print_info "Triggering GitHub Pages deployment..."
+            if DEPLOY_OUTPUT=$(gh workflow run "Deploy to GitHub Pages" 2>&1); then
                 print_success "Deployment triggered automatically!"
             else
-                print_warning "Could not trigger deployment. Please trigger manually."
+                print_warning "Could not trigger deployment: $DEPLOY_OUTPUT"
+                print_info "You can trigger manually: gh workflow run 'Deploy to GitHub Pages'"
             fi
         else
-            print_warning "Could not update GitHub Secret"
+            print_error "Failed to update GitHub Secret!"
+            print_info "Error output: $OUTPUT"
+            
+            # Check for specific permission errors
+            if echo "$OUTPUT" | grep -q "403\|not accessible\|permission"; then
+                print_error ""
+                print_error "⚠️  Permission denied! Your token needs additional scopes:"
+                print_error "   1. Go to: https://github.com/settings/tokens"
+                print_error "   2. Edit your token (or create a new one)"
+                print_error "   3. Enable these scopes:"
+                print_error "      ✓ repo (full control) - REQUIRED"
+                print_error "      ✓ admin:repo - REQUIRED for managing secrets"
+                print_error "      ✓ workflow - for triggering workflows"
+                print_error "      ✓ read:org, gist - required by GitHub CLI"
+                print_error "   4. Update GH_TOKEN in your .env file"
+                print_error ""
+            fi
+            
+            print_warning "For now, please set secret manually:"
+            print_info "   GitHub → Settings → Secrets → VITE_BACKEND_URL = $TUNNEL_URL"
         fi
     else
-        print_warning "GitHub CLI not authenticated. Run: gh auth login"
+        print_warning "GitHub CLI not authenticated"
+        print_info ""
+        print_info "To automate authentication, set GH_TOKEN environment variable:"
+        print_info "   1. Create a Personal Access Token (classic) at:"
+        print_info "      https://github.com/settings/tokens"
+        print_info "   2. Required scopes:"
+        print_info "      - repo (full control) - for repository access"
+        print_info "      - read:org - required by GitHub CLI"
+        print_info "      - gist - required by GitHub CLI"
+        print_info "      - workflow - for triggering workflows"
+        print_info "      - admin:repo (or write:packages) - for managing secrets"
+        print_info "   3. Add to your .env file: GH_TOKEN=your_token_here"
+        print_info ""
+        print_warning "Note: If you get a 403 error, your token needs 'admin:repo' scope"
+        print_warning "      to update secrets. You may need to regenerate the token."
+        print_info ""
+        print_info "Or run once manually: gh auth login"
+        print_info ""
+        print_warning "For now, please set secret manually:"
+        print_info "   GitHub → Settings → Secrets → VITE_BACKEND_URL = $TUNNEL_URL"
     fi
 else
     print_warning "GitHub CLI not installed. Set secret manually:"
