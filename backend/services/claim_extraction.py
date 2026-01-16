@@ -43,18 +43,19 @@ class ClaimExtractor:
         # Get model from environment (allows easy experimentation)
         self.model_name = os.getenv("GEMINI_MODEL_CLAIM_EXTRACTION", DEFAULT_MODEL)
 
-        # Load prompt template
-        self.prompt_template = self._load_prompt_template()
+        # Load prompt templates
+        self.prompt_template = self._load_prompt_template("claim_extraction.md")
+        self.article_prompt_template = self._load_prompt_template("claim_extraction_article.md")
 
         logger.info(f"ClaimExtractor initialized with model: {self.model_name}")
 
-    def _load_prompt_template(self) -> str:
-        """Load the claim extraction prompt template from file."""
+    def _load_prompt_template(self, filename: str) -> str:
+        """Load a prompt template from file."""
         # Try multiple possible locations
         possible_paths = [
-            Path(__file__).parent.parent.parent / "prompts" / "claim_extraction.md",
-            Path("prompts/claim_extraction.md"),
-            Path("/Users/ulfmertens/Documents/fact_check/prompts/claim_extraction.md"),
+            Path(__file__).parent.parent.parent / "prompts" / filename,
+            Path(f"prompts/{filename}"),
+            Path(f"/Users/ulfmertens/Documents/fact_check/prompts/{filename}"),
         ]
 
         for prompt_path in possible_paths:
@@ -63,7 +64,7 @@ class ClaimExtractor:
                 return prompt_path.read_text(encoding="utf-8")
 
         raise FileNotFoundError(
-            f"Could not find claim_extraction.md prompt file. Tried: {possible_paths}"
+            f"Could not find {filename} prompt file. Tried: {possible_paths}"
         )
 
     def extract(self, transcript: str, guests: str) -> List[ExtractedClaim]:
@@ -115,3 +116,29 @@ class ClaimExtractor:
             import traceback
             traceback.print_exc()
             raise
+
+    def extract_from_article(self, text: str, headline: str, publication_date: str = None) -> List[ExtractedClaim]:
+        """
+        Extract verifiable claims from an article (skip transcription).
+
+        Args:
+            text: Article text content
+            headline: Article headline (used as context)
+            publication_date: Publication date string (defaults to current month/year)
+
+        Returns:
+            List of ExtractedClaim objects
+        """
+        logger.info(f"Extracting claims from article ({len(text)} chars)")
+
+        if not publication_date:
+            publication_date = datetime.now().strftime("%B %Y")
+
+        prompt = (
+            self.article_prompt_template
+            .replace("{publication_date}", publication_date)
+            .replace("{headline}", headline)
+            .replace("{text}", text)
+        )
+
+        return asyncio.run(self._extract_async(prompt))

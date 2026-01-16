@@ -201,6 +201,90 @@ def process_audio_pipeline(audio_data: bytes, episode_key: str, guests: str):
 
 
 # =============================================================================
+# Text Processing Pipeline (skip transcription)
+# =============================================================================
+
+@app.route('/api/text-block', methods=['POST'])
+def receive_text_block():
+    """
+    Receive text directly for claim extraction (skip transcription).
+
+    Expected JSON:
+    - text: Article/text content to extract claims from
+    - headline: Context/headline for the article
+    - publication_date: (optional) Publication date, defaults to current month/year
+    - source_id: (optional) Identifier for the source, defaults to article-YYYYMMDD-HHMMSS
+    """
+    try:
+        data = request.get_json()
+        text = data.get('text')
+        headline = data.get('headline', '')
+        publication_date = data.get('publication_date')  # None means use current date
+        source_id = data.get('source_id', f"article-{datetime.now().strftime('%Y%m%d-%H%M%S')}")
+
+        # Validate
+        if not text or not text.strip():
+            return jsonify({'error': 'No text provided'}), 400
+
+        logger.info(f"Received text block: {len(text)} chars, headline: {headline[:50]}...")
+
+        # Submit to background processing (claim extraction only, skip transcription)
+        executor.submit(process_text_pipeline, text, headline, source_id, publication_date)
+
+        return jsonify({
+            'status': 'accepted',
+            'message': 'Text block received, processing claims...',
+            'source_id': source_id
+        }), 202
+
+    except Exception as e:
+        logger.error(f"Error receiving text block: {e}")
+        return jsonify({'error': str(e)}), 400
+
+
+def process_text_pipeline(text: str, headline: str, source_id: str, publication_date: str = None):
+    """
+    Background pipeline: text -> claim extraction -> pending claims
+    (Skips transcription step - for articles, press releases, etc.)
+    """
+    block_id = f"text_{int(datetime.now().timestamp() * 1000)}"
+
+    try:
+        logger.info(f"[{block_id}] Starting text processing pipeline...")
+
+        # Claim extraction (using article-specific prompt)
+        logger.info(f"[{block_id}] Extracting claims from article...")
+        claim_extractor = get_claim_extractor()
+        claims = claim_extractor.extract_from_article(text, headline, publication_date)
+        logger.info(f"[{block_id}] Extracted {len(claims)} claims")
+
+        if not claims:
+            logger.info(f"[{block_id}] No claims extracted, skipping")
+            return
+
+        # Store as pending claims
+        with processing_lock:
+            pending_block = {
+                "block_id": block_id,
+                "timestamp": datetime.now().isoformat(),
+                "claims_count": len(claims),
+                "claims": [to_dict(c) for c in claims],
+                "status": "pending",
+                "source_id": source_id,
+                "headline": headline,
+                "text_preview": text[:200] + "..." if len(text) > 200 else text
+            }
+            pending_claims_blocks.append(pending_block)
+
+        logger.info(f"[{block_id}] Pipeline complete. {len(claims)} claims added to pending.")
+
+    except Exception as e:
+        logger.error(f"[{block_id}] Pipeline error: {e}")
+        import traceback
+        traceback.print_exc()
+
+
+# =============================================================================
 # Pending Claims Management
 # =============================================================================
 
@@ -493,6 +577,7 @@ if __name__ == '__main__':
 ║                                                              ║
 ║  Endpoints:                                                  ║
 ║    POST /api/audio-block     - Receive audio from listener   ║
+║    POST /api/text-block      - Receive text from reader      ║
 ║    GET  /api/pending-claims  - Get pending claims            ║
 ║    POST /api/approve-claims  - Approve claims for checking   ║
 ║    GET  /api/fact-checks     - Get completed fact-checks     ║
