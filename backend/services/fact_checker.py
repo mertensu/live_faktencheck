@@ -5,17 +5,18 @@ Verifies claims against authoritative German sources using a robust ReAct agent 
 """
 
 import os
+import asyncio
 import logging
 from pathlib import Path
 from typing import List, Dict, Any, Literal
 from datetime import datetime
-from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from pydantic import BaseModel, Field
 
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_tavily import TavilySearch
 from langchain.agents import create_agent
+from langchain_core.runnables import RunnableLambda
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +43,7 @@ TRUSTED_DOMAINS = [
     "fraunhofer.de",
     "pik-potsdam.de",
     "wupperinst.org",
+    "ewi.uni-koeln.de",
     # Think Tanks & Foundations
     "boeckler.de",
     "swp-berlin.org",
@@ -154,25 +156,38 @@ class FactChecker:
             .replace("{claim}", claim)
         )
 
+        # Use async to avoid sync client hanging issues
+        return asyncio.run(self._check_claim_async(speaker, claim, system_prompt))
+
+    async def _check_claim_async(self, speaker: str, claim: str, system_prompt: str) -> Dict[str, Any]:
+        """Async implementation of claim checking."""
         try:
             agent = create_agent(
                 model=self.llm,
                 tools=[self.search_tool],
                 system_prompt=system_prompt,
-                response_format=FactCheckResponse
+                response_format=FactCheckResponse,
             )
 
-            result = agent.invoke({
+            result = await agent.ainvoke({
                 "messages": [{"role": "user", "content": f"Check this claim: {claim}"}]
             })
 
-            structured = result["structured_response"]
-            parsed = structured.model_dump()
+            # Handle nested structured_response
+            if "structured_response" in result:
+                structured = result["structured_response"]
+                parsed = structured.model_dump() if hasattr(structured, "model_dump") else structured
+            else:
+                # Result might already be flat
+                parsed = result.model_dump() if hasattr(result, "model_dump") else result
+
             logger.info(f"Claim checked: verdict = {parsed.get('verdict', 'unknown')}")
             return parsed
 
         except Exception as e:
             logger.error(f"Fact-check failed for claim: {e}")
+            import traceback
+            traceback.print_exc()
             return {
                 "speaker": speaker,
                 "original_claim": claim,
@@ -216,34 +231,41 @@ class FactChecker:
             results.append(result)
         return results
 
-    def _check_claims_parallel(self, claims: List[Dict[str, str]]) -> List[Dict[str, Any]]:
-        """Process claims concurrently using ThreadPoolExecutor."""
-        results = [None] * len(claims)
-
-        with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
-            future_to_index = {
-                executor.submit(
-                    self.check_claim,
-                    claim_data.get("name", "Unknown"),
-                    claim_data.get("claim", "")
-                ): i
-                for i, claim_data in enumerate(claims)
+    def _check_claim_wrapper(self, claim_data: Dict[str, str]) -> Dict[str, Any]:
+        """Helper to unpack dictionary and call check_claim"""
+        try:
+            return self.check_claim(
+                claim_data.get("name", "Unknown"), 
+                claim_data.get("claim", "")
+            )
+        except Exception as e:
+            logger.error(f"Claim failed: {e}")
+            return {
+                "speaker": claim_data.get("name", "Unknown"),
+                "original_claim": claim_data.get("claim", ""),
+                "verdict": "Unbelegt",
+                "evidence": f"Fehler: {str(e)}",
+                "sources": []
             }
 
-            for future in as_completed(future_to_index):
-                index = future_to_index[future]
-                try:
-                    results[index] = future.result()
-                    logger.info(f"Completed claim {index + 1}/{len(claims)}")
-                except Exception as e:
-                    logger.error(f"Claim {index + 1} failed: {e}")
-                    results[index] = {
-                        "speaker": claims[index].get("name", "Unknown"),
-                        "original_claim": claims[index].get("claim", ""),
-                        "verdict": "Unbelegt",
-                        "evidence": f"Fehler: {str(e)}",
-                        "sources": []
-                    }
-
+    def _check_claims_parallel(self, claims: List[Dict[str, str]]) -> List[Dict[str, Any]]:
+        """
+        Process claims concurrently using LangChain's native batching.
+        This replaces ThreadPoolExecutor with a more modern approach.
+        """
+        # Create a Runnable from the wrapper method
+        runner = RunnableLambda(self._check_claim_wrapper)
+        
+        # Run in parallel with max_concurrency (acts like max_workers)
+        logger.info(f"Running {len(claims)} claims in parallel (max_concurrency: {self.max_workers})")
+        results = runner.batch(
+            claims, 
+            config={"max_concurrency": self.max_workers}
+        )
+        
+        # Log completion
+        for i, result in enumerate(results):
+            logger.info(f"Completed claim {i + 1}/{len(claims)}: {result.get('verdict', 'unknown')}")
+        
         return results
 
