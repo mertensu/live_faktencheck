@@ -65,6 +65,35 @@
   margin: 0 auto;
 }
 
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  color: #666;
+}
+
+.loading-container p {
+  margin-top: 1rem;
+  font-size: 1.1rem;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #e0e0e0;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .show-card {
   background: white;
   padding: 2rem;
@@ -552,6 +581,92 @@
   outline: none;
   border-color: #667eea;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* Backend Error Display */
+.backend-error {
+  padding: 1.5rem;
+  margin: 0 0 1.5rem 0;
+  background-color: #fee2e2;
+  border: 2px solid #ef4444;
+  border-radius: 8px;
+  color: #991b1b;
+}
+
+.backend-error-title {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.1rem;
+}
+
+.backend-error-message {
+  margin: 0 0 0.5rem 0;
+}
+
+.backend-error-details {
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.backend-error-details summary {
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.backend-error-info {
+  margin-top: 0.5rem;
+  padding-left: 1rem;
+}
+
+.backend-error-info p {
+  margin: 0 0 0.25rem 0;
+}
+
+.backend-error-hint {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: #7f1d1d;
+}
+
+/* Episode Selector (ShowPage) */
+.episode-selector {
+  padding: 1rem;
+  background: #f5f5f5;
+  border-bottom: 1px solid #ddd;
+}
+
+.episode-selector-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: bold;
+}
+
+.episode-selector-select {
+  padding: 0.5rem;
+  font-size: 1rem;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  min-width: 300px;
+}
+
+/* FactCheckPage Header */
+.factcheck-header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+/* AdminView Empty State */
+.admin-empty-subtitle {
+  font-size: 0.9rem;
+  color: #666;
+  margin-top: 1rem;
+}
+
+/* ClaimCard No Begründung */
+.no-begruendung {
+  color: #999;
+  font-style: italic;
 }
 
 /* Footer */

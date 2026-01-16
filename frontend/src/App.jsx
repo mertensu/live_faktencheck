@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { BrowserRouter, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import './App.css'
 
 // Konfiguration: Sprecher werden vom Backend geladen (siehe FactCheckPage)
@@ -12,6 +12,13 @@ const DEFAULT_SPEAKERS = [
 
 // N8N Webhook URL für verified claims
 const N8N_VERIFIED_WEBHOOK = "http://localhost:5678/webhook/verified-claims"
+
+// Debug logging - nur in Entwicklung aktiv
+const debug = {
+  log: (...args) => { if (import.meta.env.DEV) console.log(...args) },
+  warn: (...args) => { if (import.meta.env.DEV) console.warn(...args) },
+  error: (...args) => { if (import.meta.env.DEV) console.error(...args) }
+}
 
 // Backend URL - wird basierend auf Environment angepasst
 const getBackendUrl = () => {
@@ -46,43 +53,74 @@ const safeJsonParse = async (response, errorContext = '') => {
   if (!isJsonResponse(response)) {
     const text = await response.text()
     if (text.trim().startsWith('<!DOCTYPE') || text.includes('<html')) {
-      console.error(`❌ ${errorContext}: Backend antwortet mit HTML statt JSON`)
-      console.error(`   URL: ${response.url}`)
-      console.error(`   Status: ${response.status}`)
-      console.error(`   Response (erste 200 Zeichen): ${text.substring(0, 200)}`)
+      debug.error(`❌ ${errorContext}: Backend antwortet mit HTML statt JSON`)
+      debug.error(`   URL: ${response.url}`)
+      debug.error(`   Status: ${response.status}`)
+      debug.error(`   Response (erste 200 Zeichen): ${text.substring(0, 200)}`)
       throw new Error('Backend antwortet mit HTML statt JSON. Prüfe ob Backend läuft und erreichbar ist.')
     }
   }
   try {
     return await response.json()
   } catch (error) {
-    console.error(`❌ ${errorContext}: Fehler beim Parsen der JSON-Response`)
-    console.error(`   URL: ${response.url}`)
-    console.error(`   Fehler: ${error.message}`)
+    debug.error(`❌ ${errorContext}: Fehler beim Parsen der JSON-Response`)
+    debug.error(`   URL: ${response.url}`)
+    debug.error(`   Fehler: ${error.message}`)
     throw error
   }
 }
 
-function App() {
-  const [shows, setShows] = useState(['test', 'maischberger', 'miosga'])  // Fallback
-  
-  // Lade Shows dynamisch vom Backend für Routes
+// Markdown regex patterns - compiled once at module load for better performance
+const MARKDOWN_BOLD_PATTERN = /\*\*(.+?)\*\*/g
+const MARKDOWN_ITALIC_PATTERN = /(?<!\*)\*([^*]+?)\*(?!\*)/g
+const MARKDOWN_LINK_PATTERN = /\[([^\]]+)\]\(([^)]+)\)/g
+
+// Custom Hook: Lädt Shows vom Backend (eliminiert Duplikation)
+const DEFAULT_SHOWS = ['test', 'maischberger', 'miosga']
+
+function useShows() {
+  const [shows, setShows] = useState(DEFAULT_SHOWS)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
   useEffect(() => {
+    const controller = new AbortController()
+
     const loadShows = async () => {
       try {
-        const response = await fetch(`${BACKEND_URL}/api/config/shows`, { headers: getFetchHeaders() })
+        const response = await fetch(`${BACKEND_URL}/api/config/shows`, {
+          headers: getFetchHeaders(),
+          signal: controller.signal
+        })
         if (response.ok) {
-          const data = await response.json()
+          const data = await safeJsonParse(response, 'Fehler beim Laden der Shows')
           if (data.shows && data.shows.length > 0) {
             setShows(data.shows)
           }
         }
-      } catch (error) {
-        console.error('❌ Fehler beim Laden der Shows für Routes:', error)
+        setError(null)
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          debug.error('❌ Fehler beim Laden der Shows:', err)
+          setError(err)
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false)
+        }
       }
     }
+
     loadShows()
+
+    return () => controller.abort()
   }, [])
+
+  return { shows, loading, error }
+}
+
+function App() {
+  const { shows } = useShows()
   
   return (
     <BrowserRouter basename={import.meta.env.PROD ? '/live_faktencheck' : ''}>
@@ -108,25 +146,7 @@ function App() {
 
 function Navigation() {
   const location = useLocation()
-  const [shows, setShows] = useState(['test', 'maischberger', 'miosga'])  // Fallback
-  
-  // Lade Shows dynamisch vom Backend
-  useEffect(() => {
-    const loadShows = async () => {
-      try {
-        const response = await fetch(`${BACKEND_URL}/api/config/shows`, { headers: getFetchHeaders() })
-        if (response.ok) {
-          const data = await safeJsonParse(response, 'Fehler beim Laden der Shows für Navigation')
-          if (data.shows && data.shows.length > 0) {
-            setShows(data.shows)
-          }
-        }
-      } catch (error) {
-        console.error('❌ Fehler beim Laden der Shows für Navigation:', error)
-      }
-    }
-    loadShows()
-  }, [])
+  const { shows } = useShows()
   
   return (
     <nav className="main-navigation">
@@ -149,23 +169,8 @@ function Navigation() {
 }
 
 function HomePage() {
-  const [shows, setShows] = useState([])
-  
-  useEffect(() => {
-    const loadShows = async () => {
-      try {
-        const response = await fetch(`${BACKEND_URL}/api/config/shows`, { headers: getFetchHeaders() })
-        if (response.ok) {
-          const data = await safeJsonParse(response, 'Fehler beim Laden der Shows')
-          setShows(data.shows || [])
-        }
-      } catch (error) {
-        console.error('❌ Fehler beim Laden der Shows:', error)
-      }
-    }
-    loadShows()
-  }, [])
-  
+  const { shows, loading } = useShows()
+
   return (
     <div className="home-page">
       <header className="app-header">
@@ -173,64 +178,80 @@ function HomePage() {
         <p className="subtitle">Wähle eine Sendung aus</p>
       </header>
       <main className="main-content">
-        <div className="show-selection">
-          <Link to="/test" className="show-card">
-            <h2>Test</h2>
-            <p>Test-Umgebung für Fact-Checks</p>
-          </Link>
-          {shows.filter(s => s !== 'test').map(show => (
-            <Link key={show} to={`/${show}`} className="show-card">
-              <h2>{show.charAt(0).toUpperCase() + show.slice(1)}</h2>
-              <p>Fact-Checks der {show.charAt(0).toUpperCase() + show.slice(1)} Sendung</p>
+        {loading ? (
+          <div className="loading-container">
+            <div className="loading-spinner"></div>
+            <p>Sendungen werden geladen...</p>
+          </div>
+        ) : (
+          <div className="show-selection">
+            <Link to="/test" className="show-card">
+              <h2>Test</h2>
+              <p>Test-Umgebung für Fact-Checks</p>
             </Link>
-          ))}
-        </div>
+            {shows.filter(s => s !== 'test').map(show => (
+              <Link key={show} to={`/${show}`} className="show-card">
+                <h2>{show.charAt(0).toUpperCase() + show.slice(1)}</h2>
+                <p>Fact-Checks der {show.charAt(0).toUpperCase() + show.slice(1)} Sendung</p>
+              </Link>
+            ))}
+          </div>
+        )}
       </main>
     </div>
   )
 }
 
 function ShowPage({ showKey }) {
-  const location = useLocation()
+  const { episode: episodeFromUrl } = useParams()
   const navigate = useNavigate()
   const [episodes, setEpisodes] = useState([])
   const [selectedEpisode, setSelectedEpisode] = useState(null)
   const [showName, setShowName] = useState(showKey.charAt(0).toUpperCase() + showKey.slice(1))
-  
+
   // Lade Episoden für diese Show
   useEffect(() => {
+    const controller = new AbortController()
+    const defaultShowName = showKey.charAt(0).toUpperCase() + showKey.slice(1)
+
     const loadEpisodes = async () => {
       try {
-        const response = await fetch(`${BACKEND_URL}/api/config/shows/${showKey}/episodes`, { headers: getFetchHeaders() })
+        const response = await fetch(`${BACKEND_URL}/api/config/shows/${showKey}/episodes`, {
+          headers: getFetchHeaders(),
+          signal: controller.signal
+        })
         if (response.ok) {
           const data = await safeJsonParse(response, 'Fehler beim Laden der Episoden')
           const episodesList = data.episodes || []
           setEpisodes(episodesList)
-          
+
           // Setze erste Episode als Standard oder die aus der URL
-          const episodeFromUrl = location.pathname.split('/').pop()
-          if (episodeFromUrl && episodeFromUrl !== showKey) {
+          if (episodeFromUrl) {
             const found = episodesList.find(e => e.key === episodeFromUrl)
             if (found) {
               setSelectedEpisode(found.key)
-              setShowName(found.config.name || showName)
+              setShowName(found.config.name || defaultShowName)
             } else if (episodesList.length > 0) {
               setSelectedEpisode(episodesList[0].key)
-              setShowName(episodesList[0].config.name || showName)
+              setShowName(episodesList[0].config.name || defaultShowName)
             }
           } else if (episodesList.length > 0) {
             setSelectedEpisode(episodesList[0].key)
-            setShowName(episodesList[0].config.name || showName)
+            setShowName(episodesList[0].config.name || defaultShowName)
             // Navigiere zur ersten Episode (mit React Router, respektiert basename)
             navigate(`/${showKey}/${episodesList[0].key}`, { replace: true })
           }
         }
       } catch (error) {
-        console.error('❌ Fehler beim Laden der Episoden:', error)
+        if (error.name !== 'AbortError') {
+          debug.error('❌ Fehler beim Laden der Episoden:', error)
+        }
       }
     }
     loadEpisodes()
-  }, [showKey, location.pathname])
+
+    return () => controller.abort()
+  }, [showKey, episodeFromUrl, navigate])
   
   const handleEpisodeChange = (episodeKey) => {
     setSelectedEpisode(episodeKey)
@@ -248,20 +269,14 @@ function ShowPage({ showKey }) {
   
   return (
     <>
-      <div style={{ padding: '1rem', background: '#f5f5f5', borderBottom: '1px solid #ddd' }}>
-        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+      <div className="episode-selector">
+        <label className="episode-selector-label">
           Episode auswählen:
         </label>
         <select
           value={selectedEpisode}
           onChange={(e) => handleEpisodeChange(e.target.value)}
-          style={{
-            padding: '0.5rem',
-            fontSize: '1rem',
-            borderRadius: '4px',
-            border: '1px solid #ccc',
-            minWidth: '300px'
-          }}
+          className="episode-selector-select"
         >
           {episodes.map(episode => (
             <option key={episode.key} value={episode.key}>
@@ -297,129 +312,161 @@ function FactCheckPage({ showName, showKey, episodeKey }) {
   const [selectedClaims, setSelectedClaims] = useState(new Set())
   const [editedClaims, setEditedClaims] = useState({})  // Speichert bearbeitete Claims: { "blockId-index": { name, claim } }
   const [speakers, setSpeakers] = useState(DEFAULT_SPEAKERS)  // Lädt Config vom Backend
+  const [backendError, setBackendError] = useState(null)  // Backend connection error
   
   // Lade Episode-Konfiguration vom Backend
   useEffect(() => {
+    const controller = new AbortController()
+
     const loadEpisodeConfig = async () => {
       // Verwende episodeKey (z.B. "maischberger-2025-09-19") oder showKey als Fallback
       const key = episodeKey || showKey || showName.toLowerCase()
       try {
-        const response = await fetch(`${BACKEND_URL}/api/config/${key}`, { headers: getFetchHeaders() })
+        const response = await fetch(`${BACKEND_URL}/api/config/${key}`, {
+          headers: getFetchHeaders(),
+          signal: controller.signal
+        })
         if (response.ok) {
           const config = await safeJsonParse(response, `Fehler beim Laden der Config für ${key}`)
           if (config.speakers && config.speakers.length > 0) {
             setSpeakers(config.speakers)
-            console.log(`✅ Config geladen für ${key}:`, config)
+            debug.log(`✅ Config geladen für ${key}:`, config)
           } else {
-            console.warn(`⚠️ Keine Sprecher in Config für ${key}, verwende Fallback`)
+            debug.warn(`⚠️ Keine Sprecher in Config für ${key}, verwende Fallback`)
           }
         } else {
-          console.warn(`⚠️ Konnte Config nicht laden für ${key}, verwende Fallback`)
+          debug.warn(`⚠️ Konnte Config nicht laden für ${key}, verwende Fallback`)
         }
       } catch (error) {
-        console.error(`❌ Fehler beim Laden der Config für ${key}:`, error)
+        if (error.name !== 'AbortError') {
+          debug.error(`❌ Fehler beim Laden der Config für ${key}:`, error)
+        }
       }
     }
-    
+
     loadEpisodeConfig()
+
+    return () => controller.abort()
   }, [showName, showKey, episodeKey])
 
   // Polling für Fact-Checks (nur im normalen Modus)
   useEffect(() => {
     if (isAdminMode) return
 
+    let isMounted = true
+    let currentController = null
+
     const fetchFactChecks = async () => {
-      // In Produktion: Versuche zuerst Backend, dann JSON-Fallback
-      // In Entwicklung: Nur Backend
-      const useBackend = !import.meta.env.PROD || BACKEND_URL !== 'http://localhost:5000'
-      
-      if (useBackend) {
-        try {
-          // Lade immer vom Backend (auch in Produktion, wenn Backend über Cloudflare Tunnel erreichbar ist)
-          const url = episodeKey 
-            ? `${BACKEND_URL}/api/fact-checks?episode=${episodeKey}`
-            : `${BACKEND_URL}/api/fact-checks`
-          
-          console.log(`🔍 Lade Fact-Checks von: ${url}`)
-          console.log(`   Backend URL: ${BACKEND_URL}`)
-          console.log(`   Episode Key: ${episodeKey}`)
-          
-          const controller = new AbortController()
-          const timeoutId = setTimeout(() => controller.abort(), 5000)
-          
-          const response = await fetch(url, { 
-            headers: getFetchHeaders(),
-            signal: controller.signal
+      // Erstelle neuen Controller für jeden Fetch-Aufruf
+      const controller = new AbortController()
+      currentController = controller
+
+      try {
+        const url = episodeKey
+          ? `${BACKEND_URL}/api/fact-checks?episode=${episodeKey}`
+          : `${BACKEND_URL}/api/fact-checks`
+
+        debug.log(`🔍 Lade Fact-Checks von: ${url}`)
+        debug.log(`   Backend URL: ${BACKEND_URL}`)
+        debug.log(`   Episode Key: ${episodeKey}`)
+
+        // Timeout: Abbruch nach 5 Sekunden
+        const timeoutId = setTimeout(() => controller.abort(), 5000)
+
+        const response = await fetch(url, {
+          headers: getFetchHeaders(),
+          signal: controller.signal
+        })
+
+        clearTimeout(timeoutId)
+
+        // Prüfe ob Komponente noch gemountet ist
+        if (!isMounted) return
+
+        debug.log(`📡 Response Status: ${response.status} ${response.statusText}`)
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`)
+        }
+
+        const data = await safeJsonParse(response, 'Fehler beim Laden der Fakten-Checks')
+        debug.log(`✅ Geladene Fakten-Checks (Live): ${data.length}`, data)
+        setFactChecks(data)
+        setBackendError(null)  // Clear error on success
+      } catch (error) {
+        // Ignoriere Fehler wenn Komponente nicht mehr gemountet
+        if (!isMounted) return
+
+        if (error.name === 'AbortError') {
+          setBackendError({
+            message: 'Backend-Anfrage hat zu lange gedauert (Timeout)',
+            backendUrl: BACKEND_URL,
+            episodeKey: episodeKey
           })
-          
-          clearTimeout(timeoutId)
-          console.log(`📡 Response Status: ${response.status} ${response.statusText}`)
-          
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`)
-          }
-          
-          const data = await safeJsonParse(response, 'Fehler beim Laden der Fakten-Checks')
-          console.log(`✅ Geladene Fakten-Checks (Live): ${data.length}`, data)
-          setFactChecks(data)
-          return // Erfolgreich geladen, kein Fallback nötig
-        } catch (error) {
-          console.error('❌ Fehler beim Laden vom Backend:', error)
-          console.error(`   Backend URL: ${BACKEND_URL}`)
-          console.error(`   Episode Key: ${episodeKey}`)
-          // Weiter zu JSON-Fallback
+        } else {
+          debug.error('❌ Fehler beim Laden vom Backend:', error)
+          debug.error(`   Backend URL: ${BACKEND_URL}`)
+          debug.error(`   Episode Key: ${episodeKey}`)
+          setBackendError({
+            message: error.message || 'Unbekannter Fehler',
+            backendUrl: BACKEND_URL,
+            episodeKey: episodeKey
+          })
         }
-      }
-      
-      // Fallback: JSON-Datei laden (wenn Backend nicht erreichbar oder leer)
-      if (episodeKey) {
-        try {
-          // In Produktion: /live_faktencheck/data/, in Dev: /data/
-          const jsonUrl = import.meta.env.PROD 
-            ? `/live_faktencheck/data/${episodeKey}.json`
-            : `/data/${episodeKey}.json`
-          console.log(`📂 Lade Fact-Checks aus JSON-Datei (Fallback): ${jsonUrl}`)
-          const jsonResponse = await fetch(jsonUrl)
-          if (jsonResponse.ok) {
-            const data = await jsonResponse.json()
-            console.log(`✅ Geladene Fakten-Checks (JSON-Fallback): ${data.length}`, data)
-            setFactChecks(data)
-          } else {
-            console.warn(`⚠️ JSON-Datei nicht gefunden: Status ${jsonResponse.status}`)
-          }
-        } catch (e) {
-          console.error('❌ JSON-Fallback Fehler:', e)
-        }
+        setFactChecks([])  // Clear fact checks on error
       }
     }
 
     fetchFactChecks()
     // Polling in allen Umgebungen (auch Produktion für Live-Updates)
     const interval = setInterval(fetchFactChecks, 2000)
-    return () => clearInterval(interval)
+
+    return () => {
+      isMounted = false
+      if (currentController) currentController.abort()
+      clearInterval(interval)
+    }
   }, [isAdminMode, episodeKey])
 
   // Polling für Pending Claims (nur im Admin-Modus und nur lokal)
   useEffect(() => {
     if (!isAdminMode || !showAdminMode) return
 
+    let isMounted = true
+    let currentController = null
+
     const fetchPendingClaims = async () => {
+      const controller = new AbortController()
+      currentController = controller
+
       try {
-        const response = await fetch(`${BACKEND_URL}/api/pending-claims`, { headers: getFetchHeaders() })
+        const response = await fetch(`${BACKEND_URL}/api/pending-claims`, {
+          headers: getFetchHeaders(),
+          signal: controller.signal
+        })
+
+        if (!isMounted) return
+
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`)
         }
         const data = await safeJsonParse(response, 'Fehler beim Laden der Pending Claims')
-        console.log(`📋 Geladene Pending Blocks: ${data.length}`, data)
+        debug.log(`📋 Geladene Pending Blocks: ${data.length}`, data)
         setPendingBlocks(data)
       } catch (error) {
-        console.error('❌ Fehler beim Laden der Pending Claims:', error)
+        if (!isMounted || error.name === 'AbortError') return
+        debug.error('❌ Fehler beim Laden der Pending Claims:', error)
       }
     }
 
     fetchPendingClaims()
     const interval = setInterval(fetchPendingClaims, 2000)
-    return () => clearInterval(interval)
+
+    return () => {
+      isMounted = false
+      if (currentController) currentController.abort()
+      clearInterval(interval)
+    }
   }, [isAdminMode, isProduction])
 
   const toggleExpand = (id) => {
@@ -514,7 +561,7 @@ function FactCheckPage({ showName, showKey, episodeKey }) {
       }
 
       const result = await safeJsonParse(response, 'Fehler beim Senden der Claims')
-      console.log('✅ Claims gesendet:', result)
+      debug.log('✅ Claims gesendet:', result)
       alert(`✅ ${approved.length} Claims erfolgreich an N8N gesendet!`)
       
       // Entferne ausgewählte Claims und Bearbeitungen
@@ -528,7 +575,7 @@ function FactCheckPage({ showName, showKey, episodeKey }) {
       setSelectedClaims(newSelected)
       setEditedClaims(newEdited)
     } catch (error) {
-      console.error('❌ Fehler beim Senden:', error)
+      debug.error('❌ Fehler beim Senden:', error)
       alert(`❌ Fehler beim Senden: ${error.message}`)
     }
   }
@@ -550,7 +597,7 @@ function FactCheckPage({ showName, showKey, episodeKey }) {
   return (
     <>
       <header className="app-header">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+        <div className="factcheck-header-content">
           <div>
             <h1>🔍 Fakten-Check - {showName}</h1>
             <p className="subtitle">{isAdminMode ? 'Admin-Modus: Claim-Überprüfung' : 'Live Fact-Checking Dashboard'}</p>
@@ -583,46 +630,81 @@ function FactCheckPage({ showName, showKey, episodeKey }) {
           />
         ) : (
           <>
-            {/* Sprecher Header - nebeneinander */}
-            <div className="speakers-container">
-              {speakers.map((speaker) => {
-                const count = groupedBySpeaker[speaker]?.length || 0
-                return (
-                  <div key={speaker} className="speaker-column">
-                    <div className="speaker-header">
-                      <h2>{speaker}</h2>
-                      <span className="claim-count">{count} Behauptung{count !== 1 ? 'en' : ''}</span>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-
-            {/* Behauptungen unter den Sprechern */}
-            <div className="claims-container">
-              {speakers.map((speaker) => {
-                const claims = groupedBySpeaker[speaker] || []
-                return (
-                  <div key={speaker} className="speaker-claims-column">
-                    {claims.length === 0 ? (
-                      <div className="no-claims">Noch keine Behauptungen</div>
-                    ) : (
-                      claims.map((claim) => (
-                        <ClaimCard
-                          key={claim.id}
-                          claim={claim}
-                          isExpanded={expandedIds.has(claim.id)}
-                          onToggle={() => toggleExpand(claim.id)}
-                        />
-                      ))
-                    )}
-                  </div>
-                )
-              })}
-            </div>
+            <BackendErrorDisplay error={backendError} />
+            <SpeakerColumns
+              speakers={speakers}
+              groupedBySpeaker={groupedBySpeaker}
+              expandedIds={expandedIds}
+              onToggle={toggleExpand}
+            />
           </>
         )}
       </main>
+    </>
+  )
+}
+
+function BackendErrorDisplay({ error }) {
+  if (!error) return null
+
+  return (
+    <div className="backend-error">
+      <h3 className="backend-error-title">❌ Backend-Verbindungsfehler</h3>
+      <p className="backend-error-message">{error.message}</p>
+      <details className="backend-error-details">
+        <summary>Details</summary>
+        <div className="backend-error-info">
+          <p><strong>Backend URL:</strong> {error.backendUrl}</p>
+          <p><strong>Episode:</strong> {error.episodeKey || 'N/A'}</p>
+          <p className="backend-error-hint">
+            Bitte überprüfe, ob das Backend läuft und die URL korrekt ist.
+          </p>
+        </div>
+      </details>
+    </div>
+  )
+}
+
+function SpeakerColumns({ speakers, groupedBySpeaker, expandedIds, onToggle }) {
+  return (
+    <>
+      {/* Sprecher Header - nebeneinander */}
+      <div className="speakers-container">
+        {speakers.map((speaker) => {
+          const count = groupedBySpeaker[speaker]?.length || 0
+          return (
+            <div key={speaker} className="speaker-column">
+              <div className="speaker-header">
+                <h2>{speaker}</h2>
+                <span className="claim-count">{count} Behauptung{count !== 1 ? 'en' : ''}</span>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Behauptungen unter den Sprechern */}
+      <div className="claims-container">
+        {speakers.map((speaker) => {
+          const claims = groupedBySpeaker[speaker] || []
+          return (
+            <div key={speaker} className="speaker-claims-column">
+              {claims.length === 0 ? (
+                <div className="no-claims">Noch keine Behauptungen</div>
+              ) : (
+                claims.map((claim) => (
+                  <ClaimCard
+                    key={claim.id}
+                    claim={claim}
+                    isExpanded={expandedIds.has(claim.id)}
+                    onToggle={() => onToggle(claim.id)}
+                  />
+                ))
+              )}
+            </div>
+          )
+        })}
+      </div>
     </>
   )
 }
@@ -632,7 +714,7 @@ function AdminView({ pendingBlocks, selectedClaims, editedClaims, onToggleClaim,
     return (
       <div className="admin-empty">
         <p>⏳ Keine Claims zur Überprüfung vorhanden</p>
-        <p style={{ fontSize: '0.9rem', color: '#666', marginTop: '1rem' }}>
+        <p className="admin-empty-subtitle">
           Warte auf neue Claims von N8N...
         </p>
       </div>
@@ -767,17 +849,17 @@ function ClaimCard({ claim, isExpanded, onToggle }) {
     // **bold** -> <strong>
     // *italic* -> <em>
     // [text](url) -> <a>
-    
-    let result = text
-    const parts = []
-    let lastIndex = 0
-    
-    // Pattern für **bold**
-    const boldPattern = /\*\*(.+?)\*\*/g
+
     let match
     const matches = []
-    
-    while ((match = boldPattern.exec(text)) !== null) {
+
+    // Reset lastIndex for global regex patterns (they maintain state)
+    MARKDOWN_BOLD_PATTERN.lastIndex = 0
+    MARKDOWN_ITALIC_PATTERN.lastIndex = 0
+    MARKDOWN_LINK_PATTERN.lastIndex = 0
+
+    // Pattern für **bold**
+    while ((match = MARKDOWN_BOLD_PATTERN.exec(text)) !== null) {
       matches.push({
         type: 'bold',
         start: match.index,
@@ -785,10 +867,9 @@ function ClaimCard({ claim, isExpanded, onToggle }) {
         content: match[1]
       })
     }
-    
+
     // Pattern für *italic*
-    const italicPattern = /(?<!\*)\*([^*]+?)\*(?!\*)/g
-    while ((match = italicPattern.exec(text)) !== null) {
+    while ((match = MARKDOWN_ITALIC_PATTERN.exec(text)) !== null) {
       matches.push({
         type: 'italic',
         start: match.index,
@@ -796,10 +877,9 @@ function ClaimCard({ claim, isExpanded, onToggle }) {
         content: match[1]
       })
     }
-    
+
     // Pattern für [text](url)
-    const linkPattern = /\[([^\]]+)\]\(([^)]+)\)/g
-    while ((match = linkPattern.exec(text)) !== null) {
+    while ((match = MARKDOWN_LINK_PATTERN.exec(text)) !== null) {
       matches.push({
         type: 'link',
         start: match.index,
@@ -884,7 +964,7 @@ function ClaimCard({ claim, isExpanded, onToggle }) {
                 {formatBegruendung(claim.begruendung)}
               </div>
             ) : (
-              <p className="begruendung-text" style={{ color: '#999', fontStyle: 'italic' }}>
+              <p className="begruendung-text no-begruendung">
                 Keine Begründung verfügbar
               </p>
             )}
