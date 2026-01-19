@@ -29,11 +29,20 @@ TRUSTED_DOMAINS = [
     "destatis.de",
     "bundesnetzagentur.de",
     "umweltbundesamt.de",
-    "bmwk.de",
+    "bundesfinanzministerium.de",
+    "bundesumweltministerium.de",
+    "bundesgesundheitsministerium.de",
+    "auswaertiges-amt.de",
+    "bmvg.de", 
+    "bmas.de",
+    "bundeswirtschaftsministerium.de",
     "bundeshaushalt.de",
-    "uba.de",
+    "umweltbundesamt.de",
     "bundesbank.de",
+    "bundestag.de",
     "publikationen-bundesregierung.de",
+    "bmds.bund.de",
+    "gesetze-im-internet.de",
     # Research Institutes
     "diw.de",
     "ifo.de",
@@ -59,6 +68,7 @@ TRUSTED_DOMAINS = [
     "faz.net",
     "handelsblatt.com",
     "sueddeutsche.de",
+    "zeit.de"
 ]
 
 # 1. Define the Data Structure
