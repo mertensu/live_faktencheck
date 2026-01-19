@@ -74,7 +74,7 @@ TRUSTED_DOMAINS = [
 class FactCheckResponse(BaseModel):
     speaker: str
     original_claim: str
-    verdict: Literal["Richtig", "Falsch", "Teilweise Richtig", "Unbelegt"]
+    consistency: Literal["hoch", "niedrig", "mittel", "unklar"] = Field(description="Consistency of the claim")
     evidence: str = Field(description="Detailed German explanation")
     sources: List[str] = Field(description="URLs to primary sources")
 
@@ -152,7 +152,7 @@ class FactChecker:
             claim: The claim text to verify
 
         Returns:
-            Dictionary with speaker, original_claim, verdict, evidence, sources
+            Dictionary with speaker, original_claim, consistency, evidence, sources
         """
         logger.info(f"Checking claim from {speaker}: {claim[:100]}...")
 
@@ -190,7 +190,7 @@ class FactChecker:
                 # Result might already be flat
                 parsed = result.model_dump() if hasattr(result, "model_dump") else result
 
-            logger.info(f"Claim checked: verdict = {parsed.get('verdict', 'unknown')}")
+            logger.info(f"Claim checked: consistency = {parsed.get('consistency', 'unknown')}")
             return parsed
 
         except Exception as e:
@@ -200,7 +200,7 @@ class FactChecker:
             return {
                 "speaker": speaker,
                 "original_claim": claim,
-                "verdict": "Unbelegt",
+                "consistency": "unklar",
                 "evidence": f"Fehler bei der Überprüfung: {str(e)}",
                 "sources": []
             }
@@ -269,7 +269,7 @@ class FactChecker:
                 )
 
                 result = await self._check_claim_async(speaker, claim, system_prompt)
-                logger.info(f"Completed claim {index + 1}/{len(claims)}: {result.get('verdict', 'unknown')}")
+                logger.info(f"Completed claim {index + 1}/{len(claims)}: {result.get('consistency', 'unknown')}")
                 return result
 
         logger.info(f"Running {len(claims)} claims in parallel (max_concurrency: {self.max_workers})")

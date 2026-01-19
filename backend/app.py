@@ -397,7 +397,7 @@ def process_fact_checks(claims: list, episode_key: str):
                     "id": len(fact_checks) + 1,
                     "sprecher": result_dict.get("speaker", ""),
                     "behauptung": result_dict.get("original_claim", ""),
-                    "urteil": result_dict.get("verdict", "Unbelegt"),
+                    "urteil": result_dict.get("consistency", "unklar"),
                     "begruendung": result_dict.get("evidence", ""),
                     "quellen": [to_dict(s) for s in sources] if sources else [],
                     "timestamp": datetime.now().isoformat(),
@@ -440,7 +440,7 @@ def receive_fact_check():
         # Support both German and English field names
         sprecher = data.get("sprecher") or data.get("speaker") or ""
         behauptung = data.get("behauptung") or data.get("original_claim") or data.get("claim") or ""
-        urteil = data.get("urteil") or data.get("verdict") or ""
+        urteil = data.get("urteil") or data.get("consistency") or ""
         begruendung = data.get("begruendung") or data.get("evidence") or ""
         quellen = data.get("quellen") or data.get("sources") or []
         episode_key = data.get("episode_key") or data.get("episode") or current_episode_key
