@@ -30,6 +30,9 @@ dist-ssr/
 *~
 .DS_Store
 
+# Jupyter
+.ipynb_checkpoints/
+
 # Environment
 .env
 .env.local
