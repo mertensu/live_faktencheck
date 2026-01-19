@@ -161,7 +161,7 @@ The fact-checker uses a LangChain ReAct agent that iteratively searches for evid
 │  1. LLM receives claim + conversation history           │
 │  2. LLM decides: search for more evidence OR respond    │
 │  3. If search: Execute Tavily → append results → repeat │
-│  4. If respond: Return verdict + evidence + sources     │
+│  4. If respond: Return consistency rating + evidence + sources │
 └─────────────────────────────────────────────────────────┘
 ```
 

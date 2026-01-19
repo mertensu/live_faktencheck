@@ -74,8 +74,8 @@ TRUSTED_DOMAINS = [
 class FactCheckResponse(BaseModel):
     speaker: str
     original_claim: str
-    consistency: Literal["hoch", "niedrig", "mittel", "unklar"] = Field(description="Consistency of the claim")
-    evidence: str = Field(description="Detailed German explanation")
+    consistency: Literal["hoch", "niedrig", "mittel", "unklar"] = Field(description="Consistency of the claim, i.e. how well it withstands scrutiny")
+    evidence: str = Field(description="Detailed German explanation using evidence-based phrasing")
     sources: List[str] = Field(description="URLs to primary sources")
 
 class FactChecker:

@@ -802,20 +802,20 @@ function AdminView({ pendingBlocks, selectedClaims, editedClaims, onToggleClaim,
 }
 
 function ClaimCard({ claim, isExpanded, onToggle }) {
-  const getVerdictColor = (urteil) => {
-    const lower = urteil?.toLowerCase() || ''
-    if (lower.includes('wahr') || lower.includes('richtig')) return '#22c55e'
-    if (lower.includes('falsch') || lower.includes('unwahr')) return '#ef4444'
-    if (lower.includes('teilweise')) return '#f59e0b'
-    return '#6b7280'
+  const getConsistencyColor = (consistency) => {
+    const lower = consistency?.toLowerCase() || ''
+    if (lower === 'hoch') return '#22c55e'
+    if (lower === 'niedrig') return '#ef4444'
+    if (lower === 'mittel') return '#f59e0b'
+    return '#6b7280' // unklar or unknown
   }
 
-  const getVerdictClass = (urteil) => {
-    const lower = urteil?.toLowerCase() || ''
-    if (lower.includes('wahr') || lower.includes('richtig')) return 'verdict-richtig'
-    if (lower.includes('falsch') || lower.includes('unwahr')) return 'verdict-falsch'
-    if (lower.includes('teilweise')) return 'verdict-teilweise'
-    return 'verdict-unbelegt'
+  const getConsistencyClass = (consistency) => {
+    const lower = consistency?.toLowerCase() || ''
+    if (lower === 'hoch') return 'verdict-richtig'
+    if (lower === 'niedrig') return 'verdict-falsch'
+    if (lower === 'mittel') return 'verdict-teilweise'
+    return 'verdict-unbelegt' // unklar or unknown
   }
 
   // Formatiert Begründung: Zeilenumbrüche und einfaches Markdown
@@ -930,10 +930,10 @@ function ClaimCard({ claim, isExpanded, onToggle }) {
     return elements.length > 0 ? <>{elements}</> : text
   }
 
-  const verdictClass = getVerdictClass(claim.urteil)
+  const consistencyClass = getConsistencyClass(claim.consistency)
 
   return (
-    <div className={`claim-card ${verdictClass}`}>
+    <div className={`claim-card ${consistencyClass}`}>
       <div className="claim-header">
         <div className="claim-text">{claim.behauptung}</div>
         <button
@@ -948,10 +948,10 @@ function ClaimCard({ claim, isExpanded, onToggle }) {
       {isExpanded && (
         <div className="claim-details">
           <div className="detail-section">
-            <h3>Urteil</h3>
+            <h3>Datenbasierte Fundierung</h3>
             <div
               className="verdict-badge"
-              style={{ backgroundColor: getVerdictColor(claim.urteil) }}
+              style={{ backgroundColor: getConsistencyColor(claim.consistency) }}
             >
               {claim.urteil}
             </div>
