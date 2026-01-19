@@ -16,7 +16,6 @@ from pydantic import BaseModel, Field
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_tavily import TavilySearch
 from langchain.agents import create_agent
-from langchain_core.runnables import RunnableLambda
 
 logger = logging.getLogger(__name__)
 
@@ -241,41 +240,45 @@ class FactChecker:
             results.append(result)
         return results
 
-    def _check_claim_wrapper(self, claim_data: Dict[str, str]) -> Dict[str, Any]:
-        """Helper to unpack dictionary and call check_claim"""
-        try:
-            return self.check_claim(
-                claim_data.get("name", "Unknown"), 
-                claim_data.get("claim", "")
-            )
-        except Exception as e:
-            logger.error(f"Claim failed: {e}")
-            return {
-                "speaker": claim_data.get("name", "Unknown"),
-                "original_claim": claim_data.get("claim", ""),
-                "verdict": "Unbelegt",
-                "evidence": f"Fehler: {str(e)}",
-                "sources": []
-            }
-
     def _check_claims_parallel(self, claims: List[Dict[str, str]]) -> List[Dict[str, Any]]:
         """
-        Process claims concurrently using LangChain's native batching.
-        This replaces ThreadPoolExecutor with a more modern approach.
+        Process claims concurrently using asyncio.gather with a semaphore.
+
+        This avoids the nested event loop issue caused by RunnableLambda.batch()
+        calling asyncio.run() inside an already-running loop.
         """
-        # Create a Runnable from the wrapper method
-        runner = RunnableLambda(self._check_claim_wrapper)
-        
-        # Run in parallel with max_concurrency (acts like max_workers)
+        return asyncio.run(self._check_claims_parallel_async(claims))
+
+    async def _check_claims_parallel_async(self, claims: List[Dict[str, str]]) -> List[Dict[str, Any]]:
+        """Async implementation of parallel claim checking."""
+        semaphore = asyncio.Semaphore(self.max_workers)
+
+        async def check_with_limit(claim_data: Dict[str, str], index: int) -> Dict[str, Any]:
+            """Check a single claim with concurrency limiting."""
+            async with semaphore:
+                speaker = claim_data.get("name", "Unknown")
+                claim = claim_data.get("claim", "")
+                logger.info(f"Processing claim {index + 1}/{len(claims)}: {claim[:50]}...")
+
+                current_date = datetime.now().strftime("%B %Y")
+                system_prompt = (
+                    self.prompt_template
+                    .replace("{current_date}", current_date)
+                    .replace("{speaker}", speaker)
+                    .replace("{claim}", claim)
+                )
+
+                result = await self._check_claim_async(speaker, claim, system_prompt)
+                logger.info(f"Completed claim {index + 1}/{len(claims)}: {result.get('verdict', 'unknown')}")
+                return result
+
         logger.info(f"Running {len(claims)} claims in parallel (max_concurrency: {self.max_workers})")
-        results = runner.batch(
-            claims, 
-            config={"max_concurrency": self.max_workers}
+
+        # Run all claims concurrently (semaphore limits actual parallelism)
+        results = await asyncio.gather(
+            *[check_with_limit(claim, i) for i, claim in enumerate(claims)],
+            return_exceptions=False
         )
-        
-        # Log completion
-        for i, result in enumerate(results):
-            logger.info(f"Completed claim {i + 1}/{len(claims)}: {result.get('verdict', 'unknown')}")
-        
-        return results
+
+        return list(results)
 
