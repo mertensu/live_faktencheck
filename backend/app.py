@@ -271,6 +271,7 @@ def process_text_pipeline(text: str, headline: str, source_id: str, publication_
                 "claims": [to_dict(c) for c in claims],
                 "status": "pending",
                 "source_id": source_id,
+                "episode_key": current_episode_key or "test",  # Use current episode or default to "test"
                 "headline": headline,
                 "text_preview": text[:200] + "..." if len(text) > 200 else text
             }

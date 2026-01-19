@@ -15,8 +15,11 @@ Usage:
     # Pipe from clipboard (macOS), prompts for headline and date
     pbpaste | python reader.py
 
-    # Use environment variables for non-interactive usage
-    HEADLINE="My Article" PUBLICATION_DATE="Januar 2025" cat article.txt | python reader.py
+    # Non-interactive with environment variables (note: env vars go before python, not cat)
+    cat article.txt | HEADLINE="My Article" PUBLICATION_DATE="Januar 2025" python reader.py
+
+    # Or using stdin redirection
+    HEADLINE="My Article" PUBLICATION_DATE="Januar 2025" python reader.py < article.txt
 """
 
 import sys

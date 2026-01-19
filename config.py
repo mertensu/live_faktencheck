@@ -15,7 +15,8 @@ SHOW_CONFIG = {
         "guests": "Test Sendung - Sprecher A interviewt Sprecher B",
         "speakers": [
             "Sprecher A",
-            "Sprecher B"
+            "Sprecher B",
+            "Autor"  # For article mode
         ],
         "show": "test",  # Zu welcher Show gehört diese Episode
         "episode_name": "Test Episode"
