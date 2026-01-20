@@ -953,7 +953,7 @@ function ClaimCard({ claim, isExpanded, onToggle }) {
               className="verdict-badge"
               style={{ backgroundColor: getConsistencyColor(claim.consistency) }}
             >
-              {claim.urteil}
+              {claim.consistency}
             </div>
           </div>
 

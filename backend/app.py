@@ -397,14 +397,14 @@ def process_fact_checks(claims: list, episode_key: str):
                     "id": len(fact_checks) + 1,
                     "sprecher": result_dict.get("speaker", ""),
                     "behauptung": result_dict.get("original_claim", ""),
-                    "urteil": result_dict.get("consistency", "unklar"),
+                    "consistency": result_dict.get("consistency", "unklar"),
                     "begruendung": result_dict.get("evidence", ""),
                     "quellen": [to_dict(s) for s in sources] if sources else [],
                     "timestamp": datetime.now().isoformat(),
                     "episode_key": episode_key
                 }
                 fact_checks.append(fact_check)
-                logger.info(f"Fact-check complete: {fact_check['sprecher']} - {fact_check['urteil']}")
+                logger.info(f"Fact-check complete: {fact_check['sprecher']} - {fact_check['consistency']}")
 
         # Save to JSON file for GitHub Pages
         if episode_key:
@@ -440,7 +440,7 @@ def receive_fact_check():
         # Support both German and English field names
         sprecher = data.get("sprecher") or data.get("speaker") or ""
         behauptung = data.get("behauptung") or data.get("original_claim") or data.get("claim") or ""
-        urteil = data.get("urteil") or data.get("consistency") or ""
+        consistency = data.get("consistency") or data.get("urteil") or ""
         begruendung = data.get("begruendung") or data.get("evidence") or ""
         quellen = data.get("quellen") or data.get("sources") or []
         episode_key = data.get("episode_key") or data.get("episode") or current_episode_key
@@ -456,7 +456,7 @@ def receive_fact_check():
             "id": len(fact_checks) + 1,
             "sprecher": sprecher,
             "behauptung": behauptung,
-            "urteil": urteil,
+            "consistency": consistency,
             "begruendung": begruendung,
             "quellen": quellen if isinstance(quellen, list) else [],
             "timestamp": datetime.now().isoformat(),
@@ -466,7 +466,7 @@ def receive_fact_check():
         with processing_lock:
             fact_checks.append(fact_check)
 
-        logger.info(f"Fact-check stored: ID {fact_check['id']} - {sprecher} - {urteil}")
+        logger.info(f"Fact-check stored: ID {fact_check['id']} - {sprecher} - {consistency}")
 
         if episode_key:
             save_fact_checks_to_file(episode_key)
