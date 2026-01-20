@@ -157,18 +157,15 @@ class FactChecker:
         logger.info(f"Checking claim from {speaker}: {claim[:100]}...")
 
         current_date = datetime.now().strftime("%B %Y")
+        system_prompt = self.prompt_template.replace("{current_date}", current_date)
 
-        system_prompt = (
-            self.prompt_template
-            .replace("{current_date}", current_date)
-            .replace("{speaker}", speaker)
-            .replace("{claim}", claim)
-        )
+        user_message = f"""- **Speaker:** {speaker}
+- **Claim:** {claim}"""
 
         # Use async to avoid sync client hanging issues
-        return asyncio.run(self._check_claim_async(speaker, claim, system_prompt))
+        return asyncio.run(self._check_claim_async(speaker, claim, system_prompt, user_message))
 
-    async def _check_claim_async(self, speaker: str, claim: str, system_prompt: str) -> Dict[str, Any]:
+    async def _check_claim_async(self, speaker: str, claim: str, system_prompt: str, user_message: str) -> Dict[str, Any]:
         """Async implementation of claim checking."""
         try:
             agent = create_agent(
@@ -179,7 +176,7 @@ class FactChecker:
             )
 
             result = await agent.ainvoke({
-                "messages": [{"role": "user", "content": f"Check this claim: {claim}"}]
+                "messages": [{"role": "user", "content": user_message}]
             })
 
             # Handle nested structured_response
@@ -253,6 +250,9 @@ class FactChecker:
         """Async implementation of parallel claim checking."""
         semaphore = asyncio.Semaphore(self.max_workers)
 
+        current_date = datetime.now().strftime("%B %Y")
+        system_prompt = self.prompt_template.replace("{current_date}", current_date)
+
         async def check_with_limit(claim_data: Dict[str, str], index: int) -> Dict[str, Any]:
             """Check a single claim with concurrency limiting."""
             async with semaphore:
@@ -260,15 +260,10 @@ class FactChecker:
                 claim = claim_data.get("claim", "")
                 logger.info(f"Processing claim {index + 1}/{len(claims)}: {claim[:50]}...")
 
-                current_date = datetime.now().strftime("%B %Y")
-                system_prompt = (
-                    self.prompt_template
-                    .replace("{current_date}", current_date)
-                    .replace("{speaker}", speaker)
-                    .replace("{claim}", claim)
-                )
+                user_message = f"""- **Speaker:** {speaker}
+- **Claim:** {claim}"""
 
-                result = await self._check_claim_async(speaker, claim, system_prompt)
+                result = await self._check_claim_async(speaker, claim, system_prompt, user_message)
                 logger.info(f"Completed claim {index + 1}/{len(claims)}: {result.get('consistency', 'unknown')}")
                 return result
 
