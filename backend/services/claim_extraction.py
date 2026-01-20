@@ -83,25 +83,27 @@ class ClaimExtractor:
         """
         logger.info(f"Extracting claims from transcript ({len(transcript)} chars)")
 
-        current_date = datetime.now().strftime("%B %Y")
+        system_prompt = self.prompt_template
 
-        prompt = (
-            self.prompt_template
-            .replace("{current_date}", current_date)
-            .replace("{guests}", guests)
-            .replace("{transcript}", transcript)
-        )
+        user_message = f"""<context>
+Participants and date: {guests}
+</context>
+
+<transcript>
+{transcript}
+</transcript>"""
 
         # Use async API (sync client hangs in some environments)
-        return asyncio.run(self._extract_async(prompt))
+        return asyncio.run(self._extract_async(system_prompt, user_message))
 
-    async def _extract_async(self, prompt: str) -> List[ExtractedClaim]:
+    async def _extract_async(self, system_prompt: str, user_message: str) -> List[ExtractedClaim]:
         """Async implementation of claim extraction."""
         try:
             response = await self.client.aio.models.generate_content(
                 model=self.model_name,
-                contents=prompt,
+                contents=user_message,
                 config={
+                    'system_instruction': system_prompt,
                     'response_mime_type': 'application/json',
                     'response_schema': ClaimList,
                 }
@@ -134,11 +136,10 @@ class ClaimExtractor:
         if not publication_date:
             publication_date = datetime.now().strftime("%B %Y")
 
-        prompt = (
-            self.article_prompt_template
-            .replace("{publication_date}", publication_date)
-            .replace("{headline}", headline)
-            .replace("{text}", text)
-        )
+        system_prompt = self.article_prompt_template.replace("{publication_date}", publication_date)
 
-        return asyncio.run(self._extract_async(prompt))
+        user_message = f"""Headline: {headline}
+
+Article: {text}"""
+
+        return asyncio.run(self._extract_async(system_prompt, user_message))

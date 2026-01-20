@@ -19,6 +19,4 @@ For every claim, you must perform "Coreference Resolution":
 - **Extract:** Factual assertions, causal claims, statistics, and references to studies.
 - **Discard:** Subjective opinions, future predictions, and rhetorical insults.
 
-# Context
-Headline: {headline}
-Article: {text}
+The user will provide the headline and article text to analyze.
