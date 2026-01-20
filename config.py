@@ -36,6 +36,20 @@ SHOW_CONFIG = {
         "episode_name": "19. September 2025 - Gitta Connemann & Katharina Dröge"
     },
 
+    # Maischberger Episoden
+    "maischberger-2025-09-30": {
+        "name": "Maischberger",
+        "description": "Sendung vom 30. September 2025",
+        "guests": "Sandra Maischberger interviewt Philipp Amthor (CDU) und Ines Schwerdtner (Linke). Sendung vom 30.September 2025",
+        "speakers": [
+            "Sandra Maischberger",
+            "Philipp Amthor",
+            "Ines Schwerdtner"
+        ],
+        "show": "maischberger",
+        "episode_name": "30. September 2025 - Philipp Amthor & Ines Schwerdtner"
+    },
+
     # Miosga Episoden
     "miosga-2025-10": {
         "name": "Miosga",
