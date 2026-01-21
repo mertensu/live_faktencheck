@@ -1,7 +1,7 @@
 """
 Fact-Check Backend API
 
-Flask server that handles:
+FastAPI server that handles:
 - Audio block processing (transcription + claim extraction)
 - Pending claims management
 - Fact-check processing and storage
@@ -11,15 +11,29 @@ Flask server that handles:
 import os
 import sys
 import json
+import asyncio
 import logging
-import threading
 from pathlib import Path
 from datetime import datetime
-from concurrent.futures import ThreadPoolExecutor
+from contextlib import asynccontextmanager
+from typing import Optional
 
-from flask import Flask, request, jsonify
-from flask_cors import CORS
+from fastapi import FastAPI, HTTPException, BackgroundTasks, UploadFile, File, Form, Query
+from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
+
+from backend.models import (
+    TextBlockRequest,
+    ClaimApprovalRequest,
+    FactCheckRequest,
+    PendingClaimsRequest,
+    SetEpisodeRequest,
+    ProcessingResponse,
+    HealthResponse,
+    ShowsResponse,
+    EpisodesResponse,
+    FactCheckStoredResponse,
+)
 
 # Load environment variables
 load_dotenv()
@@ -75,37 +89,49 @@ def get_fact_checker():
     return _fact_checker
 
 
-# Flask app
-app = Flask(__name__)
+# Lifespan context manager for startup/shutdown
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup: initialize services if needed
+    logger.info("FastAPI server starting up...")
+    yield
+    # Shutdown: cleanup if needed
+    logger.info("FastAPI server shutting down...")
+
+
+# FastAPI app
+app = FastAPI(
+    title="Fact-Check Backend",
+    description="Live fact-checking application for German TV shows",
+    version="2.0.0",
+    lifespan=lifespan
+)
 
 # CORS configuration
-CORS(app, resources={
-    r"/api/*": {
-        "origins": [
-            "https://mertensu.github.io",
-            "http://localhost:3000",
-            "http://localhost:5173",
-            "http://127.0.0.1:3000",
-            "http://127.0.0.1:5173"
-        ],
-        "methods": ["GET", "POST", "OPTIONS"],
-        "allow_headers": ["Content-Type", "Authorization", "Accept"]
-    }
-})
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "https://mertensu.github.io",
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:5173"
+    ],
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization", "Accept"],
+)
 
 # In-memory storage
 fact_checks = []
 pending_claims_blocks = []
 current_episode_key = None
-processing_lock = threading.Lock()
+processing_lock = asyncio.Lock()
 
 
 def to_dict(obj):
     """Convert Pydantic model to dict, or return as-is if already a dict."""
     return obj.model_dump() if hasattr(obj, "model_dump") else obj
-
-# Background executor for async processing
-executor = ThreadPoolExecutor(max_workers=5)
 
 # Path for JSON files (for GitHub Pages)
 DATA_DIR = Path(__file__).parent.parent / "frontend" / "public" / "data"
@@ -116,8 +142,13 @@ DATA_DIR.mkdir(parents=True, exist_ok=True)
 # Audio Processing Pipeline
 # =============================================================================
 
-@app.route('/api/audio-block', methods=['POST'])
-def receive_audio_block():
+@app.post('/api/audio-block', status_code=202, response_model=ProcessingResponse)
+async def receive_audio_block(
+    background_tasks: BackgroundTasks,
+    audio: UploadFile = File(...),
+    episode_key: Optional[str] = Form(default=None),
+    guests: Optional[str] = Form(default=None)
+):
     """
     Receive audio block from listener.py and start processing pipeline.
 
@@ -126,35 +157,30 @@ def receive_audio_block():
     - episode_key: Episode identifier
     - guests: (optional) Guest information override
     """
+    global current_episode_key
+
     try:
-        # Check for audio file
-        if 'audio' not in request.files:
-            return jsonify({"status": "error", "message": "No audio file provided"}), 400
+        audio_data = await audio.read()
+        ep_key = episode_key or current_episode_key or 'test'
+        guest_info = guests or get_guests(ep_key)
 
-        audio_file = request.files['audio']
-        episode_key = request.form.get('episode_key', current_episode_key or 'test')
-        guests = request.form.get('guests') or get_guests(episode_key)
-
-        # Read audio data
-        audio_data = audio_file.read()
-
-        logger.info(f"Received audio block: {len(audio_data)} bytes, episode: {episode_key}")
+        logger.info(f"Received audio block: {len(audio_data)} bytes, episode: {ep_key}")
 
         # Start background processing
-        executor.submit(process_audio_pipeline, audio_data, episode_key, guests)
+        background_tasks.add_task(process_audio_pipeline_async, audio_data, ep_key, guest_info)
 
-        return jsonify({
-            "status": "processing",
-            "message": "Audio received, processing started",
-            "episode_key": episode_key
-        }), 202
+        return ProcessingResponse(
+            status="processing",
+            message="Audio received, processing started",
+            episode_key=ep_key
+        )
 
     except Exception as e:
         logger.error(f"Error receiving audio block: {e}")
-        return jsonify({"status": "error", "message": str(e)}), 400
+        raise HTTPException(status_code=400, detail=str(e))
 
 
-def process_audio_pipeline(audio_data: bytes, episode_key: str, guests: str):
+async def process_audio_pipeline_async(audio_data: bytes, episode_key: str, guests: str):
     """
     Background pipeline: audio -> transcription -> claim extraction -> pending claims
     """
@@ -163,16 +189,20 @@ def process_audio_pipeline(audio_data: bytes, episode_key: str, guests: str):
     try:
         logger.info(f"[{block_id}] Starting audio processing pipeline...")
 
-        # Step 1: Transcription
+        # Step 1: Transcription (sync call wrapped for async)
         logger.info(f"[{block_id}] Step 1: Transcribing audio...")
         transcription_service = get_transcription_service()
-        transcript = transcription_service.transcribe(audio_data)
+        transcript = await asyncio.to_thread(transcription_service.transcribe, audio_data)
         logger.info(f"[{block_id}] Transcription complete: {len(transcript)} chars")
 
-        # Step 2: Claim extraction
+        # Step 2: Claim extraction (async)
         logger.info(f"[{block_id}] Step 2: Extracting claims...")
         claim_extractor = get_claim_extractor()
-        claims = claim_extractor.extract(transcript, guests)
+        # Use async method if available, otherwise wrap sync call
+        if hasattr(claim_extractor, 'extract_async'):
+            claims = await claim_extractor.extract_async(transcript, guests)
+        else:
+            claims = await asyncio.to_thread(claim_extractor.extract, transcript, guests)
         logger.info(f"[{block_id}] Extracted {len(claims)} claims")
 
         if not claims:
@@ -180,7 +210,7 @@ def process_audio_pipeline(audio_data: bytes, episode_key: str, guests: str):
             return
 
         # Step 3: Store as pending claims
-        with processing_lock:
+        async with processing_lock:
             pending_block = {
                 "block_id": block_id,
                 "timestamp": datetime.now().isoformat(),
@@ -204,8 +234,11 @@ def process_audio_pipeline(audio_data: bytes, episode_key: str, guests: str):
 # Text Processing Pipeline (skip transcription)
 # =============================================================================
 
-@app.route('/api/text-block', methods=['POST'])
-def receive_text_block():
+@app.post('/api/text-block', status_code=202, response_model=ProcessingResponse)
+async def receive_text_block(
+    request: TextBlockRequest,
+    background_tasks: BackgroundTasks
+):
     """
     Receive text directly for claim extraction (skip transcription).
 
@@ -215,38 +248,35 @@ def receive_text_block():
     - publication_date: (optional) Publication date, defaults to current month/year
     - source_id: (optional) Identifier for the source, defaults to article-YYYYMMDD-HHMMSS
     """
-    try:
-        data = request.get_json()
-        text = data.get('text')
-        headline = data.get('headline', '')
-        publication_date = data.get('publication_date')  # None means use current date
-        source_id = data.get('source_id', f"article-{datetime.now().strftime('%Y%m%d-%H%M%S')}")
+    if not request.text or not request.text.strip():
+        raise HTTPException(status_code=400, detail="No text provided")
 
-        # Validate
-        if not text or not text.strip():
-            return jsonify({'error': 'No text provided'}), 400
+    source_id = request.source_id or f"article-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
 
-        logger.info(f"Received text block: {len(text)} chars, headline: {headline[:50]}...")
+    logger.info(f"Received text block: {len(request.text)} chars, headline: {request.headline[:50]}...")
 
-        # Submit to background processing (claim extraction only, skip transcription)
-        executor.submit(process_text_pipeline, text, headline, source_id, publication_date)
+    # Submit to background processing (claim extraction only, skip transcription)
+    background_tasks.add_task(
+        process_text_pipeline_async,
+        request.text,
+        request.headline,
+        source_id,
+        request.publication_date
+    )
 
-        return jsonify({
-            'status': 'accepted',
-            'message': 'Text block received, processing claims...',
-            'source_id': source_id
-        }), 202
-
-    except Exception as e:
-        logger.error(f"Error receiving text block: {e}")
-        return jsonify({'error': str(e)}), 400
+    return ProcessingResponse(
+        status="accepted",
+        message="Text block received, processing claims...",
+        source_id=source_id
+    )
 
 
-def process_text_pipeline(text: str, headline: str, source_id: str, publication_date: str = None):
+async def process_text_pipeline_async(text: str, headline: str, source_id: str, publication_date: str = None):
     """
     Background pipeline: text -> claim extraction -> pending claims
     (Skips transcription step - for articles, press releases, etc.)
     """
+    global current_episode_key
     block_id = f"text_{int(datetime.now().timestamp() * 1000)}"
 
     try:
@@ -255,7 +285,14 @@ def process_text_pipeline(text: str, headline: str, source_id: str, publication_
         # Claim extraction (using article-specific prompt)
         logger.info(f"[{block_id}] Extracting claims from article...")
         claim_extractor = get_claim_extractor()
-        claims = claim_extractor.extract_from_article(text, headline, publication_date)
+
+        # Use async method if available, otherwise wrap sync call
+        if hasattr(claim_extractor, 'extract_from_article_async'):
+            claims = await claim_extractor.extract_from_article_async(text, headline, publication_date)
+        else:
+            claims = await asyncio.to_thread(
+                claim_extractor.extract_from_article, text, headline, publication_date
+            )
         logger.info(f"[{block_id}] Extracted {len(claims)} claims")
 
         if not claims:
@@ -263,7 +300,7 @@ def process_text_pipeline(text: str, headline: str, source_id: str, publication_
             return
 
         # Store as pending claims
-        with processing_lock:
+        async with processing_lock:
             pending_block = {
                 "block_id": block_id,
                 "timestamp": datetime.now().isoformat(),
@@ -271,7 +308,7 @@ def process_text_pipeline(text: str, headline: str, source_id: str, publication_
                 "claims": [to_dict(c) for c in claims],
                 "status": "pending",
                 "source_id": source_id,
-                "episode_key": current_episode_key or "test",  # Use current episode or default to "test"
+                "episode_key": current_episode_key or "test",
                 "headline": headline,
                 "text_preview": text[:200] + "..." if len(text) > 200 else text
             }
@@ -289,95 +326,86 @@ def process_text_pipeline(text: str, headline: str, source_id: str, publication_
 # Pending Claims Management
 # =============================================================================
 
-@app.route('/api/pending-claims', methods=['GET'])
-def get_pending_claims():
+@app.get('/api/pending-claims')
+async def get_pending_claims():
     """Return all pending claim blocks (newest first)"""
     sorted_blocks = sorted(
         pending_claims_blocks,
         key=lambda x: x.get("timestamp", ""),
         reverse=True
     )
-    return jsonify(sorted_blocks)
+    return sorted_blocks
 
 
-@app.route('/api/pending-claims', methods=['POST'])
-def receive_pending_claims():
+@app.post('/api/pending-claims', status_code=201, response_model=ProcessingResponse)
+async def receive_pending_claims(request: PendingClaimsRequest):
     """Receive pending claims (for manual testing or external sources)"""
-    try:
-        data = request.get_json()
+    global current_episode_key
 
-        block_id = data.get("block_id") or f"block_{int(datetime.now().timestamp() * 1000)}"
-        timestamp = data.get("timestamp") or datetime.now().isoformat()
-        claims = data.get("claims", [])
-        episode_key = data.get("episode_key", current_episode_key)
+    block_id = request.block_id or f"block_{int(datetime.now().timestamp() * 1000)}"
+    timestamp = request.timestamp or datetime.now().isoformat()
+    claims = request.claims
+    episode_key = request.episode_key or current_episode_key
 
-        # Ensure unique block_id
-        existing_ids = [b.get("block_id") for b in pending_claims_blocks]
-        if block_id in existing_ids:
-            counter = 1
-            base_id = block_id
-            while block_id in existing_ids:
-                block_id = f"{base_id}_{counter}"
-                counter += 1
+    # Ensure unique block_id
+    existing_ids = [b.get("block_id") for b in pending_claims_blocks]
+    if block_id in existing_ids:
+        counter = 1
+        base_id = block_id
+        while block_id in existing_ids:
+            block_id = f"{base_id}_{counter}"
+            counter += 1
 
-        pending_block = {
-            "block_id": block_id,
-            "timestamp": timestamp,
-            "claims_count": len(claims),
-            "claims": claims,
-            "status": "pending",
-            "episode_key": episode_key
-        }
+    pending_block = {
+        "block_id": block_id,
+        "timestamp": timestamp,
+        "claims_count": len(claims),
+        "claims": claims,
+        "status": "pending",
+        "episode_key": episode_key
+    }
 
-        with processing_lock:
-            pending_claims_blocks.append(pending_block)
+    async with processing_lock:
+        pending_claims_blocks.append(pending_block)
 
-        logger.info(f"Pending claims received: {block_id} with {len(claims)} claims")
+    logger.info(f"Pending claims received: {block_id} with {len(claims)} claims")
 
-        return jsonify({
-            "status": "success",
-            "block_id": block_id,
-            "claims_count": len(claims)
-        }), 201
-
-    except Exception as e:
-        logger.error(f"Error receiving pending claims: {e}")
-        return jsonify({"status": "error", "message": str(e)}), 400
+    return ProcessingResponse(
+        status="success",
+        block_id=block_id,
+        claims_count=len(claims)
+    )
 
 
-@app.route('/api/approve-claims', methods=['POST'])
-def approve_claims():
+@app.post('/api/approve-claims', status_code=202, response_model=ProcessingResponse)
+async def approve_claims(
+    request: ClaimApprovalRequest,
+    background_tasks: BackgroundTasks
+):
     """
     Approve selected claims and start fact-checking.
 
-    No longer sends to N8N - uses local FactChecker service.
+    Uses local FactChecker service.
     """
-    try:
-        data = request.get_json()
-        selected_claims = data.get("claims", [])
-        block_id = data.get("block_id")
-        episode_key = data.get("episode_key", current_episode_key)
+    global current_episode_key
 
-        if not selected_claims:
-            return jsonify({"status": "error", "message": "No claims selected"}), 400
+    if not request.claims:
+        raise HTTPException(status_code=400, detail="No claims selected")
 
-        logger.info(f"Approving {len(selected_claims)} claims from block {block_id}")
+    episode_key = request.episode_key or current_episode_key
+    logger.info(f"Approving {len(request.claims)} claims from block {request.block_id}")
 
-        # Start fact-checking in background
-        executor.submit(process_fact_checks, selected_claims, episode_key)
+    # Start fact-checking in background
+    background_tasks.add_task(process_fact_checks_async, request.claims, episode_key)
 
-        return jsonify({
-            "status": "processing",
-            "message": f"{len(selected_claims)} claims submitted for fact-checking",
-            "claims_count": len(selected_claims)
-        }), 202
-
-    except Exception as e:
-        logger.error(f"Error approving claims: {e}")
-        return jsonify({"status": "error", "message": str(e)}), 400
+    return ProcessingResponse(
+        status="processing",
+        message=f"{len(request.claims)} claims submitted for fact-checking",
+        claims_count=len(request.claims)
+    )
 
 
-def process_fact_checks(claims: list, episode_key: str):
+async def process_fact_checks_async(claims: list, episode_key: str):
     """
     Background task: fact-check claims using FactChecker service.
     """
@@ -385,10 +413,15 @@ def process_fact_checks(claims: list, episode_key: str):
         logger.info(f"Starting fact-check for {len(claims)} claims...")
 
         fact_checker = get_fact_checker()
-        results = fact_checker.check_claims(claims)
+
+        # Use async method if available, otherwise wrap sync call
+        if hasattr(fact_checker, 'check_claims_async'):
+            results = await fact_checker.check_claims_async(claims)
+        else:
+            results = await asyncio.to_thread(fact_checker.check_claims, claims)
 
         # Store results
-        with processing_lock:
+        async with processing_lock:
             for result in results:
                 result_dict = to_dict(result)
                 sources = result_dict.get("sources", [])
@@ -408,7 +441,7 @@ def process_fact_checks(claims: list, episode_key: str):
 
         # Save to JSON file for GitHub Pages
         if episode_key:
-            save_fact_checks_to_file(episode_key)
+            await asyncio.to_thread(save_fact_checks_to_file, episode_key)
 
         logger.info(f"Fact-checking complete. {len(results)} results stored.")
 
@@ -422,60 +455,54 @@ def process_fact_checks(claims: list, episode_key: str):
 # Fact-Check Storage
 # =============================================================================
 
-@app.route('/api/fact-checks', methods=['GET'])
-def get_fact_checks():
+@app.get('/api/fact-checks')
+async def get_fact_checks(episode: Optional[str] = Query(default=None)):
     """Return fact-checks, optionally filtered by episode"""
-    episode_key = request.args.get('episode')
-    if episode_key:
-        return jsonify([fc for fc in fact_checks if fc.get('episode_key') == episode_key])
-    return jsonify(fact_checks)
+    if episode:
+        return [fc for fc in fact_checks if fc.get('episode_key') == episode]
+    return fact_checks
 
 
-@app.route('/api/fact-checks', methods=['POST'])
-def receive_fact_check():
+@app.post('/api/fact-checks', status_code=201, response_model=FactCheckStoredResponse)
+async def receive_fact_check(request: FactCheckRequest):
     """Receive fact-check results (for manual testing or external sources)"""
-    try:
-        data = request.get_json()
+    global current_episode_key
 
-        # Support both German and English field names
-        sprecher = data.get("sprecher") or data.get("speaker") or ""
-        behauptung = data.get("behauptung") or data.get("original_claim") or data.get("claim") or ""
-        consistency = data.get("consistency") or data.get("urteil") or ""
-        begruendung = data.get("begruendung") or data.get("evidence") or ""
-        quellen = data.get("quellen") or data.get("sources") or []
-        episode_key = data.get("episode_key") or data.get("episode") or current_episode_key
+    # Support both German and English field names
+    sprecher = request.sprecher or request.speaker or ""
+    behauptung = request.behauptung or request.original_claim or request.claim or ""
+    consistency = request.consistency or request.urteil or ""
+    begruendung = request.begruendung or request.evidence or ""
+    quellen = request.quellen or request.sources or []
+    episode_key = request.episode_key or request.episode or current_episode_key
 
-        # Handle string sources
-        if isinstance(quellen, str):
-            try:
-                quellen = json.loads(quellen)
-            except:
-                quellen = [quellen] if quellen else []
+    # Handle string sources
+    if isinstance(quellen, str):
+        try:
+            quellen = json.loads(quellen)
+        except:
+            quellen = [quellen] if quellen else []
 
-        fact_check = {
-            "id": len(fact_checks) + 1,
-            "sprecher": sprecher,
-            "behauptung": behauptung,
-            "consistency": consistency,
-            "begruendung": begruendung,
-            "quellen": quellen if isinstance(quellen, list) else [],
-            "timestamp": datetime.now().isoformat(),
-            "episode_key": episode_key
-        }
+    fact_check = {
+        "id": len(fact_checks) + 1,
+        "sprecher": sprecher,
+        "behauptung": behauptung,
+        "consistency": consistency,
+        "begruendung": begruendung,
+        "quellen": quellen if isinstance(quellen, list) else [],
+        "timestamp": datetime.now().isoformat(),
+        "episode_key": episode_key
+    }
 
-        with processing_lock:
-            fact_checks.append(fact_check)
+    async with processing_lock:
+        fact_checks.append(fact_check)
 
-        logger.info(f"Fact-check stored: ID {fact_check['id']} - {sprecher} - {consistency}")
+    logger.info(f"Fact-check stored: ID {fact_check['id']} - {sprecher} - {consistency}")
 
-        if episode_key:
-            save_fact_checks_to_file(episode_key)
+    if episode_key:
+        await asyncio.to_thread(save_fact_checks_to_file, episode_key)
 
-        return jsonify({"status": "success", "id": fact_check["id"]}), 201
-
-    except Exception as e:
-        logger.error(f"Error receiving fact-check: {e}")
-        return jsonify({"status": "error", "message": str(e)}), 400
+    return FactCheckStoredResponse(status="success", id=fact_check["id"])
 
 
 def save_fact_checks_to_file(episode_key: str):
@@ -501,66 +528,62 @@ def save_fact_checks_to_file(episode_key: str):
 # Configuration Endpoints
 # =============================================================================
 
-@app.route('/api/config/<episode_key>', methods=['GET'])
-def get_episode_config_endpoint(episode_key):
+@app.get('/api/config/{episode_key}')
+async def get_episode_config_endpoint(episode_key: str):
     """Return configuration for an episode"""
     try:
         config = get_show_config(episode_key)
-        return jsonify(config)
+        return config
     except Exception as e:
         logger.error(f"Error loading config for {episode_key}: {e}")
-        return jsonify({"error": str(e)}), 500
+        raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.route('/api/config/shows', methods=['GET'])
-def get_all_shows_endpoint():
+@app.get('/api/config/shows', response_model=ShowsResponse)
+async def get_all_shows_endpoint():
     """Return all available shows"""
     try:
         shows = get_all_shows()
-        return jsonify({"shows": shows})
+        return ShowsResponse(shows=shows)
     except Exception as e:
         logger.error(f"Error loading shows: {e}")
-        return jsonify({"error": str(e)}), 500
+        raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.route('/api/config/shows/<show_key>/episodes', methods=['GET'])
-def get_episodes_for_show_endpoint(show_key):
+@app.get('/api/config/shows/{show_key}/episodes', response_model=EpisodesResponse)
+async def get_episodes_for_show_endpoint(show_key: str):
     """Return all episodes for a show"""
     try:
         episodes = get_episodes_for_show(show_key)
-        return jsonify({"episodes": episodes})
+        return EpisodesResponse(episodes=episodes)
     except Exception as e:
         logger.error(f"Error loading episodes for {show_key}: {e}")
-        return jsonify({"error": str(e)}), 500
+        raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.route('/api/set-episode', methods=['POST'])
-def set_current_episode():
+@app.post('/api/set-episode')
+async def set_current_episode(request: SetEpisodeRequest):
     """Set the current episode (called by listener)"""
     global current_episode_key
-    try:
-        data = request.get_json()
-        episode_key = data.get("episode_key") or data.get("episode")
-        if episode_key:
-            current_episode_key = episode_key
-            logger.info(f"Current episode set: {episode_key}")
-            return jsonify({"status": "success", "episode_key": episode_key})
-        else:
-            return jsonify({"status": "error", "message": "episode_key missing"}), 400
-    except Exception as e:
-        logger.error(f"Error setting episode: {e}")
-        return jsonify({"status": "error", "message": str(e)}), 400
+
+    episode_key = request.episode_key or request.episode
+    if episode_key:
+        current_episode_key = episode_key
+        logger.info(f"Current episode set: {episode_key}")
+        return {"status": "success", "episode_key": episode_key}
+    else:
+        raise HTTPException(status_code=400, detail="episode_key missing")
 
 
-@app.route('/api/health', methods=['GET'])
-def health():
+@app.get('/api/health', response_model=HealthResponse)
+async def health():
     """Health check endpoint"""
-    return jsonify({
-        "status": "ok",
-        "current_episode": current_episode_key,
-        "pending_blocks": len(pending_claims_blocks),
-        "fact_checks": len(fact_checks)
-    })
+    return HealthResponse(
+        status="ok",
+        current_episode=current_episode_key,
+        pending_blocks=len(pending_claims_blocks),
+        fact_checks=len(fact_checks)
+    )
 
 
 # =============================================================================
@@ -568,13 +591,15 @@ def health():
 # =============================================================================
 
 if __name__ == '__main__':
-    port = int(os.getenv("FLASK_PORT", 5000))
+    import uvicorn
+    port = int(os.getenv("PORT", 5000))
 
     print(f"""
 ╔══════════════════════════════════════════════════════════════╗
-║  Fact-Check Backend                                          ║
+║  Fact-Check Backend (FastAPI)                                ║
 ╠══════════════════════════════════════════════════════════════╣
 ║  Server:     http://0.0.0.0:{port}                            ║
+║  API Docs:   http://0.0.0.0:{port}/docs                       ║
 ║                                                              ║
 ║  Endpoints:                                                  ║
 ║    POST /api/audio-block     - Receive audio from listener   ║
@@ -586,4 +611,4 @@ if __name__ == '__main__':
 ╚══════════════════════════════════════════════════════════════╝
     """)
 
-    app.run(debug=True, host='0.0.0.0', port=port)
+    uvicorn.run("backend.app:app", host="0.0.0.0", port=port, reload=True)

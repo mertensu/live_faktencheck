@@ -98,7 +98,7 @@ cd frontend && npm run dev
 
 ```
 ├── backend/
-│   ├── app.py                 # Flask API server
+│   ├── app.py                 # FastAPI server
 │   └── services/
 │       ├── transcription.py   # AssemblyAI integration
 │       ├── claim_extraction.py # Gemini claim extraction

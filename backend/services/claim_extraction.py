@@ -67,9 +67,9 @@ class ClaimExtractor:
             f"Could not find {filename} prompt file. Tried: {possible_paths}"
         )
 
-    def extract(self, transcript: str, guests: str) -> List[ExtractedClaim]:
+    async def extract_async(self, transcript: str, guests: str) -> List[ExtractedClaim]:
         """
-        Extract verifiable claims from a transcript.
+        Extract verifiable claims from a transcript (async).
 
         Args:
             transcript: Formatted transcript with speaker labels
@@ -77,9 +77,6 @@ class ClaimExtractor:
 
         Returns:
             List of ExtractedClaim objects
-
-        Raises:
-            Exception: If extraction fails
         """
         logger.info(f"Extracting claims from transcript ({len(transcript)} chars)")
 
@@ -93,8 +90,23 @@ Participants and date: {guests}
 {transcript}
 </transcript>"""
 
-        # Use async API (sync client hangs in some environments)
-        return asyncio.run(self._extract_async(system_prompt, user_message))
+        return await self._extract_async(system_prompt, user_message)
+
+    def extract(self, transcript: str, guests: str) -> List[ExtractedClaim]:
+        """
+        Extract verifiable claims from a transcript (sync wrapper).
+
+        Args:
+            transcript: Formatted transcript with speaker labels
+            guests: Context information about the show/guests
+
+        Returns:
+            List of ExtractedClaim objects
+
+        Note:
+            Use extract_async() in async contexts to avoid event loop conflicts.
+        """
+        return asyncio.run(self.extract_async(transcript, guests))
 
     async def _extract_async(self, system_prompt: str, user_message: str) -> List[ExtractedClaim]:
         """Async implementation of claim extraction."""
@@ -119,9 +131,9 @@ Participants and date: {guests}
             traceback.print_exc()
             raise
 
-    def extract_from_article(self, text: str, headline: str, publication_date: str = None) -> List[ExtractedClaim]:
+    async def extract_from_article_async(self, text: str, headline: str, publication_date: str = None) -> List[ExtractedClaim]:
         """
-        Extract verifiable claims from an article (skip transcription).
+        Extract verifiable claims from an article (async).
 
         Args:
             text: Article text content
@@ -142,4 +154,21 @@ Participants and date: {guests}
 
 Article: {text}"""
 
-        return asyncio.run(self._extract_async(system_prompt, user_message))
+        return await self._extract_async(system_prompt, user_message)
+
+    def extract_from_article(self, text: str, headline: str, publication_date: str = None) -> List[ExtractedClaim]:
+        """
+        Extract verifiable claims from an article (sync wrapper).
+
+        Args:
+            text: Article text content
+            headline: Article headline (used as context)
+            publication_date: Publication date string (defaults to current month/year)
+
+        Returns:
+            List of ExtractedClaim objects
+
+        Note:
+            Use extract_from_article_async() in async contexts to avoid event loop conflicts.
+        """
+        return asyncio.run(self.extract_from_article_async(text, headline, publication_date))
