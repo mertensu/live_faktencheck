@@ -67,13 +67,13 @@ class ClaimExtractor:
             f"Could not find {filename} prompt file. Tried: {possible_paths}"
         )
 
-    async def extract_async(self, transcript: str, guests: str) -> List[ExtractedClaim]:
+    async def extract_async(self, transcript: str, info: str) -> List[ExtractedClaim]:
         """
         Extract verifiable claims from a transcript (async).
 
         Args:
             transcript: Formatted transcript with speaker labels
-            guests: Context information about the show/guests
+            info: Context information about the show/guests
 
         Returns:
             List of ExtractedClaim objects
@@ -83,7 +83,7 @@ class ClaimExtractor:
         system_prompt = self.prompt_template
 
         user_message = f"""<context>
-Participants and date: {guests}
+Participants and date: {info}
 </context>
 
 <transcript>
@@ -92,13 +92,13 @@ Participants and date: {guests}
 
         return await self._extract_async(system_prompt, user_message)
 
-    def extract(self, transcript: str, guests: str) -> List[ExtractedClaim]:
+    def extract(self, transcript: str, info: str) -> List[ExtractedClaim]:
         """
         Extract verifiable claims from a transcript (sync wrapper).
 
         Args:
             transcript: Formatted transcript with speaker labels
-            guests: Context information about the show/guests
+            info: Context information about the show/guests
 
         Returns:
             List of ExtractedClaim objects
@@ -106,7 +106,7 @@ Participants and date: {guests}
         Note:
             Use extract_async() in async contexts to avoid event loop conflicts.
         """
-        return asyncio.run(self.extract_async(transcript, guests))
+        return asyncio.run(self.extract_async(transcript, info))
 
     async def _extract_async(self, system_prompt: str, user_message: str) -> List[ExtractedClaim]:
         """Async implementation of claim extraction."""

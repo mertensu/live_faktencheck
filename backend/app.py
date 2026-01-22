@@ -50,16 +50,16 @@ logger = logging.getLogger(__name__)
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 try:
-    from config import get_show_config, get_all_shows, get_episodes_for_show, get_guests
+    from config import get_show_config, get_all_shows, get_episodes_for_show, get_info
 except ImportError:
     logger.warning("config.py not found. Using default configuration.")
     def get_show_config(episode_key=None):
-        return {"speakers": [], "guests": "", "name": "Unknown", "description": ""}
+        return {"speakers": [], "info": "", "name": "Unknown", "description": ""}
     def get_all_shows():
         return []
     def get_episodes_for_show(show_key):
         return []
-    def get_guests(episode_key=None):
+    def get_info(episode_key=None):
         return ""
 
 # Import services (lazy loading to avoid import errors if env vars not set)
@@ -147,7 +147,7 @@ async def receive_audio_block(
     background_tasks: BackgroundTasks,
     audio: UploadFile = File(...),
     episode_key: Optional[str] = Form(default=None),
-    guests: Optional[str] = Form(default=None)
+    info: Optional[str] = Form(default=None)
 ):
     """
     Receive audio block from listener.py and start processing pipeline.
@@ -155,19 +155,19 @@ async def receive_audio_block(
     Expected: multipart form data with:
     - audio: WAV file
     - episode_key: Episode identifier
-    - guests: (optional) Guest information override
+    - info: (optional) Context information override
     """
     global current_episode_key
 
     try:
         audio_data = await audio.read()
         ep_key = episode_key or current_episode_key or 'test'
-        guest_info = guests or get_guests(ep_key)
+        context_info = info or get_info(ep_key)
 
         logger.info(f"Received audio block: {len(audio_data)} bytes, episode: {ep_key}")
 
         # Start background processing
-        background_tasks.add_task(process_audio_pipeline_async, audio_data, ep_key, guest_info)
+        background_tasks.add_task(process_audio_pipeline_async, audio_data, ep_key, context_info)
 
         return ProcessingResponse(
             status="processing",
@@ -180,7 +180,7 @@ async def receive_audio_block(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-async def process_audio_pipeline_async(audio_data: bytes, episode_key: str, guests: str):
+async def process_audio_pipeline_async(audio_data: bytes, episode_key: str, info: str):
     """
     Background pipeline: audio -> transcription -> claim extraction -> pending claims
     """
@@ -200,9 +200,9 @@ async def process_audio_pipeline_async(audio_data: bytes, episode_key: str, gues
         claim_extractor = get_claim_extractor()
         # Use async method if available, otherwise wrap sync call
         if hasattr(claim_extractor, 'extract_async'):
-            claims = await claim_extractor.extract_async(transcript, guests)
+            claims = await claim_extractor.extract_async(transcript, info)
         else:
-            claims = await asyncio.to_thread(claim_extractor.extract, transcript, guests)
+            claims = await asyncio.to_thread(claim_extractor.extract, transcript, info)
         logger.info(f"[{block_id}] Extracted {len(claims)} claims")
 
         if not claims:
@@ -218,6 +218,7 @@ async def process_audio_pipeline_async(audio_data: bytes, episode_key: str, gues
                 "claims": [to_dict(c) for c in claims],
                 "status": "pending",
                 "episode_key": episode_key,
+                "info": info,
                 "transcript_preview": transcript[:200] + "..." if len(transcript) > 200 else transcript
             }
             pending_claims_blocks.append(pending_block)
@@ -395,8 +396,16 @@ async def approve_claims(
     episode_key = request.episode_key or current_episode_key
     logger.info(f"Approving {len(request.claims)} claims from block {request.block_id}")
 
+    # Try to find context from the pending block
+    context = None
+    if request.block_id:
+        for b in pending_claims_blocks:
+            if b.get("block_id") == request.block_id:
+                context = b.get("info") or b.get("headline")
+                break
+
     # Start fact-checking in background
-    background_tasks.add_task(process_fact_checks_async, request.claims, episode_key)
+    background_tasks.add_task(process_fact_checks_async, request.claims, episode_key, context)
 
     return ProcessingResponse(
         status="processing",
@@ -405,7 +414,7 @@ async def approve_claims(
     )
 
 
-async def process_fact_checks_async(claims: list, episode_key: str):
+async def process_fact_checks_async(claims: list, episode_key: str, context: str = None):
     """
     Background task: fact-check claims using FactChecker service.
     """
@@ -416,9 +425,9 @@ async def process_fact_checks_async(claims: list, episode_key: str):
 
         # Use async method if available, otherwise wrap sync call
         if hasattr(fact_checker, 'check_claims_async'):
-            results = await fact_checker.check_claims_async(claims)
+            results = await fact_checker.check_claims_async(claims, context=context)
         else:
-            results = await asyncio.to_thread(fact_checker.check_claims, claims)
+            results = await asyncio.to_thread(fact_checker.check_claims, claims, context=context)
 
         # Store results
         async with processing_lock:
@@ -528,16 +537,8 @@ def save_fact_checks_to_file(episode_key: str):
 # Configuration Endpoints
 # =============================================================================
 
-@app.get('/api/config/{episode_key}')
-async def get_episode_config_endpoint(episode_key: str):
-    """Return configuration for an episode"""
-    try:
-        config = get_show_config(episode_key)
-        return config
-    except Exception as e:
-        logger.error(f"Error loading config for {episode_key}: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
+# NOTE: More specific routes MUST come before the wildcard route
+# Otherwise /api/config/shows would match /api/config/{episode_key}
 
 @app.get('/api/config/shows', response_model=ShowsResponse)
 async def get_all_shows_endpoint():
@@ -558,6 +559,17 @@ async def get_episodes_for_show_endpoint(show_key: str):
         return EpisodesResponse(episodes=episodes)
     except Exception as e:
         logger.error(f"Error loading episodes for {show_key}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get('/api/config/{episode_key}')
+async def get_episode_config_endpoint(episode_key: str):
+    """Return configuration for an episode"""
+    try:
+        config = get_show_config(episode_key)
+        return config
+    except Exception as e:
+        logger.error(f"Error loading config for {episode_key}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

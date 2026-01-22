@@ -32,7 +32,7 @@ except ImportError:
 # --- CONFIGURATION ---
 import sys
 import os
-from config import get_guests, DEFAULT_SHOW
+from config import get_info, DEFAULT_SHOW
 
 # Backend URL (no more N8N!)
 BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:5000")
@@ -71,7 +71,7 @@ def get_current_show():
 
 
 CURRENT_SHOW = get_current_show()
-GUESTS = get_guests(CURRENT_SHOW)
+INFO = get_info(CURRENT_SHOW)
 
 # Debug mode: Save each block as WAV file
 DEBUG_MODE = os.environ.get('DEBUG', '').lower() in ('true', '1', 'yes') or '--debug' in sys.argv
@@ -122,7 +122,7 @@ class VADRecorder:
 
         print(f"🔴 Recording started...")
         print(f"📺 Show: {CURRENT_SHOW}")
-        print(f"👥 Guests: {GUESTS}")
+        print(f"📋 Info: {INFO}")
         print(f"📋 Minimum recording time: {MIN_RECORDING_TIME} seconds")
         print(f"🔍 VAD check every {VAD_CHECK_INTERVAL} seconds after minimum time")
         print(f"📊 VAD buffer: {VAD_BUFFER_SIZE} seconds")
@@ -198,7 +198,7 @@ class VADRecorder:
             }
             data = {
                 'episode_key': CURRENT_SHOW,
-                'guests': GUESTS
+                'info': INFO
             }
 
             response = requests.post(

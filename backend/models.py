@@ -89,7 +89,7 @@ class HealthResponse(BaseModel):
 
 class ShowsResponse(BaseModel):
     """Response for /api/config/shows endpoint."""
-    shows: List[dict]
+    shows: List[str]
 
 
 class EpisodesResponse(BaseModel):

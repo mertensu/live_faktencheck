@@ -143,13 +143,14 @@ class FactChecker:
             f"Could not find fact_checker.md prompt file. Tried: {possible_paths}"
         )
 
-    async def check_claim_async(self, speaker: str, claim: str) -> Dict[str, Any]:
+    async def check_claim_async(self, speaker: str, claim: str, context: str = None) -> Dict[str, Any]:
         """
         Fact-check a single claim using LangGraph ReAct agent with Tavily search (async).
 
         Args:
             speaker: Name of the person who made the claim
             claim: The claim text to verify
+            context: Optional context information (show info, date, source)
 
         Returns:
             Dictionary with speaker, original_claim, consistency, evidence, sources
@@ -161,16 +162,19 @@ class FactChecker:
 
         user_message = f"""- **Speaker:** {speaker}
 - **Claim:** {claim}"""
+        if context:
+            user_message += f"\n- **Context:** {context}"
 
         return await self._check_claim_async(speaker, claim, system_prompt, user_message)
 
-    def check_claim(self, speaker: str, claim: str) -> Dict[str, Any]:
+    def check_claim(self, speaker: str, claim: str, context: str = None) -> Dict[str, Any]:
         """
         Fact-check a single claim (sync wrapper).
 
         Args:
             speaker: Name of the person who made the claim
             claim: The claim text to verify
+            context: Optional context information
 
         Returns:
             Dictionary with speaker, original_claim, consistency, evidence, sources
@@ -178,7 +182,7 @@ class FactChecker:
         Note:
             Use check_claim_async() in async contexts to avoid event loop conflicts.
         """
-        return asyncio.run(self.check_claim_async(speaker, claim))
+        return asyncio.run(self.check_claim_async(speaker, claim, context=context))
 
     async def _check_claim_async(self, speaker: str, claim: str, system_prompt: str, user_message: str) -> Dict[str, Any]:
         """Async implementation of claim checking."""
@@ -217,12 +221,13 @@ class FactChecker:
                 "sources": []
             }
 
-    async def check_claims_async(self, claims: List[Dict[str, str]]) -> List[Dict[str, Any]]:
+    async def check_claims_async(self, claims: List[Dict[str, str]], context: str = None) -> List[Dict[str, Any]]:
         """
         Fact-check multiple claims (sequential or parallel based on config, async).
 
         Args:
             claims: List of claim dictionaries with 'name' and 'claim' keys
+            context: Optional context information for all claims
 
         Returns:
             List of fact-check result dictionaries
@@ -236,16 +241,17 @@ class FactChecker:
         )
 
         if self.parallel_enabled:
-            return await self._check_claims_parallel_async(claims)
+            return await self._check_claims_parallel_async(claims, context=context)
         else:
-            return await self._check_claims_sequential_async(claims)
+            return await self._check_claims_sequential_async(claims, context=context)
 
-    def check_claims(self, claims: List[Dict[str, str]]) -> List[Dict[str, Any]]:
+    def check_claims(self, claims: List[Dict[str, str]], context: str = None) -> List[Dict[str, Any]]:
         """
         Fact-check multiple claims (sync wrapper).
 
         Args:
             claims: List of claim dictionaries with 'name' and 'claim' keys
+            context: Optional context information
 
         Returns:
             List of fact-check result dictionaries
@@ -253,34 +259,32 @@ class FactChecker:
         Note:
             Use check_claims_async() in async contexts to avoid event loop conflicts.
         """
-        return asyncio.run(self.check_claims_async(claims))
+        return asyncio.run(self.check_claims_async(claims, context=context))
 
-    def _check_claims_sequential(self, claims: List[Dict[str, str]]) -> List[Dict[str, Any]]:
+    def _check_claims_sequential(self, claims: List[Dict[str, str]], context: str = None) -> List[Dict[str, Any]]:
         """Process claims one by one (sync)."""
-        return asyncio.run(self._check_claims_sequential_async(claims))
+        return asyncio.run(self._check_claims_sequential_async(claims, context=context))
 
-    async def _check_claims_sequential_async(self, claims: List[Dict[str, str]]) -> List[Dict[str, Any]]:
+    async def _check_claims_sequential_async(self, claims: List[Dict[str, str]], context: str = None) -> List[Dict[str, Any]]:
         """Process claims one by one (async)."""
         results = []
         for i, claim_data in enumerate(claims):
             logger.info(f"Processing claim {i + 1}/{len(claims)}")
             result = await self.check_claim_async(
                 speaker=claim_data.get("name", "Unknown"),
-                claim=claim_data.get("claim", "")
+                claim=claim_data.get("claim", ""),
+                context=context
             )
             results.append(result)
         return results
 
-    def _check_claims_parallel(self, claims: List[Dict[str, str]]) -> List[Dict[str, Any]]:
+    def _check_claims_parallel(self, claims: List[Dict[str, str]], context: str = None) -> List[Dict[str, Any]]:
         """
         Process claims concurrently using asyncio.gather with a semaphore.
-
-        This avoids the nested event loop issue caused by RunnableLambda.batch()
-        calling asyncio.run() inside an already-running loop.
         """
-        return asyncio.run(self._check_claims_parallel_async(claims))
+        return asyncio.run(self._check_claims_parallel_async(claims, context=context))
 
-    async def _check_claims_parallel_async(self, claims: List[Dict[str, str]]) -> List[Dict[str, Any]]:
+    async def _check_claims_parallel_async(self, claims: List[Dict[str, str]], context: str = None) -> List[Dict[str, Any]]:
         """Async implementation of parallel claim checking."""
         semaphore = asyncio.Semaphore(self.max_workers)
 
@@ -296,6 +300,8 @@ class FactChecker:
 
                 user_message = f"""- **Speaker:** {speaker}
 - **Claim:** {claim}"""
+                if context:
+                    user_message += f"\n- **Context:** {context}"
 
                 result = await self._check_claim_async(speaker, claim, system_prompt, user_message)
                 logger.info(f"Completed claim {index + 1}/{len(claims)}: {result.get('consistency', 'unknown')}")

@@ -124,7 +124,7 @@ SHOW_CONFIG = {
     "maischberger-2025-09-19": {
         "name": "Maischberger",
         "speakers": ["Sandra Maischberger", "Gitta Connemann", "Katharina Dröge"],
-        "guests": "Description of the episode...",
+        "info": "Description of the episode...",
         "show": "maischberger",
         "episode_name": "19. September 2025"
     }

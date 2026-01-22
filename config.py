@@ -12,7 +12,7 @@ SHOW_CONFIG = {
     "test": {
         "name": "Test",
         "description": "Test-Umgebung für Fact-Checks",
-        "guests": "Test Sendung - Sprecher A interviewt Sprecher B",
+        "info": "Test Sendung - Sprecher A interviewt Sprecher B",
         "speakers": [
             "Sprecher A",
             "Sprecher B",
@@ -26,7 +26,7 @@ SHOW_CONFIG = {
     "maischberger-2025-09-19": {
         "name": "Maischberger",
         "description": "Sendung vom 19. September 2025",
-        "guests": "Sandra Maischberger interviewt Gitta Connemann (CDU) und Katharina Dröge (B90/Grüne). Sendung vom 19.September 2025",
+        "info": "Sandra Maischberger interviewt Gitta Connemann (CDU) und Katharina Dröge (B90/Grüne). Sendung vom 19.September 2025",
         "speakers": [
             "Sandra Maischberger",
             "Gitta Connemann",
@@ -40,7 +40,7 @@ SHOW_CONFIG = {
     "maischberger-2025-09-30": {
         "name": "Maischberger",
         "description": "Sendung vom 30. September 2025",
-        "guests": "Sandra Maischberger interviewt Philipp Amthor (CDU) und Ines Schwerdtner (Linke). Sendung vom 30.September 2025",
+        "info": "Sandra Maischberger interviewt Philipp Amthor (CDU) und Ines Schwerdtner (Linke). Sendung vom 30.September 2025",
         "speakers": [
             "Sandra Maischberger",
             "Philipp Amthor",
@@ -54,7 +54,7 @@ SHOW_CONFIG = {
     "miosga-2025-10": {
         "name": "Miosga",
         "description": "Sendung vom Oktober 2025",
-        "guests": "Caren Miosga interviewt Heidi Reichinnek (Linke). Sendung vom Oktober 2025",
+        "info": "Caren Miosga interviewt Heidi Reichinnek (Linke). Sendung vom Oktober 2025",
         "speakers": [
             "Caren Miosga",
             "Heidi Reichinnek"
@@ -62,6 +62,20 @@ SHOW_CONFIG = {
         "show": "miosga",
         "episode_name": "Oktober 2025 - Heidi Reichinnek"
     },
+
+   
+    "youtube-rieck-2026-01-17": {
+        "name": "youtube",
+        "description": "Sendung vom 17. Januar 2026",
+        "info": "Youtube-Video von Christian Rieck vom 17. Januar 2026. Er berichtet über die Erbschaftsteuerreform der SPD dargelegt im Konzeptpapier: https://spd-landesgruppe-ost.de/wp-content/uploads/2026/01/FairErben-Konzept-zur-Reform-der-Erbschaftsteuer-2.pdf",
+        "speakers": [
+            "Christian Rieck"
+        ],
+        "show": "youtube",
+        "episode_name": "17. Januar 2026 - Christian Rieck"
+    },
+
+
 }
 
 # Standard-Sendung (für listener.py wenn keine spezifische Sendung gewählt wird)
@@ -78,10 +92,10 @@ def get_speakers(episode_key=None):
     config = get_show_config(episode_key)
     return config.get("speakers", [])
 
-def get_guests(episode_key=None):
-    """Gibt die Gäste-Beschreibung für eine Episode zurück"""
+def get_info(episode_key=None):
+    """Gibt die Kontext-Information für eine Episode zurück (Datum, Quelle, Teilnehmer etc.)"""
     config = get_show_config(episode_key)
-    return config.get("guests", "")
+    return config.get("info", "")
 
 def get_all_shows():
     """Gibt alle verfügbaren Shows zurück (z.B. ['maischberger', 'miosga', 'test'])"""
