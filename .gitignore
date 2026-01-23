@@ -63,4 +63,4 @@ debug_audio/
 .frontend_pid
 backend.log
 frontend_dev.log
-.ngrok_pid
+.ngrok_pidCLAUDE.md
