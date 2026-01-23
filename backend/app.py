@@ -25,6 +25,7 @@ from dotenv import load_dotenv
 from backend.models import (
     TextBlockRequest,
     ClaimApprovalRequest,
+    ClaimUpdateRequest,
     FactCheckRequest,
     PendingClaimsRequest,
     SetEpisodeRequest,
@@ -118,7 +119,7 @@ app.add_middleware(
         "http://127.0.0.1:5173"
     ],
     allow_credentials=True,
-    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_methods=["GET", "POST", "PUT", "OPTIONS"],
     allow_headers=["Content-Type", "Authorization", "Accept"],
 )
 
@@ -514,6 +515,99 @@ async def receive_fact_check(request: FactCheckRequest):
     return FactCheckStoredResponse(status="success", id=fact_check["id"])
 
 
+@app.put('/api/fact-checks/{fact_check_id}', status_code=202, response_model=ProcessingResponse)
+async def update_fact_check(
+    fact_check_id: int,
+    request: ClaimUpdateRequest,
+    background_tasks: BackgroundTasks
+):
+    """
+    Re-run fact-check for an existing claim (overwrite result).
+
+    Finds existing fact-check by ID, re-runs fact-checker with updated claim,
+    and replaces the result in the fact_checks list.
+    """
+    global current_episode_key
+
+    # Find existing fact-check
+    existing = None
+    for fc in fact_checks:
+        if fc.get("id") == fact_check_id:
+            existing = fc
+            break
+
+    if not existing:
+        raise HTTPException(status_code=404, detail=f"Fact-check {fact_check_id} not found")
+
+    episode_key = request.episode_key or existing.get("episode_key") or current_episode_key
+
+    logger.info(f"Re-running fact-check for ID {fact_check_id}: {request.name} - {request.claim[:50]}...")
+
+    # Start fact-checking in background
+    background_tasks.add_task(
+        process_fact_check_update_async,
+        fact_check_id,
+        request.name,
+        request.claim,
+        episode_key
+    )
+
+    return ProcessingResponse(
+        status="processing",
+        message=f"Fact-check {fact_check_id} re-run started"
+    )
+
+
+async def process_fact_check_update_async(fact_check_id: int, name: str, claim: str, episode_key: str):
+    """
+    Background task: re-run fact-check and update existing entry.
+    """
+    try:
+        logger.info(f"Re-running fact-check for ID {fact_check_id}...")
+
+        fact_checker = get_fact_checker()
+        claims_to_check = [{"name": name, "claim": claim}]
+
+        # Use async method if available, otherwise wrap sync call
+        if hasattr(fact_checker, 'check_claims_async'):
+            results = await fact_checker.check_claims_async(claims_to_check)
+        else:
+            results = await asyncio.to_thread(fact_checker.check_claims, claims_to_check)
+
+        if not results:
+            logger.error(f"No results from fact-checker for ID {fact_check_id}")
+            return
+
+        result = results[0]
+        result_dict = to_dict(result)
+        sources = result_dict.get("sources", [])
+
+        # Update existing fact-check
+        async with processing_lock:
+            for fc in fact_checks:
+                if fc.get("id") == fact_check_id:
+                    fc["sprecher"] = result_dict.get("speaker", name)
+                    fc["behauptung"] = result_dict.get("original_claim", claim)
+                    fc["consistency"] = result_dict.get("consistency", "unklar")
+                    fc["begruendung"] = result_dict.get("evidence", "")
+                    fc["quellen"] = [to_dict(s) for s in sources] if sources else []
+                    fc["timestamp"] = datetime.now().isoformat()
+                    fc["episode_key"] = episode_key
+                    logger.info(f"Fact-check {fact_check_id} updated: {fc['consistency']}")
+                    break
+
+        # Save to JSON file
+        if episode_key:
+            await asyncio.to_thread(save_fact_checks_to_file, episode_key)
+
+        logger.info(f"Fact-check {fact_check_id} re-run complete.")
+
+    except Exception as e:
+        logger.error(f"Error re-running fact-check {fact_check_id}: {e}")
+        import traceback
+        traceback.print_exc()
+
+
 def save_fact_checks_to_file(episode_key: str):
     """Save fact-checks for an episode to JSON file for GitHub Pages"""
     try:
@@ -619,6 +713,7 @@ if __name__ == '__main__':
 ║    GET  /api/pending-claims  - Get pending claims            ║
 ║    POST /api/approve-claims  - Approve claims for checking   ║
 ║    GET  /api/fact-checks     - Get completed fact-checks     ║
+║    PUT  /api/fact-checks/id  - Re-run fact-check (overwrite) ║
 ║    GET  /api/health          - Health check                  ║
 ╚══════════════════════════════════════════════════════════════╝
     """)

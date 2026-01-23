@@ -308,12 +308,32 @@ function FactCheckPage({ showName, showKey, episodeKey }) {
   const [isAdminMode, setIsAdminMode] = useState(false)
   const [factChecks, setFactChecks] = useState([])
   const [expandedIds, setExpandedIds] = useState(new Set())
-  const [pendingBlocks, setPendingBlocks] = useState([])
-  const [selectedClaims, setSelectedClaims] = useState(new Set())
-  const [editedClaims, setEditedClaims] = useState({})  // Speichert bearbeitete Claims: { "blockId-index": { name, claim } }
+  // Admin workflow: flat list → staging → sent history
+  const [pendingClaims, setPendingClaims] = useState([])   // Flat list of editable claims
+  const [stagedClaims, setStagedClaims] = useState([])     // Ready to send (read-only)
+  const [sentClaims, setSentClaims] = useState([])         // History with timestamps
   const [speakers, setSpeakers] = useState(DEFAULT_SPEAKERS)  // Lädt Config vom Backend
   const [backendError, setBackendError] = useState(null)  // Backend connection error
-  
+
+  // Helper: Flatten pending blocks into chronologically sorted claims
+  const flattenPendingBlocks = (blocks) => {
+    const claims = []
+    blocks.forEach(block => {
+      block.claims.forEach((claim, index) => {
+        claims.push({
+          id: `${block.block_id}-${index}`,
+          blockId: block.block_id,
+          name: claim.name || '',
+          claim: claim.claim || '',
+          timestamp: block.timestamp,
+          info: block.info || block.headline || ''
+        })
+      })
+    })
+    // Sort by timestamp (oldest first)
+    return claims.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
+  }
+
   // Lade Episode-Konfiguration vom Backend
   useEffect(() => {
     const controller = new AbortController()
@@ -435,7 +455,7 @@ function FactCheckPage({ showName, showKey, episodeKey }) {
     let isMounted = true
     let currentController = null
 
-    const fetchPendingClaims = async () => {
+    const fetchPendingClaimsFromBackend = async () => {
       const controller = new AbortController()
       currentController = controller
 
@@ -452,22 +472,28 @@ function FactCheckPage({ showName, showKey, episodeKey }) {
         }
         const data = await safeJsonParse(response, 'Fehler beim Laden der Pending Claims')
         debug.log(`📋 Geladene Pending Blocks: ${data.length}`, data)
-        setPendingBlocks(data)
+
+        // Flatten blocks into claims, excluding those already staged or sent
+        const flatClaims = flattenPendingBlocks(data)
+        const stagedIds = new Set(stagedClaims.map(c => c.id))
+        const sentIds = new Set(sentClaims.map(c => c.originalId || c.id))
+        const newPending = flatClaims.filter(c => !stagedIds.has(c.id) && !sentIds.has(c.id))
+        setPendingClaims(newPending)
       } catch (error) {
         if (!isMounted || error.name === 'AbortError') return
         debug.error('❌ Fehler beim Laden der Pending Claims:', error)
       }
     }
 
-    fetchPendingClaims()
-    const interval = setInterval(fetchPendingClaims, 2000)
+    fetchPendingClaimsFromBackend()
+    const interval = setInterval(fetchPendingClaimsFromBackend, 2000)
 
     return () => {
       isMounted = false
       if (currentController) currentController.abort()
       clearInterval(interval)
     }
-  }, [isAdminMode, isProduction])
+  }, [isAdminMode, isProduction, stagedClaims, sentClaims])
 
   const toggleExpand = (id) => {
     const newExpanded = new Set(expandedIds)
@@ -479,105 +505,125 @@ function FactCheckPage({ showName, showKey, episodeKey }) {
     setExpandedIds(newExpanded)
   }
 
-  const toggleClaimSelection = (blockId, claimIndex) => {
-    const key = `${blockId}-${claimIndex}`
-    const newSelected = new Set(selectedClaims)
-    if (newSelected.has(key)) {
-      newSelected.delete(key)
-    } else {
-      newSelected.add(key)
-    }
-    setSelectedClaims(newSelected)
+  // Move claim from pending → staging (with current edits)
+  const stageClaimForSending = (claimId) => {
+    const claim = pendingClaims.find(c => c.id === claimId)
+    if (!claim) return
+    setStagedClaims(prev => [...prev, { ...claim }])
+    setPendingClaims(prev => prev.filter(c => c.id !== claimId))
   }
 
-  const selectAllClaims = (blockId, claims) => {
-    const newSelected = new Set(selectedClaims)
-    claims.forEach((_, index) => {
-      newSelected.add(`${blockId}-${index}`)
-    })
-    setSelectedClaims(newSelected)
+  // Move claim from staging → pending (for further editing)
+  const unstageClaim = (claimId) => {
+    const claim = stagedClaims.find(c => c.id === claimId)
+    if (!claim) return
+    setPendingClaims(prev => [...prev, { ...claim }].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp)))
+    setStagedClaims(prev => prev.filter(c => c.id !== claimId))
   }
 
-  const deselectAllClaims = (blockId) => {
-    const newSelected = new Set(selectedClaims)
-    Array.from(newSelected).forEach(key => {
-      if (key.startsWith(`${blockId}-`)) {
-        newSelected.delete(key)
-      }
-    })
-    setSelectedClaims(newSelected)
+  // Edit claim in pending list
+  const updatePendingClaim = (claimId, field, value) => {
+    setPendingClaims(prev => prev.map(c =>
+      c.id === claimId ? { ...c, [field]: value } : c
+    ))
   }
 
-  const updateEditedClaim = (blockId, claimIndex, field, value) => {
-    const key = `${blockId}-${claimIndex}`
-    setEditedClaims(prev => ({
-      ...prev,
-      [key]: {
-        ...prev[key],
-        [field]: value
-      }
-    }))
-  }
-
-  const sendApprovedClaims = async (blockId) => {
-    const block = pendingBlocks.find(b => b.block_id === blockId)
-    if (!block) return
-
-    const approved = block.claims
-      .map((claim, index) => {
-        const key = `${blockId}-${index}`
-        const edited = editedClaims[key]
-        // Verwende bearbeitete Werte falls vorhanden, sonst Original
-        return {
-          name: edited?.name !== undefined ? edited.name : (claim.name || ''),
-          claim: edited?.claim !== undefined ? edited.claim : (claim.claim || ''),
-          _index: index
-        }
-      })
-      .filter((_, index) => selectedClaims.has(`${blockId}-${index}`))
-
-    if (approved.length === 0) {
-      alert('Bitte wähle mindestens einen Claim aus!')
+  // Send all staged claims to backend for fact-checking
+  const sendStagedClaims = async () => {
+    if (stagedClaims.length === 0) {
+      alert('Keine Claims zum Senden ausgewählt!')
       return
     }
 
+    // Separate new claims from re-sends
+    const newClaims = stagedClaims.filter(c => !c.originalFactCheckId)
+    const resendClaims = stagedClaims.filter(c => c.originalFactCheckId)
+
     try {
-      const headers = {
-        'Content-Type': 'application/json',
-        ...getFetchHeaders()
-      }
-      const response = await fetch(`${BACKEND_URL}/api/approve-claims`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          block_id: blockId,
-          claims: approved,
-          n8n_webhook_url: N8N_VERIFIED_WEBHOOK
+      const results = []
+
+      // Send new claims via POST
+      if (newClaims.length > 0) {
+        const claimsToSend = newClaims.map(c => ({
+          name: c.name,
+          claim: c.claim
+        }))
+
+        const response = await fetch(`${BACKEND_URL}/api/approve-claims`, {
+          method: 'POST',
+          headers: getFetchHeaders(),
+          body: JSON.stringify({
+            block_id: `staged_${Date.now()}`,
+            claims: claimsToSend,
+            n8n_webhook_url: N8N_VERIFIED_WEBHOOK
+          })
         })
-      })
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`)
+        }
+
+        const result = await safeJsonParse(response, 'Fehler beim Senden der neuen Claims')
+        debug.log('✅ Neue Claims gesendet:', result)
+        results.push(`${newClaims.length} neue Claims`)
       }
 
-      const result = await safeJsonParse(response, 'Fehler beim Senden der Claims')
-      debug.log('✅ Claims gesendet:', result)
-      alert(`✅ ${approved.length} Claims erfolgreich an N8N gesendet!`)
-      
-      // Entferne ausgewählte Claims und Bearbeitungen
-      const newSelected = new Set(selectedClaims)
-      const newEdited = { ...editedClaims }
-      approved.forEach((_, index) => {
-        const key = `${blockId}-${index}`
-        newSelected.delete(key)
-        delete newEdited[key]
-      })
-      setSelectedClaims(newSelected)
-      setEditedClaims(newEdited)
+      // Send re-sends via PUT (overwrite existing fact-checks)
+      for (const claim of resendClaims) {
+        const response = await fetch(`${BACKEND_URL}/api/fact-checks/${claim.originalFactCheckId}`, {
+          method: 'PUT',
+          headers: getFetchHeaders(),
+          body: JSON.stringify({
+            name: claim.name,
+            claim: claim.claim
+          })
+        })
+
+        if (!response.ok) {
+          debug.warn(`⚠️ Fehler beim Re-send für ID ${claim.originalFactCheckId}:`, response.status)
+        } else {
+          debug.log(`✅ Re-send für ID ${claim.originalFactCheckId} gestartet`)
+        }
+      }
+      if (resendClaims.length > 0) {
+        results.push(`${resendClaims.length} Re-sends`)
+      }
+
+      // Move staged claims to sent history with timestamp
+      const sentTimestamp = new Date().toISOString()
+      const newSentClaims = stagedClaims.map(c => ({
+        ...c,
+        originalId: c.id,
+        sentAt: sentTimestamp,
+        factCheckId: c.originalFactCheckId || null
+      }))
+      setSentClaims(prev => [...newSentClaims, ...prev])
+      setStagedClaims([])
+
+      alert(`✅ Erfolgreich gesendet: ${results.join(', ')}`)
     } catch (error) {
       debug.error('❌ Fehler beim Senden:', error)
       alert(`❌ Fehler beim Senden: ${error.message}`)
     }
+  }
+
+  // Copy sent claim back to pending for editing and re-send
+  const prepareResend = (claimId) => {
+    const claim = sentClaims.find(c => c.id === claimId || c.originalId === claimId)
+    if (!claim) return
+
+    // Create a new claim in pending with reference to original
+    const resendClaim = {
+      id: `resend_${Date.now()}_${claim.originalId || claim.id}`,
+      blockId: claim.blockId,
+      name: claim.name,
+      claim: claim.claim,
+      timestamp: new Date().toISOString(),
+      info: claim.info,
+      resendOf: claim.originalId || claim.id,
+      originalFactCheckId: claim.factCheckId
+    }
+    setPendingClaims(prev => [resendClaim, ...prev])
   }
 
   // Gruppiere Fakten-Checks nach Sprecher
@@ -619,14 +665,14 @@ function FactCheckPage({ showName, showKey, episodeKey }) {
       <main className="main-content">
         {isAdminMode ? (
           <AdminView
-            pendingBlocks={pendingBlocks}
-            selectedClaims={selectedClaims}
-            editedClaims={editedClaims}
-            onToggleClaim={toggleClaimSelection}
-            onUpdateClaim={updateEditedClaim}
-            onSelectAll={selectAllClaims}
-            onDeselectAll={deselectAllClaims}
-            onSendApproved={sendApprovedClaims}
+            pendingClaims={pendingClaims}
+            stagedClaims={stagedClaims}
+            sentClaims={sentClaims}
+            onStage={stageClaimForSending}
+            onUnstage={unstageClaim}
+            onUpdatePending={updatePendingClaim}
+            onSendAll={sendStagedClaims}
+            onResend={prepareResend}
           />
         ) : (
           <>
@@ -709,94 +755,136 @@ function SpeakerColumns({ speakers, groupedBySpeaker, expandedIds, onToggle }) {
   )
 }
 
-function AdminView({ pendingBlocks, selectedClaims, editedClaims, onToggleClaim, onUpdateClaim, onSelectAll, onDeselectAll, onSendApproved }) {
-  if (pendingBlocks.length === 0) {
-    return (
-      <div className="admin-empty">
-        <p>⏳ Keine Claims zur Überprüfung vorhanden</p>
-        <p className="admin-empty-subtitle">
-          Warte auf neue Claims von N8N...
-        </p>
-      </div>
-    )
-  }
-
+function AdminView({ pendingClaims, stagedClaims, sentClaims, onStage, onUnstage, onUpdatePending, onSendAll, onResend }) {
   return (
-    <div className="admin-container">
-      {pendingBlocks.map((block) => {
-        const blockSelectedCount = block.claims.filter((_, index) => 
-          selectedClaims.has(`${block.block_id}-${index}`)
-        ).length
-        const isAllSelected = block.claims.length > 0 && blockSelectedCount === block.claims.length
-
-        return (
-          <div key={block.block_id} className="admin-block">
-            <div className="admin-block-header">
-              <div>
-                <h2>Block: {block.block_id}</h2>
-                <p className="block-meta">
-                  {new Date(block.timestamp).toLocaleString('de-DE')} • {block.claims_count} Claims
-                </p>
-              </div>
-              <div className="block-actions">
-                <button
-                  className="action-button"
-                  onClick={() => isAllSelected ? onDeselectAll(block.block_id) : onSelectAll(block.block_id, block.claims)}
-                >
-                  {isAllSelected ? '☐ Alle abwählen' : '☑ Alle auswählen'}
-                </button>
-                <button
-                  className="action-button primary"
-                  onClick={() => onSendApproved(block.block_id)}
-                  disabled={blockSelectedCount === 0}
-                >
-                  📤 {blockSelectedCount} Claim{blockSelectedCount !== 1 ? 's' : ''} senden
-                </button>
-              </div>
-            </div>
-
-            <div className="admin-claims-list">
-              {block.claims.map((claim, index) => {
-                const claimKey = `${block.block_id}-${index}`
-                const isSelected = selectedClaims.has(claimKey)
-                const edited = editedClaims[claimKey] || {}
-                const displayName = edited.name !== undefined ? edited.name : (claim.name || 'Unbekannt')
-                const displayClaim = edited.claim !== undefined ? edited.claim : (claim.claim || '')
-
-                return (
-                  <div key={index} className={`admin-claim-item ${isSelected ? 'selected' : ''}`}>
-                    <label className="claim-checkbox">
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={() => onToggleClaim(block.block_id, index)}
-                      />
-                      <div className="claim-content">
-                        <input
-                          type="text"
-                          className="claim-speaker-edit"
-                          value={displayName}
-                          onChange={(e) => onUpdateClaim(block.block_id, index, 'name', e.target.value)}
-                          placeholder="Sprecher"
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                        <textarea
-                          className="claim-text-edit"
-                          value={displayClaim}
-                          onChange={(e) => onUpdateClaim(block.block_id, index, 'claim', e.target.value)}
-                          placeholder="Claim"
-                          rows={3}
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                      </div>
-                    </label>
-                  </div>
-                )
-              })}
-            </div>
+    <div className="admin-layout">
+      {/* Top row: 2 columns side by side */}
+      <div className="admin-top-row">
+        {/* Left: Pending Claims List */}
+        <div className="admin-panel admin-pending">
+          <div className="admin-panel-header">
+            <h2>Pending Claims</h2>
+            <span className="panel-count">{pendingClaims.length}</span>
           </div>
-        )
-      })}
+          {pendingClaims.length === 0 ? (
+            <div className="admin-panel-empty">
+              <p>Keine Claims zur Bearbeitung</p>
+              <p className="empty-subtitle">Warte auf neue Claims...</p>
+            </div>
+          ) : (
+            <div className="admin-claims-list">
+              {pendingClaims.map((claim) => (
+                <div key={claim.id} className="admin-claim-item pending-item">
+                  <div className="claim-content">
+                    <input
+                      type="text"
+                      className="claim-speaker-edit"
+                      value={claim.name}
+                      onChange={(e) => onUpdatePending(claim.id, 'name', e.target.value)}
+                      placeholder="Sprecher"
+                    />
+                    <textarea
+                      className="claim-text-edit"
+                      value={claim.claim}
+                      onChange={(e) => onUpdatePending(claim.id, 'claim', e.target.value)}
+                      placeholder="Claim"
+                      rows={3}
+                    />
+                    <div className="claim-meta">
+                      {new Date(claim.timestamp).toLocaleString('de-DE')}
+                    </div>
+                  </div>
+                  <button
+                    className="stage-button"
+                    onClick={() => onStage(claim.id)}
+                    title="Zum Staging hinzufügen"
+                  >
+                    →
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Right: Staging Area */}
+        <div className="admin-panel admin-staging">
+          <div className="admin-panel-header">
+            <h2>Staging Area</h2>
+            <span className="panel-count">{stagedClaims.length}</span>
+          </div>
+          {stagedClaims.length === 0 ? (
+            <div className="admin-panel-empty">
+              <p>Keine Claims bereit zum Senden</p>
+              <p className="empty-subtitle">Klicke → bei einem Claim</p>
+            </div>
+          ) : (
+            <>
+              <div className="admin-claims-list">
+                {stagedClaims.map((claim) => (
+                  <div key={claim.id} className="admin-claim-item staged-item">
+                    <button
+                      className="unstage-button"
+                      onClick={() => onUnstage(claim.id)}
+                      title="Zurück zum Bearbeiten"
+                    >
+                      ←
+                    </button>
+                    <div className="claim-content readonly">
+                      <div className="claim-speaker-display">{claim.name || 'Unbekannt'}</div>
+                      <div className="claim-text-display">{claim.claim}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="staging-actions">
+                <button
+                  className="action-button primary send-all-button"
+                  onClick={onSendAll}
+                >
+                  Alle {stagedClaims.length} Claims senden
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Bottom row: Sent Claims History */}
+      <div className="admin-bottom-row">
+        <div className="admin-panel admin-sent">
+          <div className="admin-panel-header">
+            <h2>Gesendete Claims</h2>
+            <span className="panel-count">{sentClaims.length}</span>
+          </div>
+          {sentClaims.length === 0 ? (
+            <div className="admin-panel-empty compact">
+              <p>Noch keine Claims gesendet</p>
+            </div>
+          ) : (
+            <div className="sent-claims-list">
+              {sentClaims.map((claim) => (
+                <div key={claim.id} className="sent-claim-item">
+                  <div className="sent-claim-content">
+                    <span className="sent-speaker">{claim.name || 'Unbekannt'}</span>
+                    <span className="sent-text">{claim.claim}</span>
+                    <span className="sent-timestamp">
+                      {new Date(claim.sentAt).toLocaleString('de-DE')}
+                    </span>
+                  </div>
+                  <button
+                    className="resend-button"
+                    onClick={() => onResend(claim.id)}
+                    title="Erneut senden (kopiert zu Pending)"
+                  >
+                    Re-send
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   )
 }

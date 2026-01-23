@@ -59,6 +59,13 @@ class SetEpisodeRequest(BaseModel):
     episode: Optional[str] = None
 
 
+class ClaimUpdateRequest(BaseModel):
+    """Request body for PUT /api/fact-checks/{id} endpoint (re-send with overwrite)."""
+    name: str
+    claim: str
+    episode_key: Optional[str] = None
+
+
 # =============================================================================
 # Response Models
 # =============================================================================

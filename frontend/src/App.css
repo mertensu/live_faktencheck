@@ -390,70 +390,286 @@
   text-decoration: underline;
 }
 
-/* Admin-Modus Styles */
-.admin-empty {
-  background: white;
-  padding: 4rem 2rem;
-  border-radius: 12px;
-  text-align: center;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-.admin-container {
+/* Admin-Modus Styles - New 2-column + row layout */
+.admin-layout {
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 1.5rem;
 }
 
-.admin-block {
+.admin-top-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.admin-bottom-row {
+  width: 100%;
+}
+
+.admin-panel {
   background: white;
   border-radius: 12px;
   padding: 1.5rem;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
 }
 
-.admin-block-header {
+.admin-panel-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 1.5rem;
-  padding-bottom: 1rem;
-  border-bottom: 2px solid #e5e7eb;
-}
-
-.admin-block-header h2 {
-  font-size: 1.3rem;
-  color: #333;
-  margin-bottom: 0.5rem;
-}
-
-.block-meta {
-  color: #666;
-  font-size: 0.9rem;
-  display: flex;
   align-items: center;
-  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 3px solid #e5e7eb;
 }
 
-.status-badge {
-  display: inline-block;
-  padding: 0.25rem 0.75rem;
-  border-radius: 12px;
+.admin-panel-header h2 {
+  font-size: 1.2rem;
+  color: #333;
+  margin: 0;
+}
+
+.panel-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: 14px;
   font-size: 0.85rem;
   font-weight: 600;
-}
-
-.status-badge.approved {
-  background: #22c55e;
   color: white;
 }
 
-.block-actions {
-  display: flex;
-  gap: 1rem;
-  align-items: center;
+/* Pending panel - orange accent */
+.admin-pending .admin-panel-header {
+  border-bottom-color: #f59e0b;
+}
+.admin-pending .panel-count {
+  background: #f59e0b;
+}
+.admin-pending .pending-item {
+  border-left: 4px solid #f59e0b;
 }
 
+/* Staging panel - blue accent */
+.admin-staging .admin-panel-header {
+  border-bottom-color: #3b82f6;
+}
+.admin-staging .panel-count {
+  background: #3b82f6;
+}
+.admin-staging .staged-item {
+  border-left: 4px solid #3b82f6;
+}
+
+/* Sent panel - green accent */
+.admin-sent .admin-panel-header {
+  border-bottom-color: #22c55e;
+}
+.admin-sent .panel-count {
+  background: #22c55e;
+}
+
+.admin-panel-empty {
+  text-align: center;
+  padding: 2rem;
+  color: #666;
+}
+
+.admin-panel-empty.compact {
+  padding: 1rem;
+}
+
+.admin-panel-empty p {
+  margin: 0;
+}
+
+.empty-subtitle {
+  font-size: 0.85rem;
+  color: #999;
+  margin-top: 0.5rem !important;
+}
+
+.admin-claims-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  flex: 1;
+  overflow-y: auto;
+  max-height: 400px;
+}
+
+.admin-claim-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 1rem;
+  transition: all 0.2s;
+  background: white;
+}
+
+.admin-claim-item:hover {
+  border-color: #667eea;
+  background: #f8f9ff;
+}
+
+.claim-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.claim-content.readonly {
+  gap: 0.25rem;
+}
+
+.claim-meta {
+  font-size: 0.75rem;
+  color: #999;
+}
+
+/* Stage/Unstage buttons */
+.stage-button,
+.unstage-button {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 6px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stage-button {
+  background: #3b82f6;
+  color: white;
+  align-self: center;
+}
+
+.stage-button:hover {
+  background: #2563eb;
+  transform: translateX(2px);
+}
+
+.unstage-button {
+  background: #f59e0b;
+  color: white;
+  align-self: center;
+}
+
+.unstage-button:hover {
+  background: #d97706;
+  transform: translateX(-2px);
+}
+
+/* Read-only display in staging */
+.claim-speaker-display {
+  font-weight: 600;
+  color: #667eea;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.claim-text-display {
+  color: #333;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+/* Staging actions */
+.staging-actions {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 2px solid #e5e7eb;
+}
+
+.send-all-button {
+  width: 100%;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+}
+
+/* Sent claims list */
+.sent-claims-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.sent-claim-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: #f9fafb;
+  border-radius: 6px;
+  border-left: 4px solid #22c55e;
+}
+
+.sent-claim-content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.sent-speaker {
+  font-weight: 600;
+  color: #667eea;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.sent-text {
+  flex: 1;
+  color: #333;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sent-timestamp {
+  font-size: 0.75rem;
+  color: #999;
+  white-space: nowrap;
+}
+
+.resend-button {
+  background: #f3f4f6;
+  color: #333;
+  border: none;
+  border-radius: 4px;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.resend-button:hover {
+  background: #e5e7eb;
+  color: #667eea;
+}
+
+/* Keep action-button styles for compatibility */
 .action-button {
   background: #f3f4f6;
   color: #333;
@@ -482,58 +698,6 @@
 .action-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-}
-
-.admin-claims-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.admin-claim-item {
-  border: 2px solid #e5e7eb;
-  border-radius: 8px;
-  padding: 1rem;
-  transition: all 0.2s;
-}
-
-.admin-claim-item:hover {
-  border-color: #667eea;
-  background: #f8f9ff;
-}
-
-.admin-claim-item.selected {
-  border-color: #667eea;
-  background: #f0f4ff;
-}
-
-.claim-checkbox {
-  display: flex;
-  align-items: flex-start;
-  gap: 1rem;
-  cursor: pointer;
-  margin: 0;
-}
-
-.claim-checkbox input[type="checkbox"] {
-  width: 20px;
-  height: 20px;
-  cursor: pointer;
-  margin-top: 0.25rem;
-  flex-shrink: 0;
-}
-
-.claim-content {
-  flex: 1;
-}
-
-.claim-speaker {
-  font-weight: 600;
-  color: #667eea;
-  font-size: 0.9rem;
-  margin-bottom: 0.5rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
 }
 
 .claim-text {
@@ -710,14 +874,27 @@
     font-size: 2rem;
   }
 
-  .admin-block-header {
-    flex-direction: column;
-    gap: 1rem;
+  /* Admin layout - stack columns on mobile */
+  .admin-top-row {
+    grid-template-columns: 1fr;
   }
 
-  .block-actions {
-    width: 100%;
+  .admin-claims-list {
+    max-height: 300px;
+  }
+
+  .sent-claims-list {
+    max-height: 150px;
+  }
+
+  .sent-claim-content {
     flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+
+  .sent-text {
+    white-space: normal;
   }
 
   .action-button {
