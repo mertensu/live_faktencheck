@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Production Startup Script for Live Fact-Check
-# Starts: Cloudflare Tunnel, Backend, Frontend (dev mode for admin)
+# Starts: Cloudflare Tunnel (named), Backend, Frontend (dev mode for admin)
 
 set -e  # Exit on errors
 
@@ -16,6 +16,7 @@ NC='\033[0m' # No Color
 EPISODE_KEY="${1:-}"  # First parameter: Episode key (e.g., maischberger-2025-09-19)
 BACKEND_PORT=5000
 FRONTEND_DIR="frontend"
+TUNNEL_NAME="faktencheck-api"
 TUNNEL_LOG=".cloudflared_tunnel.log"
 
 # Functions
@@ -69,166 +70,37 @@ print_header "Step 1: Cloudflare Tunnel"
 
 if ! command -v cloudflared &> /dev/null; then
     print_error "cloudflared not installed!"
-    print_info "Install with: brew install cloudflare/cloudflare/cloudflared"
+    print_info "Install with: brew install cloudflared"
     exit 1
 fi
 
-if ! pgrep -f "cloudflared.*tunnel" > /dev/null; then
-    print_warning "Cloudflare Tunnel not running. Starting..."
-    cloudflared tunnel --url http://localhost:$BACKEND_PORT > "$TUNNEL_LOG" 2>&1 &
+# Check if config exists
+if [ ! -f "$HOME/.cloudflared/config.yml" ]; then
+    print_error "Cloudflare tunnel config not found!"
+    print_info "Expected: ~/.cloudflared/config.yml"
+    print_info "Run: cloudflared tunnel login && cloudflared tunnel create $TUNNEL_NAME"
+    exit 1
+fi
+
+if ! pgrep -f "cloudflared.*tunnel.*run" > /dev/null; then
+    print_info "Starting Cloudflare Tunnel ($TUNNEL_NAME)..."
+    cloudflared tunnel run $TUNNEL_NAME > "$TUNNEL_LOG" 2>&1 &
     TUNNEL_PID=$!
     echo $TUNNEL_PID > .cloudflared_pid
-    print_info "Waiting 5 seconds for Cloudflare Tunnel..."
-    sleep 5
-    print_success "Cloudflare Tunnel started (PID: $TUNNEL_PID)"
+    sleep 3
+
+    if kill -0 $TUNNEL_PID 2>/dev/null; then
+        print_success "Cloudflare Tunnel started (PID: $TUNNEL_PID)"
+    else
+        print_error "Cloudflare Tunnel failed to start. Check $TUNNEL_LOG"
+        exit 1
+    fi
 else
     print_success "Cloudflare Tunnel already running"
 fi
 
-# Step 2: Get Cloudflare Tunnel URL
-print_header "Step 2: Extract Tunnel URL"
-
-TUNNEL_URL=""
-MAX_RETRIES=15
-RETRY_COUNT=0
-
-while [ -z "$TUNNEL_URL" ] && [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-    sleep 1
-    if [ -f "$TUNNEL_LOG" ]; then
-        TUNNEL_URL=$(grep -oE 'https://[a-z0-9-]+\.trycloudflare\.com' "$TUNNEL_LOG" 2>/dev/null | head -1)
-    fi
-    RETRY_COUNT=$((RETRY_COUNT + 1))
-done
-
-if [ -z "$TUNNEL_URL" ]; then
-    print_error "Could not get Cloudflare Tunnel URL!"
-    print_info "Check log: cat $TUNNEL_LOG"
-    exit 1
-fi
-
-print_success "Tunnel URL: $TUNNEL_URL"
-
-# Step 3: Update GitHub Secret and trigger deployment
-print_header "Step 3: GitHub Secret & Deployment"
-
-SECRET_UPDATED=false
-if command -v gh &> /dev/null; then
-    # Check if GH_TOKEN is set (for automation)
-    if [ -n "$GH_TOKEN" ]; then
-        print_info "Using GH_TOKEN from environment for authentication"
-        export GH_TOKEN
-    fi
-    
-    # Check authentication status and verify token has required scopes
-    if gh auth status &>/dev/null; then
-        # Verify token has required scopes
-        AUTH_STATUS=$(gh auth status 2>&1)
-        if echo "$AUTH_STATUS" | grep -q "repo.*workflow"; then
-            print_success "GitHub CLI authenticated with required scopes"
-        else
-            print_warning "Token may be missing required scopes. Checking..."
-            if ! echo "$AUTH_STATUS" | grep -q "repo"; then
-                print_error "Token missing 'repo' scope!"
-            fi
-            if ! echo "$AUTH_STATUS" | grep -q "workflow"; then
-                print_error "Token missing 'workflow' scope!"
-            fi
-        fi
-        print_info "Updating GitHub Secret..."
-        # Try to update secret and capture both stdout and stderr
-        if OUTPUT=$(gh secret set VITE_BACKEND_URL --body "$TUNNEL_URL" 2>&1); then
-            print_success "GitHub Secret updated: $TUNNEL_URL"
-            SECRET_UPDATED=true
-            sleep 2
-
-            # Verify the secret was actually set
-            print_info "Verifying secret was updated..."
-            sleep 1
-            if gh secret list | grep -q "VITE_BACKEND_URL"; then
-                print_success "Secret verified in GitHub"
-            else
-                print_warning "Secret may not be visible (this is normal for security reasons)"
-            fi
-
-            # Auto-trigger deployment
-            print_info "Triggering GitHub Pages deployment..."
-            if DEPLOY_OUTPUT=$(gh workflow run "Deploy to GitHub Pages" 2>&1); then
-                print_success "Deployment triggered automatically!"
-            else
-                print_warning "Could not trigger deployment: $DEPLOY_OUTPUT"
-                print_info "You can trigger manually: gh workflow run 'Deploy to GitHub Pages'"
-            fi
-        else
-            print_error "Failed to update GitHub Secret!"
-            print_info "Error output: $OUTPUT"
-            
-            # Check for specific permission errors
-            if echo "$OUTPUT" | grep -q "403\|not accessible\|permission"; then
-                print_error ""
-                print_error "⚠️  Permission denied! Your token needs additional scopes:"
-                print_error "   1. Go to: https://github.com/settings/tokens"
-                print_error "   2. Edit your token (or create a new one)"
-                print_error "   3. Enable these scopes:"
-                print_error "      ✓ repo (full control) - REQUIRED"
-                print_error "      ✓ admin:repo - REQUIRED for managing secrets"
-                print_error "      ✓ workflow - for triggering workflows"
-                print_error "      ✓ read:org, gist - required by GitHub CLI"
-                print_error "   4. Update GH_TOKEN in your .env file"
-                print_error ""
-            fi
-            
-            print_warning "For now, please set secret manually:"
-            print_info "   GitHub → Settings → Secrets → VITE_BACKEND_URL = $TUNNEL_URL"
-        fi
-    else
-        print_warning "GitHub CLI not authenticated"
-        print_info ""
-        print_info "To automate authentication, set GH_TOKEN environment variable:"
-        print_info "   1. Create a Personal Access Token (classic) at:"
-        print_info "      https://github.com/settings/tokens"
-        print_info "   2. Required scopes:"
-        print_info "      - repo (full control) - for repository access"
-        print_info "      - read:org - required by GitHub CLI"
-        print_info "      - gist - required by GitHub CLI"
-        print_info "      - workflow - for triggering workflows"
-        print_info "      - admin:repo (or write:packages) - for managing secrets"
-        print_info "   3. Add to your .env file: GH_TOKEN=your_token_here"
-        print_info ""
-        print_warning "Note: If you get a 403 error, your token needs 'admin:repo' scope"
-        print_warning "      to update secrets. You may need to regenerate the token."
-        print_info ""
-        print_info "Or run once manually: gh auth login"
-        print_info ""
-        print_warning "For now, please set secret manually:"
-        print_info "   GitHub → Settings → Secrets → VITE_BACKEND_URL = $TUNNEL_URL"
-    fi
-else
-    print_warning "GitHub CLI not installed. Set secret manually:"
-    print_info "   GitHub → Settings → Secrets → VITE_BACKEND_URL = $TUNNEL_URL"
-fi
-
-# Step 4: Build frontend locally
-print_header "Step 4: Build Frontend (local)"
-
-cd "$FRONTEND_DIR" || exit 1
-
-if [ ! -d "node_modules" ]; then
-    print_info "Installing npm dependencies..."
-    npm install
-fi
-
-print_info "Building frontend with VITE_BACKEND_URL=$TUNNEL_URL..."
-if VITE_BACKEND_URL="$TUNNEL_URL" npm run build; then
-    print_success "Frontend built successfully"
-else
-    print_error "Frontend build failed!"
-    exit 1
-fi
-
-cd ..
-
-# Step 5: Start Backend
-print_header "Step 5: Start Backend"
+# Step 2: Start Backend
+print_header "Step 2: Start Backend"
 
 if pgrep -f "python.*backend.app" > /dev/null; then
     print_warning "Backend already running"
@@ -247,8 +119,20 @@ else
     fi
 fi
 
-# Step 6: Set episode in backend
-print_header "Step 6: Set Episode"
+# Step 3: Verify tunnel connectivity
+print_header "Step 3: Verify Tunnel"
+
+print_info "Testing API via tunnel..."
+sleep 2
+if curl -s https://api.live-faktencheck.de/api/health > /dev/null 2>&1; then
+    print_success "API accessible at https://api.live-faktencheck.de"
+else
+    print_warning "API not yet accessible via tunnel (may take a moment)"
+    print_info "Test manually: curl https://api.live-faktencheck.de/api/health"
+fi
+
+# Step 4: Set episode in backend
+print_header "Step 4: Set Episode"
 
 if curl -s -X POST http://localhost:$BACKEND_PORT/api/set-episode \
     -H "Content-Type: application/json" \
@@ -258,14 +142,20 @@ else
     print_warning "Could not set episode"
 fi
 
-# Step 7: Start Dev Frontend (for admin mode)
-print_header "Step 7: Start Dev Frontend (Admin Mode)"
+# Step 5: Start Dev Frontend (for admin mode)
+print_header "Step 5: Start Dev Frontend (Admin Mode)"
 
 if pgrep -f "vite.*dev" > /dev/null || lsof -ti:3000 > /dev/null 2>&1; then
     print_warning "Dev frontend already running on port 3000"
 else
     print_info "Starting dev frontend on port 3000..."
     cd "$FRONTEND_DIR" || exit 1
+
+    if [ ! -d "node_modules" ]; then
+        print_info "Installing npm dependencies..."
+        npm install
+    fi
+
     npm run dev > ../frontend_dev.log 2>&1 &
     FRONTEND_PID=$!
     echo $FRONTEND_PID > ../.frontend_pid
@@ -288,9 +178,10 @@ echo -e "${GREEN}═════════════════════
 echo ""
 echo -e "${BLUE}📋 Summary:${NC}"
 echo -e "   Episode: ${YELLOW}$EPISODE_KEY${NC}"
-echo -e "   Tunnel URL: ${YELLOW}$TUNNEL_URL${NC}"
-echo -e "   Backend: ${GREEN}http://localhost:$BACKEND_PORT${NC}"
+echo -e "   Backend API: ${GREEN}https://api.live-faktencheck.de${NC}"
+echo -e "   Backend (local): ${GREEN}http://localhost:$BACKEND_PORT${NC}"
 echo -e "   Admin UI: ${GREEN}http://localhost:3000${NC}"
+echo -e "   Public UI: ${GREEN}https://live-faktencheck.de${NC}"
 echo ""
 echo -e "${BLUE}📝 Next Steps:${NC}"
 echo -e "   1. Open Admin UI: ${YELLOW}http://localhost:3000${NC}"
@@ -298,7 +189,7 @@ echo -e "   2. Start Listener: ${YELLOW}uv run python listener.py $EPISODE_KEY${
 echo ""
 echo -e "${BLUE}🔄 Workflow:${NC}"
 echo -e "   Audio → Backend (transcription + claim extraction) → Admin UI"
-echo -e "   → Approve claims → Fact-checking → GitHub Pages"
+echo -e "   → Approve claims → Fact-checking → Live on Cloudflare Pages"
 echo ""
 echo -e "${BLUE}🛑 Stop:${NC}"
 echo -e "   ${YELLOW}./stop_production.sh${NC}"

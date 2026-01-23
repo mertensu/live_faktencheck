@@ -112,7 +112,8 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://mertensu.github.io",
+        "https://live-faktencheck.de",
+        "https://www.live-faktencheck.de",
         "http://localhost:3000",
         "http://localhost:5173",
         "http://127.0.0.1:3000",
@@ -133,10 +134,6 @@ processing_lock = asyncio.Lock()
 def to_dict(obj):
     """Convert Pydantic model to dict, or return as-is if already a dict."""
     return obj.model_dump() if hasattr(obj, "model_dump") else obj
-
-# Path for JSON files (for GitHub Pages)
-DATA_DIR = Path(__file__).parent.parent / "frontend" / "public" / "data"
-DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 
 # =============================================================================
@@ -449,10 +446,6 @@ async def process_fact_checks_async(claims: list, episode_key: str, context: str
                 fact_checks.append(fact_check)
                 logger.info(f"Fact-check complete: {fact_check['sprecher']} - {fact_check['consistency']}")
 
-        # Save to JSON file for GitHub Pages
-        if episode_key:
-            await asyncio.to_thread(save_fact_checks_to_file, episode_key)
-
         logger.info(f"Fact-checking complete. {len(results)} results stored.")
 
     except Exception as e:
@@ -508,9 +501,6 @@ async def receive_fact_check(request: FactCheckRequest):
         fact_checks.append(fact_check)
 
     logger.info(f"Fact-check stored: ID {fact_check['id']} - {sprecher} - {consistency}")
-
-    if episode_key:
-        await asyncio.to_thread(save_fact_checks_to_file, episode_key)
 
     return FactCheckStoredResponse(status="success", id=fact_check["id"])
 
@@ -596,35 +586,12 @@ async def process_fact_check_update_async(fact_check_id: int, name: str, claim: 
                     logger.info(f"Fact-check {fact_check_id} updated: {fc['consistency']}")
                     break
 
-        # Save to JSON file
-        if episode_key:
-            await asyncio.to_thread(save_fact_checks_to_file, episode_key)
-
         logger.info(f"Fact-check {fact_check_id} re-run complete.")
 
     except Exception as e:
         logger.error(f"Error re-running fact-check {fact_check_id}: {e}")
         import traceback
         traceback.print_exc()
-
-
-def save_fact_checks_to_file(episode_key: str):
-    """Save fact-checks for an episode to JSON file for GitHub Pages"""
-    try:
-        episode_checks = [fc for fc in fact_checks if fc.get('episode_key') == episode_key]
-
-        if not episode_checks:
-            logger.warning(f"No fact-checks for episode {episode_key}")
-            return
-
-        json_file = DATA_DIR / f"{episode_key}.json"
-        with open(json_file, 'w', encoding='utf-8') as f:
-            json.dump(episode_checks, f, indent=2, ensure_ascii=False)
-
-        logger.info(f"Saved {len(episode_checks)} fact-checks to {json_file}")
-
-    except Exception as e:
-        logger.error(f"Error saving fact-checks for {episode_key}: {e}")
 
 
 # =============================================================================

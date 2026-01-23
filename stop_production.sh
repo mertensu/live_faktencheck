@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Production Stop Script
-# Stops all processes and optionally commits fact-check data
+# Stops all running processes (tunnel, backend, frontend)
 
 set -e
 
@@ -40,8 +40,8 @@ if [ -f .cloudflared_pid ]; then
     rm -f .cloudflared_pid
     rm -f .cloudflared_tunnel.log
 else
-    if pgrep -f "cloudflared.*tunnel" > /dev/null; then
-        pkill -f "cloudflared.*tunnel" || true
+    if pgrep -f "cloudflared.*tunnel.*run" > /dev/null; then
+        pkill -f "cloudflared.*tunnel.*run" || true
         print_success "Cloudflare Tunnel stopped"
     else
         print_info "Cloudflare Tunnel not running"
@@ -87,62 +87,8 @@ else
     fi
 fi
 
-# Ask about committing fact-checks (IMPORTANT for production workflow)
-DATA_DIR="frontend/public/data"
-if [ -d "$DATA_DIR" ] && [ -n "$(ls -A $DATA_DIR/*.json 2>/dev/null)" ]; then
-    echo ""
-    echo -e "${BLUE}════════════════════════════════════════${NC}"
-    echo -e "${BLUE}📊 Fact-Check Data${NC}"
-    echo -e "${BLUE}════════════════════════════════════════${NC}"
-    echo ""
-    print_info "Found fact-check JSON files:"
-    for file in $DATA_DIR/*.json; do
-        if [ -f "$file" ]; then
-            episode=$(basename "$file" .json)
-            count=$(python3 -c "import json; data=json.load(open('$file')); print(len(data))" 2>/dev/null || echo "?")
-            echo "   - $episode: $count fact-checks"
-        fi
-    done
-
-    echo ""
-    echo -e "${YELLOW}Note: Committing makes fact-checks permanent on GitHub Pages.${NC}"
-    echo -e "${YELLOW}      For testing, you probably want to skip this.${NC}"
-    echo ""
-    read -p "Do you want to commit and push fact-check JSON files? (y/n): " -n 1 -r
-    echo ""
-
-    if [[ $REPLY =~ ^[JjYy]$ ]]; then
-        print_info "Adding JSON files to git..."
-        git add $DATA_DIR/*.json
-
-        if git diff --staged --quiet; then
-            print_warning "No changes to commit."
-        else
-            EPISODE_KEYS=$(ls $DATA_DIR/*.json 2>/dev/null | xargs -n1 basename | sed 's/.json$//' | tr '\n' ',' | sed 's/,$//')
-            COMMIT_MSG="Update fact checks: $EPISODE_KEYS"
-
-            print_info "Committing: $COMMIT_MSG"
-            git commit -m "$COMMIT_MSG"
-
-            echo ""
-            read -p "Do you want to push to GitHub? (y/n): " -n 1 -r
-            echo ""
-
-            if [[ $REPLY =~ ^[JjYy]$ ]]; then
-                print_info "Pushing to GitHub..."
-                git push
-                print_success "Fact-checks pushed to GitHub!"
-                print_info "Files are now available on GitHub Pages (even when backend is offline)."
-            else
-                print_info "Not pushed. You can push later with 'git push'."
-            fi
-        fi
-    else
-        print_info "Fact-checks not committed."
-        print_info "Data remains in: $DATA_DIR/"
-        print_info "You can commit later manually if needed."
-    fi
-fi
+# Cleanup log files
+rm -f backend.log frontend_dev.log .cloudflared_tunnel.log 2>/dev/null
 
 echo ""
 print_success "All processes stopped!"
