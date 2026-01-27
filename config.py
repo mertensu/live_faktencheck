@@ -67,11 +67,12 @@ SHOW_CONFIG = {
     "youtube-rieck-2026-01-17": {
         "name": "youtube",
         "description": "Sendung vom 17. Januar 2026",
-        "info": "Youtube-Video von Christian Rieck vom 17. Januar 2026. Er berichtet über die Erbschaftsteuerreform der SPD dargelegt im Konzeptpapier: https://spd-landesgruppe-ost.de/wp-content/uploads/2026/01/FairErben-Konzept-zur-Reform-der-Erbschaftsteuer-2.pdf",
+        "info": "Video von Christian Rieck vom 17. Januar 2026. Er berichtet über die Erbschaftsteuerreform der SPD dargelegt im Konzeptpapier: https://spd-landesgruppe-ost.de/wp-content/uploads/2026/01/FairErben-Konzept-zur-Reform-der-Erbschaftsteuer-2.pdf",
         "speakers": [
             "Christian Rieck"
         ],
         "show": "youtube",
+        "type": "youtube",
         "episode_name": "17. Januar 2026 - Christian Rieck"
     },
 

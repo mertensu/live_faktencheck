@@ -94,9 +94,17 @@ class HealthResponse(BaseModel):
     fact_checks: int
 
 
-class ShowsResponse(BaseModel):
+class ShowPreview(BaseModel):
+    key: str
+    name: str
+    description: Optional[str] = None
+    info: Optional[str] = None
+    type: str = "show"
+    speakers: List[str] = []
+
+class ShowsDetailedResponse(BaseModel):
     """Response for /api/config/shows endpoint."""
-    shows: List[str]
+    shows: List[ShowPreview]
 
 
 class EpisodesResponse(BaseModel):

@@ -121,22 +121,26 @@ function useShows() {
 
 function App() {
   const { shows } = useShows()
-  
+
   return (
     <BrowserRouter basename={import.meta.env.PROD ? '/live_faktencheck' : ''}>
       <div className="app">
         <Navigation />
         <Routes>
           <Route path="/" element={<HomePage />} />
+          <Route path="/about" element={<AboutPage />} />
           <Route path="/test" element={<FactCheckPage showName="Test" showKey="test" episodeKey="test" />} />
           {/* Dynamische Routes für alle Shows */}
-          {shows.filter(s => s !== 'test').map(show => (
-            <Route 
-              key={show} 
-              path={`/${show}/:episode?`} 
-              element={<ShowPage showKey={show} />} 
-            />
-          ))}
+          {shows.filter(s => (s.key || s) !== 'test').map(show => {
+            const showKey = show.key || show
+            return (
+              <Route
+                key={showKey}
+                path={`/${showKey}/:episode?`}
+                element={<ShowPage showKey={showKey} />}
+              />
+            )
+          })}
         </Routes>
         <Footer />
       </div>
@@ -144,28 +148,50 @@ function App() {
   )
 }
 
+// GitHub Repository URL
+const GITHUB_REPO_URL = "https://github.com/ulfmertens/fact_check"
+
 function Navigation() {
   const location = useLocation()
-  const { shows } = useShows()
-  
+
   return (
     <nav className="main-navigation">
       <div className="nav-container">
-        <Link to="/" className="nav-logo">🔍 Live Fakten-Check</Link>
+        <Link to="/" className="nav-logo">Fakten-Check Live</Link>
         <div className="nav-links">
-          {shows.map(show => (
-            <Link 
-              key={show} 
-              to={`/${show}`} 
-              className={location.pathname.startsWith(`/${show}`) ? 'active' : ''}
-            >
-              {show.charAt(0).toUpperCase() + show.slice(1)}
-            </Link>
-          ))}
+          <Link to="/about" className={location.pathname === '/about' ? 'active' : ''}>
+            About
+          </Link>
+          <a
+            href={GITHUB_REPO_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="github-link"
+            aria-label="GitHub Repository"
+          >
+            <svg height="24" width="24" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
+            </svg>
+          </a>
         </div>
       </div>
     </nav>
   )
+}
+
+// Show name mapping for full display names (Fallback/Legacy)
+const SHOW_DISPLAY_NAMES = {
+  'test': 'Test',
+  'maischberger': 'Maischberger',
+  'miosga': 'Caren Miosga',
+  'lanz': 'Markus Lanz',
+  'illner': 'Maybrit Illner'
+}
+
+function getShowDisplayName(show) {
+  if (typeof show === 'object' && show.name) return show.name
+  if (typeof show === 'string') return SHOW_DISPLAY_NAMES[show] || show.charAt(0).toUpperCase() + show.slice(1)
+  return 'Unknown Show'
 }
 
 function HomePage() {
@@ -173,31 +199,111 @@ function HomePage() {
 
   return (
     <div className="home-page">
-      <header className="app-header">
-        <h1>🔍 Live Fakten-Check</h1>
-        <p className="subtitle">Wähle eine Sendung aus</p>
-      </header>
-      <main className="main-content">
+      {/* Hero Section */}
+      <section className="hero-section">
+        <h1 className="hero-title">Fakten-Check Live</h1>
+        <p className="hero-subtitle">Ein Live-Ticker für Fakten</p>
+        <div className="scroll-indicator">
+          <span>Scroll für aktuelle Checks</span>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M12 5v14M19 12l-7 7-7-7" />
+          </svg>
+        </div>
+      </section>
+
+      {/* Shows Section */}
+      <section className="shows-section">
         {loading ? (
           <div className="loading-container">
             <div className="loading-spinner"></div>
             <p>Sendungen werden geladen...</p>
           </div>
         ) : (
-          <div className="show-selection">
-            <Link to="/test" className="show-card">
-              <h2>Test</h2>
-              <p>Test-Umgebung für Fact-Checks</p>
-            </Link>
-            {shows.filter(s => s !== 'test').map(show => (
-              <Link key={show} to={`/${show}`} className="show-card">
-                <h2>{show.charAt(0).toUpperCase() + show.slice(1)}</h2>
-                <p>Fact-Checks der {show.charAt(0).toUpperCase() + show.slice(1)} Sendung</p>
-              </Link>
-            ))}
-          </div>
+          <>
+            {/* TV Shows Group */}
+            <div className="shows-group mb-5">
+              <h2 className="shows-section-title">TV Talkshows</h2>
+              <div className="shows-list">
+                {shows.filter(s => (s.key || s) !== 'test' && (!s.type || s.type === 'show')).map(show => {
+                  const showKey = show.key || show
+                  const showInfo = show.info || show.description || ""
+
+                  return (
+                    <Link key={showKey} to={`/${showKey}`} className="show-item">
+                      <div className="show-item-content">
+                        <span className="show-name">{getShowDisplayName(show)}</span>
+                        {showInfo && <span className="show-info">{showInfo}</span>}
+                      </div>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M9 18l6-6-6-6" />
+                      </svg>
+                    </Link>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* YouTube Group */}
+            {shows.some(s => s.type === 'youtube') && (
+              <div className="shows-group">
+                <h2 className="shows-section-title">YouTube-Videos</h2>
+                <div className="shows-list">
+                  {shows.filter(s => s.type === 'youtube').map(show => {
+                    const showKey = show.key || show
+                    const showInfo = show.info || show.description || ""
+
+                    return (
+                      <Link key={showKey} to={`/${showKey}`} className="show-item">
+                        <div className="show-item-content">
+                          {/* name hidden for youtube */}
+                          {showInfo && <span className="show-info">{showInfo}</span>}
+                        </div>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M9 18l6-6-6-6" />
+                        </svg>
+                      </Link>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+          </>
         )}
-      </main>
+      </section>
+    </div>
+  )
+}
+
+function AboutPage() {
+  return (
+    <div className="about-page">
+      <div className="about-content">
+        <h1>Über live-faktencheck.de</h1>
+        <p>
+          Live-Faktenchecks waren in der Vergangenheit immer wieder Diskussions-Thema. Mit der stetigen Entwicklung bestehender
+          KI-Modelle sind wir nun, wie ich finde, an einem Punkt angelangt, der ein solches Projekt realisierbar macht. Dieses Projekt ist mein Versuch,
+          einen Live-Faktencheck auf Basis von künstlicher Intelligenz umzusetzen. Das Projekt ist bei Weitem nicht ausgereift und Fehler sind nicht ausgeschlossen.
+          Nichtsdestotrotz hoffe ich, dass es für den einen oder anderen interessant sein könnte und eine Hilfestellung darstellt.
+          <br />
+          Ich möchte betonen, dass es hier ausdrücklich nicht darum geht, die Gäste bzw. Content-Creator an den Pranger zu stellen, zu diskreditieren oder in sonstiger Weise
+          in Verruf zu bringen. Es geht vielmehr darum, aufzuzeigen, wie sehr bestimmte Behauptungen durch Studien, Statistiken oder andere vertrauenswürdige Quellen, gestützt werden.
+          Somit bleiben die Aussagen nicht undiskutiert im Raume stehen, sondern werden einer (ersten) kritischen Betrachtung unterzogen, und zwar während die Sendung läuft.
+        </p>
+        <h2>Wie es funktioniert</h2>
+        <p>
+          Die Sendungen werden in zeitlich begrenzte Blöcke aufgeteilt und dann live transkribiert. Diese Transkripte werden an ein großes Sprachmodell (LLM) weitergereicht,
+          welches überprüfbare Behauptungen extrahiert und diese automatisch den jeweiligen Sprechern zuweist. Diese Aussagen werden dann auf Relevanz und Korrektheit geprüft und schließlich
+          einem weiteren Agenten (LLM) zur Bewertung übergeben. Das Modell startet daraufhin eine Web-Recherche, wobei es sich auf
+          vertrauenswurdige Seiten beschränkt (offizielle Regierungsseiten, anerkannte Institute, etc.). Das Modell nimmt eine Bewertung vor (wie sehr wird die Aussage durch Daten gestützt),
+          gibt eine ausführliche Erklärung ab sowie die der Entscheidung zugrundliegenden Quellen an. Für Details sei auf das <a href="https://github.com/mertensu/live_faktencheck">Github-Repository</a> verwiesen.
+        </p>
+        <h2>Hinweis</h2>
+        <p>
+          Die hier dargestellten Fakten-Checks werden automatisch mit Hilfe von
+          Künstlicher Intelligenz (KI) generiert. Die Inhalte können Fehler enthalten
+          und sollten nicht als alleinige Grundlage für Entscheidungen verwendet werden.
+        </p>
+      </div>
     </div>
   )
 }
@@ -252,7 +358,7 @@ function ShowPage({ showKey }) {
 
     return () => controller.abort()
   }, [showKey, episodeFromUrl, navigate])
-  
+
   const handleEpisodeChange = (episodeKey) => {
     setSelectedEpisode(episodeKey)
     const episode = episodes.find(e => e.key === episodeKey)
@@ -262,11 +368,11 @@ function ShowPage({ showKey }) {
       navigate(`/${showKey}/${episodeKey}`, { replace: true })
     }
   }
-  
+
   if (!selectedEpisode) {
     return <div>Lade Episoden...</div>
   }
-  
+
   return (
     <>
       <div className="episode-selector">
@@ -285,9 +391,9 @@ function ShowPage({ showKey }) {
           ))}
         </select>
       </div>
-      <FactCheckPage 
-        showName={showName} 
-        showKey={showKey} 
+      <FactCheckPage
+        showName={showName}
+        showKey={showKey}
         episodeKey={selectedEpisode}
       />
     </>
@@ -298,13 +404,17 @@ function FactCheckPage({ showName, showKey, episodeKey }) {
   // Admin-Modus verfügbar wenn:
   // 1. Nicht in Produktion (Entwicklung) ODER
   // 2. Lokal auf localhost (auch bei Production-Build)
+  // 3. Wenn ?admin=true in URL
+  const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams()
+  const forceAdmin = searchParams.get('admin') === 'true'
+
   const isProduction = import.meta.env.PROD
-  const isLocalhost = typeof window !== 'undefined' && 
-    (window.location.hostname === 'localhost' || 
-     window.location.hostname === '127.0.0.1' ||
-     window.location.hostname.startsWith('192.168.'))
-  const showAdminMode = !isProduction || isLocalhost
-  
+  const isLocalhost = typeof window !== 'undefined' &&
+    (window.location.hostname === 'localhost' ||
+      window.location.hostname === '127.0.0.1' ||
+      window.location.hostname.startsWith('192.168.'))
+  const showAdminMode = !isProduction || isLocalhost || forceAdmin
+
   const [isAdminMode, setIsAdminMode] = useState(false)
   const [factChecks, setFactChecks] = useState([])
   const [expandedIds, setExpandedIds] = useState(new Set())
@@ -645,16 +755,13 @@ function FactCheckPage({ showName, showKey, episodeKey }) {
       <header className="app-header">
         <div className="factcheck-header-content">
           <div>
-            <h1>🔍 Fakten-Check - {showName}</h1>
+            <h1>Fakten-Check - {showName}</h1>
             <p className="subtitle">{isAdminMode ? 'Admin-Modus: Claim-Überprüfung' : 'Live Fact-Checking Dashboard'}</p>
           </div>
           {showAdminMode && (
             <button
               className="admin-toggle"
-              onClick={() => {
-                setIsAdminMode(!isAdminMode)
-                setSelectedClaims(new Set())
-              }}
+              onClick={() => setIsAdminMode(!isAdminMode)}
             >
               {isAdminMode ? '👤 Normal-Modus' : '⚙️ Admin-Modus'}
             </button>
@@ -909,10 +1016,10 @@ function ClaimCard({ claim, isExpanded, onToggle }) {
   // Formatiert Begründung: Zeilenumbrüche und einfaches Markdown
   const formatBegruendung = (text) => {
     if (!text) return null
-    
+
     // Ersetze \n\n durch Absätze
     const paragraphs = text.split(/\n\n+/).filter(p => p.trim())
-    
+
     return paragraphs.map((para, idx) => {
       // Ersetze einzelne \n durch <br>
       const lines = para.split('\n')
@@ -932,7 +1039,7 @@ function ClaimCard({ claim, isExpanded, onToggle }) {
   // Einfaches Markdown-Formatting (fett, kursiv, Links)
   const formatMarkdown = (text) => {
     if (!text) return text
-    
+
     // Einfache Markdown-Patterns
     // **bold** -> <strong>
     // *italic* -> <em>
@@ -976,24 +1083,24 @@ function ClaimCard({ claim, isExpanded, onToggle }) {
         url: match[2]
       })
     }
-    
+
     // Sortiere Matches nach Position
     matches.sort((a, b) => a.start - b.start)
-    
+
     // Baue React-Elemente
     if (matches.length === 0) {
       return text
     }
-    
+
     const elements = []
     let currentIndex = 0
-    
+
     matches.forEach((match, idx) => {
       // Text vor dem Match
       if (match.start > currentIndex) {
         elements.push(text.substring(currentIndex, match.start))
       }
-      
+
       // Das Match selbst
       if (match.type === 'bold') {
         elements.push(<strong key={`bold-${idx}`}>{match.content}</strong>)
@@ -1006,15 +1113,15 @@ function ClaimCard({ claim, isExpanded, onToggle }) {
           </a>
         )
       }
-      
+
       currentIndex = match.end
     })
-    
+
     // Rest des Textes
     if (currentIndex < text.length) {
       elements.push(text.substring(currentIndex))
     }
-    
+
     return elements.length > 0 ? <>{elements}</> : text
   }
 
@@ -1088,13 +1195,13 @@ function Footer() {
     <footer className="app-footer">
       <div className="footer-content">
         <p className="footer-disclaimer">
-          <strong>Hinweis:</strong> Die hier dargestellten Fakten-Checks werden automatisch mit Hilfe von 
-          Künstlicher Intelligenz (KI) generiert. Die Inhalte können Fehler enthalten und sollten nicht 
-          als alleinige Grundlage für Entscheidungen verwendet werden. Wir übernehmen keine Gewähr für 
+          Die hier dargestellten Fakten-Checks werden automatisch mit Hilfe von
+          Künstlicher Intelligenz (KI) generiert. Die Inhalte können Fehler enthalten und sollten nicht
+          als alleinige Grundlage für Entscheidungen verwendet werden. Wir übernehmen keine Gewähr für
           die Richtigkeit, Vollständigkeit oder Aktualität der Informationen.
         </p>
         <p className="footer-meta">
-          Diese Seite dient ausschließlich zu Informationszwecken. Bei Fragen oder Anmerkungen kontaktieren 
+          Diese Seite dient ausschließlich zu Informationszwecken. Bei Fragen oder Anmerkungen kontaktieren
           Sie bitte den Betreiber dieser Seite.
         </p>
       </div>

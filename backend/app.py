@@ -31,7 +31,8 @@ from backend.models import (
     SetEpisodeRequest,
     ProcessingResponse,
     HealthResponse,
-    ShowsResponse,
+    HealthResponse,
+    ShowsDetailedResponse,
     EpisodesResponse,
     FactCheckStoredResponse,
 )
@@ -601,12 +602,45 @@ async def process_fact_check_update_async(fact_check_id: int, name: str, claim: 
 # NOTE: More specific routes MUST come before the wildcard route
 # Otherwise /api/config/shows would match /api/config/{episode_key}
 
-@app.get('/api/config/shows', response_model=ShowsResponse)
+@app.get('/api/config/shows', response_model=ShowsDetailedResponse)
 async def get_all_shows_endpoint():
-    """Return all available shows"""
+    """Return all available shows with details from latest episode"""
     try:
-        shows = get_all_shows()
-        return ShowsResponse(shows=shows)
+        show_keys = get_all_shows()
+        detailed_shows = []
+        
+        for key in show_keys:
+            # Get episodes to find latest info
+            episodes = get_episodes_for_show(key)
+            
+            # Default values
+            name = key.capitalize()
+            description = ""
+            info = ""
+            speakers = []
+            
+            if episodes:
+                # Use latest episode for info
+                latest = episodes[0]
+                config = latest.get('config', {})
+                name = config.get('name', name)
+                description = config.get('description', "")
+                info = config.get('info', "")
+                type_ = config.get('type', "show")
+                speakers = config.get('speakers', [])
+            else:
+                type_ = "show"  # Default
+            
+            detailed_shows.append({
+                "key": key,
+                "name": name,
+                "description": description,
+                "info": info,
+                "type": type_,
+                "speakers": speakers
+            })
+            
+        return ShowsDetailedResponse(shows=detailed_shows)
     except Exception as e:
         logger.error(f"Error loading shows: {e}")
         raise HTTPException(status_code=500, detail=str(e))
