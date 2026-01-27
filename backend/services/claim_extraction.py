@@ -51,11 +51,10 @@ class ClaimExtractor:
 
     def _load_prompt_template(self, filename: str) -> str:
         """Load a prompt template from file."""
-        # Try multiple possible locations
+        # Try multiple possible locations (relative to this file or cwd)
         possible_paths = [
             Path(__file__).parent.parent.parent / "prompts" / filename,
             Path(f"prompts/{filename}"),
-            Path(f"/Users/ulfmertens/Documents/fact_check/prompts/{filename}"),
         ]
 
         for prompt_path in possible_paths:

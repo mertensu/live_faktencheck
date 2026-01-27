@@ -131,7 +131,6 @@ class FactChecker:
         possible_paths = [
             Path(__file__).parent.parent.parent / "prompts" / "fact_checker.md",
             Path("prompts/fact_checker.md"),
-            Path("/Users/ulfmertens/Documents/fact_check/prompts/fact_checker.md"),
         ]
 
         for prompt_path in possible_paths:
