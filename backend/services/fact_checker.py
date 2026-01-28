@@ -15,7 +15,7 @@ from pydantic import BaseModel, Field
 
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_tavily import TavilySearch
-from langchain.agents import create_agent
+from langgraph.prebuilt import create_react_agent as create_agent
 
 logger = logging.getLogger(__name__)
 
@@ -189,13 +189,17 @@ class FactChecker:
             agent = create_agent(
                 model=self.llm,
                 tools=[self.search_tool],
-                system_prompt=system_prompt,
+                prompt=system_prompt,
                 response_format=FactCheckResponse,
             )
 
-            result = await agent.ainvoke({
-                "messages": [{"role": "user", "content": user_message}]
-            })
+            # Use sync invoke in a thread to work around ChatGoogleGenerativeAI ainvoke bugs
+            # which can cause hangs in certain environments like pytest or subprocesses.
+            # See: https://github.com/langchain-ai/langchain-google/issues/357
+            result = await asyncio.to_thread(
+                agent.invoke,
+                {"messages": [{"role": "user", "content": user_message}]}
+            )
 
             # Handle nested structured_response
             if "structured_response" in result:
