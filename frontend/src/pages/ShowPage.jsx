@@ -69,28 +69,10 @@ export function ShowPage({ showKey }) {
   }
 
   return (
-    <>
-      <div className="episode-selector">
-        <label className="episode-selector-label">
-          Episode auswahlen:
-        </label>
-        <select
-          value={selectedEpisode}
-          onChange={(e) => handleEpisodeChange(e.target.value)}
-          className="episode-selector-select"
-        >
-          {episodes.map(episode => (
-            <option key={episode.key} value={episode.key}>
-              {episode.name}
-            </option>
-          ))}
-        </select>
-      </div>
-      <FactCheckPage
-        showName={showName}
-        showKey={showKey}
-        episodeKey={selectedEpisode}
-      />
-    </>
+    <FactCheckPage
+      showName={showName}
+      showKey={showKey}
+      episodeKey={selectedEpisode}
+    />
   )
 }

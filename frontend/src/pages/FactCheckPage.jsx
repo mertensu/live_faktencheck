@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { BACKEND_URL, N8N_VERIFIED_WEBHOOK, getFetchHeaders, safeJsonParse, debug } from '../services/api'
 import { AdminView } from '../components/AdminView'
 import { SpeakerColumns } from '../components/SpeakerColumns'
@@ -52,6 +52,9 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
   const [pendingClaims, setPendingClaims] = useState([])   // Flat list of editable claims
   const [stagedClaims, setStagedClaims] = useState([])     // Ready to send (read-only)
   const [sentClaims, setSentClaims] = useState([])         // History with timestamps
+  const [localEdits, setLocalEdits] = useState({})         // Track local edits: { claimId: { name, claim } }
+  const localEditsRef = useRef(localEdits)                   // Ref to access current edits in polling
+  localEditsRef.current = localEdits                         // Keep ref in sync with state
   const [speakers, setSpeakers] = useState(DEFAULT_SPEAKERS)  // Load config from backend
   const [backendError, setBackendError] = useState(null)  // Backend connection error
 
@@ -190,7 +193,10 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
         const stagedIds = new Set(stagedClaims.map(c => c.id))
         const sentIds = new Set(sentClaims.map(c => c.originalId || c.id))
         const newPending = flatClaims.filter(c => !stagedIds.has(c.id) && !sentIds.has(c.id))
-        setPendingClaims(newPending)
+        const currentEdits = localEditsRef.current
+        setPendingClaims(newPending.map(claim =>
+          currentEdits[claim.id] ? { ...claim, ...currentEdits[claim.id] } : claim
+        ))
       } catch (error) {
         if (!isMounted || error.name === 'AbortError') return
         debug.error('Error loading pending claims:', error)
@@ -223,6 +229,11 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
     if (!claim) return
     setStagedClaims(prev => [...prev, { ...claim }])
     setPendingClaims(prev => prev.filter(c => c.id !== claimId))
+    // Clear local edits for this claim
+    setLocalEdits(prev => {
+      const { [claimId]: _, ...rest } = prev
+      return rest
+    })
   }
 
   // Move claim from staging -> pending (for further editing)
@@ -238,6 +249,10 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
     setPendingClaims(prev => prev.map(c =>
       c.id === claimId ? { ...c, [field]: value } : c
     ))
+    setLocalEdits(prev => ({
+      ...prev,
+      [claimId]: { ...(prev[claimId] || {}), [field]: value }
+    }))
   }
 
   // Send all staged claims to backend for fact-checking
@@ -358,7 +373,6 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
         <div className="factcheck-header-content">
           <div>
             <h1>Fakten-Check - {showName}</h1>
-            <p className="subtitle">{isAdminMode ? 'Admin-Modus: Claim-Uberprufung' : 'Live Fact-Checking Dashboard'}</p>
           </div>
           {showAdminMode && (
             <button
