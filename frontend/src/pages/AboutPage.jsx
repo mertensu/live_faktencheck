@@ -1,4 +1,20 @@
 export function AboutPage() {
+  const isProduction = import.meta.env.PROD
+
+  // Production: show coming soon message
+  if (isProduction) {
+    return (
+      <div className="about-page">
+        <div className="about-content">
+          <h1>Über live-faktencheck.de</h1>
+          <p>
+            Weitere Informationen folgen in Kürze.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="about-page">
       <div className="about-content">

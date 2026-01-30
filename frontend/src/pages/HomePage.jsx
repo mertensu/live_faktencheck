@@ -18,6 +18,22 @@ function getShowDisplayName(show) {
 
 export function HomePage() {
   const { shows, loading } = useShows()
+  const isProduction = import.meta.env.PROD
+
+  // Production: show "coming soon" page
+  if (isProduction) {
+    return (
+      <div className="home-page">
+        <section className="hero-section">
+          <h1 className="hero-title">Live-Faktencheck</h1>
+          <p className="hero-subtitle">KI-gestützte Faktenchecks in Echtzeit</p>
+          <div className="coming-soon-badge">
+            Coming soon
+          </div>
+        </section>
+      </div>
+    )
+  }
 
   return (
     <div className="home-page">

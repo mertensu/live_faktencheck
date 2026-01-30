@@ -116,6 +116,17 @@
   margin-bottom: 3rem;
 }
 
+.coming-soon-badge {
+  display: inline-block;
+  padding: 0.75rem 2rem;
+  background: var(--accent-blue);
+  color: white;
+  border-radius: var(--radius-md);
+  font-size: 1.1rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+}
+
 .scroll-indicator {
   display: flex;
   flex-direction: column;
@@ -316,38 +327,6 @@
 }
 
 
-
-/* Episode Selector */
-.episode-selector {
-  padding: 1rem 2rem;
-  margin-top: 4rem;
-  border-bottom: 1px solid var(--border-light);
-}
-
-.episode-selector-label {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-weight: 500;
-  color: var(--text-main);
-  font-size: 0.9rem;
-}
-
-.episode-selector-select {
-  padding: 0.5rem 1rem;
-  font-size: 1rem;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-light);
-  min-width: 300px;
-  background: white;
-  color: var(--text-main);
-  font-family: inherit;
-  transition: border-color var(--transition-normal);
-}
-
-.episode-selector-select:focus {
-  outline: none;
-  border-color: var(--accent-blue);
-}
 
 /* Sprecher Container */
 .speakers-container {
@@ -1057,11 +1036,6 @@
   }
 
   .action-button {
-    width: 100%;
-  }
-
-  .episode-selector-select {
-    min-width: auto;
     width: 100%;
   }
 }

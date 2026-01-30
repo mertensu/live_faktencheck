@@ -13,7 +13,7 @@ function App() {
   const { shows } = useShows()
 
   return (
-    <BrowserRouter basename={import.meta.env.PROD ? '/live_faktencheck' : ''}>
+    <BrowserRouter>
       <div className="app">
         <Navigation />
         <Routes>
