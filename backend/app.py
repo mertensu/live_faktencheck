@@ -54,6 +54,7 @@ app.add_middleware(
     allow_origins=[
         "https://live-faktencheck.de",
         "https://www.live-faktencheck.de",
+        "https://live-faktencheck.mertens-ulf.workers.dev",
         "http://localhost:3000",
         "http://localhost:5173",
         "http://127.0.0.1:3000",
