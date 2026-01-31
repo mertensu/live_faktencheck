@@ -53,6 +53,8 @@ def cheap_models(monkeypatch):
     """Use cheapest models for E2E tests to minimize cost."""
     monkeypatch.setenv("GEMINI_MODEL_CLAIM_EXTRACTION", "gemini-2.0-flash-lite")
     monkeypatch.setenv("GEMINI_MODEL_FACT_CHECKER", "gemini-2.0-flash-lite")
+    monkeypatch.setenv("FACT_CHECK_RECURSION_LIMIT", "5")
+    monkeypatch.setenv("MOCK_SEARCH", "true")
 
 
 # =============================================================================
@@ -88,6 +90,8 @@ load_dotenv()
 
 os.environ["GEMINI_MODEL_CLAIM_EXTRACTION"] = "gemini-2.0-flash-lite"
 os.environ["GEMINI_MODEL_FACT_CHECKER"] = "gemini-2.0-flash-lite"
+os.environ["FACT_CHECK_RECURSION_LIMIT"] = "5"
+os.environ["MOCK_SEARCH"] = "true"
 
 from backend.services.transcription import TranscriptionService
 from backend.services.claim_extraction import ClaimExtractor
@@ -201,6 +205,8 @@ load_dotenv()
 
 os.environ["GEMINI_MODEL_CLAIM_EXTRACTION"] = "gemini-2.0-flash-lite"
 os.environ["GEMINI_MODEL_FACT_CHECKER"] = "gemini-2.0-flash-lite"
+os.environ["FACT_CHECK_RECURSION_LIMIT"] = "5"
+os.environ["MOCK_SEARCH"] = "true"
 
 from backend.services.claim_extraction import ClaimExtractor
 from backend.services.fact_checker import FactChecker
@@ -309,6 +315,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 os.environ["GEMINI_MODEL_FACT_CHECKER"] = "gemini-2.0-flash-lite"
+os.environ["FACT_CHECK_RECURSION_LIMIT"] = "5"
+os.environ["MOCK_SEARCH"] = "true"
 
 from backend.services.fact_checker import FactChecker
 
