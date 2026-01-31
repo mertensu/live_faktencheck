@@ -152,11 +152,11 @@ else
     cd "$FRONTEND_DIR" || exit 1
 
     if [ ! -d "node_modules" ]; then
-        print_info "Installing npm dependencies..."
-        npm install
+        print_info "Installing dependencies..."
+        bun install
     fi
 
-    npm run dev > ../frontend_dev.log 2>&1 &
+    bun run dev > ../frontend_dev.log 2>&1 &
     FRONTEND_PID=$!
     echo $FRONTEND_PID > ../.frontend_pid
     cd ..
