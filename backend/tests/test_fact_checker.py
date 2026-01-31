@@ -39,21 +39,21 @@ class TestFactCheckerCheckClaim:
             context="Maischberger, 15.01.2024"
         )
 
-        # Verify agent was called
+        # Verify agent was called (uses invoke via asyncio.to_thread)
         mock_agent = mock_create_agent.return_value
-        mock_agent.ainvoke.assert_called_once()
+        mock_agent.invoke.assert_called_once()
 
         # Check context was included in the message
-        call_args = mock_agent.ainvoke.call_args[0][0]
+        call_args = mock_agent.invoke.call_args[0][0]
         messages = call_args.get("messages", [])
         assert len(messages) > 0
         assert "Maischberger" in messages[0]["content"]
 
     async def test_check_claim_handles_error_gracefully(self, mock_create_agent):
         """check_claim_async returns 'unklar' on error."""
-        # Make agent raise an exception
+        # Make agent raise an exception (uses invoke via asyncio.to_thread)
         mock_agent = MagicMock()
-        mock_agent.ainvoke = AsyncMock(side_effect=Exception("Search API failed"))
+        mock_agent.invoke = MagicMock(side_effect=Exception("Search API failed"))
         mock_create_agent.return_value = mock_agent
 
         with patch.dict("os.environ", {
@@ -122,9 +122,9 @@ class TestFactCheckerCheckClaims:
 
         await mock_fact_checker.check_claims_async(claims, context="Hart aber Fair, 10.01.2024")
 
-        # Agent should be called for each claim
+        # Agent should be called for each claim (uses invoke via asyncio.to_thread)
         mock_agent = mock_create_agent.return_value
-        assert mock_agent.ainvoke.call_count == 2
+        assert mock_agent.invoke.call_count == 2
 
     async def test_check_claims_async_handles_missing_fields(self, mock_fact_checker):
         """check_claims_async handles claims with missing name/claim fields."""

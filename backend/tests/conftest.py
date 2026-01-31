@@ -11,6 +11,7 @@ from backend.app import app
 from backend import state
 from backend.services.claim_extraction import ExtractedClaim, ClaimList
 from backend.services.fact_checker import FactCheckResponse
+from backend.services.cost_tracker import CostTracker
 
 # Allow nested event loops - fixes LangChain agent hanging in pytest
 # See: https://github.com/pytest-dev/pytest-asyncio/discussions/546
@@ -27,11 +28,13 @@ def reset_state():
     state.fact_checks.clear()
     state.pending_claims_blocks.clear()
     state.current_episode_key = None
+    CostTracker.reset_instance()
     yield
     # Cleanup after test
     state.fact_checks.clear()
     state.pending_claims_blocks.clear()
     state.current_episode_key = None
+    CostTracker.reset_instance()
 
 
 # =============================================================================
@@ -105,9 +108,14 @@ def mock_create_agent(mock_fact_check_response):
     with patch("backend.services.fact_checker.create_agent") as mock_create:
         mock_agent = MagicMock()
 
-        # Mock ainvoke to return structured response
+        # Mock both invoke (used in asyncio.to_thread) and ainvoke for compatibility
+        mock_agent.invoke = MagicMock(return_value={
+            "structured_response": mock_fact_check_response,
+            "messages": []  # Empty messages for cost tracking
+        })
         mock_agent.ainvoke = AsyncMock(return_value={
-            "structured_response": mock_fact_check_response
+            "structured_response": mock_fact_check_response,
+            "messages": []
         })
 
         mock_create.return_value = mock_agent

@@ -15,7 +15,10 @@ from pydantic import BaseModel, Field
 
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_tavily import TavilySearch
+from langchain_core.tools import tool
 from langgraph.prebuilt import create_react_agent as create_agent
+
+from .cost_tracker import get_cost_tracker
 
 logger = logging.getLogger(__name__)
 
@@ -87,10 +90,6 @@ class FactChecker:
         if not google_api_key:
             raise ValueError("GEMINI_API_KEY or GOOGLE_API_KEY environment variable not set")
 
-        tavily_api_key = os.getenv("TAVILY_API_KEY")
-        if not tavily_api_key:
-            raise ValueError("TAVILY_API_KEY environment variable not set")
-
         # Get model from environment
         self.model_name = os.getenv("GEMINI_MODEL_FACT_CHECKER", DEFAULT_MODEL)
 
@@ -102,16 +101,36 @@ class FactChecker:
             max_retries=2,
         )
 
-        # Initialize Tavily search tool with domain restrictions
+        # Initialize search tool (Mock or Tavily)
+        self.use_mock_search = os.getenv("MOCK_SEARCH", "false").lower() == "true"
         self.search_depth = os.getenv("TAVILY_SEARCH_DEPTH", "basic")
         self.max_results = int(os.getenv("TAVILY_MAX_RESULTS", "5"))
-        self.search_tool = TavilySearch(
-            name="fact_checker_search",
-            description="Search the web to verify claims.",
-            max_results=self.max_results,
-            search_depth=self.search_depth,
-            include_domains=TRUSTED_DOMAINS,
-        )
+
+        if self.use_mock_search:
+            logger.info("Initializing with MOCK SEARCH tool")
+            @tool
+            def fact_checker_search(query: str) -> str:
+                """Search the web to verify claims."""
+                logger.info(f"MOCK SEARCH called with query: {query}")
+                return (
+                    f"MOCK SEARCH RESULT for '{query}': "
+                    "Die Suche in offiziellen deutschen Quellen (destatis.de, Bundesministerien) "
+                    "bestätigt die in der Behauptung genannten Zahlen oder Fakten weitgehend. "
+                    "Es wurden keine widersprüchlichen Primärquellen gefunden."
+                )
+            self.search_tool = fact_checker_search
+        else:
+            tavily_api_key = os.getenv("TAVILY_API_KEY")
+            if not tavily_api_key:
+                raise ValueError("TAVILY_API_KEY environment variable not set (and MOCK_SEARCH is false)")
+
+            self.search_tool = TavilySearch(
+                name="fact_checker_search",
+                description="Search the web to verify claims.",
+                max_results=self.max_results,
+                search_depth=self.search_depth,
+                include_domains=TRUSTED_DOMAINS,
+            )
 
         # Load prompt template
         self.prompt_template = self._load_prompt_template()
@@ -120,10 +139,15 @@ class FactChecker:
         self.parallel_enabled = os.getenv("FACT_CHECK_PARALLEL", "false").lower() == "true"
         self.max_workers = int(os.getenv("FACT_CHECK_MAX_WORKERS", "3"))
 
+        # Recursion limit (avoid infinity loops and high costs)
+        # Default to 15 for production, but can be overridden (e.g., 5 for tests)
+        self.recursion_limit = int(os.getenv("FACT_CHECK_RECURSION_LIMIT", "15"))
+
         logger.info(
             f"FactChecker initialized with model: {self.model_name}, "
             f"search_depth: {self.search_depth}, max_results: {self.max_results}, "
-            f"parallel: {self.parallel_enabled}, max_workers: {self.max_workers}"
+            f"parallel: {self.parallel_enabled}, max_workers: {self.max_workers}, "
+            f"recursion_limit: {self.recursion_limit}"
         )
 
     def _load_prompt_template(self) -> str:
@@ -198,7 +222,8 @@ class FactChecker:
             # See: https://github.com/langchain-ai/langchain-google/issues/357
             result = await asyncio.to_thread(
                 agent.invoke,
-                {"messages": [{"role": "user", "content": user_message}]}
+                {"messages": [{"role": "user", "content": user_message}]},
+                config={"recursion_limit": self.recursion_limit}
             )
 
             # Handle nested structured_response
@@ -208,6 +233,17 @@ class FactChecker:
             else:
                 # Result might already be flat
                 parsed = result.model_dump() if hasattr(result, "model_dump") else result
+
+            # Extract and log cost
+            cost_tracker = get_cost_tracker(self.model_name)
+            stats = cost_tracker.extract_usage_stats(result)
+            cost_tracker.log_claim_cost(
+                stats,
+                speaker=speaker,
+                claim=claim,
+                consistency=parsed.get('consistency', 'unknown')
+            )
+            cost_tracker.log_session_totals()
 
             logger.info(f"Claim checked: consistency = {parsed.get('consistency', 'unknown')}")
             return parsed
