@@ -262,9 +262,9 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
       return
     }
 
-    // Separate new claims from re-sends
-    const newClaims = stagedClaims.filter(c => !c.originalFactCheckId)
-    const resendClaims = stagedClaims.filter(c => c.originalFactCheckId)
+    // Separate new claims from re-sends (use resendOf flag, not factCheckId)
+    const newClaims = stagedClaims.filter(c => !c.resendOf)
+    const resendClaims = stagedClaims.filter(c => c.resendOf)
 
     try {
       const results = []
@@ -295,10 +295,10 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
         results.push(`${newClaims.length} neue Claims`)
       }
 
-      // Send re-sends via PUT (overwrite existing fact-checks)
+      // Send re-sends via POST to /resend endpoint (matches by speaker+claim text)
       for (const claim of resendClaims) {
-        const response = await fetch(`${BACKEND_URL}/api/fact-checks/${claim.originalFactCheckId}`, {
-          method: 'PUT',
+        const response = await fetch(`${BACKEND_URL}/api/fact-checks/resend`, {
+          method: 'POST',
           headers: getFetchHeaders(),
           body: JSON.stringify({
             name: claim.name,
@@ -307,9 +307,9 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
         })
 
         if (!response.ok) {
-          debug.warn(`Error re-sending ID ${claim.originalFactCheckId}:`, response.status)
+          debug.warn(`Error re-sending claim:`, response.status)
         } else {
-          debug.log(`Re-send for ID ${claim.originalFactCheckId} started`)
+          debug.log(`Re-send for "${claim.name}" started`)
         }
       }
       if (resendClaims.length > 0) {
