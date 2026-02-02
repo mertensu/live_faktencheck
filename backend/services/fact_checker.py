@@ -15,7 +15,6 @@ from pydantic import BaseModel, Field
 
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_tavily import TavilySearch
-from langchain_core.tools import tool
 from langgraph.prebuilt import create_react_agent as create_agent
 
 from .cost_tracker import get_cost_tracker
@@ -102,23 +101,18 @@ class FactChecker:
         )
 
         # Initialize search tool (Mock or Tavily)
-        self.use_mock_search = os.getenv("MOCK_SEARCH", "false").lower() == "true"
+        # Mock search is ONLY enabled when MOCK_SEARCH=true AND running in test environment
+        self.use_mock_search = (
+            os.getenv("MOCK_SEARCH", "false").lower() == "true"
+            and os.getenv("PYTEST_CURRENT_TEST") is not None
+        )
         self.search_depth = os.getenv("TAVILY_SEARCH_DEPTH", "basic")
         self.max_results = int(os.getenv("TAVILY_MAX_RESULTS", "5"))
 
         if self.use_mock_search:
-            logger.info("Initializing with MOCK SEARCH tool")
-            @tool
-            def fact_checker_search(query: str) -> str:
-                """Search the web to verify claims."""
-                logger.info(f"MOCK SEARCH called with query: {query}")
-                return (
-                    f"MOCK SEARCH RESULT for '{query}': "
-                    "Die Suche in offiziellen deutschen Quellen (destatis.de, Bundesministerien) "
-                    "bestätigt die in der Behauptung genannten Zahlen oder Fakten weitgehend. "
-                    "Es wurden keine widersprüchlichen Primärquellen gefunden."
-                )
-            self.search_tool = fact_checker_search
+            logger.info("Initializing with MOCK SEARCH tool (test environment only)")
+            from .mock_search import mock_search
+            self.search_tool = mock_search
         else:
             tavily_api_key = os.getenv("TAVILY_API_KEY")
             if not tavily_api_key:
@@ -140,8 +134,8 @@ class FactChecker:
         self.max_workers = int(os.getenv("FACT_CHECK_MAX_WORKERS", "3"))
 
         # Recursion limit (avoid infinity loops and high costs)
-        # Default to 15 for production, but can be overridden (e.g., 5 for tests)
-        self.recursion_limit = int(os.getenv("FACT_CHECK_RECURSION_LIMIT", "15"))
+        # Default to 25 for production; tests should set FACT_CHECK_RECURSION_LIMIT=10 or lower
+        self.recursion_limit = int(os.getenv("FACT_CHECK_RECURSION_LIMIT", "25"))
 
         logger.info(
             f"FactChecker initialized with model: {self.model_name}, "
