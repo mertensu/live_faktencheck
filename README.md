@@ -50,7 +50,7 @@ cd live_faktencheck
 uv sync
 
 # Install frontend dependencies
-cd frontend && npm install && cd ..
+cd frontend && bun install && cd ..
 
 # Copy env template and add your API keys
 cp .env.example .env
@@ -85,7 +85,7 @@ This will:
 ./backend/run.sh
 
 # In another terminal, start frontend dev server
-cd frontend && npm run dev
+cd frontend && bun run dev
 ```
 
 ### Stop Everything
@@ -166,7 +166,7 @@ The fact-checker uses a LangChain ReAct agent that iteratively searches for evid
 ```
 
 - **Tavily Search**: Searches the web, filtered to trusted domains only
-- **Max 10 iterations**: Safety limit to prevent infinite loops
+- **Recursion limit**: Default 25 super-steps to prevent infinite loops (configurable via `FACT_CHECK_RECURSION_LIMIT`)
 - **Robust handling**: LangChain guarantees a final response (no silent failures)
 
 ## Environment Variables
@@ -179,6 +179,7 @@ The fact-checker uses a LangChain ReAct agent that iteratively searches for evid
 | `GEMINI_MODEL_CLAIM_EXTRACTION` | Model for claim extraction (default: gemini-2.5-flash) | No |
 | `GEMINI_MODEL_FACT_CHECKER` | Model for fact-checking (default: gemini-2.5-pro) | No |
 | `FACT_CHECK_PARALLEL` | Enable parallel fact-checking (default: false) | No |
+| `FACT_CHECK_RECURSION_LIMIT` | Max agent iterations (default: 25, use lower for tests) | No |
 | `DEBUG` | Save audio files for debugging | No |
 
 ## License
