@@ -109,7 +109,7 @@ cd frontend && bun run dev
 ├── prompts/
 │   ├── claim_extraction.md    # Prompt for extracting claims
 │   └── fact_checker.md        # Prompt for fact-checking
-├── listener.py                # Audio capture with VAD
+├── listener.py                # Audio capture with fixed-interval sending
 ├── config.py                  # Episode configuration
 ├── start_production.sh        # Production startup script
 └── stop_production.sh         # Stop all services
