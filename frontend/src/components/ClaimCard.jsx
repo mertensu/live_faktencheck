@@ -173,18 +173,22 @@ export function ClaimCard({ claim, isExpanded, onToggle }) {
             <div className="detail-section">
               <h3>Quellen</h3>
               <ul className="sources-list">
-                {claim.quellen.map((quelle, idx) => (
-                  <li key={idx}>
-                    <a
-                      href={quelle}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="source-link"
-                    >
-                      {quelle}
-                    </a>
-                  </li>
-                ))}
+                {claim.quellen.map((quelle, idx) => {
+                  const url = typeof quelle === 'object' ? quelle.url : quelle;
+                  const title = typeof quelle === 'object' && quelle.title ? quelle.title : url;
+                  return (
+                    <li key={idx}>
+                      <a
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="source-link"
+                      >
+                        {title}
+                      </a>
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           )}

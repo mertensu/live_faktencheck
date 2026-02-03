@@ -74,12 +74,16 @@ TRUSTED_DOMAINS = [
 ]
 
 # 1. Define the Data Structure
+class Source(BaseModel):
+    url: str = Field(description="URL to the source")
+    title: str = Field(description="Short informative description of the source, e.g. 'Statistisches Bundesamt - Bevölkerungsdaten 2024'")
+
 class FactCheckResponse(BaseModel):
     speaker: str
     original_claim: str
     consistency: Literal["hoch", "niedrig", "mittel", "unklar"] = Field(description="Consistency of the claim, i.e. how well it withstands scrutiny")
     evidence: str = Field(description="Detailed and well-structured German explanation using evidence-based phrasing")
-    sources: List[str] = Field(description="URLs to primary sources")
+    sources: List[Source] = Field(description="Primary sources with URL and short informative title")
 
 class FactChecker:
     """Service for fact-checking claims using LangGraph ReAct agent with Gemini and Tavily."""

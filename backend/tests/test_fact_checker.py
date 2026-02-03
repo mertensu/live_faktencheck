@@ -10,7 +10,7 @@ Tests:
 import pytest
 from unittest.mock import MagicMock, patch
 
-from backend.services.fact_checker import FactChecker, FactCheckResponse
+from backend.services.fact_checker import FactChecker, FactCheckResponse, Source
 
 
 class TestFactCheckerCheckClaim:
@@ -262,7 +262,10 @@ class TestFactCheckResponse:
             original_claim="Test claim",
             consistency="hoch",
             evidence="Basierend auf offiziellen Quellen verifiziert.",
-            sources=["https://destatis.de", "https://bundestag.de"],
+            sources=[
+                Source(url="https://destatis.de", title="Statistisches Bundesamt"),
+                Source(url="https://bundestag.de", title="Deutscher Bundestag"),
+            ],
         )
 
         assert response.speaker == "Angela Merkel"

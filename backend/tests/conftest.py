@@ -10,7 +10,7 @@ from httpx import AsyncClient, ASGITransport
 from backend.app import app
 from backend import state
 from backend.services.claim_extraction import ExtractedClaim, ClaimList
-from backend.services.fact_checker import FactCheckResponse
+from backend.services.fact_checker import FactCheckResponse, Source
 from backend.services.cost_tracker import CostTracker
 
 # Allow nested event loops - fixes LangChain agent hanging in pytest
@@ -98,7 +98,10 @@ def mock_fact_check_response():
         original_claim="Test claim statement",
         consistency="hoch",
         evidence="Dies ist eine verifizierte Aussage basierend auf offiziellen Quellen.",
-        sources=["https://example.com/source1", "https://example.com/source2"],
+        sources=[
+            Source(url="https://example.com/source1", title="Example Source 1"),
+            Source(url="https://example.com/source2", title="Example Source 2"),
+        ],
     )
 
 

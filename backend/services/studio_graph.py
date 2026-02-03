@@ -47,7 +47,7 @@ class FactCheckResponse(BaseModel):
     evidence: str = Field(
         description="Detailed German explanation using evidence-based phrasing"
     )
-    sources: List[str] = Field(description="URLs to primary sources")
+    sources: List[dict] = Field(description="Primary sources with 'url' and 'title' fields")
 
 
 def _load_prompt() -> str:
