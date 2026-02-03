@@ -11,6 +11,9 @@ fact_checks: list = []
 pending_claims_blocks: list = []
 current_episode_key: str | None = None
 
+# Last few speaker turns from the previous transcript block, for cross-block continuity
+last_transcript_tail: str | None = None
+
 # Lock for concurrent access
 processing_lock = asyncio.Lock()
 

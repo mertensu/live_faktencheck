@@ -90,14 +90,21 @@ async def process_audio_pipeline_async(audio_data: bytes, episode_key: str, info
         transcript = await asyncio.to_thread(transcription_service.transcribe, audio_data)
         logger.info(f"[{block_id}] Transcription complete: {len(transcript)} chars")
 
+        # Grab previous transcript tail for cross-block context, then update it
+        async with processing_lock:
+            previous_context = state.last_transcript_tail
+            # Store the last 3 speaker lines from this transcript for the next block
+            transcript_lines = [l for l in transcript.strip().splitlines() if l.strip()]
+            state.last_transcript_tail = "\n".join(transcript_lines[-3:]) if transcript_lines else None
+
         # Step 2: Claim extraction (async)
         logger.info(f"[{block_id}] Step 2: Extracting claims...")
         claim_extractor = get_claim_extractor()
         # Use async method if available, otherwise wrap sync call
         if hasattr(claim_extractor, 'extract_async'):
-            claims = await claim_extractor.extract_async(transcript, info)
+            claims = await claim_extractor.extract_async(transcript, info, previous_context=previous_context)
         else:
-            claims = await asyncio.to_thread(claim_extractor.extract, transcript, info)
+            claims = await asyncio.to_thread(claim_extractor.extract, transcript, info, previous_context=previous_context)
         logger.info(f"[{block_id}] Extracted {len(claims)} claims")
 
         if not claims:

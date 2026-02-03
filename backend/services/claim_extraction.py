@@ -66,13 +66,14 @@ class ClaimExtractor:
             f"Could not find {filename} prompt file. Tried: {possible_paths}"
         )
 
-    async def extract_async(self, transcript: str, info: str) -> List[ExtractedClaim]:
+    async def extract_async(self, transcript: str, info: str, previous_context: str | None = None) -> List[ExtractedClaim]:
         """
         Extract verifiable claims from a transcript (async).
 
         Args:
             transcript: Formatted transcript with speaker labels
             info: Context information about the show/guests
+            previous_context: Last few lines from the previous block's transcript, for continuity
 
         Returns:
             List of ExtractedClaim objects
@@ -81,23 +82,32 @@ class ClaimExtractor:
 
         system_prompt = self.prompt_template
 
-        user_message = f"""<context>
+        parts = []
+        if previous_context:
+            parts.append(f"""<previous_block_ending>
+{previous_context}
+</previous_block_ending>
+""")
+        parts.append(f"""<context>
 Participants and date: {info}
 </context>
 
 <transcript>
 {transcript}
-</transcript>"""
+</transcript>""")
+
+        user_message = "\n".join(parts)
 
         return await self._extract_async(system_prompt, user_message)
 
-    def extract(self, transcript: str, info: str) -> List[ExtractedClaim]:
+    def extract(self, transcript: str, info: str, previous_context: str | None = None) -> List[ExtractedClaim]:
         """
         Extract verifiable claims from a transcript (sync wrapper).
 
         Args:
             transcript: Formatted transcript with speaker labels
             info: Context information about the show/guests
+            previous_context: Last few lines from the previous block's transcript, for continuity
 
         Returns:
             List of ExtractedClaim objects
@@ -105,7 +115,7 @@ Participants and date: {info}
         Note:
             Use extract_async() in async contexts to avoid event loop conflicts.
         """
-        return asyncio.run(self.extract_async(transcript, info))
+        return asyncio.run(self.extract_async(transcript, info, previous_context=previous_context))
 
     async def _extract_async(self, system_prompt: str, user_message: str) -> List[ExtractedClaim]:
         """Async implementation of claim extraction."""
