@@ -15,7 +15,7 @@ from pydantic import BaseModel, Field
 
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_tavily import TavilySearch
-from langgraph.prebuilt import create_react_agent as create_agent
+from langchain.agents import create_agent
 
 from .cost_tracker import get_cost_tracker
 
@@ -58,6 +58,7 @@ TRUSTED_DOMAINS = [
     "boeckler.de",
     "swp-berlin.org",
     "agora-energiewende.de",
+    "globalenergymonitor.org",
     "oeko.de",
     "steuerzahler.de",
     "portal-sozialpolitik.de",
@@ -77,7 +78,7 @@ class FactCheckResponse(BaseModel):
     speaker: str
     original_claim: str
     consistency: Literal["hoch", "niedrig", "mittel", "unklar"] = Field(description="Consistency of the claim, i.e. how well it withstands scrutiny")
-    evidence: str = Field(description="Detailed German explanation using evidence-based phrasing")
+    evidence: str = Field(description="Detailed and well-structured German explanation using evidence-based phrasing")
     sources: List[str] = Field(description="URLs to primary sources")
 
 class FactChecker:
@@ -207,7 +208,7 @@ class FactChecker:
             agent = create_agent(
                 model=self.llm,
                 tools=[self.search_tool],
-                prompt=system_prompt,
+                system_prompt=system_prompt,
                 response_format=FactCheckResponse,
             )
 
