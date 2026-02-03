@@ -135,14 +135,27 @@ async def resend_fact_check(
     Finds existing fact-check by speaker and claim text, re-runs fact-checker,
     and replaces the result. If no match found, creates a new fact-check.
     """
-    # Find existing fact-check by speaker+claim (most recent match)
+    # Find existing fact-check: by ID first, then by speaker+original_claim, then by speaker+claim
     existing = None
     existing_id = None
-    for fc in reversed(fact_checks):  # Search newest first
-        if fc.get("sprecher") == request.name and fc.get("behauptung") == request.claim:
-            existing = fc
-            existing_id = fc.get("id")
-            break
+    if request.fact_check_id:
+        for fc in fact_checks:
+            if fc.get("id") == request.fact_check_id:
+                existing = fc
+                existing_id = fc.get("id")
+                break
+    if not existing and request.original_claim:
+        for fc in reversed(fact_checks):  # Search newest first
+            if fc.get("sprecher") == request.name and fc.get("behauptung") == request.original_claim:
+                existing = fc
+                existing_id = fc.get("id")
+                break
+    if not existing:
+        for fc in reversed(fact_checks):  # Search newest first
+            if fc.get("sprecher") == request.name and fc.get("behauptung") == request.claim:
+                existing = fc
+                existing_id = fc.get("id")
+                break
 
     episode_key = request.episode_key or (existing.get("episode_key") if existing else None) or state.current_episode_key
 

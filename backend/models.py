@@ -64,6 +64,8 @@ class ClaimUpdateRequest(BaseModel):
     name: str
     claim: str
     episode_key: Optional[str] = None
+    fact_check_id: Optional[int] = None
+    original_claim: Optional[str] = None
 
 
 # =============================================================================

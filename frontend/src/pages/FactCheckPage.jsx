@@ -302,7 +302,9 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
           headers: getFetchHeaders(),
           body: JSON.stringify({
             name: claim.name,
-            claim: claim.claim
+            claim: claim.claim,
+            fact_check_id: claim.originalFactCheckId || null,
+            original_claim: claim.originalClaim || null
           })
         })
 
@@ -348,7 +350,8 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
       timestamp: new Date().toISOString(),
       info: claim.info,
       resendOf: claim.originalId || claim.id,
-      originalFactCheckId: claim.factCheckId
+      originalFactCheckId: claim.factCheckId,
+      originalClaim: claim.claim
     }
     setPendingClaims(prev => [resendClaim, ...prev])
   }
