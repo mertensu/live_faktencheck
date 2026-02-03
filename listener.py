@@ -106,7 +106,7 @@ class AudioRecorder:
             frames_per_buffer=CHUNK
         )
 
-        print(f"Recording started...")
+        print("Recording started...")
         print(f"  Show: {self.show}")
         print(f"  Info: {self.info}")
         print(f"  Block duration: {self.block_duration}s")
@@ -176,7 +176,7 @@ class AudioRecorder:
 
         except requests.exceptions.ConnectionError:
             print(f"Cannot connect to backend at {self.backend_url}")
-            print(f"   Make sure the backend is running: ./backend/run.sh")
+            print("   Make sure the backend is running: ./backend/run.sh")
         except Exception as e:
             print(f"Error sending: {e}")
 
@@ -218,9 +218,10 @@ class AudioRecorder:
         send_thread = threading.Thread(
             target=self.send_to_backend,
             args=(audio_content, seq_num),
-            daemon=False
+            daemon=True
         )
         send_thread.start()
+        return send_thread
 
     def manual_send(self):
         """Manually send current frames and reset the block timer"""
@@ -239,15 +240,22 @@ class AudioRecorder:
         print("Manual block sent. Timer reset. Recording continues...\n")
 
     def _flush_and_stop(self):
-        """Send remaining frames and release resources."""
+        """Send remaining frames, release resources, and force exit."""
         total_duration = time.time() - self.block_start_time
         print(f"\nRecording ended after {total_duration:.1f} seconds in current block")
         with self.lock:
-            print(f"Collected chunks: {len(self.frames)}")
-            if self.frames:
-                print("Sending remaining data...")
-                self.save_and_send(reset_frames=False)
+            num_frames = len(self.frames)
+            has_frames = bool(self.frames)
+        print(f"Collected chunks: {num_frames}")
+        if has_frames:
+            print("Sending remaining data...")
+            send_thread = self.save_and_send(reset_frames=False)
+            if send_thread:
+                send_thread.join(timeout=10)
+                if send_thread.is_alive():
+                    print("Send timed out, exiting anyway.")
         self.stop()
+        os._exit(0)
 
     def record(self):
         """Main recording loop with fixed-interval sending"""
@@ -302,10 +310,9 @@ def setup_input_listeners(recorder):
     # Terminal input for manual sending
     def stdin_listener():
         """Read input from terminal (blocking in separate thread)"""
-        print("\nTerminal input enabled:")
-        print("   Type 's' + Enter to manually send an audio block (resets timer)")
-        print("   Type 'q' + Enter to quit")
-        print("   (Recording continues after sending)\n")
+        print("\nControls:")
+        print("   F10        - manually send current audio block (resets timer)")
+        print("   Ctrl+C     - stop recording and exit\n")
 
         if not sys.stdin.isatty():
             print("Warning: stdin not in TTY mode. Terminal input may not work.")
@@ -342,7 +349,7 @@ def setup_input_listeners(recorder):
                 if key == keyboard.Key.f10:
                     print("F10 detected (global)")
                     recorder.manual_send()
-            except:
+            except Exception:
                 pass
 
         keyboard_listener = keyboard.Listener(on_press=on_press)
