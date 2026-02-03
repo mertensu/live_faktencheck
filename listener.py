@@ -5,37 +5,26 @@ Captures audio from BlackHole virtual audio device and sends audio blocks
 to the backend at fixed intervals for processing.
 """
 
-import pyaudio
-import wave
-import threading
-import requests
-import time
 import io
+import os
+import sys
+import threading
+import time
+import wave
 from pathlib import Path
 
-# Keyboard listener for manual sending
-try:
-    from pynput import keyboard
-except ImportError:
-    print("pynput not found. Install with: uv sync")
-    exit(1)
+import pyaudio
+import requests
 
-# --- CONFIGURATION ---
-import sys
-import os
 from config import get_info, DEFAULT_SHOW
 
-# Backend URL
-BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:5000")
-AUDIO_ENDPOINT = f"{BACKEND_URL}/api/audio-block"
-
-# Recording settings
-BLOCK_DURATION = 180  # Send audio block every 3 minutes
+# Audio constants
 FORMAT = pyaudio.paInt16
 CHANNELS = 1  # Mono
 DEVICE_RATE = 48000  # BlackHole runs at 48 kHz
 CHUNK = 1024
 PROGRESS_INTERVAL = 30  # Print progress every 30 seconds
+BLOCK_DURATION = 180  # Send audio block every 3 minutes (default)
 
 
 def get_current_show():
@@ -58,19 +47,37 @@ def get_current_show():
     return DEFAULT_SHOW
 
 
-CURRENT_SHOW = get_current_show()
-INFO = get_info(CURRENT_SHOW)
-
-# Debug mode: Save each block as WAV file
-DEBUG_MODE = os.environ.get('DEBUG', '').lower() in ('true', '1', 'yes') or '--debug' in sys.argv
-DEBUG_OUTPUT_DIR = Path(__file__).parent / "debug_audio"
-if DEBUG_MODE:
-    DEBUG_OUTPUT_DIR.mkdir(exist_ok=True)
-    print(f"Debug mode enabled. Audio blocks saved to: {DEBUG_OUTPUT_DIR}")
+def set_backend_episode(backend_url, show):
+    """Set current episode in backend"""
+    try:
+        response = requests.post(
+            f"{backend_url}/api/set-episode",
+            json={"episode_key": show},
+            timeout=5
+        )
+        if response.ok:
+            print(f"Episode set in backend: {show}")
+        else:
+            print(f"Could not set episode in backend: {response.status_code}")
+    except Exception as e:
+        print(f"Could not set episode in backend: {e}")
+        print("   (Backend may not be running)")
 
 
 class AudioRecorder:
-    def __init__(self):
+    def __init__(self, show: str, info: str, backend_url: str, block_duration: int = BLOCK_DURATION, debug: bool = False):
+        self.show = show
+        self.info = info
+        self.backend_url = backend_url
+        self.audio_endpoint = f"{backend_url}/api/audio-block"
+        self.block_duration = block_duration
+        self.debug = debug
+        self.debug_output_dir = Path(__file__).parent / "debug_audio"
+
+        if self.debug:
+            self.debug_output_dir.mkdir(exist_ok=True)
+            print(f"Debug mode enabled. Audio blocks saved to: {self.debug_output_dir}")
+
         self.audio = pyaudio.PyAudio()
         self.frames = []
         self.is_recording = True
@@ -100,10 +107,10 @@ class AudioRecorder:
         )
 
         print(f"Recording started...")
-        print(f"  Show: {CURRENT_SHOW}")
-        print(f"  Info: {INFO}")
-        print(f"  Block duration: {BLOCK_DURATION}s")
-        print(f"  Backend: {BACKEND_URL}")
+        print(f"  Show: {self.show}")
+        print(f"  Info: {self.info}")
+        print(f"  Block duration: {self.block_duration}s")
+        print(f"  Backend: {self.backend_url}")
 
     def find_blackhole_device(self):
         """Find the BlackHole audio device"""
@@ -132,6 +139,16 @@ class AudioRecorder:
         except Exception as e:
             print(f"Error listing devices: {e}")
 
+    def _build_wav(self, frames: list[bytes]) -> bytes:
+        """Encode raw audio frames as WAV data"""
+        buffer = io.BytesIO()
+        with wave.open(buffer, 'wb') as wf:
+            wf.setnchannels(CHANNELS)
+            wf.setsampwidth(self.audio.get_sample_size(FORMAT))
+            wf.setframerate(DEVICE_RATE)
+            wf.writeframes(b''.join(frames))
+        return buffer.getvalue()
+
     def send_to_backend(self, audio_data, sequence_num):
         """Send audio data to the backend for processing"""
         print(f"Sending block {sequence_num} to backend...")
@@ -140,12 +157,12 @@ class AudioRecorder:
                 'audio': (f'chunk_{sequence_num}.wav', audio_data, 'audio/wav')
             }
             data = {
-                'episode_key': CURRENT_SHOW,
-                'info': INFO
+                'episode_key': self.show,
+                'info': self.info
             }
 
             response = requests.post(
-                AUDIO_ENDPOINT,
+                self.audio_endpoint,
                 files=files,
                 data=data,
                 timeout=30
@@ -158,7 +175,7 @@ class AudioRecorder:
                 print(f"Backend error: {response.status_code} - {response.text}")
 
         except requests.exceptions.ConnectionError:
-            print(f"Cannot connect to backend at {BACKEND_URL}")
+            print(f"Cannot connect to backend at {self.backend_url}")
             print(f"   Make sure the backend is running: ./backend/run.sh")
         except Exception as e:
             print(f"Error sending: {e}")
@@ -180,23 +197,14 @@ class AudioRecorder:
         seq_num = self.chunk_count
         self.chunk_count += 1
 
-        # Create WAV file in memory
-        buffer = io.BytesIO()
-        wf = wave.open(buffer, 'wb')
-        wf.setnchannels(CHANNELS)
-        wf.setsampwidth(self.audio.get_sample_size(FORMAT))
-        wf.setframerate(DEVICE_RATE)
-        wf.writeframes(b''.join(frames_to_send))
-        wf.close()
-
-        audio_content = buffer.getvalue()
+        audio_content = self._build_wav(frames_to_send)
         duration = len(frames_to_send) * CHUNK / DEVICE_RATE
 
         # Debug mode: Save as local WAV file
-        if DEBUG_MODE:
+        if self.debug:
             timestamp = time.strftime("%Y%m%d_%H%M%S")
-            filename = f"{CURRENT_SHOW}_block_{seq_num:03d}_{timestamp}.wav"
-            filepath = DEBUG_OUTPUT_DIR / filename
+            filename = f"{self.show}_block_{seq_num:03d}_{timestamp}.wav"
+            filepath = self.debug_output_dir / filename
             try:
                 with open(filepath, 'wb') as f:
                     f.write(audio_content)
@@ -230,12 +238,23 @@ class AudioRecorder:
         self.block_start_time = time.time()
         print("Manual block sent. Timer reset. Recording continues...\n")
 
+    def _flush_and_stop(self):
+        """Send remaining frames and release resources."""
+        total_duration = time.time() - self.block_start_time
+        print(f"\nRecording ended after {total_duration:.1f} seconds in current block")
+        with self.lock:
+            print(f"Collected chunks: {len(self.frames)}")
+            if self.frames:
+                print("Sending remaining data...")
+                self.save_and_send(reset_frames=False)
+        self.stop()
+
     def record(self):
         """Main recording loop with fixed-interval sending"""
         self.block_start_time = time.time()
         last_progress_report = 0
 
-        print(f"Recording... auto-send every {BLOCK_DURATION}s")
+        print(f"Recording... auto-send every {self.block_duration}s")
 
         try:
             while self.is_recording:
@@ -249,13 +268,13 @@ class AudioRecorder:
                 # Progress report
                 elapsed_int = int(elapsed)
                 if elapsed_int > 0 and elapsed_int % PROGRESS_INTERVAL == 0 and elapsed_int != last_progress_report:
-                    remaining = BLOCK_DURATION - elapsed
+                    remaining = self.block_duration - elapsed
                     print(f"  Block {self.chunk_count}: {elapsed_int}s recorded, {remaining:.0f}s until auto-send")
                     last_progress_report = elapsed_int
 
                 # Auto-send when block duration reached
-                if elapsed >= BLOCK_DURATION:
-                    print(f"Block duration ({BLOCK_DURATION}s) reached. Sending...")
+                if elapsed >= self.block_duration:
+                    print(f"Block duration ({self.block_duration}s) reached. Sending...")
                     self.save_and_send(reset_frames=True)
                     self.block_start_time = time.time()
                     last_progress_report = 0
@@ -263,28 +282,9 @@ class AudioRecorder:
 
         except KeyboardInterrupt:
             print("\nRecording interrupted by user")
+        finally:
             self.is_recording = False
-            if self.frames:
-                total_duration = time.time() - self.block_start_time
-                print(f"Recording ended after {total_duration:.1f} seconds in current block")
-                print(f"Collected chunks: {len(self.frames)}")
-                print("Data was not sent (early termination)")
-            return
-        except Exception as e:
-            print(f"Error during recording: {e}")
-            self.is_recording = False
-
-        if not self.is_recording:
-            total_duration = time.time() - self.block_start_time
-            print(f"\nRecording ended after {total_duration:.1f} seconds in current block")
-            print(f"Collected chunks: {len(self.frames)}")
-
-            with self.lock:
-                if self.frames:
-                    print("Sending remaining data...")
-                    self.save_and_send(reset_frames=False)
-
-            self.stop()
+            self._flush_and_stop()
 
     def stop(self):
         """Stop recording and cleanup"""
@@ -297,25 +297,8 @@ class AudioRecorder:
         print("Recording stopped and resources released.")
 
 
-# --- MAIN PROGRAM ---
-if __name__ == "__main__":
-    # Set current episode in backend
-    try:
-        response = requests.post(
-            f"{BACKEND_URL}/api/set-episode",
-            json={"episode_key": CURRENT_SHOW},
-            timeout=5
-        )
-        if response.ok:
-            print(f"Episode set in backend: {CURRENT_SHOW}")
-        else:
-            print(f"Could not set episode in backend: {response.status_code}")
-    except Exception as e:
-        print(f"Could not set episode in backend: {e}")
-        print("   (Backend may not be running)")
-
-    recorder = AudioRecorder()
-
+def setup_input_listeners(recorder):
+    """Set up stdin and global keyboard listeners. Returns a cleanup callable."""
     # Terminal input for manual sending
     def stdin_listener():
         """Read input from terminal (blocking in separate thread)"""
@@ -349,9 +332,11 @@ if __name__ == "__main__":
         except Exception as e:
             print(f"Terminal input listener ended: {e}")
 
-    # Try global keyboard listener (if permissions available)
+    # Try global keyboard listener (if pynput available and permissions granted)
     keyboard_listener = None
     try:
+        from pynput import keyboard
+
         def on_press(key):
             try:
                 if key == keyboard.Key.f10:
@@ -363,6 +348,9 @@ if __name__ == "__main__":
         keyboard_listener = keyboard.Listener(on_press=on_press)
         keyboard_listener.start()
         print("Global keyboard listener enabled (F10)")
+    except ImportError:
+        print("pynput not found. Install with: uv sync")
+        print("   (Using terminal input only)")
     except Exception as e:
         print(f"Global keyboard listener not available: {e}")
         print("   (Using terminal input instead)")
@@ -371,10 +359,29 @@ if __name__ == "__main__":
     stdin_thread = threading.Thread(target=stdin_listener, daemon=True)
     stdin_thread.start()
 
-    # Start recording (blocking)
+    def cleanup():
+        if keyboard_listener:
+            keyboard_listener.stop()
+
+    return cleanup
+
+
+def main():
+    show = get_current_show()
+    info = get_info(show)
+    debug = os.environ.get('DEBUG', '').lower() in ('true', '1', 'yes') or '--debug' in sys.argv
+    backend_url = os.getenv("BACKEND_URL", "http://localhost:5000")
+
+    set_backend_episode(backend_url, show)
+
+    recorder = AudioRecorder(show, info, backend_url, debug=debug)
+    cleanup = setup_input_listeners(recorder)
+
     recorder.record()
 
-    # Cleanup
-    if keyboard_listener:
-        keyboard_listener.stop()
+    cleanup()
     print("Program ended.")
+
+
+if __name__ == "__main__":
+    main()
