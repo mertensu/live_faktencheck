@@ -14,6 +14,7 @@ from fastapi import APIRouter, BackgroundTasks, UploadFile, File, Form
 
 from backend.models import ProcessingResponse
 from backend.state import pending_claims_blocks, processing_lock, to_dict
+from backend.show_config import get_info
 import backend.state as state
 
 logger = logging.getLogger(__name__)
@@ -39,9 +40,6 @@ def get_claim_extractor():
         from backend.services.claim_extraction import ClaimExtractor
         _claim_extractor = ClaimExtractor()
     return _claim_extractor
-
-
-from backend.show_config import get_info
 
 
 @router.post('/audio-block', status_code=202, response_model=ProcessingResponse)
@@ -94,7 +92,7 @@ async def process_audio_pipeline_async(audio_data: bytes, episode_key: str, info
         async with processing_lock:
             previous_context = state.last_transcript_tail
             # Store the last 3 speaker lines from this transcript for the next block
-            transcript_lines = [l for l in transcript.strip().splitlines() if l.strip()]
+            transcript_lines = [line for line in transcript.strip().splitlines() if line.strip()]
             state.last_transcript_tail = "\n".join(transcript_lines[-3:]) if transcript_lines else None
 
         # Step 2: Claim extraction (async)

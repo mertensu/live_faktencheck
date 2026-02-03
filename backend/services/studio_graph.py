@@ -26,16 +26,15 @@ from typing import List, Literal
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 
-# Load .env from project root
+# Load .env from project root (must happen before imports that read env vars)
 env_path = Path(__file__).parent.parent.parent / ".env"
 load_dotenv(env_path)
 
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_tavily import TavilySearch
-from langchain.agents import create_agent
+from langchain_google_genai import ChatGoogleGenerativeAI  # noqa: E402
+from langchain_tavily import TavilySearch  # noqa: E402
+from langchain.agents import create_agent  # noqa: E402
 
-# Import shared config
-from .fact_checker import TRUSTED_DOMAINS, DEFAULT_MODEL
+from .fact_checker import TRUSTED_DOMAINS, DEFAULT_MODEL  # noqa: E402
 
 
 class FactCheckResponse(BaseModel):

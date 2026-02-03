@@ -9,7 +9,6 @@ Tests:
 - GET /api/health
 """
 
-import pytest
 
 from backend import state
 

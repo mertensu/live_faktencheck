@@ -14,15 +14,13 @@ from backend.models import (
     ShowsDetailedResponse,
     EpisodesResponse,
 )
-from backend.state import fact_checks, pending_claims_blocks, current_episode_key
+from backend.state import fact_checks, pending_claims_blocks
+from backend.show_config import get_show_config, get_all_shows, get_episodes_for_show
 import backend.state as state
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api", tags=["config"])
-
-# Import config functions (with fallback)
-from backend.show_config import get_show_config, get_all_shows, get_episodes_for_show, get_info
 
 
 # NOTE: More specific routes MUST come before the wildcard route

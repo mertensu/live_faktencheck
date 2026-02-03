@@ -11,8 +11,6 @@ from unittest.mock import patch, MagicMock
 from backend.services.cost_tracker import (
     CostTracker,
     get_cost_tracker,
-    PRICING,
-    TAVILY_PRICE_PER_SEARCH,
 )
 
 

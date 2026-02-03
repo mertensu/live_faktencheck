@@ -8,9 +8,9 @@ Tests:
 """
 
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
-from backend.services.claim_extraction import ClaimExtractor, ExtractedClaim, ClaimList
+from backend.services.claim_extraction import ClaimExtractor, ExtractedClaim
 
 
 class TestClaimExtractorExtract:

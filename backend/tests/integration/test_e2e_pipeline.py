@@ -75,7 +75,6 @@ def test_full_pipeline_with_audio(cheap_models):
     """
     import subprocess
     import sys
-    import json
     import time
 
     skip_if_missing_keys()
@@ -191,7 +190,6 @@ def test_full_pipeline_with_text(cheap_models):
     """
     import subprocess
     import sys
-    import json
     import time
 
     skip_if_missing_keys()

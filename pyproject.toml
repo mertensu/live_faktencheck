@@ -47,6 +47,9 @@ markers = [
 ]
 
 [dependency-groups]
+dev = [
+    "ruff>=0.14.14",
+]
 test = [
     "nest-asyncio>=1.6.0",
 ]

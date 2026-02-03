@@ -203,7 +203,7 @@ async def process_new_fact_check_async(name: str, claim: str, episode_key: str):
             results = await asyncio.to_thread(fact_checker.check_claims, claims_to_check)
 
         if not results:
-            logger.error(f"No results from fact-checker for new claim")
+            logger.error("No results from fact-checker for new claim")
             return
 
         result = results[0]

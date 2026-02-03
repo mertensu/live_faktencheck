@@ -8,7 +8,7 @@ Tests:
 """
 
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 from backend.services.fact_checker import FactChecker, FactCheckResponse
 

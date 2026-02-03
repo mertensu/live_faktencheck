@@ -7,8 +7,6 @@ Tests:
 - POST /api/approve-claims
 """
 
-import pytest
-from unittest.mock import patch, AsyncMock
 
 from backend import state
 

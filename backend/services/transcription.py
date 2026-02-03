@@ -6,7 +6,6 @@ Handles audio transcription with speaker detection for German language.
 
 import os
 import logging
-from typing import Optional
 
 import assemblyai as aai
 
