@@ -22,21 +22,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api", tags=["config"])
 
 # Import config functions (with fallback)
-try:
-    import sys
-    import os
-    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-    from config import get_show_config, get_all_shows, get_episodes_for_show, get_info
-except ImportError:
-    logger.warning("config.py not found. Using default configuration.")
-    def get_show_config(episode_key=None):
-        return {"speakers": [], "info": "", "name": "Unknown", "description": ""}
-    def get_all_shows():
-        return []
-    def get_episodes_for_show(show_key):
-        return []
-    def get_info(episode_key=None):
-        return ""
+from backend.show_config import get_show_config, get_all_shows, get_episodes_for_show, get_info
 
 
 # NOTE: More specific routes MUST come before the wildcard route

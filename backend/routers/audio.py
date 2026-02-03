@@ -41,15 +41,7 @@ def get_claim_extractor():
     return _claim_extractor
 
 
-# Import get_info with fallback
-try:
-    import sys
-    import os
-    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-    from config import get_info
-except ImportError:
-    def get_info(episode_key=None):
-        return ""
+from backend.show_config import get_info
 
 
 @router.post('/audio-block', status_code=202, response_model=ProcessingResponse)

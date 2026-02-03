@@ -25,6 +25,8 @@ from backend.state import (
 )
 import backend.state as state
 
+from backend.show_config import get_info
+
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api", tags=["claims"])
@@ -209,13 +211,19 @@ async def approve_claims(
     episode_key = request.episode_key or state.current_episode_key
     logger.info(f"Approving {len(request.claims)} claims from block {request.block_id}")
 
-    # Try to find context from the pending block
+    # Try to find context from the pending block, fall back to config
     context = None
     if request.block_id:
         for b in pending_claims_blocks:
             if b.get("block_id") == request.block_id:
                 context = b.get("info") or b.get("headline")
                 break
+
+    # Fall back to config info if no context found in pending block
+    if not context:
+        context = get_info(episode_key)
+        if context:
+            logger.info(f"Using context from config for episode {episode_key}")
 
     # Start fact-checking in background
     background_tasks.add_task(process_fact_checks_async, request.claims, episode_key, context)
