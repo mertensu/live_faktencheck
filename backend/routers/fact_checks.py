@@ -7,7 +7,6 @@ Handles CRUD operations for fact-check results.
 import json
 import asyncio
 import logging
-import traceback
 from datetime import datetime
 from typing import Optional
 
@@ -20,22 +19,12 @@ from backend.models import (
     FactCheckStoredResponse,
 )
 from backend.state import fact_checks, processing_lock, to_dict
+from backend.services.registry import get_fact_checker
 import backend.state as state
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api", tags=["fact-checks"])
-
-# Lazy-loaded fact checker
-_fact_checker = None
-
-
-def get_fact_checker():
-    global _fact_checker
-    if _fact_checker is None:
-        from backend.services.fact_checker import FactChecker
-        _fact_checker = FactChecker()
-    return _fact_checker
 
 
 @router.get('/fact-checks')
@@ -64,18 +53,17 @@ async def receive_fact_check(request: FactCheckRequest):
         except (json.JSONDecodeError, ValueError):
             quellen = [quellen] if quellen else []
 
-    fact_check = {
-        "id": len(fact_checks) + 1,
-        "sprecher": sprecher,
-        "behauptung": behauptung,
-        "consistency": consistency,
-        "begruendung": begruendung,
-        "quellen": quellen if isinstance(quellen, list) else [],
-        "timestamp": datetime.now().isoformat(),
-        "episode_key": episode_key
-    }
-
     async with processing_lock:
+        fact_check = {
+            "id": state.allocate_fact_check_id(),
+            "sprecher": sprecher,
+            "behauptung": behauptung,
+            "consistency": consistency,
+            "begruendung": begruendung,
+            "quellen": quellen if isinstance(quellen, list) else [],
+            "timestamp": datetime.now().isoformat(),
+            "episode_key": episode_key
+        }
         fact_checks.append(fact_check)
 
     logger.info(f"Fact-check stored: ID {fact_check['id']} - {sprecher} - {consistency}")
@@ -212,7 +200,7 @@ async def process_new_fact_check_async(name: str, claim: str, episode_key: str):
 
         async with processing_lock:
             fact_check = {
-                "id": len(fact_checks) + 1,
+                "id": state.allocate_fact_check_id(),
                 "sprecher": result_dict.get("speaker", name),
                 "behauptung": result_dict.get("original_claim", claim),
                 "consistency": result_dict.get("consistency", "unklar"),
@@ -224,9 +212,8 @@ async def process_new_fact_check_async(name: str, claim: str, episode_key: str):
             fact_checks.append(fact_check)
             logger.info(f"New fact-check created: ID {fact_check['id']} - {fact_check['consistency']}")
 
-    except Exception as e:
-        logger.error(f"Error creating new fact-check: {e}")
-        traceback.print_exc()
+    except Exception:
+        logger.exception("Error creating new fact-check")
 
 
 async def process_fact_check_update_async(fact_check_id: int, name: str, claim: str, episode_key: str):
@@ -269,6 +256,5 @@ async def process_fact_check_update_async(fact_check_id: int, name: str, claim: 
 
         logger.info(f"Fact-check {fact_check_id} re-run complete.")
 
-    except Exception as e:
-        logger.error(f"Error re-running fact-check {fact_check_id}: {e}")
-        traceback.print_exc()
+    except Exception:
+        logger.exception(f"Error re-running fact-check {fact_check_id}")

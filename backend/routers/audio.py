@@ -6,7 +6,6 @@ Handles audio block reception and transcription pipeline.
 
 import asyncio
 import logging
-import traceback
 from datetime import datetime
 from typing import Optional
 
@@ -15,31 +14,12 @@ from fastapi import APIRouter, BackgroundTasks, UploadFile, File, Form
 from backend.models import ProcessingResponse
 from backend.state import pending_claims_blocks, processing_lock, to_dict
 from backend.show_config import get_info
+from backend.services.registry import get_transcription_service, get_claim_extractor
 import backend.state as state
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api", tags=["audio"])
-
-# Lazy-loaded services
-_transcription_service = None
-_claim_extractor = None
-
-
-def get_transcription_service():
-    global _transcription_service
-    if _transcription_service is None:
-        from backend.services.transcription import TranscriptionService
-        _transcription_service = TranscriptionService()
-    return _transcription_service
-
-
-def get_claim_extractor():
-    global _claim_extractor
-    if _claim_extractor is None:
-        from backend.services.claim_extraction import ClaimExtractor
-        _claim_extractor = ClaimExtractor()
-    return _claim_extractor
 
 
 @router.post('/audio-block', status_code=202, response_model=ProcessingResponse)
@@ -125,6 +105,5 @@ async def process_audio_pipeline_async(audio_data: bytes, episode_key: str, info
 
         logger.info(f"[{block_id}] Pipeline complete. {len(claims)} claims added to pending.")
 
-    except Exception as e:
-        logger.error(f"[{block_id}] Pipeline error: {e}")
-        traceback.print_exc()
+    except Exception:
+        logger.exception(f"[{block_id}] Pipeline error")

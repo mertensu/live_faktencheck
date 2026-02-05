@@ -17,6 +17,16 @@ last_transcript_tail: str | None = None
 # Lock for concurrent access
 processing_lock = asyncio.Lock()
 
+_next_fact_check_id = 1
+
+
+def allocate_fact_check_id() -> int:
+    """Return next ID and increment. Must be called under processing_lock."""
+    global _next_fact_check_id
+    fid = _next_fact_check_id
+    _next_fact_check_id += 1
+    return fid
+
 
 def to_dict(obj):
     """Convert Pydantic model to dict, or return as-is if already a dict."""

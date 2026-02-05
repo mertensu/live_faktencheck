@@ -34,6 +34,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI  # noqa: E402
 from langchain_tavily import TavilySearch  # noqa: E402
 from langchain.agents import create_agent  # noqa: E402
 
+from backend.utils import load_prompt  # noqa: E402
 from .fact_checker import TRUSTED_DOMAINS, DEFAULT_MODEL  # noqa: E402
 
 
@@ -50,16 +51,7 @@ class FactCheckResponse(BaseModel):
     sources: List[dict] = Field(description="Primary sources with 'url' and 'title' fields")
 
 
-def _load_prompt() -> str:
-    """Load the fact checker prompt template."""
-    prompt_path = Path(__file__).parent.parent.parent / "prompts" / "fact_checker.md"
-    if prompt_path.exists():
-        template = prompt_path.read_text(encoding="utf-8")
-        current_date = datetime.now().strftime("%B %Y")
-        return template.replace("{current_date}", current_date)
-
-    # Fallback minimal prompt
-    return """You are a professional German fact-checker.
+FALLBACK_PROMPT = """You are a professional German fact-checker.
 Verify the claim provided by the user using the search tool.
 Search in German. Provide evidence-based analysis."""
 
@@ -94,7 +86,9 @@ def _create_studio_graph():
     )
 
     # Load prompt
-    system_prompt = _load_prompt()
+    current_date = datetime.now().strftime("%B %Y")
+    template = load_prompt("fact_checker.md", fallback=FALLBACK_PROMPT)
+    system_prompt = template.replace("{current_date}", current_date)
 
     # Create the agent graph
     agent = create_agent(

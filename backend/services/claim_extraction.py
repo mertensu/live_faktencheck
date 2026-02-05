@@ -7,12 +7,13 @@ Extracts verifiable factual claims from German transcripts.
 import os
 import asyncio
 import logging
-from pathlib import Path
 from typing import List
 from datetime import datetime
 
 from google import genai
 from pydantic import BaseModel, Field
+
+from backend.utils import load_prompt
 
 logger = logging.getLogger(__name__)
 
@@ -44,27 +45,10 @@ class ClaimExtractor:
         self.model_name = os.getenv("GEMINI_MODEL_CLAIM_EXTRACTION", DEFAULT_MODEL)
 
         # Load prompt templates
-        self.prompt_template = self._load_prompt_template("claim_extraction.md")
-        self.article_prompt_template = self._load_prompt_template("claim_extraction_article.md")
+        self.prompt_template = load_prompt("claim_extraction.md")
+        self.article_prompt_template = load_prompt("claim_extraction_article.md")
 
         logger.info(f"ClaimExtractor initialized with model: {self.model_name}")
-
-    def _load_prompt_template(self, filename: str) -> str:
-        """Load a prompt template from file."""
-        # Try multiple possible locations (relative to this file or cwd)
-        possible_paths = [
-            Path(__file__).parent.parent.parent / "prompts" / filename,
-            Path(f"prompts/{filename}"),
-        ]
-
-        for prompt_path in possible_paths:
-            if prompt_path.exists():
-                logger.info(f"Loading prompt from: {prompt_path}")
-                return prompt_path.read_text(encoding="utf-8")
-
-        raise FileNotFoundError(
-            f"Could not find {filename} prompt file. Tried: {possible_paths}"
-        )
 
     async def extract_async(self, transcript: str, info: str, previous_context: str | None = None) -> List[ExtractedClaim]:
         """
@@ -134,10 +118,8 @@ Participants and date: {info}
             logger.info(f"Extraction complete: {len(claims)} claims found")
             return claims
 
-        except Exception as e:
-            logger.error(f"Structured extraction failed: {e}")
-            import traceback
-            traceback.print_exc()
+        except Exception:
+            logger.exception("Structured extraction failed")
             raise
 
     async def extract_from_article_async(self, text: str, headline: str, publication_date: str = None) -> List[ExtractedClaim]:

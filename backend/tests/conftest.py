@@ -12,6 +12,7 @@ from backend import state
 from backend.services.claim_extraction import ExtractedClaim, ClaimList
 from backend.services.fact_checker import FactCheckResponse, Source
 from backend.services.cost_tracker import CostTracker
+from backend.services.registry import reset_services
 
 # Allow nested event loops - fixes LangChain agent hanging in pytest
 # See: https://github.com/pytest-dev/pytest-asyncio/discussions/546
@@ -28,13 +29,17 @@ def reset_state():
     state.fact_checks.clear()
     state.pending_claims_blocks.clear()
     state.current_episode_key = None
+    state._next_fact_check_id = 1
     CostTracker.reset_instance()
+    reset_services()
     yield
     # Cleanup after test
     state.fact_checks.clear()
     state.pending_claims_blocks.clear()
     state.current_episode_key = None
+    state._next_fact_check_id = 1
     CostTracker.reset_instance()
+    reset_services()
 
 
 # =============================================================================

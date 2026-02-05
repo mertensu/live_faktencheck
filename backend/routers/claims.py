@@ -6,7 +6,6 @@ Handles pending claims and text-based claim extraction.
 
 import asyncio
 import logging
-import traceback
 from datetime import datetime
 
 from fastapi import APIRouter, HTTPException, BackgroundTasks
@@ -26,30 +25,11 @@ from backend.state import (
 import backend.state as state
 
 from backend.show_config import get_info
+from backend.services.registry import get_claim_extractor, get_fact_checker
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api", tags=["claims"])
-
-# Lazy-loaded services
-_claim_extractor = None
-_fact_checker = None
-
-
-def get_claim_extractor():
-    global _claim_extractor
-    if _claim_extractor is None:
-        from backend.services.claim_extraction import ClaimExtractor
-        _claim_extractor = ClaimExtractor()
-    return _claim_extractor
-
-
-def get_fact_checker():
-    global _fact_checker
-    if _fact_checker is None:
-        from backend.services.fact_checker import FactChecker
-        _fact_checker = FactChecker()
-    return _fact_checker
 
 
 # =============================================================================
@@ -137,9 +117,8 @@ async def process_text_pipeline_async(text: str, headline: str, source_id: str, 
 
         logger.info(f"[{block_id}] Pipeline complete. {len(claims)} claims added to pending.")
 
-    except Exception as e:
-        logger.error(f"[{block_id}] Pipeline error: {e}")
-        traceback.print_exc()
+    except Exception:
+        logger.exception(f"[{block_id}] Pipeline error")
 
 
 # =============================================================================
@@ -257,7 +236,7 @@ async def process_fact_checks_async(claims: list, episode_key: str, context: str
                 sources = result_dict.get("sources", [])
 
                 fact_check = {
-                    "id": len(fact_checks) + 1,
+                    "id": state.allocate_fact_check_id(),
                     "sprecher": result_dict.get("speaker", ""),
                     "behauptung": result_dict.get("original_claim", ""),
                     "consistency": result_dict.get("consistency", "unklar"),
@@ -271,6 +250,5 @@ async def process_fact_checks_async(claims: list, episode_key: str, context: str
 
         logger.info(f"Fact-checking complete. {len(results)} results stored.")
 
-    except Exception as e:
-        logger.error(f"Error in fact-check processing: {e}")
-        traceback.print_exc()
+    except Exception:
+        logger.exception("Error in fact-check processing")

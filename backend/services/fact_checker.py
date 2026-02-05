@@ -7,7 +7,6 @@ Verifies claims against authoritative German sources using a robust ReAct agent 
 import os
 import asyncio
 import logging
-from pathlib import Path
 from typing import List, Dict, Any, Literal
 from datetime import datetime
 
@@ -17,6 +16,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_tavily import TavilySearch
 from langchain.agents import create_agent
 
+from backend.utils import load_prompt
 from .cost_tracker import get_cost_tracker
 
 logger = logging.getLogger(__name__)
@@ -132,7 +132,7 @@ class FactChecker:
             )
 
         # Load prompt template
-        self.prompt_template = self._load_prompt_template()
+        self.prompt_template = load_prompt("fact_checker.md")
 
         # Parallel processing settings
         self.parallel_enabled = os.getenv("FACT_CHECK_PARALLEL", "false").lower() == "true"
@@ -147,22 +147,6 @@ class FactChecker:
             f"search_depth: {self.search_depth}, max_results: {self.max_results}, "
             f"parallel: {self.parallel_enabled}, max_workers: {self.max_workers}, "
             f"recursion_limit: {self.recursion_limit}"
-        )
-
-    def _load_prompt_template(self) -> str:
-        """Load the fact checker prompt template from file."""
-        possible_paths = [
-            Path(__file__).parent.parent.parent / "prompts" / "fact_checker.md",
-            Path("prompts/fact_checker.md"),
-        ]
-
-        for prompt_path in possible_paths:
-            if prompt_path.exists():
-                logger.info(f"Loading prompt from: {prompt_path}")
-                return prompt_path.read_text(encoding="utf-8")
-
-        raise FileNotFoundError(
-            f"Could not find fact_checker.md prompt file. Tried: {possible_paths}"
         )
 
     async def check_claim_async(self, speaker: str, claim: str, context: str = None) -> Dict[str, Any]:
@@ -248,9 +232,7 @@ class FactChecker:
             return parsed
 
         except Exception as e:
-            logger.error(f"Fact-check failed for claim: {e}")
-            import traceback
-            traceback.print_exc()
+            logger.exception("Fact-check failed for claim")
             return {
                 "speaker": speaker,
                 "original_claim": claim,
