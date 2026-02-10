@@ -1,4 +1,4 @@
-export function AdminView({ pendingClaims, stagedClaims, sentClaims, onStage, onUnstage, onUpdatePending, onSendAll, onResend }) {
+export function AdminView({ pendingClaims, stagedClaims, discardedClaims, sentClaims, onStage, onUnstage, onDiscard, onUndiscard, onUpdatePending, onSendAll, onResend }) {
   return (
     <div className="admin-layout">
       {/* Top row: 2 columns side by side */}
@@ -37,13 +37,22 @@ export function AdminView({ pendingClaims, stagedClaims, sentClaims, onStage, on
                       {new Date(claim.timestamp).toLocaleString('de-DE')}
                     </div>
                   </div>
-                  <button
-                    className="stage-button"
-                    onClick={() => onStage(claim.id)}
-                    title="Zum Staging hinzufugen"
-                  >
-                    {'\u2192'}
-                  </button>
+                  <div className="claim-actions">
+                    <button
+                      className="stage-button"
+                      onClick={() => onStage(claim.id)}
+                      title="Zum Staging hinzufugen"
+                    >
+                      {'\u2192'}
+                    </button>
+                    <button
+                      className="discard-button"
+                      onClick={() => onDiscard(claim.id)}
+                      title="Verwerfen"
+                    >
+                      {'\u2715'}
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -89,6 +98,39 @@ export function AdminView({ pendingClaims, stagedClaims, sentClaims, onStage, on
                 </button>
               </div>
             </>
+          )}
+        </div>
+      </div>
+
+      {/* Discarded Claims */}
+      <div className="admin-bottom-row">
+        <div className="admin-panel admin-discarded">
+          <div className="admin-panel-header">
+            <h2>Verworfen</h2>
+            <span className="panel-count">{discardedClaims.length}</span>
+          </div>
+          {discardedClaims.length === 0 ? (
+            <div className="admin-panel-empty compact">
+              <p>Keine verworfenen Claims</p>
+            </div>
+          ) : (
+            <div className="discarded-claims-list">
+              {discardedClaims.map((claim) => (
+                <div key={claim.id} className="discarded-claim-item">
+                  <div className="discarded-claim-content">
+                    <span className="discarded-speaker">{claim.name || 'Unbekannt'}</span>
+                    <span className="discarded-text">{claim.claim}</span>
+                  </div>
+                  <button
+                    className="undiscard-button"
+                    onClick={() => onUndiscard(claim.id)}
+                    title="Zurück zu Pending"
+                  >
+                    Zurückholen
+                  </button>
+                </div>
+              ))}
+            </div>
           )}
         </div>
       </div>

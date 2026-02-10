@@ -51,6 +51,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
   // Admin workflow: flat list -> staging -> sent history
   const [pendingClaims, setPendingClaims] = useState([])   // Flat list of editable claims
   const [stagedClaims, setStagedClaims] = useState([])     // Ready to send (read-only)
+  const [discardedClaims, setDiscardedClaims] = useState([]) // Discarded/irrelevant claims
   const [sentClaims, setSentClaims] = useState([])         // History with timestamps
   const [localEdits, setLocalEdits] = useState({})         // Track local edits: { claimId: { name, claim } }
   const localEditsRef = useRef(localEdits)                   // Ref to access current edits in polling
@@ -192,11 +193,20 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
         const flatClaims = flattenPendingBlocks(data)
         const stagedIds = new Set(stagedClaims.map(c => c.id))
         const sentIds = new Set(sentClaims.map(c => c.originalId || c.id))
-        const newPending = flatClaims.filter(c => !stagedIds.has(c.id) && !sentIds.has(c.id))
+        const discardedIds = new Set(discardedClaims.map(c => c.id))
+        const newPending = flatClaims.filter(c => !stagedIds.has(c.id) && !sentIds.has(c.id) && !discardedIds.has(c.id))
         const currentEdits = localEditsRef.current
-        setPendingClaims(newPending.map(claim =>
-          currentEdits[claim.id] ? { ...claim, ...currentEdits[claim.id] } : claim
-        ))
+        setPendingClaims(prev => {
+          // Preserve locally-added resend claims (not from backend)
+          const localResendClaims = prev.filter(c => c.resendOf)
+          const merged = [
+            ...localResendClaims,
+            ...newPending.map(claim =>
+              currentEdits[claim.id] ? { ...claim, ...currentEdits[claim.id] } : claim
+            )
+          ]
+          return merged
+        })
       } catch (error) {
         if (!isMounted || error.name === 'AbortError') return
         debug.error('Error loading pending claims:', error)
@@ -211,7 +221,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
       if (currentController) currentController.abort()
       clearInterval(interval)
     }
-  }, [isAdminMode, showAdminMode, stagedClaims, sentClaims])
+  }, [isAdminMode, showAdminMode, stagedClaims, sentClaims, discardedClaims])
 
   const toggleExpand = (id) => {
     const newExpanded = new Set(expandedIds)
@@ -242,6 +252,26 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
     if (!claim) return
     setPendingClaims(prev => [...prev, { ...claim }].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp)))
     setStagedClaims(prev => prev.filter(c => c.id !== claimId))
+  }
+
+  // Move claim from pending -> discarded
+  const discardClaim = (claimId) => {
+    const claim = pendingClaims.find(c => c.id === claimId)
+    if (!claim) return
+    setDiscardedClaims(prev => [...prev, { ...claim }])
+    setPendingClaims(prev => prev.filter(c => c.id !== claimId))
+    setLocalEdits(prev => {
+      const { [claimId]: _, ...rest } = prev
+      return rest
+    })
+  }
+
+  // Move claim from discarded -> pending
+  const undiscardClaim = (claimId) => {
+    const claim = discardedClaims.find(c => c.id === claimId)
+    if (!claim) return
+    setPendingClaims(prev => [...prev, { ...claim }].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp)))
+    setDiscardedClaims(prev => prev.filter(c => c.id !== claimId))
   }
 
   // Edit claim in pending list
@@ -393,9 +423,12 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
           <AdminView
             pendingClaims={pendingClaims}
             stagedClaims={stagedClaims}
+            discardedClaims={discardedClaims}
             sentClaims={sentClaims}
             onStage={stageClaimForSending}
             onUnstage={unstageClaim}
+            onDiscard={discardClaim}
+            onUndiscard={undiscardClaim}
             onUpdatePending={updatePendingClaim}
             onSendAll={sendStagedClaims}
             onResend={prepareResend}

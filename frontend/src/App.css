@@ -821,6 +821,109 @@
   color: var(--accent-blue);
 }
 
+/* Discard button */
+.claim-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-self: center;
+  flex-shrink: 0;
+}
+
+.discard-button {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--text-muted);
+  color: white;
+}
+
+.discard-button:hover {
+  background: #dc2626;
+}
+
+/* Discarded panel */
+.admin-discarded .admin-panel-header {
+  border-bottom-color: var(--text-muted);
+}
+
+.admin-discarded .panel-count {
+  background: var(--text-muted);
+}
+
+.discarded-claims-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.discarded-claim-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: var(--bg-main);
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--text-muted);
+  opacity: 0.6;
+}
+
+.discarded-claim-item:hover {
+  opacity: 0.85;
+}
+
+.discarded-claim-content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.discarded-speaker {
+  font-weight: 600;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.discarded-text {
+  flex: 1;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.undiscard-button {
+  background: white;
+  color: var(--text-main);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  padding: 0.35rem 0.65rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  white-space: nowrap;
+}
+
+.undiscard-button:hover {
+  border-color: var(--status-pending);
+  color: var(--status-pending);
+}
+
 /* Action buttons */
 .action-button {
   background: white;
