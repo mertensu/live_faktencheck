@@ -217,6 +217,27 @@ class FactChecker:
                 # Result might already be flat
                 parsed = result.model_dump() if hasattr(result, "model_dump") else result
 
+            # Retry once if agent returned no structured response or empty fields
+            # This happens when Gemini ignores tool_choice="any" and responds with plain text
+            if "structured_response" not in result or (not parsed.get("speaker") and not parsed.get("original_claim")):
+                logger.warning(f"Agent returned no structured response for '{speaker}', retrying once...")
+                result = await asyncio.to_thread(
+                    agent.invoke,
+                    {"messages": [{"role": "user", "content": user_message}]},
+                    config={"recursion_limit": self.recursion_limit}
+                )
+                if "structured_response" in result:
+                    structured = result["structured_response"]
+                    parsed = structured.model_dump() if hasattr(structured, "model_dump") else structured
+                else:
+                    parsed = result.model_dump() if hasattr(result, "model_dump") else result
+
+            # Fallback to input values if still empty after retry
+            if not parsed.get("speaker"):
+                parsed["speaker"] = speaker
+            if not parsed.get("original_claim"):
+                parsed["original_claim"] = claim
+
             # Extract and log cost
             cost_tracker = get_cost_tracker(self.model_name)
             stats = cost_tracker.extract_usage_stats(result)
