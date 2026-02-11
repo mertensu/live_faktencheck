@@ -14,8 +14,7 @@ from backend.models import (
     ShowsDetailedResponse,
     EpisodesResponse,
 )
-from backend.state import fact_checks, pending_claims_blocks
-from backend.show_config import get_show_config, get_all_shows, get_episodes_for_show
+from backend.show_config import get_show_config, get_episodes_for_show
 import backend.state as state
 
 logger = logging.getLogger(__name__)
@@ -28,41 +27,24 @@ router = APIRouter(prefix="/api", tags=["config"])
 
 @router.get('/config/shows', response_model=ShowsDetailedResponse)
 async def get_all_shows_endpoint():
-    """Return all available shows with details from latest episode"""
+    """Return all available episodes as individual entries"""
     try:
-        show_keys = get_all_shows()
+        from backend.show_config import SHOW_CONFIG
         detailed_shows = []
 
-        for key in show_keys:
-            # Get episodes to find latest info
-            episodes = get_episodes_for_show(key)
-
-            # Default values
-            name = key.capitalize()
-            description = ""
-            info = ""
-            speakers = []
-
-            if episodes:
-                # Use latest episode for info
-                latest = episodes[0]
-                config = latest.get('config', {})
-                name = config.get('name', name)
-                description = config.get('description', "")
-                info = config.get('info', "")
-                type_ = config.get('type', "show")
-                speakers = config.get('speakers', [])
-            else:
-                type_ = "show"  # Default
-
+        for episode_key, config in SHOW_CONFIG.items():
             detailed_shows.append({
-                "key": key,
-                "name": name,
-                "description": description,
-                "info": info,
-                "type": type_,
-                "speakers": speakers
+                "key": episode_key,
+                "name": config.get("name", episode_key.capitalize()),
+                "description": config.get("description", ""),
+                "info": config.get("info", ""),
+                "type": config.get("type", "show"),
+                "speakers": config.get("speakers", []),
+                "episode_name": config.get("episode_name", ""),
             })
+
+        # Sort by key (reverse for newest first)
+        detailed_shows.sort(key=lambda x: x["key"], reverse=True)
 
         return ShowsDetailedResponse(shows=detailed_shows)
     except Exception as e:
@@ -107,9 +89,10 @@ async def set_current_episode(request: SetEpisodeRequest):
 @router.get('/health', response_model=HealthResponse)
 async def health():
     """Health check endpoint"""
+    db = state.get_db()
     return HealthResponse(
         status="ok",
         current_episode=state.current_episode_key,
-        pending_blocks=len(pending_claims_blocks),
-        fact_checks=len(fact_checks)
+        pending_blocks=await db.count_pending_blocks(),
+        fact_checks=await db.count_fact_checks()
     )

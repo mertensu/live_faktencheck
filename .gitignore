@@ -67,3 +67,10 @@ frontend_dev.log
 
 # Cost tracking data
 backend/data/cost_history.json
+
+# SQLite database
+backend/data/factcheck.db
+
+# Claude Code session memory
+memory.md
+handover/

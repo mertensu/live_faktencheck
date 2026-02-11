@@ -1,31 +1,30 @@
 """
 Shared state for the fact-check backend.
 
-In-memory storage for fact-checks and pending claims.
+Runtime state (episode, transcript context) and database reference.
+Fact-checks and pending claims are stored in SQLite via the Database class.
 """
 
 import asyncio
 
-# In-memory storage
-fact_checks: list = []
-pending_claims_blocks: list = []
-current_episode_key: str | None = None
+from backend.database import Database
 
-# Last few speaker turns from the previous transcript block, for cross-block continuity
+# Runtime state (not persisted)
+current_episode_key: str | None = None
 last_transcript_tail: str | None = None
 
 # Lock for concurrent access
 processing_lock = asyncio.Lock()
 
-_next_fact_check_id = 1
+# Database instance (set during app lifespan)
+db: Database | None = None
 
 
-def allocate_fact_check_id() -> int:
-    """Return next ID and increment. Must be called under processing_lock."""
-    global _next_fact_check_id
-    fid = _next_fact_check_id
-    _next_fact_check_id += 1
-    return fid
+def get_db() -> Database:
+    """Return the active database instance. Raises if not initialized."""
+    if db is None:
+        raise RuntimeError("Database not initialized. Is the app lifespan running?")
+    return db
 
 
 def to_dict(obj):

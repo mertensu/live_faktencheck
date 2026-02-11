@@ -15,6 +15,7 @@ NC='\033[0m' # No Color
 # Configuration
 EPISODE_KEY="${1:-}"  # First parameter: Episode key (e.g., maischberger-2025-09-19)
 BACKEND_PORT=5000
+DB_ENV=""
 FRONTEND_DIR="frontend"
 TUNNEL_NAME="faktencheck-api"
 TUNNEL_LOG=".cloudflared_tunnel.log"
@@ -42,6 +43,15 @@ print_info() {
     echo -e "${BLUE}ℹ️  $1${NC}"
 }
 
+# Parse optional flags
+for arg in "$@"; do
+    case "$arg" in
+        --no-db)
+            DB_ENV="DB_MODE=memory"
+            ;;
+    esac
+done
+
 # Check for episode key
 if [ -z "$EPISODE_KEY" ]; then
     print_error "Episode key missing!"
@@ -54,6 +64,10 @@ if [ -z "$EPISODE_KEY" ]; then
 fi
 
 print_header "🚀 Production Startup for: $EPISODE_KEY"
+
+if [ -n "$DB_ENV" ]; then
+    print_warning "Running without database persistence (in-memory mode)"
+fi
 
 # Load .env file if exists
 if [ -f .env ]; then
@@ -106,7 +120,11 @@ if pgrep -f "python.*backend.app" > /dev/null; then
     print_warning "Backend already running"
 else
     print_info "Starting backend on port $BACKEND_PORT..."
-    uv run python -m backend.app > backend.log 2>&1 &
+    if [ -n "$DB_ENV" ]; then
+        env $DB_ENV uv run python -m backend.app > backend.log 2>&1 &
+    else
+        uv run python -m backend.app > backend.log 2>&1 &
+    fi
     BACKEND_PID=$!
     echo $BACKEND_PID > .backend_pid
     sleep 3

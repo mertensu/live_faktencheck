@@ -12,7 +12,7 @@ from typing import Optional
 from fastapi import APIRouter, BackgroundTasks, UploadFile, File, Form
 
 from backend.models import ProcessingResponse
-from backend.state import pending_claims_blocks, processing_lock, to_dict
+from backend.state import processing_lock, to_dict
 from backend.show_config import get_info
 from backend.services.registry import get_transcription_service, get_claim_extractor
 import backend.state as state
@@ -90,18 +90,18 @@ async def process_audio_pipeline_async(audio_data: bytes, episode_key: str, info
             return
 
         # Step 3: Store as pending claims
-        async with processing_lock:
-            pending_block = {
-                "block_id": block_id,
-                "timestamp": datetime.now().isoformat(),
-                "claims_count": len(claims),
-                "claims": [to_dict(c) for c in claims],
-                "status": "pending",
-                "episode_key": episode_key,
-                "info": info,
-                "transcript_preview": transcript[:200] + "..." if len(transcript) > 200 else transcript
-            }
-            pending_claims_blocks.append(pending_block)
+        db = state.get_db()
+        pending_block = {
+            "block_id": block_id,
+            "timestamp": datetime.now().isoformat(),
+            "claims_count": len(claims),
+            "claims": [to_dict(c) for c in claims],
+            "status": "pending",
+            "episode_key": episode_key,
+            "info": info,
+            "text_preview": transcript[:200] + "..." if len(transcript) > 200 else transcript
+        }
+        await db.add_pending_block(pending_block)
 
         logger.info(f"[{block_id}] Pipeline complete. {len(claims)} claims added to pending.")
 

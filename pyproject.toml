@@ -25,6 +25,8 @@ dependencies = [
     "langchain-google-genai>=4.2.0",
     "langchain-tavily>=0.2.16",
     "langgraph>=1.0.6",
+    # Database
+    "aiosqlite>=0.20.0",
     # Utilities
     "python-dotenv>=1.0.0",
     "langgraph-cli[inmem]>=0.4.12",

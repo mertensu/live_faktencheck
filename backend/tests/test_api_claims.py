@@ -34,8 +34,10 @@ class TestPendingClaimsEndpoint:
         assert data["claims_count"] == 2
 
         # Verify state was updated
-        assert len(state.pending_claims_blocks) == 1
-        block = state.pending_claims_blocks[0]
+        db = state.get_db()
+        blocks = await db.get_pending_blocks()
+        assert len(blocks) == 1
+        block = blocks[0]
         assert block["block_id"] == "test-block-001"
         assert block["claims_count"] == 2
         assert block["status"] == "pending"
@@ -97,15 +99,16 @@ class TestPendingClaimsEndpoint:
 
     async def test_get_pending_claims_sorted_by_timestamp(self, client):
         """GET /api/pending-claims returns blocks newest first."""
-        # Add blocks with specific timestamps
-        state.pending_claims_blocks.append({
+        # Add blocks with specific timestamps via DB
+        db = state.get_db()
+        await db.add_pending_block({
             "block_id": "old",
             "timestamp": "2024-01-01T10:00:00",
             "claims_count": 1,
             "claims": [],
             "status": "pending",
         })
-        state.pending_claims_blocks.append({
+        await db.add_pending_block({
             "block_id": "new",
             "timestamp": "2024-01-02T10:00:00",
             "claims_count": 1,
@@ -154,12 +157,14 @@ class TestApproveClaimsEndpoint:
 
     async def test_approve_claims_uses_context_from_block(self, client, mock_all_services):
         """POST /api/approve-claims retrieves context from pending block."""
-        # First add a pending block with context
-        state.pending_claims_blocks.append({
+        # First add a pending block with context via DB
+        db = state.get_db()
+        await db.add_pending_block({
             "block_id": "context-block",
             "headline": "Important context headline",
             "claims": [{"name": "X", "claim": "Y"}],
             "status": "pending",
+            "timestamp": "2024-01-01T10:00:00",
         })
 
         payload = {

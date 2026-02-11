@@ -9,6 +9,7 @@ from httpx import AsyncClient, ASGITransport
 
 from backend.app import app
 from backend import state
+from backend.database import Database
 from backend.services.claim_extraction import ExtractedClaim, ClaimList
 from backend.services.fact_checker import FactCheckResponse, Source
 from backend.services.cost_tracker import CostTracker
@@ -24,20 +25,19 @@ nest_asyncio.apply()
 # =============================================================================
 
 @pytest.fixture(autouse=True)
-def reset_state():
-    """Reset shared state before each test."""
-    state.fact_checks.clear()
-    state.pending_claims_blocks.clear()
+async def reset_state():
+    """Reset shared state and provide fresh in-memory DB before each test."""
+    db = Database(":memory:")
+    await db.connect()
+    state.db = db
     state.current_episode_key = None
-    state._next_fact_check_id = 1
     CostTracker.reset_instance()
     reset_services()
     yield
     # Cleanup after test
-    state.fact_checks.clear()
-    state.pending_claims_blocks.clear()
+    await db.close()
+    state.db = None
     state.current_episode_key = None
-    state._next_fact_check_id = 1
     CostTracker.reset_instance()
     reset_services()
 

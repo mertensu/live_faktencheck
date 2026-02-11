@@ -16,12 +16,7 @@ from backend.models import (
     PendingClaimsRequest,
     ProcessingResponse,
 )
-from backend.state import (
-    fact_checks,
-    pending_claims_blocks,
-    processing_lock,
-    to_dict,
-)
+from backend.state import to_dict
 import backend.state as state
 
 from backend.show_config import get_info
@@ -101,19 +96,19 @@ async def process_text_pipeline_async(text: str, headline: str, source_id: str, 
             return
 
         # Store as pending claims
-        async with processing_lock:
-            pending_block = {
-                "block_id": block_id,
-                "timestamp": datetime.now().isoformat(),
-                "claims_count": len(claims),
-                "claims": [to_dict(c) for c in claims],
-                "status": "pending",
-                "source_id": source_id,
-                "episode_key": state.current_episode_key or "test",
-                "headline": headline,
-                "text_preview": text[:200] + "..." if len(text) > 200 else text
-            }
-            pending_claims_blocks.append(pending_block)
+        db = state.get_db()
+        pending_block = {
+            "block_id": block_id,
+            "timestamp": datetime.now().isoformat(),
+            "claims_count": len(claims),
+            "claims": [to_dict(c) for c in claims],
+            "status": "pending",
+            "source_id": source_id,
+            "episode_key": state.current_episode_key or "test",
+            "headline": headline,
+            "text_preview": text[:200] + "..." if len(text) > 200 else text
+        }
+        await db.add_pending_block(pending_block)
 
         logger.info(f"[{block_id}] Pipeline complete. {len(claims)} claims added to pending.")
 
@@ -128,12 +123,8 @@ async def process_text_pipeline_async(text: str, headline: str, source_id: str, 
 @router.get('/pending-claims')
 async def get_pending_claims():
     """Return all pending claim blocks (newest first)"""
-    sorted_blocks = sorted(
-        pending_claims_blocks,
-        key=lambda x: x.get("timestamp", ""),
-        reverse=True
-    )
-    return sorted_blocks
+    db = state.get_db()
+    return await db.get_pending_blocks()
 
 
 @router.post('/pending-claims', status_code=201, response_model=ProcessingResponse)
@@ -145,11 +136,11 @@ async def receive_pending_claims(request: PendingClaimsRequest):
     episode_key = request.episode_key or state.current_episode_key
 
     # Ensure unique block_id
-    existing_ids = [b.get("block_id") for b in pending_claims_blocks]
-    if block_id in existing_ids:
+    db = state.get_db()
+    if await db.block_id_exists(block_id):
         counter = 1
         base_id = block_id
-        while block_id in existing_ids:
+        while await db.block_id_exists(block_id):
             block_id = f"{base_id}_{counter}"
             counter += 1
 
@@ -162,8 +153,7 @@ async def receive_pending_claims(request: PendingClaimsRequest):
         "episode_key": episode_key
     }
 
-    async with processing_lock:
-        pending_claims_blocks.append(pending_block)
+    await db.add_pending_block(pending_block)
 
     logger.info(f"Pending claims received: {block_id} with {len(claims)} claims")
 
@@ -191,12 +181,12 @@ async def approve_claims(
     logger.info(f"Approving {len(request.claims)} claims from block {request.block_id}")
 
     # Try to find context from the pending block, fall back to config
+    db = state.get_db()
     context = None
     if request.block_id:
-        for b in pending_claims_blocks:
-            if b.get("block_id") == request.block_id:
-                context = b.get("info") or b.get("headline")
-                break
+        block = await db.get_pending_block_by_id(request.block_id)
+        if block:
+            context = block.get("info") or block.get("headline")
 
     # Fall back to config info if no context found in pending block
     if not context:
@@ -230,23 +220,22 @@ async def process_fact_checks_async(claims: list, episode_key: str, context: str
             results = await asyncio.to_thread(fact_checker.check_claims, claims, context=context)
 
         # Store results
-        async with processing_lock:
-            for result in results:
-                result_dict = to_dict(result)
-                sources = result_dict.get("sources", [])
+        db = state.get_db()
+        for result in results:
+            result_dict = to_dict(result)
+            sources = result_dict.get("sources", [])
 
-                fact_check = {
-                    "id": state.allocate_fact_check_id(),
-                    "sprecher": result_dict.get("speaker", ""),
-                    "behauptung": result_dict.get("original_claim", ""),
-                    "consistency": result_dict.get("consistency", "unklar"),
-                    "begruendung": result_dict.get("evidence", ""),
-                    "quellen": [to_dict(s) for s in sources] if sources else [],
-                    "timestamp": datetime.now().isoformat(),
-                    "episode_key": episode_key
-                }
-                fact_checks.append(fact_check)
-                logger.info(f"Fact-check complete: {fact_check['sprecher']} - {fact_check['consistency']}")
+            fact_check = {
+                "sprecher": result_dict.get("speaker", ""),
+                "behauptung": result_dict.get("original_claim", ""),
+                "consistency": result_dict.get("consistency", "unklar"),
+                "begruendung": result_dict.get("evidence", ""),
+                "quellen": [to_dict(s) for s in sources] if sources else [],
+                "timestamp": datetime.now().isoformat(),
+                "episode_key": episode_key
+            }
+            await db.add_fact_check(fact_check)
+            logger.info(f"Fact-check complete: {fact_check['sprecher']} - {fact_check['consistency']}")
 
         logger.info(f"Fact-checking complete. {len(results)} results stored.")
 

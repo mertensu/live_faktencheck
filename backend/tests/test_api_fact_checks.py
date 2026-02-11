@@ -25,29 +25,25 @@ class TestGetFactChecks:
 
     async def test_get_fact_checks_returns_all(self, client):
         """GET /api/fact-checks returns all stored fact-checks."""
-        # Add some fact-checks to state
-        state.fact_checks.extend([
-            {
-                "id": 1,
-                "sprecher": "Speaker A",
-                "behauptung": "Claim 1",
-                "consistency": "hoch",
-                "begruendung": "Evidence 1",
-                "quellen": [],
-                "timestamp": "2024-01-01T10:00:00",
-                "episode_key": "ep1",
-            },
-            {
-                "id": 2,
-                "sprecher": "Speaker B",
-                "behauptung": "Claim 2",
-                "consistency": "niedrig",
-                "begruendung": "Evidence 2",
-                "quellen": [],
-                "timestamp": "2024-01-01T11:00:00",
-                "episode_key": "ep2",
-            },
-        ])
+        db = state.get_db()
+        await db.add_fact_check({
+            "sprecher": "Speaker A",
+            "behauptung": "Claim 1",
+            "consistency": "hoch",
+            "begruendung": "Evidence 1",
+            "quellen": [],
+            "timestamp": "2024-01-01T10:00:00",
+            "episode_key": "ep1",
+        })
+        await db.add_fact_check({
+            "sprecher": "Speaker B",
+            "behauptung": "Claim 2",
+            "consistency": "niedrig",
+            "begruendung": "Evidence 2",
+            "quellen": [],
+            "timestamp": "2024-01-01T11:00:00",
+            "episode_key": "ep2",
+        })
 
         response = await client.get("/api/fact-checks")
 
@@ -59,11 +55,10 @@ class TestGetFactChecks:
 
     async def test_get_fact_checks_with_episode_filter(self, client):
         """GET /api/fact-checks?episode=xxx filters by episode."""
-        state.fact_checks.extend([
-            {"id": 1, "sprecher": "A", "episode_key": "episode-1", "behauptung": "C1"},
-            {"id": 2, "sprecher": "B", "episode_key": "episode-2", "behauptung": "C2"},
-            {"id": 3, "sprecher": "C", "episode_key": "episode-1", "behauptung": "C3"},
-        ])
+        db = state.get_db()
+        await db.add_fact_check({"sprecher": "A", "episode_key": "episode-1", "behauptung": "C1", "timestamp": "2024-01-01T10:00:00"})
+        await db.add_fact_check({"sprecher": "B", "episode_key": "episode-2", "behauptung": "C2", "timestamp": "2024-01-01T11:00:00"})
+        await db.add_fact_check({"sprecher": "C", "episode_key": "episode-1", "behauptung": "C3", "timestamp": "2024-01-01T12:00:00"})
 
         response = await client.get("/api/fact-checks?episode=episode-1")
 
@@ -74,8 +69,9 @@ class TestGetFactChecks:
 
     async def test_get_fact_checks_episode_filter_no_match(self, client):
         """GET /api/fact-checks?episode=xxx returns empty if no match."""
-        state.fact_checks.append({
-            "id": 1, "sprecher": "A", "episode_key": "ep1", "behauptung": "C"
+        db = state.get_db()
+        await db.add_fact_check({
+            "sprecher": "A", "episode_key": "ep1", "behauptung": "C", "timestamp": "2024-01-01T10:00:00"
         })
 
         response = await client.get("/api/fact-checks?episode=nonexistent")
@@ -106,8 +102,10 @@ class TestPostFactCheck:
         assert data["id"] == 1
 
         # Verify stored correctly
-        assert len(state.fact_checks) == 1
-        fc = state.fact_checks[0]
+        db = state.get_db()
+        fact_checks = await db.get_fact_checks()
+        assert len(fact_checks) == 1
+        fc = fact_checks[0]
         assert fc["sprecher"] == "Angela Merkel"
         assert fc["consistency"] == "hoch"
 
@@ -127,7 +125,9 @@ class TestPostFactCheck:
         assert response.status_code == 201
 
         # Verify mapped to German field names in storage
-        fc = state.fact_checks[0]
+        db = state.get_db()
+        fact_checks = await db.get_fact_checks()
+        fc = fact_checks[0]
         assert fc["sprecher"] == "Joe Biden"
         assert fc["behauptung"] == "The economy is growing"
 
@@ -142,7 +142,9 @@ class TestPostFactCheck:
         response = await client.post("/api/fact-checks", json=payload)
 
         assert response.status_code == 201
-        fc = state.fact_checks[0]
+        db = state.get_db()
+        fact_checks = await db.get_fact_checks()
+        fc = fact_checks[0]
         assert fc["sprecher"] == "Mixed Speaker"
         assert fc["behauptung"] == "Mixed claim"
 
@@ -157,7 +159,9 @@ class TestPostFactCheck:
         response = await client.post("/api/fact-checks", json=payload)
 
         assert response.status_code == 201
-        fc = state.fact_checks[0]
+        db = state.get_db()
+        fact_checks = await db.get_fact_checks()
+        fc = fact_checks[0]
         assert isinstance(fc["quellen"], list)
         assert len(fc["quellen"]) == 2
         assert fc["quellen"][0] == "https://source1.com"
@@ -170,10 +174,12 @@ class TestPostFactCheck:
                 "behauptung": f"Claim {i}",
             })
 
-        assert len(state.fact_checks) == 3
-        assert state.fact_checks[0]["id"] == 1
-        assert state.fact_checks[1]["id"] == 2
-        assert state.fact_checks[2]["id"] == 3
+        db = state.get_db()
+        fact_checks = await db.get_fact_checks()
+        assert len(fact_checks) == 3
+        assert fact_checks[0]["id"] == 1
+        assert fact_checks[1]["id"] == 2
+        assert fact_checks[2]["id"] == 3
 
     async def test_post_fact_check_uses_current_episode(self, client):
         """POST /api/fact-checks uses current episode if not specified."""
@@ -185,7 +191,9 @@ class TestPostFactCheck:
         })
 
         assert response.status_code == 201
-        assert state.fact_checks[0]["episode_key"] == "current-ep"
+        db = state.get_db()
+        fact_checks = await db.get_fact_checks()
+        assert fact_checks[0]["episode_key"] == "current-ep"
 
 
 class TestPutFactCheck:
@@ -205,12 +213,15 @@ class TestPutFactCheck:
 
     async def test_put_fact_check_starts_recheck(self, client, mock_all_services):
         """PUT /api/fact-checks/{id} starts background re-check."""
-        # Add existing fact-check
-        state.fact_checks.append({
-            "id": 1,
+        # Add existing fact-check via DB
+        db = state.get_db()
+        await db.add_fact_check({
             "sprecher": "Original",
             "behauptung": "Original claim",
             "consistency": "unklar",
+            "begruendung": "",
+            "quellen": [],
+            "timestamp": "2024-01-01T10:00:00",
             "episode_key": "ep1",
         })
 
@@ -239,10 +250,18 @@ class TestHealthEndpoint:
 
     async def test_health_includes_counts(self, client):
         """GET /api/health includes pending and fact-check counts."""
-        # Add some data
-        state.pending_claims_blocks.append({"block_id": "b1"})
-        state.pending_claims_blocks.append({"block_id": "b2"})
-        state.fact_checks.append({"id": 1})
+        db = state.get_db()
+        await db.add_pending_block({
+            "block_id": "b1", "timestamp": "2024-01-01T10:00:00",
+            "claims": [], "status": "pending",
+        })
+        await db.add_pending_block({
+            "block_id": "b2", "timestamp": "2024-01-01T11:00:00",
+            "claims": [], "status": "pending",
+        })
+        await db.add_fact_check({
+            "sprecher": "A", "behauptung": "C", "timestamp": "2024-01-01T10:00:00",
+        })
 
         response = await client.get("/api/health")
 

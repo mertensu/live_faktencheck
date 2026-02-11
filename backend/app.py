@@ -17,6 +17,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
 from backend.routers import audio, claims, fact_checks, config
+from backend.database import Database
+from backend import state
 
 # Load environment variables
 load_dotenv()
@@ -33,11 +35,24 @@ logger = logging.getLogger(__name__)
 # Lifespan context manager for startup/shutdown
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: initialize services if needed
+    # Startup: initialize database
     logger.info("FastAPI server starting up...")
+    db_mode = os.getenv("DB_MODE", "file")
+    if db_mode == "memory":
+        logger.info("Using in-memory database (no persistence)")
+        db = Database(":memory:")
+    else:
+        db = Database()
+        logger.info(f"Using file database: {db.db_path}")
+    await db.connect()
+    state.db = db
+
     yield
-    # Shutdown: cleanup if needed
+
+    # Shutdown: close database
     logger.info("FastAPI server shutting down...")
+    await db.close()
+    state.db = None
 
 
 # FastAPI app
