@@ -7,7 +7,7 @@ Real-time fact-checking system for German TV talk shows. Captures audio, extract
 ```
 Audio Capture → Transcription → Claim Extraction → Human Review → Fact-Checking → Live Display
      │              │                  │                │              │              │
- BlackHole      AssemblyAI         Gemini AI       Admin UI       LangChain      GitHub
+ BlackHole      AssemblyAI         Gemini AI       Admin UI       LangChain    Cloudflare
   + VAD                                                          Agent Loop      Pages
                                                                  (Gemini +
                                                                   Tavily)
@@ -18,16 +18,15 @@ Audio Capture → Transcription → Claim Extraction → Human Review → Fact-C
 3. **Claim Extraction**: Gemini extracts verifiable factual claims
 4. **Human Review**: Admin UI allows editing and approval of claims
 5. **Fact-Checking**: LangChain agent with Gemini + Tavily verifies claims against trusted German sources
-6. **Display**: Results shown on GitHub Pages (public) and local admin UI
+6. **Display**: Results shown on Cloudflare Pages (public) and local admin UI
 
 ## Requirements
 
-- Python 3.12+
+- Python 3.11+
 - Node.js 20+
 - [uv](https://github.com/astral-sh/uv) (Python package manager)
 - [cloudflared](https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/install-and-setup/installation/) (Cloudflare Tunnel)
 - [BlackHole](https://existential.audio/blackhole/) (virtual audio device for macOS)
-- [GitHub CLI](https://cli.github.com/) (for automated deployments)
 
 ## API Keys Required
 
@@ -73,8 +72,6 @@ uv run python listener.py <episode-key>
 
 This will:
 - Start Cloudflare Tunnel (exposes backend to internet)
-- Update GitHub secret with new tunnel URL
-- Trigger GitHub Pages rebuild
 - Start backend API
 - Start local admin UI at http://localhost:3000
 
@@ -138,7 +135,7 @@ SHOW_CONFIG = {
 3. **Play audio** through BlackHole (route TV/browser audio)
 4. **Review claims** at http://localhost:3000 (Admin Mode)
 5. **Approve claims** for fact-checking
-6. **View results** on GitHub Pages or local UI
+6. **View results** on Cloudflare Pages or local UI
 
 ## Trusted Sources
 
