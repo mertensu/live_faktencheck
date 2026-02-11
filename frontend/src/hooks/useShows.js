@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { BACKEND_URL, getFetchHeaders, safeJsonParse, debug } from '../services/api'
 
-const DEFAULT_SHOWS = ['test', 'maischberger', 'miosga']
+const DEFAULT_SHOWS = []
 
 export function useShows() {
   const [shows, setShows] = useState(DEFAULT_SHOWS)

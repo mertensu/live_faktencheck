@@ -1,18 +1,12 @@
 import { Link } from 'react-router-dom'
 import { useShows } from '../hooks/useShows'
 
-// Show name mapping for full display names (Fallback/Legacy)
-const SHOW_DISPLAY_NAMES = {
-  'test': 'Test',
-  'maischberger': 'Maischberger',
-  'miosga': 'Caren Miosga',
-  'lanz': 'Markus Lanz',
-  'illner': 'Maybrit Illner'
-}
-
-function getShowDisplayName(show) {
-  if (typeof show === 'object' && show.name) return show.name
-  if (typeof show === 'string') return SHOW_DISPLAY_NAMES[show] || show.charAt(0).toUpperCase() + show.slice(1)
+function getEpisodeDisplayName(show) {
+  if (typeof show === 'object') {
+    if (show.episode_name) return `${show.name} - ${show.episode_name}`
+    if (show.name) return show.name
+  }
+  if (typeof show === 'string') return show.charAt(0).toUpperCase() + show.slice(1)
   return 'Unknown Show'
 }
 
@@ -63,13 +57,13 @@ export function HomePage() {
               <h2 className="shows-section-title">TV Talkshows</h2>
               <div className="shows-list">
                 {shows.filter(s => (s.key || s) !== 'test' && (!s.type || s.type === 'show')).map(show => {
-                  const showKey = show.key || show
+                  const episodeKey = show.key || show
                   const showInfo = show.info || show.description || ""
 
                   return (
-                    <Link key={showKey} to={`/${showKey}`} className="show-item">
+                    <Link key={episodeKey} to={`/${episodeKey}`} className="show-item">
                       <div className="show-item-content">
-                        <span className="show-name">{getShowDisplayName(show)}</span>
+                        <span className="show-name">{getEpisodeDisplayName(show)}</span>
                         {showInfo && <span className="show-info">{showInfo}</span>}
                       </div>
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -87,13 +81,12 @@ export function HomePage() {
                 <h2 className="shows-section-title">YouTube-Videos</h2>
                 <div className="shows-list">
                   {shows.filter(s => s.type === 'youtube').map(show => {
-                    const showKey = show.key || show
+                    const episodeKey = show.key || show
                     const showInfo = show.info || show.description || ""
 
                     return (
-                      <Link key={showKey} to={`/${showKey}`} className="show-item">
+                      <Link key={episodeKey} to={`/${episodeKey}`} className="show-item">
                         <div className="show-item-content">
-                          {/* name hidden for youtube */}
                           {showInfo && <span className="show-info">{showInfo}</span>}
                         </div>
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

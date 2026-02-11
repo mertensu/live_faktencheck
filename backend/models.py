@@ -103,6 +103,7 @@ class ShowPreview(BaseModel):
     info: Optional[str] = None
     type: str = "show"
     speakers: List[str] = []
+    episode_name: Optional[str] = None
 
 class ShowsDetailedResponse(BaseModel):
     """Response for /api/config/shows endpoint."""
