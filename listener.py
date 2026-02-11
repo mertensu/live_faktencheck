@@ -24,7 +24,7 @@ CHANNELS = 1  # Mono
 DEVICE_RATE = 48000  # BlackHole runs at 48 kHz
 CHUNK = 1024
 PROGRESS_INTERVAL = 30  # Print progress every 30 seconds
-BLOCK_DURATION = 180  # Send audio block every 3 minutes (default)
+BLOCK_DURATION = 60  # Send audio block every 60 seconds (default)
 
 
 def get_current_show():
