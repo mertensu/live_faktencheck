@@ -50,6 +50,19 @@ SHOW_CONFIG = {
         "episode_name": "30. September 2025 - Philipp Amthor & Ines Schwerdtner"
     },
 
+    "maischberger-2026-01-28": {
+        "name": "Maischberger",
+        "description": "Sendung vom 28. Januar 2026",
+        "info": "Sandra Maischberger interviewt Gregor Gysi (Linke) und Philipp Amthor (CDU). Sendung vom 28.Januar 2026",
+        "speakers": [
+            "Sandra Maischberger",
+            "Gregor Gysi",
+            "Philipp Amthor"
+        ],
+        "show": "maischberger",
+        "episode_name": "28. Januar 2026 - Gregor Gysi & Philipp Amthor"
+    },
+
     # Miosga Episoden
     "miosga-2025-10": {
         "name": "Miosga",
@@ -64,6 +77,22 @@ SHOW_CONFIG = {
     },
 
    
+    # Markus Lanz Episoden
+    "lanz-2026-02-06": {
+        "name": "Markus Lanz",
+        "description": "Sendung vom 6. Februar 2026",
+        "info": "Markus Lanz diskutiert mit seinen Gästen über Regierung, Haushalt und Investitionen. Gäste: Veronika Grimm (Wirtschaftswissenschaftlerin, Mitglied im Sachverständigenrat), Dirk Wiese (SPD-Politiker, MdB), Wiebke Winter (CDU-Politikerin) und Daniel Friedrich Sturm (Journalist). Grimm warnt, dass der Bundeshaushalt 2029 durch Zinsrückzahlungen, Soziales und Verteidigung ausgeschöpft sei. Wiese bekräftigt, dass Reformen folgen werden. Sendung vom 6. Februar 2026.",
+        "speakers": [
+            "Markus Lanz",
+            "Veronika Grimm",
+            "Dirk Wiese",
+            "Wiebke Winter",
+            "Daniel Friedrich Sturm"
+        ],
+        "show": "lanz",
+        "episode_name": "6. Februar 2026 - Grimm, Wiese, Winter & Sturm"
+    },
+
     "youtube-rieck-2026-01-17": {
         "name": "youtube",
         "description": "Sendung vom 17. Januar 2026",
