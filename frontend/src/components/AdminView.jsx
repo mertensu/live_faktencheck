@@ -1,4 +1,24 @@
-export function AdminView({ pendingClaims, stagedClaims, discardedClaims, sentClaims, onStage, onUnstage, onDiscard, onUndiscard, onUpdatePending, onSendAll, onResend }) {
+import { useState } from 'react'
+
+export function AdminView({ pendingClaims, pendingBlocks, stagedClaims, discardedClaims, sentClaims, onStage, onUnstage, onDiscard, onUndiscard, onDiscardCollection, onUpdatePending, onSendAll, onResend }) {
+  const [expandedBlocks, setExpandedBlocks] = useState(new Set())
+
+  const toggleBlock = (blockId) => {
+    setExpandedBlocks(prev => {
+      const next = new Set(prev)
+      if (next.has(blockId)) {
+        next.delete(blockId)
+      } else {
+        next.add(blockId)
+      }
+      return next
+    })
+  }
+
+  // Resend claims are shown as standalone items at the top
+  const resendClaims = pendingClaims.filter(c => c.resendOf)
+  const totalPendingCount = pendingClaims.length
+
   return (
     <div className="admin-layout">
       {/* Top row: 2 columns side by side */}
@@ -7,16 +27,17 @@ export function AdminView({ pendingClaims, stagedClaims, discardedClaims, sentCl
         <div className="admin-panel admin-pending">
           <div className="admin-panel-header">
             <h2>Pending Claims</h2>
-            <span className="panel-count">{pendingClaims.length}</span>
+            <span className="panel-count">{totalPendingCount}</span>
           </div>
-          {pendingClaims.length === 0 ? (
+          {totalPendingCount === 0 ? (
             <div className="admin-panel-empty">
               <p>Keine Claims zur Bearbeitung</p>
               <p className="empty-subtitle">Warte auf neue Claims...</p>
             </div>
           ) : (
             <div className="admin-claims-list">
-              {pendingClaims.map((claim) => (
+              {/* Resend claims as standalone items */}
+              {resendClaims.map((claim) => (
                 <div key={claim.id} className="admin-claim-item pending-item">
                   <div className="claim-content">
                     <input
@@ -34,7 +55,7 @@ export function AdminView({ pendingClaims, stagedClaims, discardedClaims, sentCl
                       rows={3}
                     />
                     <div className="claim-meta">
-                      {new Date(claim.timestamp).toLocaleString('de-DE')}
+                      Re-send &middot; {new Date(claim.timestamp).toLocaleString('de-DE')}
                     </div>
                   </div>
                   <div className="claim-actions">
@@ -53,6 +74,80 @@ export function AdminView({ pendingClaims, stagedClaims, discardedClaims, sentCl
                       {'\u2715'}
                     </button>
                   </div>
+                </div>
+              ))}
+
+              {/* Block collections */}
+              {(pendingBlocks || []).map((block) => (
+                <div key={block.blockId} className="claim-collection">
+                  <div className="collection-header">
+                    <button
+                      className="collection-toggle"
+                      onClick={() => toggleBlock(block.blockId)}
+                      title={expandedBlocks.has(block.blockId) ? 'Einklappen' : 'Ausklappen'}
+                    >
+                      {expandedBlocks.has(block.blockId) ? '\u25BC' : '\u25B6'}
+                    </button>
+                    <div className="collection-info">
+                      <span className="collection-timestamp">
+                        {new Date(block.timestamp).toLocaleString('de-DE')}
+                      </span>
+                      {block.info && (
+                        <span className="collection-block-info">{block.info}</span>
+                      )}
+                      <span className="collection-count">{block.claims.length} Claims</span>
+                    </div>
+                    <button
+                      className="discard-all-button"
+                      onClick={() => onDiscardCollection(block.blockId)}
+                      title="Alle Claims dieses Blocks verwerfen"
+                    >
+                      Alle verwerfen
+                    </button>
+                  </div>
+                  {expandedBlocks.has(block.blockId) && (
+                    <div className="collection-claims">
+                      {block.claims.map((claim) => (
+                        <div key={claim.id} className="admin-claim-item pending-item">
+                          <div className="claim-content">
+                            <input
+                              type="text"
+                              className="claim-speaker-edit"
+                              value={claim.name}
+                              onChange={(e) => onUpdatePending(claim.id, 'name', e.target.value)}
+                              placeholder="Sprecher"
+                            />
+                            <textarea
+                              className="claim-text-edit"
+                              value={claim.claim}
+                              onChange={(e) => onUpdatePending(claim.id, 'claim', e.target.value)}
+                              placeholder="Claim"
+                              rows={3}
+                            />
+                            <div className="claim-meta">
+                              {new Date(claim.timestamp).toLocaleString('de-DE')}
+                            </div>
+                          </div>
+                          <div className="claim-actions">
+                            <button
+                              className="stage-button"
+                              onClick={() => onStage(claim.id)}
+                              title="Zum Staging hinzufugen"
+                            >
+                              {'\u2192'}
+                            </button>
+                            <button
+                              className="discard-button"
+                              onClick={() => onDiscard(claim.id)}
+                              title="Verwerfen"
+                            >
+                              {'\u2715'}
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

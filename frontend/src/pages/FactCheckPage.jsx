@@ -50,6 +50,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
   const [expandedIds, setExpandedIds] = useState(new Set())
   // Admin workflow: flat list -> staging -> sent history
   const [pendingClaims, setPendingClaims] = useState([])   // Flat list of editable claims
+  const [pendingBlocks, setPendingBlocks] = useState([])   // Claims grouped by source block
   const [stagedClaims, setStagedClaims] = useState([])     // Ready to send (read-only)
   const [discardedClaims, setDiscardedClaims] = useState([]) // Discarded/irrelevant claims
   const [sentClaims, setSentClaims] = useState([])         // History with timestamps
@@ -207,6 +208,32 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
           ]
           return merged
         })
+
+        // Build pendingBlocks: group enriched claims by block, newest first
+        const filteredIds = new Set([...stagedIds, ...sentIds, ...discardedIds])
+        const blocks = data
+          .map(block => {
+            const enrichedClaims = block.claims
+              .map((claim, index) => {
+                const id = `${block.block_id}-${index}`
+                const base = {
+                  id,
+                  blockId: block.block_id,
+                  name: claim.name || '',
+                  claim: claim.claim || '',
+                  timestamp: block.timestamp,
+                  info: block.info || block.headline || ''
+                }
+                return filteredIds.has(id) ? null : (currentEdits[id] ? { ...base, ...currentEdits[id] } : base)
+              })
+              .filter(Boolean)
+            return enrichedClaims.length > 0
+              ? { blockId: block.block_id, timestamp: block.timestamp, info: block.info || block.headline || '', claims: enrichedClaims }
+              : null
+          })
+          .filter(Boolean)
+          .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+        setPendingBlocks(blocks)
       } catch (error) {
         if (!isMounted || error.name === 'AbortError') return
         debug.error('Error loading pending claims:', error)
@@ -272,6 +299,18 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
     if (!claim) return
     setPendingClaims(prev => [...prev, { ...claim }].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp)))
     setDiscardedClaims(prev => prev.filter(c => c.id !== claimId))
+  }
+
+  // Discard all claims in a collection (block)
+  const discardCollection = (blockId) => {
+    const claimsToDiscard = pendingClaims.filter(c => c.blockId === blockId && !c.resendOf)
+    setDiscardedClaims(prev => [...prev, ...claimsToDiscard])
+    setPendingClaims(prev => prev.filter(c => c.blockId !== blockId || c.resendOf))
+    setLocalEdits(prev => {
+      const next = { ...prev }
+      claimsToDiscard.forEach(c => delete next[c.id])
+      return next
+    })
   }
 
   // Edit claim in pending list
@@ -422,6 +461,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
         {isAdminMode ? (
           <AdminView
             pendingClaims={pendingClaims}
+            pendingBlocks={pendingBlocks}
             stagedClaims={stagedClaims}
             discardedClaims={discardedClaims}
             sentClaims={sentClaims}
@@ -429,6 +469,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
             onUnstage={unstageClaim}
             onDiscard={discardClaim}
             onUndiscard={undiscardClaim}
+            onDiscardCollection={discardCollection}
             onUpdatePending={updatePendingClaim}
             onSendAll={sendStagedClaims}
             onResend={prepareResend}
