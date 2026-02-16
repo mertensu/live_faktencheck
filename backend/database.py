@@ -234,6 +234,18 @@ class Database:
         await self.db.commit()
         return cursor.rowcount > 0
 
+    async def clear_pending_blocks(self, episode_key: str | None = None) -> int:
+        """Delete all pending blocks, optionally filtered by episode_key. Returns count deleted."""
+        if episode_key:
+            cursor = await self.db.execute(
+                "DELETE FROM pending_claims_blocks WHERE episode_key = ?",
+                (episode_key,),
+            )
+        else:
+            cursor = await self.db.execute("DELETE FROM pending_claims_blocks")
+        await self.db.commit()
+        return cursor.rowcount
+
     async def count_pending_blocks(self) -> int:
         """Return the total number of pending blocks."""
         cursor = await self.db.execute("SELECT COUNT(*) FROM pending_claims_blocks")

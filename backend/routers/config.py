@@ -76,12 +76,17 @@ async def get_episode_config_endpoint(episode_key: str):
 
 @router.post('/set-episode')
 async def set_current_episode(request: SetEpisodeRequest):
-    """Set the current episode (called by listener)"""
+    """Set the current episode (called by listener). Clears old pending claims."""
     episode_key = request.episode_key or request.episode
     if episode_key:
         state.current_episode_key = episode_key
+        # Clear all pending claims from previous sessions
+        db = state.get_db()
+        deleted = await db.clear_pending_blocks()
+        if deleted:
+            logger.info(f"Cleared {deleted} pending claim blocks from previous session")
         logger.info(f"Current episode set: {episode_key}")
-        return {"status": "success", "episode_key": episode_key}
+        return {"status": "success", "episode_key": episode_key, "cleared_pending": deleted}
     else:
         raise HTTPException(status_code=400, detail="episode_key missing")
 
