@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom'
 
-const GITHUB_REPO_URL = "https://github.com/ulfmertens/fact_check"
+const GITHUB_REPO_URL = "https://github.com/mertensu/live_faktencheck"
 
 export function Navigation() {
   const location = useLocation()
