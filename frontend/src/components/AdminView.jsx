@@ -92,9 +92,6 @@ export function AdminView({ pendingClaims, pendingBlocks, stagedClaims, discarde
                       <span className="collection-timestamp">
                         {new Date(block.timestamp).toLocaleString('de-DE')}
                       </span>
-                      {block.info && (
-                        <span className="collection-block-info">{block.info}</span>
-                      )}
                       <span className="collection-count">{block.claims.length} Claims</span>
                     </div>
                     <button

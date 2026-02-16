@@ -121,10 +121,10 @@ async def process_text_pipeline_async(text: str, headline: str, source_id: str, 
 # =============================================================================
 
 @router.get('/pending-claims')
-async def get_pending_claims():
-    """Return all pending claim blocks (newest first)"""
+async def get_pending_claims(episode: str | None = None):
+    """Return pending claim blocks (newest first), optionally filtered by episode"""
     db = state.get_db()
-    return await db.get_pending_blocks()
+    return await db.get_pending_blocks(episode_key=episode)
 
 
 @router.post('/pending-claims', status_code=201, response_model=ProcessingResponse)

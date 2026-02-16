@@ -177,7 +177,10 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
       currentController = controller
 
       try {
-        const response = await fetch(`${BACKEND_URL}/api/pending-claims`, {
+        const pendingUrl = episodeKey
+          ? `${BACKEND_URL}/api/pending-claims?episode=${episodeKey}`
+          : `${BACKEND_URL}/api/pending-claims`
+        const response = await fetch(pendingUrl, {
           headers: getFetchHeaders(),
           signal: controller.signal
         })
@@ -318,6 +321,12 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
     setPendingClaims(prev => prev.map(c =>
       c.id === claimId ? { ...c, [field]: value } : c
     ))
+    setPendingBlocks(prev => prev.map(block => ({
+      ...block,
+      claims: block.claims.map(c =>
+        c.id === claimId ? { ...c, [field]: value } : c
+      )
+    })))
     setLocalEdits(prev => ({
       ...prev,
       [claimId]: { ...(prev[claimId] || {}), [field]: value }

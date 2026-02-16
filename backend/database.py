@@ -197,11 +197,17 @@ class Database:
         await self.db.commit()
         return cursor.lastrowid
 
-    async def get_pending_blocks(self) -> list[dict]:
-        """Return all pending blocks, newest first."""
-        cursor = await self.db.execute(
-            "SELECT * FROM pending_claims_blocks ORDER BY timestamp DESC"
-        )
+    async def get_pending_blocks(self, episode_key: str | None = None) -> list[dict]:
+        """Return pending blocks, newest first. Optionally filter by episode_key."""
+        if episode_key:
+            cursor = await self.db.execute(
+                "SELECT * FROM pending_claims_blocks WHERE episode_key = ? ORDER BY timestamp DESC",
+                (episode_key,),
+            )
+        else:
+            cursor = await self.db.execute(
+                "SELECT * FROM pending_claims_blocks ORDER BY timestamp DESC"
+            )
         rows = await cursor.fetchall()
         return [self._row_to_pending_block(row) for row in rows]
 
