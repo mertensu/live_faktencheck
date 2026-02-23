@@ -63,6 +63,7 @@ debug_audio/
 .frontend_pid
 backend.log
 frontend_dev.log
+.current_episode
 .ngrok_pid
 
 # Cost tracking data

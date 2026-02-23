@@ -5,12 +5,20 @@ Real-time fact-checking system for German TV talk shows. Captures audio, extract
 ## How It Works
 
 ```
-Audio Capture → Transcription → Claim Extraction → Human Review → Fact-Checking → Live Display
-     │              │                  │                │              │              │
- BlackHole      AssemblyAI         Gemini AI       Admin UI       LangChain    Cloudflare
-  + VAD                                                          Agent Loop      Pages
-                                                                 (Gemini +
-                                                                  Tavily)
+  Live Audio Stream
+  ┌──────────┬──────────┬──────────┬──────────┐
+  │  Block 1 │  Block 2 │  Block 3 │  Block 4 │  ──▶
+  └──────────┴──────────┴──────────┴──────────┘
+                    │ per block
+                    ▼
+┌──────────────┐  ┌─────────────────┐  ┌──────────────────┐  ┌──────────────────────┐  ┌──────────────────┐
+│Transcription │─▶│Claim Extraction │─▶│Human-in-the-Loop │─▶│    Fact-Checking     │─▶│    Display       │
+│ (AssemblyAI) │  │    (LLM)        │  │ approve / discard│  │  ┌────────────────┐  │  │ verdict +        │
+└──────────────┘  └─────────────────┘  └──────────────────┘  │  │Reason → Search │  │  │ explanation +    │
+                                                              │  │  → Evaluate    │  │  │ sources          │
+                                                              │  └──────↺─────────┘  │  └──────────────────┘
+                                                              │  (LLM + Web Search)  │
+                                                              └──────────────────────┘
 ```
 
 1. **Audio Capture**: Listener captures audio via BlackHole virtual audio device
@@ -55,41 +63,93 @@ cd frontend && bun install && cd ..
 cp .env.example .env
 ```
 
-## Usage
+## Workflows
 
-### Production Mode (Full Pipeline)
+### Live Fact-Check (on air)
 
-```bash
-# Start everything: tunnel, backend, frontend
-./start_production.sh <episode-key>
+Run a live session where results appear in real-time on the public domain.
 
-# Example
-./start_production.sh maischberger-2025-09-19
+**Before the show** — add the episode to `config.py` with `publish: True` and push to GitHub (Cloudflare deploys automatically):
 
-# In a separate terminal, start the audio listener
-uv run python listener.py <episode-key>
+```python
+SHOW_CONFIG = {
+    "maischberger-2026-03-01": {
+        "name": "Maischberger",
+        "speakers": ["Sandra Maischberger", "Guest A", "Guest B"],
+        "info": "Episode description...",
+        "show": "maischberger",
+        "episode_name": "1. März 2026",
+        "publish": True        # appears on live-faktencheck.de
+    }
+}
 ```
 
-This will:
-- Start Cloudflare Tunnel (exposes backend to internet)
-- Start backend API
-- Start local admin UI at http://localhost:3000
+```bash
+git add config.py && git commit -m "Add maischberger-2026-03-01" && git push
+```
 
-### Development Mode (Backend Only)
+**During the show** — start backend + Cloudflare Tunnel, then the audio listener:
 
 ```bash
-# Start just the backend
+# Terminal 1: start backend, tunnel, local admin UI
+./start_production.sh maischberger-2026-03-01
+
+# Terminal 2: start audio capture
+uv run python listener.py maischberger-2026-03-01
+```
+
+- Route your audio through BlackHole into the listener
+- Review extracted claims at **http://localhost:3000** (Admin UI, local only)
+- Approve claims → fact-checking runs automatically
+- Results appear live at **https://live-faktencheck.de/maischberger-2026-03-01**
+
+**After the show** — export results as static files so the page stays online without a running backend:
+
+```bash
+./stop_production.sh --permanent
+```
+
+This exports the SQLite data to `frontend/public/data/<episode>.json`, commits, pushes, and waits for Cloudflare to build before shutting down the tunnel. No downtime.
+
+---
+
+### Development / Debugging
+
+Test the pipeline locally without Cloudflare or audio capture.
+
+```bash
+# Terminal 1: backend
 ./backend/run.sh
 
-# In another terminal, start frontend dev server
+# Terminal 2: frontend dev server (includes Admin UI)
 cd frontend && bun run dev
 ```
 
-### Stop Everything
+Open **http://localhost:3000** — Admin UI is always enabled on localhost.
+
+To simulate a claim without audio, POST directly to the backend:
 
 ```bash
-./stop_production.sh
+curl -X POST http://localhost:5000/api/text-block \
+  -H "Content-Type: application/json" \
+  -d '{"text": "Deutschland hat 84 Millionen Einwohner.", "episode_key": "test"}'
 ```
+
+---
+
+### Export an Archived Episode
+
+Re-export or update an already-finished episode (e.g. after correcting a claim):
+
+```bash
+# Export as static JSON for deployment
+uv run python export_episode.py <episode-key> --json
+
+# Export as Markdown (e.g. for publication)
+uv run python export_episode.py <episode-key> --order "Sprecher1,Sprecher2"
+```
+
+After `--json`, commit and push `frontend/public/data/<episode>.json` to redeploy.
 
 ## Project Structure
 
@@ -102,19 +162,20 @@ cd frontend && bun run dev
 │       └── fact_checker.py    # LangChain agent with Gemini + Tavily
 ├── frontend/
 │   ├── src/App.jsx            # React frontend
-│   └── public/data/           # Persisted fact-checks (JSON)
+│   └── public/data/           # Static JSON exports (served by Cloudflare)
 ├── prompts/
 │   ├── claim_extraction.md    # Prompt for extracting claims
 │   └── fact_checker.md        # Prompt for fact-checking
 ├── listener.py                # Audio capture with fixed-interval sending
+├── export_episode.py          # Export episode from DB as JSON or Markdown
 ├── config.py                  # Episode configuration
 ├── start_production.sh        # Production startup script
-└── stop_production.sh         # Stop all services
+└── stop_production.sh         # Stop all services (--permanent to export & deploy)
 ```
 
 ## Configuration
 
-Episodes are configured in `config.py`:
+Episodes are configured in `config.py`. The `publish` flag controls visibility on the public domain (episodes without it only appear in development):
 
 ```python
 SHOW_CONFIG = {
@@ -123,19 +184,11 @@ SHOW_CONFIG = {
         "speakers": ["Sandra Maischberger", "Gitta Connemann", "Katharina Dröge"],
         "info": "Description of the episode...",
         "show": "maischberger",
-        "episode_name": "19. September 2025"
+        "episode_name": "19. September 2025",
+        "publish": True        # show on live-faktencheck.de
     }
 }
 ```
-
-## Workflow
-
-1. **Start production** with `./start_production.sh <episode>`
-2. **Start listener** with `uv run python listener.py <episode>`
-3. **Play audio** through BlackHole (route TV/browser audio)
-4. **Review claims** at http://localhost:3000 (Admin Mode)
-5. **Approve claims** for fact-checking
-6. **View results** on Cloudflare Pages or local UI
 
 ## Trusted Sources
 

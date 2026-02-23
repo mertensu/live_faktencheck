@@ -2,6 +2,7 @@
 
 # Production Stop Script
 # Stops all running processes (tunnel, backend, frontend)
+# --permanent: export episode as static JSON, commit, push, then stop
 
 set -e
 
@@ -24,9 +25,52 @@ print_warning() {
     echo -e "${YELLOW}⚠️  $1${NC}"
 }
 
+print_error() {
+    echo -e "${RED}❌ $1${NC}"
+}
+
+# Parse --permanent flag
+PERMANENT=false
+for arg in "$@"; do
+    case "$arg" in
+        --permanent) PERMANENT=true ;;
+    esac
+done
+
 echo -e "\n${BLUE}════════════════════════════════════════${NC}"
 echo -e "${BLUE}🛑 Stopping Production Processes${NC}"
 echo -e "${BLUE}════════════════════════════════════════${NC}\n"
+
+# --permanent: export, build, push before stopping
+if [ "$PERMANENT" = true ]; then
+    echo -e "\n${BLUE}════════════════════════════════════════${NC}"
+    echo -e "${BLUE}📦 Permanent Export${NC}"
+    echo -e "${BLUE}════════════════════════════════════════${NC}\n"
+
+    if [ ! -f .current_episode ]; then
+        print_error "No .current_episode file found. Run start_production.sh first."
+        exit 1
+    fi
+    EPISODE_KEY=$(cat .current_episode)
+    print_info "Episode: $EPISODE_KEY"
+
+    # Step 1: Export JSON
+    print_info "Exporting fact-checks as static JSON..."
+    uv run python export_episode.py "$EPISODE_KEY" --json
+    print_success "JSON exported to frontend/public/data/${EPISODE_KEY}.json"
+
+    # Step 2: Git commit and push (tunnel still running → no downtime during build)
+    print_info "Committing and pushing to GitHub..."
+    git add "frontend/public/data/${EPISODE_KEY}.json"
+    git commit -m "Export ${EPISODE_KEY} as static data"
+    git push
+    print_success "Pushed — Cloudflare build started"
+
+    # Step 3: Wait for Cloudflare build (~60s) while tunnel still serves live data
+    print_info "Waiting 60s for Cloudflare build to complete..."
+    sleep 60
+    print_success "Cloudflare build should be live now"
+fi
 
 # Stop Cloudflare Tunnel
 if [ -f .cloudflared_pid ]; then

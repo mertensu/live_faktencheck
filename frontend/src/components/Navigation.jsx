@@ -1,12 +1,25 @@
 import { Link, useLocation } from 'react-router-dom'
+import { useState, useEffect } from 'react'
 
 const GITHUB_REPO_URL = "https://github.com/mertensu/live_faktencheck"
 
 export function Navigation() {
   const location = useLocation()
+  const [visible, setVisible] = useState(true)
+  const [lastY, setLastY] = useState(0)
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentY = window.scrollY
+      setVisible(currentY < lastY || currentY < 60)
+      setLastY(currentY)
+    }
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [lastY])
 
   return (
-    <nav className="main-navigation">
+    <nav className={`main-navigation${visible ? '' : ' main-navigation--hidden'}`}>
       <div className="nav-container">
         <Link to="/" className="nav-logo">Fakten-Check Live</Link>
         <div className="nav-links">
