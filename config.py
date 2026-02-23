@@ -93,6 +93,21 @@ SHOW_CONFIG = {
         "episode_name": "6. Februar 2026 - Grimm, Wiese, Winter & Sturm"
     },
 
+    # Pinar Atalay Episoden
+    "atalay-2026-02-09": {
+        "name": "Pinar Atalay",
+        "description": "Sendung vom 9. Februar 2026",
+        "info": "Pinar Atalay diskutiert mit Heidi Reichinnek (Die Linke) und Philipp Amthor (CDU) über Wachstum vs. Umverteilung, Social-Media-Regeln und den Umgang mit der AfD. Sendung vom 9. Februar 2026.",
+        "speakers": [
+            "Pinar Atalay",
+            "Heidi Reichinnek",
+            "Philipp Amthor"
+        ],
+        "show": "atalay",
+        "episode_name": "9. Februar 2026 - Heidi Reichinnek & Philipp Amthor",
+        "publish": True
+    },
+
     "youtube-rieck-2026-01-17": {
         "name": "youtube",
         "description": "Sendung vom 17. Januar 2026",

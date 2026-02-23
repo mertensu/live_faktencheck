@@ -41,6 +41,7 @@ async def get_all_shows_endpoint():
                 "type": config.get("type", "show"),
                 "speakers": config.get("speakers", []),
                 "episode_name": config.get("episode_name", ""),
+                "publish": config.get("publish", False),
             })
 
         # Sort by key (reverse for newest first)

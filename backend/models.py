@@ -104,6 +104,7 @@ class ShowPreview(BaseModel):
     type: str = "show"
     speakers: List[str] = []
     episode_name: Optional[str] = None
+    publish: bool = False
 
 class ShowsDetailedResponse(BaseModel):
     """Response for /api/config/shows endpoint."""
