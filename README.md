@@ -113,19 +113,24 @@ This exports the SQLite data to `frontend/public/data/<episode>.json`, commits, 
 
 ---
 
-### Development / Debugging
+### Development / Testing
 
-Test the pipeline locally without Cloudflare or audio capture.
+Test the full pipeline locally — same tools as production, but without the Cloudflare tunnel. Nothing goes live.
+
+Data is always stored under the episode key `test` in the local DB, never published. Pass a real episode key to automatically inherit its speakers and config:
 
 ```bash
-# Terminal 1: backend
-./backend/run.sh
+# Terminal 1: start backend + admin UI (no tunnel)
+./start_dev.sh atalay-2026-02-09   # inherits Atalay's speakers, runs as "test"
+./start_dev.sh                     # generic test config (no episode key needed)
 
-# Terminal 2: frontend dev server (includes Admin UI)
-cd frontend && bun run dev
+# Terminal 2: start audio capture
+uv run python listener.py test
 ```
 
-Open **http://localhost:3000** — Admin UI is always enabled on localhost.
+- Review extracted claims at **http://localhost:3000** (Admin UI)
+- Approve claims → fact-checking runs automatically
+- Results visible locally only — nothing appears on the public domain
 
 To simulate a claim without audio, POST directly to the backend:
 
@@ -134,6 +139,8 @@ curl -X POST http://localhost:5000/api/text-block \
   -H "Content-Type: application/json" \
   -d '{"text": "Deutschland hat 84 Millionen Einwohner.", "episode_key": "test"}'
 ```
+
+Stop with `./stop_production.sh` (same stop script works for both modes).
 
 ---
 
