@@ -63,6 +63,7 @@ def load_fact_checks(episode_key: str) -> list[dict]:
 
 def export_as_json(episode_key: str, fact_checks: list[dict]) -> None:
     from config import get_speakers
+    from backend.show_config import SHOW_CONFIG
     speakers = get_speakers(episode_key)
 
     output = {
@@ -70,13 +71,35 @@ def export_as_json(episode_key: str, fact_checks: list[dict]) -> None:
         "fact_checks": fact_checks,
     }
 
-    out_path = Path(__file__).parent / "frontend" / "public" / "data" / f"{episode_key}.json"
-    out_path.parent.mkdir(parents=True, exist_ok=True)
+    data_dir = Path(__file__).parent / "frontend" / "public" / "data"
+    data_dir.mkdir(parents=True, exist_ok=True)
+
+    out_path = data_dir / f"{episode_key}.json"
     out_path.write_text(json.dumps(output, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"✓ {len(fact_checks)} Fact-Checks exportiert → {out_path}")
     for speaker in speakers:
         count = sum(1 for fc in fact_checks if fc["sprecher"] == speaker)
         print(f"  {speaker}: {count} Claims")
+
+    # Update shows.json with current published episodes
+    shows = []
+    for key, cfg in SHOW_CONFIG.items():
+        if key == "test":
+            continue
+        shows.append({
+            "key": key,
+            "name": cfg.get("name", key),
+            "description": cfg.get("description", ""),
+            "info": cfg.get("info", ""),
+            "type": cfg.get("type", "show"),
+            "speakers": cfg.get("speakers", []),
+            "episode_name": cfg.get("episode_name", ""),
+            "publish": cfg.get("publish", False),
+        })
+    shows.sort(key=lambda x: x["key"], reverse=True)
+    shows_path = data_dir / "shows.json"
+    shows_path.write_text(json.dumps({"shows": shows}, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(f"✓ shows.json aktualisiert → {shows_path}")
 
 
 def group_by_speaker(fact_checks: list[dict], order: list[str] | None = None) -> dict[str, list]:

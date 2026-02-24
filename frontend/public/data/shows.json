@@ -1,0 +1,101 @@
+{
+  "shows": [
+    {
+      "key": "youtube-rieck-2026-01-17",
+      "name": "youtube",
+      "description": "Sendung vom 17. Januar 2026",
+      "info": "Video von Christian Rieck vom 17. Januar 2026. Er berichtet über die Erbschaftsteuerreform der SPD dargelegt im Konzeptpapier: https://spd-landesgruppe-ost.de/wp-content/uploads/2026/01/FairErben-Konzept-zur-Reform-der-Erbschaftsteuer-2.pdf",
+      "type": "youtube",
+      "speakers": [
+        "Christian Rieck"
+      ],
+      "episode_name": "17. Januar 2026 - Christian Rieck",
+      "publish": false
+    },
+    {
+      "key": "miosga-2025-10",
+      "name": "Miosga",
+      "description": "Sendung vom Oktober 2025",
+      "info": "Caren Miosga interviewt Heidi Reichinnek (Linke). Sendung vom Oktober 2025",
+      "type": "show",
+      "speakers": [
+        "Caren Miosga",
+        "Heidi Reichinnek"
+      ],
+      "episode_name": "Oktober 2025 - Heidi Reichinnek",
+      "publish": false
+    },
+    {
+      "key": "maischberger-2026-01-28",
+      "name": "Maischberger",
+      "description": "Sendung vom 28. Januar 2026",
+      "info": "Sandra Maischberger interviewt Gregor Gysi (Linke) und Philipp Amthor (CDU). Sendung vom 28.Januar 2026",
+      "type": "show",
+      "speakers": [
+        "Sandra Maischberger",
+        "Gregor Gysi",
+        "Philipp Amthor"
+      ],
+      "episode_name": "28. Januar 2026 - Gregor Gysi & Philipp Amthor",
+      "publish": false
+    },
+    {
+      "key": "maischberger-2025-09-30",
+      "name": "Maischberger",
+      "description": "Sendung vom 30. September 2025",
+      "info": "Sandra Maischberger interviewt Philipp Amthor (CDU) und Ines Schwerdtner (Linke). Sendung vom 30.September 2025",
+      "type": "show",
+      "speakers": [
+        "Sandra Maischberger",
+        "Philipp Amthor",
+        "Ines Schwerdtner"
+      ],
+      "episode_name": "30. September 2025 - Philipp Amthor & Ines Schwerdtner",
+      "publish": false
+    },
+    {
+      "key": "maischberger-2025-09-19",
+      "name": "Maischberger",
+      "description": "Sendung vom 19. September 2025",
+      "info": "Sandra Maischberger interviewt Gitta Connemann (CDU) und Katharina Dröge (B90/Grüne). Sendung vom 19.September 2025",
+      "type": "show",
+      "speakers": [
+        "Sandra Maischberger",
+        "Gitta Connemann",
+        "Katharina Dröge"
+      ],
+      "episode_name": "19. September 2025 - Gitta Connemann & Katharina Dröge",
+      "publish": false
+    },
+    {
+      "key": "lanz-2026-02-06",
+      "name": "Markus Lanz",
+      "description": "Sendung vom 6. Februar 2026",
+      "info": "Markus Lanz diskutiert mit seinen Gästen über Regierung, Haushalt und Investitionen. Gäste: Veronika Grimm (Wirtschaftswissenschaftlerin, Mitglied im Sachverständigenrat), Dirk Wiese (SPD-Politiker, MdB), Wiebke Winter (CDU-Politikerin) und Daniel Friedrich Sturm (Journalist). Grimm warnt, dass der Bundeshaushalt 2029 durch Zinsrückzahlungen, Soziales und Verteidigung ausgeschöpft sei. Wiese bekräftigt, dass Reformen folgen werden. Sendung vom 6. Februar 2026.",
+      "type": "show",
+      "speakers": [
+        "Markus Lanz",
+        "Veronika Grimm",
+        "Dirk Wiese",
+        "Wiebke Winter",
+        "Daniel Friedrich Sturm"
+      ],
+      "episode_name": "6. Februar 2026 - Grimm, Wiese, Winter & Sturm",
+      "publish": false
+    },
+    {
+      "key": "atalay-2026-02-09",
+      "name": "Pinar Atalay",
+      "description": "Sendung vom 9. Februar 2026",
+      "info": "Pinar Atalay diskutiert mit Heidi Reichinnek (Die Linke) und Philipp Amthor (CDU) über Wachstum vs. Umverteilung, Social-Media-Regeln und den Umgang mit der AfD.",
+      "type": "show",
+      "speakers": [
+        "Pinar Atalay",
+        "Heidi Reichinnek",
+        "Philipp Amthor"
+      ],
+      "episode_name": "9. Februar 2026 - Heidi Reichinnek & Philipp Amthor",
+      "publish": true
+    }
+  ]
+}

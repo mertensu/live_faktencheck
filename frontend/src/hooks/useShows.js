@@ -11,17 +11,28 @@ export function useShows() {
   useEffect(() => {
     const controller = new AbortController()
 
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    const isStaticMode = import.meta.env.PROD && !isLocalhost
+
     const loadShows = async () => {
       try {
-        const response = await fetch(`${BACKEND_URL}/api/config/shows`, {
-          headers: getFetchHeaders(),
-          signal: controller.signal
-        })
-        if (response.ok) {
-          const data = await safeJsonParse(response, 'Error loading shows')
-          if (data.shows && data.shows.length > 0) {
-            setShows(data.shows)
+        let data
+        if (isStaticMode) {
+          const response = await fetch('/data/shows.json', { signal: controller.signal })
+          if (response.ok) {
+            data = await response.json()
           }
+        } else {
+          const response = await fetch(`${BACKEND_URL}/api/config/shows`, {
+            headers: getFetchHeaders(),
+            signal: controller.signal
+          })
+          if (response.ok) {
+            data = await safeJsonParse(response, 'Error loading shows')
+          }
+        }
+        if (data?.shows?.length > 0) {
+          setShows(data.shows)
         }
         setError(null)
       } catch (err) {
