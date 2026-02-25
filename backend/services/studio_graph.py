@@ -35,7 +35,8 @@ from langchain_tavily import TavilySearch  # noqa: E402
 from langchain.agents import create_agent  # noqa: E402
 
 from backend.utils import load_prompt  # noqa: E402
-from .fact_checker import TRUSTED_DOMAINS, DEFAULT_MODEL  # noqa: E402
+from .trusted_domains import TRUSTED_DOMAINS  # noqa: E402
+from .fact_checker import DEFAULT_MODEL  # noqa: E402
 
 
 class FactCheckResponse(BaseModel):
