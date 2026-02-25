@@ -3,6 +3,7 @@ import { BACKEND_URL, N8N_VERIFIED_WEBHOOK, getFetchHeaders, safeJsonParse, debu
 import { AdminView } from '../components/AdminView'
 import { SpeakerColumns } from '../components/SpeakerColumns'
 import { BackendErrorDisplay } from '../components/BackendErrorDisplay'
+import { ClaimDetailOverlay } from '../components/ClaimDetailOverlay'
 
 // Default speakers as fallback
 const DEFAULT_SPEAKERS = [
@@ -47,7 +48,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
 
   const [isAdminMode, setIsAdminMode] = useState(false)
   const [factChecks, setFactChecks] = useState([])
-  const [expandedIds, setExpandedIds] = useState(new Set())
+  const [selectedClaim, setSelectedClaim] = useState(null)
   // Admin workflow: flat list -> staging -> sent history
   const [pendingClaims, setPendingClaims] = useState([])   // Flat list of editable claims
   const [pendingBlocks, setPendingBlocks] = useState([])   // Claims grouped by source block
@@ -275,16 +276,6 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
     }
   }, [isAdminMode, showAdminMode, stagedClaims, sentClaims, discardedClaims])
 
-  const toggleExpand = (id) => {
-    const newExpanded = new Set(expandedIds)
-    if (newExpanded.has(id)) {
-      newExpanded.delete(id)
-    } else {
-      newExpanded.add(id)
-    }
-    setExpandedIds(newExpanded)
-  }
-
   // Move claim from pending -> staging (with current edits)
   const stageClaimForSending = (claimId) => {
     const claim = pendingClaims.find(c => c.id === claimId)
@@ -511,9 +502,14 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
             <SpeakerColumns
               speakers={speakers}
               groupedBySpeaker={groupedBySpeaker}
-              expandedIds={expandedIds}
-              onToggle={toggleExpand}
+              onSelect={setSelectedClaim}
             />
+            {selectedClaim && (
+              <ClaimDetailOverlay
+                claim={selectedClaim}
+                onClose={() => setSelectedClaim(null)}
+              />
+            )}
           </>
         )}
       </main>

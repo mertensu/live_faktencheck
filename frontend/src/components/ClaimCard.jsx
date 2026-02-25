@@ -5,7 +5,7 @@ const MARKDOWN_BOLD_PATTERN = /\*\*(.+?)\*\*/g
 const MARKDOWN_ITALIC_PATTERN = /(?<!\*)\*([^*]+?)\*(?!\*)/g
 const MARKDOWN_LINK_PATTERN = /\[([^\]]+)\]\(([^)]+)\)/g
 
-const getConsistencyColor = (consistency) => {
+export const getConsistencyColor = (consistency) => {
   const lower = consistency?.toLowerCase() || ''
   if (lower === 'hoch') return '#22c55e'
   if (lower === 'niedrig') return '#ef4444'
@@ -13,7 +13,7 @@ const getConsistencyColor = (consistency) => {
   return '#6b7280' // unklar or unknown
 }
 
-const getConsistencyClass = (consistency) => {
+export const getConsistencyClass = (consistency) => {
   const lower = consistency?.toLowerCase() || ''
   if (lower === 'hoch') return 'verdict-richtig'
   if (lower === 'niedrig') return 'verdict-falsch'
@@ -106,7 +106,7 @@ const formatMarkdown = (text) => {
 }
 
 // Format reasoning: line breaks and simple Markdown
-const formatBegruendung = (text) => {
+export const formatBegruendung = (text) => {
   if (!text) return null
 
   // Replace \n\n with paragraphs
@@ -128,72 +128,21 @@ const formatBegruendung = (text) => {
   })
 }
 
-export function ClaimCard({ claim, isExpanded, onToggle }) {
+export function ClaimCard({ claim, onSelect }) {
   const consistencyClass = getConsistencyClass(claim.consistency)
 
   return (
-    <div className={`claim-card ${consistencyClass}`}>
+    <div
+      className={`claim-card ${consistencyClass} claim-card--clickable`}
+      onClick={() => onSelect(claim)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onSelect(claim) }}
+    >
       <div className="claim-header">
         <div className="claim-text">{claim.behauptung}</div>
-        <button
-          className="expand-button"
-          onClick={onToggle}
-          aria-label={isExpanded ? 'Einklappen' : 'Ausklappen'}
-        >
-          {isExpanded ? '▼' : '▶'}
-        </button>
+        <span className="expand-button" aria-hidden="true">▶</span>
       </div>
-
-      {isExpanded && (
-        <div className="claim-details">
-          <div className="detail-section">
-            <h3>Datenbasierte Fundierung</h3>
-            <div
-              className="verdict-badge"
-              style={{ backgroundColor: getConsistencyColor(claim.consistency) }}
-            >
-              {claim.consistency}
-            </div>
-          </div>
-
-          <div className="detail-section">
-            <h3>Begrundung</h3>
-            {claim.begruendung ? (
-              <div className="begruendung-container">
-                {formatBegruendung(claim.begruendung)}
-              </div>
-            ) : (
-              <p className="begruendung-text no-begruendung">
-                Keine Begrundung verfugbar
-              </p>
-            )}
-          </div>
-
-          {claim.quellen && claim.quellen.length > 0 && (
-            <div className="detail-section">
-              <h3>Quellen</h3>
-              <ul className="sources-list">
-                {claim.quellen.map((quelle, idx) => {
-                  const url = typeof quelle === 'object' ? quelle.url : quelle;
-                  const title = typeof quelle === 'object' && quelle.title ? quelle.title : url;
-                  return (
-                    <li key={idx}>
-                      <a
-                        href={url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="source-link"
-                      >
-                        {title}
-                      </a>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          )}
-        </div>
-      )}
     </div>
   )
 }

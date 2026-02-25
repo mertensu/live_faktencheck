@@ -1,6 +1,6 @@
 import { ClaimCard } from './ClaimCard'
 
-export function SpeakerColumns({ speakers, groupedBySpeaker, expandedIds, onToggle }) {
+export function SpeakerColumns({ speakers, groupedBySpeaker, onSelect }) {
   return (
     <div className="speakers-container">
       {speakers.map((speaker) => {
@@ -17,8 +17,7 @@ export function SpeakerColumns({ speakers, groupedBySpeaker, expandedIds, onTogg
                 <ClaimCard
                   key={claim.id}
                   claim={claim}
-                  isExpanded={expandedIds.has(claim.id)}
-                  onToggle={() => onToggle(claim.id)}
+                  onSelect={onSelect}
                 />
               ))}
             </div>

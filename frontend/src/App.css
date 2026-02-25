@@ -632,11 +632,19 @@
 .claim-card {
   padding: 1rem;
   border-left: 3px solid var(--border-light);
-  transition: border-color var(--transition-normal);
+  transition: border-color var(--transition-normal), background var(--transition-normal);
 }
 
-.claim-card:hover {
+.claim-card--clickable {
+  cursor: pointer;
+}
+
+.claim-card--clickable:hover {
   border-left-color: var(--accent-blue);
+}
+
+.claim-card--clickable:hover .expand-button {
+  color: var(--accent-blue);
 }
 
 /* Verdict colors */
@@ -1482,5 +1490,144 @@
 
   .action-button {
     width: 100%;
+  }
+}
+
+/* Claim Detail Overlay */
+.claim-detail-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.25);
+  z-index: 200;
+  animation: backdropFadeIn 0.2s ease-out;
+}
+
+@keyframes backdropFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.claim-detail-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(680px, 100vw);
+  background: white;
+  z-index: 201;
+  overflow-y: auto;
+  box-shadow: -8px 0 40px rgba(0, 0, 0, 0.12);
+  animation: panelSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes panelSlideIn {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+.claim-detail-close {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 1.5rem 1.75rem 0;
+  transition: color var(--transition-normal);
+  font-family: inherit;
+}
+
+.claim-detail-close:hover {
+  color: var(--accent-blue);
+}
+
+.claim-detail-body {
+  padding: 1.25rem 1.75rem 3rem;
+}
+
+.claim-detail-speaker {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-bottom: 0.75rem;
+}
+
+.claim-detail-heading {
+  font-size: 1.4rem;
+  font-weight: 500;
+  color: var(--text-main);
+  line-height: 1.5;
+  margin-bottom: 1.25rem;
+}
+
+.claim-detail-verdict-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.75rem;
+}
+
+.claim-detail-verdict-label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.claim-detail-card {
+  padding: 1.5rem;
+  border-left: 3px solid var(--border-light);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+}
+
+.claim-detail-card.verdict-richtig {
+  background: var(--verdict-true-bg);
+  border-left-color: var(--verdict-true-border);
+}
+
+.claim-detail-card.verdict-falsch {
+  background: var(--verdict-false-bg);
+  border-left-color: var(--verdict-false-border);
+}
+
+.claim-detail-card.verdict-teilweise {
+  background: var(--verdict-partial-bg);
+  border-left-color: var(--verdict-partial-border);
+}
+
+.claim-detail-card.verdict-unbelegt {
+  background: var(--verdict-unknown-bg);
+  border-left-color: var(--verdict-unknown-border);
+}
+
+.claim-detail-section-title {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+  font-weight: 500;
+  margin-bottom: 0.75rem;
+  margin-top: 0;
+}
+
+.claim-detail-section-title + .sources-list,
+.claim-detail-section-title ~ .begruendung-container {
+  margin-top: 0;
+}
+
+.claim-detail-card .claim-detail-section-title:not(:first-child) {
+  margin-top: 1.5rem;
+}
+
+@media (max-width: 768px) {
+  .claim-detail-panel {
+    width: 100vw;
+  }
+
+  .claim-detail-heading {
+    font-size: 1.15rem;
   }
 }
