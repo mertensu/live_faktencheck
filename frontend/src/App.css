@@ -1507,6 +1507,15 @@
   to { opacity: 1; }
 }
 
+.claim-detail-backdrop--closing {
+  animation: backdropFadeOut 0.25s ease-in forwards;
+}
+
+@keyframes backdropFadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
 .claim-detail-panel {
   position: fixed;
   top: 0;
@@ -1523,6 +1532,15 @@
 @keyframes panelSlideIn {
   from { transform: translateX(100%); }
   to { transform: translateX(0); }
+}
+
+.claim-detail-panel--closing {
+  animation: panelSlideOut 0.25s cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
+@keyframes panelSlideOut {
+  from { transform: translateX(0); }
+  to { transform: translateX(100%); }
 }
 
 .claim-detail-close {

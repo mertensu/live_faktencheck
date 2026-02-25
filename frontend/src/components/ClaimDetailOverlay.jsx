@@ -1,23 +1,36 @@
-import { useEffect } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { getConsistencyColor, getConsistencyClass, formatBegruendung } from './ClaimCard'
 
 export function ClaimDetailOverlay({ claim, onClose }) {
+  const [isClosing, setIsClosing] = useState(false)
+
+  const startClose = useCallback(() => {
+    setIsClosing(true)
+  }, [])
+
   useEffect(() => {
     document.body.style.overflow = 'hidden'
-    const handleKey = (e) => { if (e.key === 'Escape') onClose() }
+    const handleKey = (e) => { if (e.key === 'Escape') startClose() }
     window.addEventListener('keydown', handleKey)
     return () => {
       document.body.style.overflow = ''
       window.removeEventListener('keydown', handleKey)
     }
-  }, [onClose])
+  }, [startClose])
 
   const consistencyClass = getConsistencyClass(claim.consistency)
 
   return (
-    <div className="claim-detail-backdrop" onClick={onClose}>
-      <div className="claim-detail-panel" onClick={(e) => e.stopPropagation()}>
-        <button className="claim-detail-close" onClick={onClose} aria-label="Schließen">
+    <div
+      className={`claim-detail-backdrop${isClosing ? ' claim-detail-backdrop--closing' : ''}`}
+      onClick={startClose}
+    >
+      <div
+        className={`claim-detail-panel${isClosing ? ' claim-detail-panel--closing' : ''}`}
+        onClick={(e) => e.stopPropagation()}
+        onAnimationEnd={isClosing ? onClose : undefined}
+      >
+        <button className="claim-detail-close" onClick={startClose} aria-label="Schließen">
           ← Zurück
         </button>
 
