@@ -97,7 +97,7 @@ SHOW_CONFIG = {
     "atalay-2026-02-09": {
         "name": "Pinar Atalay",
         "description": "Sendung vom 9. Februar 2026",
-        "info": "Pinar Atalay diskutiert mit Heidi Reichinnek (Die Linke) und Philipp Amthor (CDU) über Wachstum vs. Umverteilung, Social-Media-Regeln und den Umgang mit der AfD. Sendung vom 9. Februar 2026.",
+        "info": "Pinar Atalay diskutiert mit Heidi Reichinnek (Die Linke) und Philipp Amthor (CDU) über Wachstum vs. Umverteilung, Social-Media-Regeln und den Umgang mit der AfD.",
         "speakers": [
             "Pinar Atalay",
             "Heidi Reichinnek",
@@ -122,6 +122,14 @@ SHOW_CONFIG = {
 
 
 }
+
+# Allow start_dev.sh to override the "test" entry with a real episode's config.
+# Written by start_dev.sh when called with a real episode key; ignored otherwise.
+import json as _json, os as _os
+_override_path = _os.path.join(_os.path.dirname(__file__), ".test_override.json")
+if _os.path.exists(_override_path):
+    with open(_override_path) as _f:
+        SHOW_CONFIG["test"] = _json.load(_f)
 
 # Standard-Sendung (für listener.py wenn keine spezifische Sendung gewählt wird)
 DEFAULT_SHOW = "test"

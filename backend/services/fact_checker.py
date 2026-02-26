@@ -33,7 +33,7 @@ class Source(BaseModel):
 class FactCheckResponse(BaseModel):
     speaker: str
     original_claim: str
-    consistency: Literal["hoch", "niedrig", "mittel", "unklar"] = Field(description="Consistency of the claim, i.e. how well it withstands scrutiny")
+    consistency: Literal["hoch", "eher hoch", "eher niedrig", "niedrig", "unklar"] = Field(description="Consistency of the claim, i.e. how well it withstands scrutiny")
     evidence: str = Field(description="Detailed and well-structured German explanation using evidence-based phrasing")
     sources: List[Source] = Field(description="Primary sources with URL and short informative title")
 

@@ -653,14 +653,19 @@
   border-left-color: var(--verdict-true-border);
 }
 
+.claim-card.verdict-eher-richtig {
+  background: var(--verdict-eher-true-bg);
+  border-left-color: var(--verdict-eher-true-border);
+}
+
+.claim-card.verdict-eher-falsch {
+  background: var(--verdict-eher-false-bg);
+  border-left-color: var(--verdict-eher-false-border);
+}
+
 .claim-card.verdict-falsch {
   background: var(--verdict-false-bg);
   border-left-color: var(--verdict-false-border);
-}
-
-.claim-card.verdict-teilweise {
-  background: var(--verdict-partial-bg);
-  border-left-color: var(--verdict-partial-border);
 }
 
 .claim-card.verdict-unbelegt {
@@ -1606,14 +1611,19 @@
   border-left-color: var(--verdict-true-border);
 }
 
+.claim-detail-card.verdict-eher-richtig {
+  background: var(--verdict-eher-true-bg);
+  border-left-color: var(--verdict-eher-true-border);
+}
+
+.claim-detail-card.verdict-eher-falsch {
+  background: var(--verdict-eher-false-bg);
+  border-left-color: var(--verdict-eher-false-border);
+}
+
 .claim-detail-card.verdict-falsch {
   background: var(--verdict-false-bg);
   border-left-color: var(--verdict-false-border);
-}
-
-.claim-detail-card.verdict-teilweise {
-  background: var(--verdict-partial-bg);
-  border-left-color: var(--verdict-partial-border);
 }
 
 .claim-detail-card.verdict-unbelegt {

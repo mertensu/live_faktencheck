@@ -8,16 +8,18 @@ const MARKDOWN_LINK_PATTERN = /\[([^\]]+)\]\(([^)]+)\)/g
 export const getConsistencyColor = (consistency) => {
   const lower = consistency?.toLowerCase() || ''
   if (lower === 'hoch') return '#22c55e'
+  if (lower === 'eher hoch') return '#86efac'
+  if (lower === 'eher niedrig') return '#fca5a5'
   if (lower === 'niedrig') return '#ef4444'
-  if (lower === 'mittel') return '#f59e0b'
   return '#6b7280' // unklar or unknown
 }
 
 export const getConsistencyClass = (consistency) => {
   const lower = consistency?.toLowerCase() || ''
   if (lower === 'hoch') return 'verdict-richtig'
+  if (lower === 'eher hoch') return 'verdict-eher-richtig'
+  if (lower === 'eher niedrig') return 'verdict-eher-falsch'
   if (lower === 'niedrig') return 'verdict-falsch'
-  if (lower === 'mittel') return 'verdict-teilweise'
   return 'verdict-unbelegt' // unklar or unknown
 }
 

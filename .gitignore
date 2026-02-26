@@ -75,3 +75,4 @@ backend/data/factcheck.db
 # Claude Code session memory
 memory.md
 handover/
+.test_override.json
