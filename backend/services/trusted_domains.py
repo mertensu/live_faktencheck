@@ -36,6 +36,8 @@ TRUSTED_DOMAINS = [
     "oeko.de",
     "steuerzahler.de",
     "portal-sozialpolitik.de",
+    "oecd.org",
+    "bertelsmann-stiftung.de",
     # Fact-Checking Organizations
     "correctiv.org",
     # EU Sources
