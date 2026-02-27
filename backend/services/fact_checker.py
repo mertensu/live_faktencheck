@@ -33,7 +33,22 @@ class Source(BaseModel):
 class FactCheckResponse(BaseModel):
     speaker: str
     original_claim: str
-    consistency: Literal["hoch", "eher hoch", "eher niedrig", "niedrig", "unklar"] = Field(description="Consistency of the claim, i.e. how well it withstands scrutiny")
+    # Strict version: clear thresholds only
+    # consistency: Literal["hoch", "niedrig", "unklar", "keine Datenlage"] = Field(description=(
+    #     "Empirical consistency of the claim. Choose exactly one of four levels:\n"
+    #     "- 'hoch': Clear and unambiguous empirical support. Reliable data or studies directly corroborate the claim.\n"
+    #     "- 'niedrig': The available data or empirical evidence contradicts the claim.\n"
+    #     "- 'unklar': Conflicting studies or evidence exist; no clear determination can be made.\n"
+    #     "- 'keine Datenlage': No relevant data or empirical evidence could be found on this topic."
+    # ))
+    # Loose version: hoch/niedrig explicitly cover predominantly-supported/contradicted claims
+    consistency: Literal["hoch", "niedrig", "unklar", "keine Datenlage"] = Field(description=(
+        "Empirical consistency of the claim. Choose exactly one of four levels:\n"
+        "- 'hoch': The available data supports the claim — use this also when evidence predominantly supports it, even if not entirely conclusive.\n"
+        "- 'niedrig': The available data contradicts the claim — use this also when evidence predominantly contradicts it, even if not entirely conclusive.\n"
+        "- 'unklar': Conflicting studies or evidence exist with no clear direction either way; genuinely impossible to determine.\n"
+        "- 'keine Datenlage': No relevant data or empirical evidence could be found on this topic."
+    ))
     evidence: str = Field(description="Detailed and well-structured German explanation using evidence-based phrasing")
     sources: List[Source] = Field(description="Primary sources with URL and short informative title")
 

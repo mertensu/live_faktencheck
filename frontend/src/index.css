@@ -19,12 +19,10 @@
   /* Verdicts (muted) */
   --verdict-true-bg: #E8F5E9;
   --verdict-true-border: #A8D5BA;
-  --verdict-eher-true-bg: #F4FBF5;
-  --verdict-eher-true-border: #C8E6C9;
-  --verdict-eher-false-bg: #FFF5F5;
-  --verdict-eher-false-border: #FFCDD2;
   --verdict-false-bg: #FFEBEE;
   --verdict-false-border: #F5B7B7;
+  --verdict-unklar-bg: #FFFBEB;
+  --verdict-unklar-border: #FDE68A;
   --verdict-unknown-bg: #ECEFF1;
   --verdict-unknown-border: #D1D5DB;
 

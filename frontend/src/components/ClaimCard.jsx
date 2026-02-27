@@ -8,19 +8,17 @@ const MARKDOWN_LINK_PATTERN = /\[([^\]]+)\]\(([^)]+)\)/g
 export const getConsistencyColor = (consistency) => {
   const lower = consistency?.toLowerCase() || ''
   if (lower === 'hoch') return '#22c55e'
-  if (lower === 'eher hoch') return '#86efac'
-  if (lower === 'eher niedrig') return '#fca5a5'
   if (lower === 'niedrig') return '#ef4444'
-  return '#6b7280' // unklar or unknown
+  if (lower === 'unklar') return '#f59e0b'
+  return '#6b7280' // keine Datenlage or unknown
 }
 
 export const getConsistencyClass = (consistency) => {
   const lower = consistency?.toLowerCase() || ''
   if (lower === 'hoch') return 'verdict-richtig'
-  if (lower === 'eher hoch') return 'verdict-eher-richtig'
-  if (lower === 'eher niedrig') return 'verdict-eher-falsch'
   if (lower === 'niedrig') return 'verdict-falsch'
-  return 'verdict-unbelegt' // unklar or unknown
+  if (lower === 'unklar') return 'verdict-unklar'
+  return 'verdict-unbelegt' // keine Datenlage or unknown
 }
 
 // Simple Markdown formatting (bold, italic, links)

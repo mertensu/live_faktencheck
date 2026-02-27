@@ -18,6 +18,14 @@ TRUSTED_DOMAINS = [
     "publikationen-bundesregierung.de",
     "bmds.bund.de",
     "gesetze-im-internet.de",
+    #Parteien
+    "spd.de",
+    "cdu.de",
+    "csu.de",
+    "fdp.de",
+    "gruene.de",
+    "die-linke.de",
+    "afd.de",
     # Research Institutes
     "diw.de",
     "ifo.de",
