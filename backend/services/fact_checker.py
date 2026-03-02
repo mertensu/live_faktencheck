@@ -16,7 +16,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_tavily import TavilySearch
 from langchain.agents import create_agent
 
-from backend.utils import load_prompt
+from backend.utils import load_prompt, to_dict
 from .cost_tracker import get_cost_tracker
 from .trusted_domains import TRUSTED_DOMAINS
 
@@ -178,11 +178,10 @@ class FactChecker:
 
             # Handle nested structured_response
             if "structured_response" in result:
-                structured = result["structured_response"]
-                parsed = structured.model_dump() if hasattr(structured, "model_dump") else structured
+                parsed = to_dict(result["structured_response"])
             else:
                 # Result might already be flat
-                parsed = result.model_dump() if hasattr(result, "model_dump") else result
+                parsed = to_dict(result)
 
             # Retry once if agent returned no structured response or empty fields
             # This happens when Gemini ignores tool_choice="any" and responds with plain text
@@ -194,10 +193,9 @@ class FactChecker:
                     config={"recursion_limit": self.recursion_limit}
                 )
                 if "structured_response" in result:
-                    structured = result["structured_response"]
-                    parsed = structured.model_dump() if hasattr(structured, "model_dump") else structured
+                    parsed = to_dict(result["structured_response"])
                 else:
-                    parsed = result.model_dump() if hasattr(result, "model_dump") else result
+                    parsed = to_dict(result)
 
             # Fallback to input values if still empty after retry
             if not parsed.get("speaker"):

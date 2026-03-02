@@ -32,6 +32,3 @@ def get_db() -> Database:
     return db
 
 
-def to_dict(obj):
-    """Convert Pydantic model to dict, or return as-is if already a dict."""
-    return obj.model_dump() if hasattr(obj, "model_dump") else obj

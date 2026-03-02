@@ -18,7 +18,7 @@ from backend.models import (
     ProcessingResponse,
     FactCheckStoredResponse,
 )
-from backend.state import to_dict
+from backend.utils import to_dict
 from backend.services.registry import get_fact_checker
 import backend.state as state
 

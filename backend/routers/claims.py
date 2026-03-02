@@ -16,7 +16,7 @@ from backend.models import (
     PendingClaimsRequest,
     ProcessingResponse,
 )
-from backend.state import to_dict
+from backend.utils import to_dict
 import backend.state as state
 
 from backend.show_config import get_info

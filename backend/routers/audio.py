@@ -13,7 +13,8 @@ from typing import Optional
 from fastapi import APIRouter, BackgroundTasks, UploadFile, File, Form
 
 from backend.models import ProcessingResponse
-from backend.state import processing_lock, to_dict
+from backend.state import processing_lock
+from backend.utils import to_dict
 from backend.show_config import get_info
 from backend.services.registry import get_transcription_service, get_claim_extractor
 import backend.state as state

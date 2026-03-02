@@ -72,12 +72,6 @@ class ClaimUpdateRequest(BaseModel):
 # Response Models
 # =============================================================================
 
-class StatusResponse(BaseModel):
-    """Generic status response."""
-    status: str
-    message: Optional[str] = None
-
-
 class ProcessingResponse(BaseModel):
     """Response for endpoints that start background processing."""
     status: str

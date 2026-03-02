@@ -5,6 +5,11 @@ Shared utility functions for the backend.
 from pathlib import Path
 
 
+def to_dict(obj):
+    """Convert Pydantic model to dict, or return as-is if already a dict."""
+    return obj.model_dump() if hasattr(obj, "model_dump") else obj
+
+
 def load_prompt(filename: str, fallback: str | None = None) -> str:
     """
     Load a prompt template from the prompts directory.
@@ -29,8 +34,10 @@ def load_prompt(filename: str, fallback: str | None = None) -> str:
     ]
 
     for prompt_path in possible_paths:
-        if prompt_path.exists():
+        try:
             return prompt_path.read_text(encoding="utf-8")
+        except FileNotFoundError:
+            continue
 
     if fallback is not None:
         return fallback
