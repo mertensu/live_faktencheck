@@ -29,11 +29,6 @@ class ClaimList(BaseModel):
     """List of extracted factual claims."""
     claims: List[ExtractedClaim]
 
-class SelectedClaims(BaseModel):
-    """Top claims selected for fact-checking."""
-    claims: List[ExtractedClaim]
-
-
 
 class ClaimExtractor:
     """Service for extracting verifiable claims from transcripts using Gemini."""
@@ -180,7 +175,7 @@ Article: {text}"""
                 config={
                     'system_instruction': system_prompt,
                     'response_mime_type': 'application/json',
-                    'response_schema': SelectedClaims,
+                    'response_schema': ClaimList,
                 }
             )
             selected = [{"name": c.name, "claim": c.claim} for c in response.parsed.claims]

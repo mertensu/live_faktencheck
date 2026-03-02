@@ -20,7 +20,10 @@ FRONTEND_DIR="frontend"
 for arg in "$@"; do
     if [ "$arg" = "--autopilot" ]; then
         AUTOPILOT=true
-    elif [[ "$arg" != --* ]]; then
+    elif [[ "$arg" == --* ]]; then
+        echo "Unknown option: $arg"
+        exit 1
+    else
         EPISODE_KEY="$arg"
     fi
 done

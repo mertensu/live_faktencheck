@@ -17,6 +17,7 @@ from backend.state import processing_lock
 from backend.utils import to_dict, truncate
 from backend.show_config import get_info
 from backend.services.registry import get_transcription_service, get_claim_extractor
+from backend.routers.claims import process_fact_checks_async
 import backend.state as state
 
 logger = logging.getLogger(__name__)
@@ -169,7 +170,6 @@ async def process_audio_pipeline_async(block_id: str, audio_path: str, episode_k
 
         if os.getenv("AUTO_APPROVE", "false").lower() == "true":
             logger.info(f"[{block_id}] AUTO_APPROVE enabled, selecting best claims...")
-            from backend.routers.claims import process_fact_checks_async
             selected = await claim_extractor.select_async(pending_block["claims"], max_claims=3)
             await process_fact_checks_async(selected, episode_key, info)
 
