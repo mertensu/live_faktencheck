@@ -29,6 +29,11 @@ class ClaimList(BaseModel):
     """List of extracted factual claims."""
     claims: List[ExtractedClaim]
 
+class SelectedClaims(BaseModel):
+    """Top claims selected for fact-checking."""
+    claims: List[ExtractedClaim]
+
+
 
 class ClaimExtractor:
     """Service for extracting verifiable claims from transcripts using Gemini."""
@@ -47,6 +52,7 @@ class ClaimExtractor:
         # Load prompt templates
         self.prompt_template = load_prompt("claim_extraction.md")
         self.article_prompt_template = load_prompt("claim_extraction_article.md")
+        self.selection_prompt_template = load_prompt("claim_selection.md")
 
         logger.info(f"ClaimExtractor initialized with model: {self.model_name}")
 
@@ -146,6 +152,43 @@ Participants and date: {info}
 Article: {text}"""
 
         return await self._extract_async(system_prompt, user_message)
+
+    async def select_async(self, claims: List[dict], max_claims: int = 3) -> List[dict]:
+        """
+        Select the top N most fact-checkable claims from a list (autopilot mode).
+
+        Args:
+            claims: List of claim dicts with 'name' and 'claim' keys
+            max_claims: Maximum number of claims to return
+
+        Returns:
+            Filtered list of claim dicts, at most max_claims entries
+        """
+        logger.info(f"Autopilot: selecting up to {max_claims} relevant claims from {len(claims)}...")
+
+        claims_text = "\n".join(
+            f"{i+1}. [{c.get('name', '?')}]: {c.get('claim', '')}"
+            for i, c in enumerate(claims)
+        )
+        system_prompt = self.selection_prompt_template.replace("{max_claims}", str(max_claims))
+        user_message = f"Behauptungen:\n{claims_text}"
+
+        try:
+            response = await self.client.aio.models.generate_content(
+                model=self.model_name,
+                contents=user_message,
+                config={
+                    'system_instruction': system_prompt,
+                    'response_mime_type': 'application/json',
+                    'response_schema': SelectedClaims,
+                }
+            )
+            selected = [{"name": c.name, "claim": c.claim} for c in response.parsed.claims]
+            logger.info(f"Autopilot: selected {len(selected)} claims")
+            return selected[:max_claims]
+        except Exception:
+            logger.exception("Claim selection failed, falling back to all claims (capped)")
+            return claims[:max_claims]
 
     def extract_from_article(self, text: str, headline: str, publication_date: str = None) -> List[ExtractedClaim]:
         """

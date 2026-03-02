@@ -6,6 +6,7 @@ Handles pending claims and text-based claim extraction.
 
 import asyncio
 import logging
+import os
 from datetime import datetime
 
 from fastapi import APIRouter, HTTPException, BackgroundTasks
@@ -109,6 +110,11 @@ async def process_text_pipeline_async(text: str, headline: str, source_id: str, 
             "text_preview": truncate(text)
         }
         await db.add_pending_block(pending_block)
+
+        if os.getenv("AUTO_APPROVE", "false").lower() == "true":
+            logger.info(f"[{block_id}] AUTO_APPROVE enabled, selecting best claims...")
+            selected = await claim_extractor.select_async(pending_block["claims"], max_claims=3)
+            await process_fact_checks_async(selected, pending_block["episode_key"], headline)
 
         logger.info(f"[{block_id}] Pipeline complete. {len(claims)} claims added to pending.")
 
