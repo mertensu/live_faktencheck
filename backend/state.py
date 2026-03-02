@@ -19,6 +19,11 @@ processing_lock = asyncio.Lock()
 # Database instance (set during app lifespan)
 db: Database | None = None
 
+# Pipeline event tracking (in-memory, not persisted)
+# schema per entry: { block_id, status, started_at, episode_key, audio_file, message }
+# status values: "processing" | "slow" | "timeout" | "error" | "done"
+pipeline_events: dict[str, dict] = {}
+
 
 def get_db() -> Database:
     """Return the active database instance. Raises if not initialized."""

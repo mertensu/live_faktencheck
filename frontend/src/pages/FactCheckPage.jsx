@@ -49,6 +49,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
   const [isAdminMode, setIsAdminMode] = useState(false)
   const [factChecks, setFactChecks] = useState([])
   const [selectedClaim, setSelectedClaim] = useState(null)
+  const [pipelineEvents, setPipelineEvents] = useState([])  // Pipeline status events
   // Admin workflow: flat list -> staging -> sent history
   const [pendingClaims, setPendingClaims] = useState([])   // Flat list of editable claims
   const [pendingBlocks, setPendingBlocks] = useState([])   // Claims grouped by source block
@@ -276,6 +277,57 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
     }
   }, [isAdminMode, showAdminMode, stagedClaims, sentClaims, discardedClaims])
 
+  // Polling for pipeline status (only in admin mode)
+  useEffect(() => {
+    if (!isAdminMode || !showAdminMode) return
+
+    let isMounted = true
+    let currentController = null
+
+    const fetchPipelineStatus = async () => {
+      const controller = new AbortController()
+      currentController = controller
+      try {
+        const response = await fetch(`${BACKEND_URL}/api/pipeline-status`, {
+          headers: getFetchHeaders(),
+          signal: controller.signal
+        })
+        if (!isMounted || !response.ok) return
+        const data = await safeJsonParse(response, 'Error loading pipeline status')
+        if (isMounted) setPipelineEvents(data)
+      } catch (error) {
+        if (isMounted && error.name !== 'AbortError') {
+          debug.error('Error loading pipeline status:', error)
+        }
+      }
+    }
+
+    fetchPipelineStatus()
+    const interval = setInterval(fetchPipelineStatus, 2000)
+
+    return () => {
+      isMounted = false
+      if (currentController) currentController.abort()
+      clearInterval(interval)
+    }
+  }, [isAdminMode, showAdminMode])
+
+  const retriggerBlock = async (blockId) => {
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/pipeline-status/${blockId}/retrigger`, {
+        method: 'POST',
+        headers: getFetchHeaders()
+      })
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}))
+        alert(`Fehler: ${err.detail || response.status}`)
+      }
+    } catch (error) {
+      debug.error('Error retriggering block:', error)
+      alert(`Fehler beim Neustarten: ${error.message}`)
+    }
+  }
+
   // Move claim from pending -> staging (with current edits)
   const stageClaimForSending = (claimId) => {
     const claim = pendingClaims.find(c => c.id === claimId)
@@ -487,6 +539,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
             stagedClaims={stagedClaims}
             discardedClaims={discardedClaims}
             sentClaims={sentClaims}
+            pipelineEvents={pipelineEvents}
             onStage={stageClaimForSending}
             onUnstage={unstageClaim}
             onDiscard={discardClaim}
@@ -495,6 +548,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
             onUpdatePending={updatePendingClaim}
             onSendAll={sendStagedClaims}
             onResend={prepareResend}
+            onRetrigger={retriggerBlock}
           />
         ) : (
           <>

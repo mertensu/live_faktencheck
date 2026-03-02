@@ -9,6 +9,7 @@ FastAPI server that handles:
 """
 
 import os
+import shutil
 import logging
 from contextlib import asynccontextmanager
 
@@ -16,7 +17,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
-from backend.routers import audio, claims, fact_checks, config
+from backend.routers import audio, claims, fact_checks, config, pipeline
+from backend.routers.audio import AUDIO_TMP_DIR
 from backend.database import Database
 from backend import state
 
@@ -35,6 +37,11 @@ logger = logging.getLogger(__name__)
 # Lifespan context manager for startup/shutdown
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Startup: clear orphaned temp audio files from previous crash
+    shutil.rmtree(AUDIO_TMP_DIR, ignore_errors=True)
+    os.makedirs(AUDIO_TMP_DIR, exist_ok=True)
+    logger.info(f"Cleared temp audio dir: {AUDIO_TMP_DIR}")
+
     # Startup: initialize database
     logger.info("FastAPI server starting up...")
     db_mode = os.getenv("DB_MODE", "file")
@@ -85,6 +92,7 @@ app.include_router(audio.router)
 app.include_router(claims.router)
 app.include_router(fact_checks.router)
 app.include_router(config.router)
+app.include_router(pipeline.router)
 
 
 # =============================================================================

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-export function AdminView({ pendingClaims, pendingBlocks, stagedClaims, discardedClaims, sentClaims, onStage, onUnstage, onDiscard, onUndiscard, onDiscardCollection, onUpdatePending, onSendAll, onResend }) {
+export function AdminView({ pendingClaims, pendingBlocks, stagedClaims, discardedClaims, sentClaims, pipelineEvents = [], onStage, onUnstage, onDiscard, onUndiscard, onDiscardCollection, onUpdatePending, onSendAll, onResend, onRetrigger }) {
   const [expandedBlocks, setExpandedBlocks] = useState(new Set())
 
   const toggleBlock = (blockId) => {
@@ -19,8 +19,63 @@ export function AdminView({ pendingClaims, pendingBlocks, stagedClaims, discarde
   const resendClaims = pendingClaims.filter(c => c.resendOf)
   const totalPendingCount = pendingClaims.length
 
+  // Filter pipeline events: hide done events older than 30s (client-side)
+  const now = Date.now()
+  const visibleEvents = pipelineEvents.filter(ev => {
+    if (ev.status !== 'done') return true
+    const age = (now - new Date(ev.started_at).getTime()) / 1000
+    return age < 30
+  })
+
+  const getPipelineStatusClass = (status) => {
+    if (status === 'processing') return 'pipeline-event--processing'
+    if (status === 'slow') return 'pipeline-event--slow'
+    if (status === 'timeout' || status === 'error') return 'pipeline-event--error'
+    if (status === 'done') return 'pipeline-event--done'
+    return ''
+  }
+
   return (
     <div className="admin-layout">
+      {/* Pipeline Status Strip */}
+      {visibleEvents.length > 0 && (
+        <div className="pipeline-status">
+          <div className="pipeline-status-header">
+            Pipeline
+          </div>
+          <div className="pipeline-events-list">
+            {visibleEvents.map(ev => (
+              <div key={ev.block_id} className={`pipeline-event ${getPipelineStatusClass(ev.status)}`}>
+                {(ev.status === 'processing' || ev.status === 'slow') && (
+                  <span className="pipeline-spinner" />
+                )}
+                {(ev.status === 'timeout' || ev.status === 'error') && (
+                  <span className="pipeline-icon">&#9888;</span>
+                )}
+                {ev.status === 'done' && (
+                  <span className="pipeline-icon">&#10003;</span>
+                )}
+                <span className="pipeline-event-label">
+                  {ev.status === 'processing' && `Verarbeitung… ${ev.elapsed_seconds}s`}
+                  {ev.status === 'slow' && `Langsam… ${ev.elapsed_seconds}s`}
+                  {ev.status === 'timeout' && (ev.message || 'Timeout')}
+                  {ev.status === 'error' && (ev.message || 'Fehler')}
+                  {ev.status === 'done' && (ev.message || 'Fertig')}
+                </span>
+                {(ev.status === 'timeout' || ev.status === 'error') && onRetrigger && (
+                  <button
+                    className="pipeline-retrigger-button"
+                    onClick={() => onRetrigger(ev.block_id)}
+                  >
+                    Neu versuchen
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Top row: 2 columns side by side */}
       <div className="admin-top-row">
         {/* Left: Pending Claims List */}

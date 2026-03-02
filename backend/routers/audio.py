@@ -6,7 +6,8 @@ Handles audio block reception and transcription pipeline.
 
 import asyncio
 import logging
-from datetime import datetime
+import os
+from datetime import datetime, timezone
 from typing import Optional
 
 from fastapi import APIRouter, BackgroundTasks, UploadFile, File, Form
@@ -20,6 +21,26 @@ import backend.state as state
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api", tags=["audio"])
+
+AUDIO_TMP_DIR = "/tmp/factcheck_blocks"
+
+
+def _audio_file_path(block_id: str) -> str:
+    return os.path.join(AUDIO_TMP_DIR, f"{block_id}.wav")
+
+
+def _cleanup_audio_file(block_id: str):
+    try:
+        os.remove(_audio_file_path(block_id))
+    except FileNotFoundError:
+        pass
+
+
+def _set_event_status(block_id: str, status: str, message: str | None = None):
+    ev = state.pipeline_events.get(block_id)
+    if ev is not None:
+        ev["status"] = status
+        ev["message"] = message
 
 
 @router.post('/audio-block', status_code=202, response_model=ProcessingResponse)
@@ -41,23 +62,49 @@ async def receive_audio_block(
     ep_key = episode_key or state.current_episode_key or 'test'
     context_info = info or get_info(ep_key)
 
-    logger.info(f"Received audio block: {len(audio_data)} bytes, episode: {ep_key}")
+    # Generate block_id here so it can be tracked immediately
+    block_id = f"block_{int(datetime.now(timezone.utc).timestamp() * 1000)}"
+
+    logger.info(f"Received audio block {block_id}: {len(audio_data)} bytes, episode: {ep_key}")
+
+    # Save audio to temp file for potential retrigger (dir guaranteed by startup)
+    audio_path = _audio_file_path(block_id)
+    with open(audio_path, "wb") as f:
+        f.write(audio_data)
+
+    # Register pipeline event
+    state.pipeline_events[block_id] = {
+        "block_id": block_id,
+        "status": "processing",
+        "started_at": datetime.now(timezone.utc).isoformat(),
+        "episode_key": ep_key,
+        "audio_file": audio_path,
+        "message": None,
+    }
 
     # Start background processing
-    background_tasks.add_task(process_audio_pipeline_async, audio_data, ep_key, context_info)
+    background_tasks.add_task(process_audio_pipeline_async, block_id, audio_data, ep_key, context_info)
 
     return ProcessingResponse(
         status="processing",
         message="Audio received, processing started",
-        episode_key=ep_key
+        episode_key=ep_key,
+        block_id=block_id,
     )
 
 
-async def process_audio_pipeline_async(audio_data: bytes, episode_key: str, info: str):
+async def process_audio_pipeline_async(block_id: str, audio_data: bytes, episode_key: str, info: str):
     """
     Background pipeline: audio -> transcription -> claim extraction -> pending claims
     """
-    block_id = f"block_{int(datetime.now().timestamp() * 1000)}"
+    async def _mark_slow():
+        await asyncio.sleep(30)
+        ev = state.pipeline_events.get(block_id)
+        if ev is not None and ev["status"] == "processing":
+            ev["status"] = "slow"
+            logger.warning(f"[{block_id}] Transcription is slow (>30s)")
+
+    slow_task = asyncio.create_task(_mark_slow())
 
     try:
         logger.info(f"[{block_id}] Starting audio processing pipeline...")
@@ -65,7 +112,18 @@ async def process_audio_pipeline_async(audio_data: bytes, episode_key: str, info
         # Step 1: Transcription (sync call wrapped for async)
         logger.info(f"[{block_id}] Step 1: Transcribing audio...")
         transcription_service = get_transcription_service()
-        transcript = await asyncio.to_thread(transcription_service.transcribe, audio_data)
+        try:
+            transcript = await asyncio.wait_for(
+                asyncio.to_thread(transcription_service.transcribe, audio_data),
+                timeout=60.0
+            )
+        except asyncio.TimeoutError:
+            logger.error(f"[{block_id}] Transcription timed out after 60 seconds. AssemblyAI is likely stuck in 'processing' state.")
+            slow_task.cancel()
+            _set_event_status(block_id, "timeout", "Transkription nach 60s abgebrochen (AssemblyAI hängt)")
+            return
+
+        slow_task.cancel()
         logger.info(f"[{block_id}] Transcription complete: {len(transcript)} chars")
 
         # Grab previous transcript tail for cross-block context, then update it
@@ -87,6 +145,8 @@ async def process_audio_pipeline_async(audio_data: bytes, episode_key: str, info
 
         if not claims:
             logger.info(f"[{block_id}] No claims extracted, skipping")
+            _set_event_status(block_id, "done", "Keine Claims gefunden")
+            _cleanup_audio_file(block_id)
             return
 
         # Step 3: Store as pending claims
@@ -104,6 +164,11 @@ async def process_audio_pipeline_async(audio_data: bytes, episode_key: str, info
         await db.add_pending_block(pending_block)
 
         logger.info(f"[{block_id}] Pipeline complete. {len(claims)} claims added to pending.")
+        _set_event_status(block_id, "done", f"{len(claims)} Claims extrahiert")
+        _cleanup_audio_file(block_id)
 
     except Exception:
         logger.exception(f"[{block_id}] Pipeline error")
+        slow_task.cancel()
+        _set_event_status(block_id, "error", "Pipeline-Fehler (siehe Logs)")
+        # Keep audio file for retrigger

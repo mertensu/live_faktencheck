@@ -271,7 +271,14 @@ class CostTracker:
                     fcntl.flock(f.fileno(), fcntl.LOCK_EX)
                     try:
                         content = f.read()
-                        data = json.loads(content) if content.strip() else self._create_empty_history()
+                        if not content.strip():
+                            data = self._create_empty_history()
+                        else:
+                            try:
+                                data = json.loads(content)
+                            except json.JSONDecodeError as e:
+                                logger.error(f"Corrupted cost history file detected: {e}. Recreating.")
+                                data = self._create_empty_history()
 
                         # Add claim record
                         data["claims"].append(claim_record)

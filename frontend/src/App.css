@@ -1349,6 +1349,96 @@
   overflow-y: auto;
 }
 
+/* Pipeline Status Strip */
+.pipeline-status {
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 1rem;
+  background: white;
+}
+
+.pipeline-status-header {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+.pipeline-events-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.pipeline-event {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.6rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+}
+
+.pipeline-event--processing {
+  background: #EFF6FF;
+  color: #1D4ED8;
+}
+
+.pipeline-event--slow {
+  background: var(--verdict-unklar-bg);
+  color: #92400E;
+}
+
+.pipeline-event--error {
+  background: var(--verdict-false-bg);
+  color: #991B1B;
+}
+
+.pipeline-event--done {
+  background: #F0FDF4;
+  color: #166534;
+}
+
+.pipeline-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+
+.pipeline-icon {
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.pipeline-event-label {
+  flex: 1;
+}
+
+.pipeline-retrigger-button {
+  background: white;
+  color: #991B1B;
+  border: 1px solid var(--verdict-false-border);
+  border-radius: var(--radius-sm);
+  padding: 0.2rem 0.6rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  flex-shrink: 0;
+}
+
+.pipeline-retrigger-button:hover {
+  background: var(--verdict-false-bg);
+  border-color: #DC2626;
+}
+
 /* Backend Error Display */
 .backend-error {
   padding: 1.5rem;
