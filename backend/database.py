@@ -32,10 +32,6 @@ class Database:
         self.db = await aiosqlite.connect(self.db_path)
         self.db.row_factory = aiosqlite.Row
 
-        # Performance pragmas
-        await self.db.execute("PRAGMA journal_mode=WAL")
-        await self.db.execute("PRAGMA synchronous=NORMAL")
-
         await self.init_schema()
         logger.info(f"Database connected: {self.db_path}")
 
@@ -49,6 +45,9 @@ class Database:
     async def init_schema(self):
         """Create tables if they don't exist."""
         await self.db.executescript("""
+            PRAGMA journal_mode=WAL;
+            PRAGMA synchronous=NORMAL;
+
             CREATE TABLE IF NOT EXISTS fact_checks (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 sprecher TEXT NOT NULL DEFAULT '',
@@ -59,6 +58,9 @@ class Database:
                 timestamp TEXT NOT NULL,
                 episode_key TEXT
             );
+
+            CREATE INDEX IF NOT EXISTS idx_fact_checks_speaker_claim
+                ON fact_checks (sprecher, behauptung);
 
             CREATE TABLE IF NOT EXISTS pending_claims_blocks (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -80,21 +82,25 @@ class Database:
     # Fact-Checks CRUD
     # =========================================================================
 
+    def _fact_check_params(self, data: dict) -> tuple:
+        """Extract the ordered parameter tuple for INSERT/UPDATE of a fact-check."""
+        return (
+            data.get("sprecher", ""),
+            data.get("behauptung", ""),
+            data.get("consistency", ""),
+            data.get("begruendung", ""),
+            json.dumps(data.get("quellen", []), ensure_ascii=False),
+            data["timestamp"],
+            data.get("episode_key"),
+        )
+
     async def add_fact_check(self, fact_check: dict) -> int:
         """Insert a fact-check and return its auto-generated ID."""
         cursor = await self.db.execute(
             """INSERT INTO fact_checks
                (sprecher, behauptung, consistency, begruendung, quellen, timestamp, episode_key)
                VALUES (?, ?, ?, ?, ?, ?, ?)""",
-            (
-                fact_check.get("sprecher", ""),
-                fact_check.get("behauptung", ""),
-                fact_check.get("consistency", ""),
-                fact_check.get("begruendung", ""),
-                json.dumps(fact_check.get("quellen", []), ensure_ascii=False),
-                fact_check["timestamp"],
-                fact_check.get("episode_key"),
-            ),
+            self._fact_check_params(fact_check),
         )
         await self.db.commit()
         return cursor.lastrowid
@@ -126,16 +132,7 @@ class Database:
                SET sprecher = ?, behauptung = ?, consistency = ?,
                    begruendung = ?, quellen = ?, timestamp = ?, episode_key = ?
                WHERE id = ?""",
-            (
-                data.get("sprecher", ""),
-                data.get("behauptung", ""),
-                data.get("consistency", ""),
-                data.get("begruendung", ""),
-                json.dumps(data.get("quellen", []), ensure_ascii=False),
-                data["timestamp"],
-                data.get("episode_key"),
-                fact_check_id,
-            ),
+            (*self._fact_check_params(data), fact_check_id),
         )
         await self.db.commit()
         return cursor.rowcount > 0
