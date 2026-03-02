@@ -14,7 +14,7 @@ from fastapi import APIRouter, BackgroundTasks, UploadFile, File, Form
 
 from backend.models import ProcessingResponse
 from backend.state import processing_lock
-from backend.utils import to_dict
+from backend.utils import to_dict, truncate
 from backend.show_config import get_info
 from backend.services.registry import get_transcription_service, get_claim_extractor
 import backend.state as state
@@ -64,11 +64,12 @@ async def receive_audio_block(
     context_info = info or get_info(ep_key)
 
     # Generate block_id here so it can be tracked immediately
-    block_id = f"block_{int(datetime.now(timezone.utc).timestamp() * 1000)}"
+    now = datetime.now(timezone.utc)
+    block_id = f"block_{int(now.timestamp() * 1000)}"
 
     logger.info(f"Received audio block {block_id}: {len(audio_data)} bytes, episode: {ep_key}")
 
-    # Save audio to temp file for potential retrigger (dir guaranteed by startup)
+    # Save audio to temp file for transcription and potential retrigger (dir guaranteed by startup)
     audio_path = _audio_file_path(block_id)
     with open(audio_path, "wb") as f:
         f.write(audio_data)
@@ -77,14 +78,14 @@ async def receive_audio_block(
     state.pipeline_events[block_id] = {
         "block_id": block_id,
         "status": "processing",
-        "started_at": datetime.now(timezone.utc).isoformat(),
+        "started_at": now.isoformat(),
         "episode_key": ep_key,
         "audio_file": audio_path,
         "message": None,
     }
 
-    # Start background processing
-    background_tasks.add_task(process_audio_pipeline_async, block_id, audio_data, ep_key, context_info)
+    # Start background processing (pass path, not bytes, to avoid holding memory in handler)
+    background_tasks.add_task(process_audio_pipeline_async, block_id, audio_path, ep_key, context_info)
 
     return ProcessingResponse(
         status="processing",
@@ -94,7 +95,7 @@ async def receive_audio_block(
     )
 
 
-async def process_audio_pipeline_async(block_id: str, audio_data: bytes, episode_key: str, info: str):
+async def process_audio_pipeline_async(block_id: str, audio_path: str, episode_key: str, info: str):
     """
     Background pipeline: audio -> transcription -> claim extraction -> pending claims
     """
@@ -113,6 +114,8 @@ async def process_audio_pipeline_async(block_id: str, audio_data: bytes, episode
         # Step 1: Transcription (sync call wrapped for async)
         logger.info(f"[{block_id}] Step 1: Transcribing audio...")
         transcription_service = get_transcription_service()
+        with open(audio_path, "rb") as f:
+            audio_data = f.read()
         try:
             transcript = await asyncio.wait_for(
                 asyncio.to_thread(transcription_service.transcribe, audio_data),
@@ -160,7 +163,7 @@ async def process_audio_pipeline_async(block_id: str, audio_data: bytes, episode
             "status": "pending",
             "episode_key": episode_key,
             "info": info,
-            "text_preview": transcript[:200] + "..." if len(transcript) > 200 else transcript
+            "text_preview": truncate(transcript)
         }
         await db.add_pending_block(pending_block)
 

@@ -18,7 +18,7 @@ from backend.models import (
     ProcessingResponse,
     FactCheckStoredResponse,
 )
-from backend.utils import to_dict
+from backend.utils import to_dict, build_fact_check_dict
 from backend.services.registry import get_fact_checker
 import backend.state as state
 
@@ -184,20 +184,8 @@ async def process_new_fact_check_async(name: str, claim: str, episode_key: str):
             logger.error("No results from fact-checker for new claim")
             return
 
-        result = results[0]
-        result_dict = to_dict(result)
-        sources = result_dict.get("sources", [])
-
         db = state.get_db()
-        fact_check = {
-            "sprecher": result_dict.get("speaker", name),
-            "behauptung": result_dict.get("original_claim", claim),
-            "consistency": result_dict.get("consistency", "unklar"),
-            "begruendung": result_dict.get("evidence", ""),
-            "quellen": [to_dict(s) for s in sources] if sources else [],
-            "timestamp": datetime.now().isoformat(),
-            "episode_key": episode_key
-        }
+        fact_check = build_fact_check_dict(to_dict(results[0]), episode_key, speaker_fallback=name, claim_fallback=claim)
         new_id = await db.add_fact_check(fact_check)
         logger.info(f"New fact-check created: ID {new_id} - {fact_check['consistency']}")
 
@@ -225,21 +213,9 @@ async def process_fact_check_update_async(fact_check_id: int, name: str, claim: 
             logger.error(f"No results from fact-checker for ID {fact_check_id}")
             return
 
-        result = results[0]
-        result_dict = to_dict(result)
-        sources = result_dict.get("sources", [])
-
         # Update existing fact-check
         db = state.get_db()
-        updated_data = {
-            "sprecher": result_dict.get("speaker", name),
-            "behauptung": result_dict.get("original_claim", claim),
-            "consistency": result_dict.get("consistency", "unklar"),
-            "begruendung": result_dict.get("evidence", ""),
-            "quellen": [to_dict(s) for s in sources] if sources else [],
-            "timestamp": datetime.now().isoformat(),
-            "episode_key": episode_key
-        }
+        updated_data = build_fact_check_dict(to_dict(results[0]), episode_key, speaker_fallback=name, claim_fallback=claim)
         await db.update_fact_check(fact_check_id, updated_data)
         logger.info(f"Fact-check {fact_check_id} updated: {updated_data['consistency']}")
 

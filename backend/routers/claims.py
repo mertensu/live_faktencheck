@@ -16,7 +16,7 @@ from backend.models import (
     PendingClaimsRequest,
     ProcessingResponse,
 )
-from backend.utils import to_dict
+from backend.utils import to_dict, truncate, build_fact_check_dict
 import backend.state as state
 
 from backend.show_config import get_info
@@ -106,7 +106,7 @@ async def process_text_pipeline_async(text: str, headline: str, source_id: str, 
             "source_id": source_id,
             "episode_key": state.current_episode_key or "test",
             "headline": headline,
-            "text_preview": text[:200] + "..." if len(text) > 200 else text
+            "text_preview": truncate(text)
         }
         await db.add_pending_block(pending_block)
 
@@ -137,12 +137,11 @@ async def receive_pending_claims(request: PendingClaimsRequest):
 
     # Ensure unique block_id
     db = state.get_db()
-    if await db.block_id_exists(block_id):
-        counter = 1
-        base_id = block_id
-        while await db.block_id_exists(block_id):
-            block_id = f"{base_id}_{counter}"
-            counter += 1
+    counter = 1
+    base_id = block_id
+    while await db.block_id_exists(block_id):
+        block_id = f"{base_id}_{counter}"
+        counter += 1
 
     pending_block = {
         "block_id": block_id,
@@ -222,18 +221,7 @@ async def process_fact_checks_async(claims: list, episode_key: str, context: str
         # Store results
         db = state.get_db()
         for result in results:
-            result_dict = to_dict(result)
-            sources = result_dict.get("sources", [])
-
-            fact_check = {
-                "sprecher": result_dict.get("speaker", ""),
-                "behauptung": result_dict.get("original_claim", ""),
-                "consistency": result_dict.get("consistency", "unklar"),
-                "begruendung": result_dict.get("evidence", ""),
-                "quellen": [to_dict(s) for s in sources] if sources else [],
-                "timestamp": datetime.now().isoformat(),
-                "episode_key": episode_key
-            }
+            fact_check = build_fact_check_dict(to_dict(result), episode_key)
             await db.add_fact_check(fact_check)
             logger.info(f"Fact-check complete: {fact_check['sprecher']} - {fact_check['consistency']}")
 

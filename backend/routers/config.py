@@ -14,7 +14,7 @@ from backend.models import (
     ShowsDetailedResponse,
     EpisodesResponse,
 )
-from backend.show_config import get_show_config, get_episodes_for_show
+from backend.show_config import SHOW_CONFIG, get_show_config, get_episodes_for_show
 import backend.state as state
 
 logger = logging.getLogger(__name__)
@@ -29,24 +29,23 @@ router = APIRouter(prefix="/api", tags=["config"])
 async def get_all_shows_endpoint():
     """Return all available episodes as individual entries"""
     try:
-        from backend.show_config import SHOW_CONFIG
-        detailed_shows = []
-
-        for episode_key, config in SHOW_CONFIG.items():
-            detailed_shows.append({
-                "key": episode_key,
-                "name": config.get("name", episode_key.capitalize()),
-                "description": config.get("description", ""),
-                "info": config.get("info", ""),
-                "type": config.get("type", "show"),
-                "speakers": config.get("speakers", []),
-                "episode_name": config.get("episode_name", ""),
-                "publish": config.get("publish", False),
-            })
-
-        # Sort by key (reverse for newest first)
-        detailed_shows.sort(key=lambda x: x["key"], reverse=True)
-
+        detailed_shows = sorted(
+            [
+                {
+                    "key": episode_key,
+                    "name": config.get("name", episode_key.capitalize()),
+                    "description": config.get("description", ""),
+                    "info": config.get("info", ""),
+                    "type": config.get("type", "show"),
+                    "speakers": config.get("speakers", []),
+                    "episode_name": config.get("episode_name", ""),
+                    "publish": config.get("publish", False),
+                }
+                for episode_key, config in SHOW_CONFIG.items()
+            ],
+            key=lambda x: x["key"],
+            reverse=True,
+        )
         return ShowsDetailedResponse(shows=detailed_shows)
     except Exception as e:
         logger.error(f"Error loading shows: {e}")

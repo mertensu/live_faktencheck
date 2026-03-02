@@ -40,22 +40,21 @@ async def get_pipeline_status():
     Auto-prunes done events older than 5 minutes from memory.
     """
     now = datetime.now(timezone.utc)
+    result = []
+    to_delete = []
 
-    # Compute elapsed once per event
-    aged = {bid: _elapsed_seconds(ev["started_at"], now) for bid, ev in state.pipeline_events.items()}
+    for bid, ev in state.pipeline_events.items():
+        elapsed = _elapsed_seconds(ev["started_at"], now)
+        if ev["status"] == "done" and elapsed > _PRUNE_DONE_AFTER_SECONDS:
+            to_delete.append(bid)
+            continue
+        if ev["status"] != "done" or elapsed < 120:
+            result.append({**ev, "elapsed_seconds": int(elapsed)})
 
-    # Prune old done events
-    to_delete = [bid for bid, ev in state.pipeline_events.items() if ev["status"] == "done" and aged[bid] > _PRUNE_DONE_AFTER_SECONDS]
     for bid in to_delete:
         del state.pipeline_events[bid]
-        del aged[bid]
 
-    # Return non-done + done < 2 min
-    return [
-        {**ev, "elapsed_seconds": int(aged[bid])}
-        for bid, ev in state.pipeline_events.items()
-        if ev["status"] != "done" or aged[bid] < 120
-    ]
+    return result
 
 
 @router.post("/pipeline-status/{block_id}/retrigger")
@@ -83,10 +82,6 @@ async def retrigger_pipeline(block_id: str):
             detail=f"Audio-Datei für Block '{block_id}' nicht gefunden (Pfad: {audio_file})"
         )
 
-    # Read saved audio
-    with open(audio_file, "rb") as f:
-        audio_data = f.read()
-
     ep_key = ev.get("episode_key") or state.current_episode_key or "test"
     context_info = get_info(ep_key)
 
@@ -97,6 +92,6 @@ async def retrigger_pipeline(block_id: str):
 
     logger.info(f"[{block_id}] Retrigger requested — restarting pipeline")
 
-    asyncio.create_task(process_audio_pipeline_async(block_id, audio_data, ep_key, context_info))
+    asyncio.create_task(process_audio_pipeline_async(block_id, audio_file, ep_key, context_info))
 
     return {"status": "processing", "block_id": block_id, "message": "Pipeline neu gestartet"}
