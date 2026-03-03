@@ -22,11 +22,11 @@ class TranscriptionService:
 
         aai.settings.api_key = api_key
 
-        # Configure for German with speaker detection
-        self.config = aai.TranscriptionConfig(
+        config = aai.TranscriptionConfig(
             language_detection=True,
             speaker_labels=True,
         )
+        self.transcriber = aai.Transcriber(config=config)
 
         logger.info("TranscriptionService initialized")
 
@@ -45,19 +45,11 @@ class TranscriptionService:
         """
         logger.info(f"Starting transcription of {len(audio_data)} bytes")
 
-        transcriber = aai.Transcriber(config=self.config)
-
         # AssemblyAI SDK handles upload and polling automatically
-        transcript = transcriber.transcribe(audio_data)
+        transcript = self.transcriber.transcribe(audio_data)
+        self._raise_on_error(transcript)
 
-        if transcript.status == aai.TranscriptStatus.error:
-            error_msg = f"Transcription failed: {transcript.error}"
-            logger.error(error_msg)
-            raise Exception(error_msg)
-
-        # Format transcript with speaker labels
         formatted = self._format_transcript(transcript)
-
         logger.info(f"Transcription completed: {len(formatted)} characters")
         return formatted
 
@@ -73,15 +65,15 @@ class TranscriptionService:
         """
         logger.info(f"Transcribing file: {file_path}")
 
-        transcriber = aai.Transcriber(config=self.config)
-        transcript = transcriber.transcribe(file_path)
+        transcript = self.transcriber.transcribe(file_path)
+        self._raise_on_error(transcript)
+        return self._format_transcript(transcript)
 
+    def _raise_on_error(self, transcript: aai.Transcript) -> None:
         if transcript.status == aai.TranscriptStatus.error:
             error_msg = f"Transcription failed: {transcript.error}"
             logger.error(error_msg)
             raise Exception(error_msg)
-
-        return self._format_transcript(transcript)
 
     def _format_transcript(self, transcript: aai.Transcript) -> str:
         """
@@ -98,8 +90,6 @@ class TranscriptionService:
             logger.warning("No utterances found, returning raw text")
             return transcript.text or ""
 
-        lines = []
-        for utterance in transcript.utterances:
-            lines.append(f"Sprecher {utterance.speaker}: {utterance.text}")
-
-        return "\n".join(lines)
+        return "\n".join(
+            f"Sprecher {u.speaker}: {u.text}" for u in transcript.utterances
+        )

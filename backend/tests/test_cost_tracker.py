@@ -94,17 +94,6 @@ class TestCostTrackerPricing:
         assert breakdown["tavily_usd"] == pytest.approx(expected_tavily, rel=0.01)
         assert breakdown["total_usd"] == pytest.approx(expected_total, rel=0.01)
 
-    def test_calculate_cost_returns_total(self):
-        """Test that calculate_cost returns total from breakdown."""
-        tracker = CostTracker(model_name="gemini-2.5-pro")
-
-        cost = tracker.calculate_cost(
-            input_tokens=1_000_000,
-            output_tokens=1_000_000,
-            tavily_searches=10
-        )
-
-        assert cost == pytest.approx(11.33, rel=0.01)
 
 
 class TestCostTrackerExtraction:

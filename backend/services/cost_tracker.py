@@ -166,21 +166,6 @@ class CostTracker:
             "total_usd": gemini_cost + tavily_cost
         }
 
-    def calculate_cost(self, input_tokens: int, output_tokens: int, tavily_searches: int) -> float:
-        """
-        Calculate the estimated total USD cost.
-
-        Args:
-            input_tokens: Number of input tokens
-            output_tokens: Number of output tokens
-            tavily_searches: Number of Tavily search calls
-
-        Returns:
-            Estimated total cost in USD
-        """
-        breakdown = self.calculate_cost_breakdown(input_tokens, output_tokens, tavily_searches)
-        return breakdown["total_usd"]
-
     def log_claim_cost(
         self,
         stats: Dict[str, int],
@@ -261,78 +246,45 @@ class CostTracker:
             claim_record: The claim data to persist
         """
         try:
-            # Ensure data directory exists
-            DATA_DIR.mkdir(parents=True, exist_ok=True)
+            session_cost = self.calculate_cost_breakdown(
+                self.total_input_tokens,
+                self.total_output_tokens,
+                self.total_tavily_searches
+            )
+            session_totals = {
+                "input_tokens": self.total_input_tokens,
+                "output_tokens": self.total_output_tokens,
+                "tavily_searches": self.total_tavily_searches,
+                "llm_calls": self.total_llm_calls,
+                "gemini_usd": round(session_cost["gemini_usd"], 6),
+                "tavily_usd": round(session_cost["tavily_usd"], 6),
+                "total_usd": round(session_cost["total_usd"], 6),
+                "claims_processed": self.claims_processed
+            }
 
-            # Read existing data or create new structure
-            if COST_HISTORY_FILE.exists():
-                with open(COST_HISTORY_FILE, "r+", encoding="utf-8") as f:
-                    # Acquire exclusive lock
-                    fcntl.flock(f.fileno(), fcntl.LOCK_EX)
-                    try:
-                        content = f.read()
-                        if not content.strip():
+            with open(COST_HISTORY_FILE, "a+", encoding="utf-8") as f:
+                fcntl.flock(f.fileno(), fcntl.LOCK_EX)
+                try:
+                    f.seek(0)
+                    content = f.read()
+                    if not content.strip():
+                        data = self._create_empty_history()
+                    else:
+                        try:
+                            data = json.loads(content)
+                        except json.JSONDecodeError as e:
+                            logger.error(f"Corrupted cost history file detected: {e}. Recreating.")
                             data = self._create_empty_history()
-                        else:
-                            try:
-                                data = json.loads(content)
-                            except json.JSONDecodeError as e:
-                                logger.error(f"Corrupted cost history file detected: {e}. Recreating.")
-                                data = self._create_empty_history()
 
-                        # Add claim record
-                        data["claims"].append(claim_record)
+                    data["claims"].append(claim_record)
+                    data["session_start"] = self.session_start
+                    data["session_totals"] = session_totals
 
-                        # Update session totals
-                        data["session_start"] = self.session_start
-                        session_cost = self.calculate_cost_breakdown(
-                            self.total_input_tokens,
-                            self.total_output_tokens,
-                            self.total_tavily_searches
-                        )
-                        data["session_totals"] = {
-                            "input_tokens": self.total_input_tokens,
-                            "output_tokens": self.total_output_tokens,
-                            "tavily_searches": self.total_tavily_searches,
-                            "llm_calls": self.total_llm_calls,
-                            "gemini_usd": round(session_cost["gemini_usd"], 6),
-                            "tavily_usd": round(session_cost["tavily_usd"], 6),
-                            "total_usd": round(session_cost["total_usd"], 6),
-                            "claims_processed": self.claims_processed
-                        }
-
-                        # Write back
-                        f.seek(0)
-                        f.truncate()
-                        json.dump(data, f, indent=2, ensure_ascii=False)
-                    finally:
-                        fcntl.flock(f.fileno(), fcntl.LOCK_UN)
-            else:
-                # Create new file
-                data = self._create_empty_history()
-                data["claims"].append(claim_record)
-                session_cost = self.calculate_cost_breakdown(
-                    self.total_input_tokens,
-                    self.total_output_tokens,
-                    self.total_tavily_searches
-                )
-                data["session_totals"] = {
-                    "input_tokens": self.total_input_tokens,
-                    "output_tokens": self.total_output_tokens,
-                    "tavily_searches": self.total_tavily_searches,
-                    "llm_calls": self.total_llm_calls,
-                    "gemini_usd": round(session_cost["gemini_usd"], 6),
-                    "tavily_usd": round(session_cost["tavily_usd"], 6),
-                    "total_usd": round(session_cost["total_usd"], 6),
-                    "claims_processed": self.claims_processed
-                }
-
-                with open(COST_HISTORY_FILE, "w", encoding="utf-8") as f:
-                    fcntl.flock(f.fileno(), fcntl.LOCK_EX)
-                    try:
-                        json.dump(data, f, indent=2, ensure_ascii=False)
-                    finally:
-                        fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+                    f.seek(0)
+                    f.truncate()
+                    json.dump(data, f, indent=2, ensure_ascii=False)
+                finally:
+                    fcntl.flock(f.fileno(), fcntl.LOCK_UN)
 
         except Exception as e:
             logger.error(f"Failed to persist cost data: {e}")
