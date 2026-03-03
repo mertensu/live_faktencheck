@@ -1,22 +1,20 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState } from 'react'
 import { getConsistencyColor, getConsistencyClass, formatBegruendung } from './ClaimCard'
 
 export function ClaimDetailOverlay({ claim, onClose }) {
   const [isClosing, setIsClosing] = useState(false)
 
-  const startClose = useCallback(() => {
-    setIsClosing(true)
-  }, [])
+  const startClose = () => setIsClosing(true)
 
   useEffect(() => {
     document.body.style.overflow = 'hidden'
-    const handleKey = (e) => { if (e.key === 'Escape') startClose() }
+    const handleKey = (e) => { if (e.key === 'Escape') setIsClosing(true) }
     window.addEventListener('keydown', handleKey)
     return () => {
       document.body.style.overflow = ''
       window.removeEventListener('keydown', handleKey)
     }
-  }, [startClose])
+  }, [])
 
   const consistencyClass = getConsistencyClass(claim.consistency)
 

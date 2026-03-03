@@ -1,22 +1,22 @@
 import { Link, useLocation } from 'react-router-dom'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 const GITHUB_REPO_URL = "https://github.com/mertensu/live_faktencheck"
 
 export function Navigation() {
   const location = useLocation()
   const [visible, setVisible] = useState(true)
-  const [lastY, setLastY] = useState(0)
+  const lastYRef = useRef(0)
 
   useEffect(() => {
     const handleScroll = () => {
       const currentY = window.scrollY
-      setVisible(currentY < lastY || currentY < 60)
-      setLastY(currentY)
+      setVisible(currentY < lastYRef.current || currentY < 60)
+      lastYRef.current = currentY
     }
     window.addEventListener('scroll', handleScroll, { passive: true })
     return () => window.removeEventListener('scroll', handleScroll)
-  }, [lastY])
+  }, [])
 
   return (
     <nav className={`main-navigation${visible ? '' : ' main-navigation--hidden'}`}>

@@ -1,5 +1,56 @@
 import { useState } from 'react'
 
+const getPipelineStatusClass = (status) => {
+  if (status === 'processing') return 'pipeline-event--processing'
+  if (status === 'slow') return 'pipeline-event--slow'
+  if (status === 'timeout' || status === 'error') return 'pipeline-event--error'
+  if (status === 'done') return 'pipeline-event--done'
+  return ''
+}
+
+function PendingClaimItem({ claim, isResend, onStage, onDiscard, onUpdatePending }) {
+  return (
+    <div className="admin-claim-item pending-item">
+      <div className="claim-content">
+        <input
+          type="text"
+          className="claim-speaker-edit"
+          value={claim.name}
+          onChange={(e) => onUpdatePending(claim.id, 'name', e.target.value)}
+          placeholder="Sprecher"
+        />
+        <textarea
+          className="claim-text-edit"
+          value={claim.claim}
+          onChange={(e) => onUpdatePending(claim.id, 'claim', e.target.value)}
+          placeholder="Claim"
+          rows={3}
+        />
+        <div className="claim-meta">
+          {isResend && <>Re-send &middot; </>}
+          {new Date(claim.timestamp).toLocaleString('de-DE')}
+        </div>
+      </div>
+      <div className="claim-actions">
+        <button
+          className="stage-button"
+          onClick={() => onStage(claim.id)}
+          title="Zum Staging hinzufugen"
+        >
+          {'\u2192'}
+        </button>
+        <button
+          className="discard-button"
+          onClick={() => onDiscard(claim.id)}
+          title="Verwerfen"
+        >
+          {'\u2715'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export function AdminView({ pendingClaims, pendingBlocks, stagedClaims, discardedClaims, sentClaims, pipelineEvents = [], onStage, onUnstage, onDiscard, onUndiscard, onDiscardCollection, onUpdatePending, onSendAll, onResend, onRetrigger }) {
   const [expandedBlocks, setExpandedBlocks] = useState(new Set())
 
@@ -17,7 +68,6 @@ export function AdminView({ pendingClaims, pendingBlocks, stagedClaims, discarde
 
   // Resend claims are shown as standalone items at the top
   const resendClaims = pendingClaims.filter(c => c.resendOf)
-  const totalPendingCount = pendingClaims.length
 
   // Filter pipeline events: hide done events older than 30s (client-side)
   const now = Date.now()
@@ -26,14 +76,6 @@ export function AdminView({ pendingClaims, pendingBlocks, stagedClaims, discarde
     const age = (now - new Date(ev.started_at).getTime()) / 1000
     return age < 30
   })
-
-  const getPipelineStatusClass = (status) => {
-    if (status === 'processing') return 'pipeline-event--processing'
-    if (status === 'slow') return 'pipeline-event--slow'
-    if (status === 'timeout' || status === 'error') return 'pipeline-event--error'
-    if (status === 'done') return 'pipeline-event--done'
-    return ''
-  }
 
   return (
     <div className="admin-layout">
@@ -82,9 +124,9 @@ export function AdminView({ pendingClaims, pendingBlocks, stagedClaims, discarde
         <div className="admin-panel admin-pending">
           <div className="admin-panel-header">
             <h2>Pending Claims</h2>
-            <span className="panel-count">{totalPendingCount}</span>
+            <span className="panel-count">{pendingClaims.length}</span>
           </div>
-          {totalPendingCount === 0 ? (
+          {pendingClaims.length === 0 ? (
             <div className="admin-panel-empty">
               <p>Keine Claims zur Bearbeitung</p>
               <p className="empty-subtitle">Warte auf neue Claims...</p>
@@ -93,43 +135,14 @@ export function AdminView({ pendingClaims, pendingBlocks, stagedClaims, discarde
             <div className="admin-claims-list">
               {/* Resend claims as standalone items */}
               {resendClaims.map((claim) => (
-                <div key={claim.id} className="admin-claim-item pending-item">
-                  <div className="claim-content">
-                    <input
-                      type="text"
-                      className="claim-speaker-edit"
-                      value={claim.name}
-                      onChange={(e) => onUpdatePending(claim.id, 'name', e.target.value)}
-                      placeholder="Sprecher"
-                    />
-                    <textarea
-                      className="claim-text-edit"
-                      value={claim.claim}
-                      onChange={(e) => onUpdatePending(claim.id, 'claim', e.target.value)}
-                      placeholder="Claim"
-                      rows={3}
-                    />
-                    <div className="claim-meta">
-                      Re-send &middot; {new Date(claim.timestamp).toLocaleString('de-DE')}
-                    </div>
-                  </div>
-                  <div className="claim-actions">
-                    <button
-                      className="stage-button"
-                      onClick={() => onStage(claim.id)}
-                      title="Zum Staging hinzufugen"
-                    >
-                      {'\u2192'}
-                    </button>
-                    <button
-                      className="discard-button"
-                      onClick={() => onDiscard(claim.id)}
-                      title="Verwerfen"
-                    >
-                      {'\u2715'}
-                    </button>
-                  </div>
-                </div>
+                <PendingClaimItem
+                  key={claim.id}
+                  claim={claim}
+                  isResend
+                  onStage={onStage}
+                  onDiscard={onDiscard}
+                  onUpdatePending={onUpdatePending}
+                />
               ))}
 
               {/* Block collections */}
@@ -160,43 +173,13 @@ export function AdminView({ pendingClaims, pendingBlocks, stagedClaims, discarde
                   {expandedBlocks.has(block.blockId) && (
                     <div className="collection-claims">
                       {block.claims.map((claim) => (
-                        <div key={claim.id} className="admin-claim-item pending-item">
-                          <div className="claim-content">
-                            <input
-                              type="text"
-                              className="claim-speaker-edit"
-                              value={claim.name}
-                              onChange={(e) => onUpdatePending(claim.id, 'name', e.target.value)}
-                              placeholder="Sprecher"
-                            />
-                            <textarea
-                              className="claim-text-edit"
-                              value={claim.claim}
-                              onChange={(e) => onUpdatePending(claim.id, 'claim', e.target.value)}
-                              placeholder="Claim"
-                              rows={3}
-                            />
-                            <div className="claim-meta">
-                              {new Date(claim.timestamp).toLocaleString('de-DE')}
-                            </div>
-                          </div>
-                          <div className="claim-actions">
-                            <button
-                              className="stage-button"
-                              onClick={() => onStage(claim.id)}
-                              title="Zum Staging hinzufugen"
-                            >
-                              {'\u2192'}
-                            </button>
-                            <button
-                              className="discard-button"
-                              onClick={() => onDiscard(claim.id)}
-                              title="Verwerfen"
-                            >
-                              {'\u2715'}
-                            </button>
-                          </div>
-                        </div>
+                        <PendingClaimItem
+                          key={claim.id}
+                          claim={claim}
+                          onStage={onStage}
+                          onDiscard={onDiscard}
+                          onUpdatePending={onUpdatePending}
+                        />
                       ))}
                     </div>
                   )}
