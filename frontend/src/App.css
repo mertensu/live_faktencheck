@@ -459,9 +459,6 @@
   flex: 1;
 }
 
-.pipeline-step-wrapper:last-child {
-  flex: 1;
-}
 
 .pipeline-step {
   flex: 1;

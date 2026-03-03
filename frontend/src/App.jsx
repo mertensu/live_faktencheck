@@ -9,8 +9,9 @@ import { FactCheckPage } from './pages/FactCheckPage'
 
 function EpisodeRoute() {
   const { episodeKey } = useParams()
-  const showName = episodeKey.split('-')[0].charAt(0).toUpperCase() + episodeKey.split('-')[0].slice(1)
-  return <FactCheckPage showName={showName} showKey={episodeKey} episodeKey={episodeKey} />
+  const prefix = episodeKey.split('-')[0]
+  const showName = prefix.charAt(0).toUpperCase() + prefix.slice(1)
+  return <FactCheckPage showName={showName} episodeKey={episodeKey} />
 }
 
 function App() {
