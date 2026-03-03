@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { BACKEND_URL, N8N_VERIFIED_WEBHOOK, getFetchHeaders, safeJsonParse, debug } from '../services/api'
 import { AdminView } from '../components/AdminView'
 import { SpeakerColumns } from '../components/SpeakerColumns'
@@ -59,6 +59,12 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
   const [localEdits, setLocalEdits] = useState({})         // Track local edits: { claimId: { name, claim } }
   const localEditsRef = useRef(localEdits)                   // Ref to access current edits in polling
   localEditsRef.current = localEdits                         // Keep ref in sync with state
+  const stagedClaimsRef = useRef(stagedClaims)
+  stagedClaimsRef.current = stagedClaims
+  const sentClaimsRef = useRef(sentClaims)
+  sentClaimsRef.current = sentClaims
+  const discardedClaimsRef = useRef(discardedClaims)
+  discardedClaimsRef.current = discardedClaims
   const [speakers, setSpeakers] = useState(DEFAULT_SPEAKERS)  // Load config from backend
   const [backendError, setBackendError] = useState(null)  // Backend connection error
 
@@ -219,9 +225,9 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
 
         // Flatten blocks into claims, excluding those already staged or sent
         const flatClaims = flattenPendingBlocks(data)
-        const stagedIds = new Set(stagedClaims.map(c => c.id))
-        const sentIds = new Set(sentClaims.map(c => c.originalId || c.id))
-        const discardedIds = new Set(discardedClaims.map(c => c.id))
+        const stagedIds = new Set(stagedClaimsRef.current.map(c => c.id))
+        const sentIds = new Set(sentClaimsRef.current.map(c => c.originalId || c.id))
+        const discardedIds = new Set(discardedClaimsRef.current.map(c => c.id))
         const newPending = flatClaims.filter(c => !stagedIds.has(c.id) && !sentIds.has(c.id) && !discardedIds.has(c.id))
         const currentEdits = localEditsRef.current
         setPendingClaims(prev => {
@@ -275,7 +281,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
       if (currentController) currentController.abort()
       clearInterval(interval)
     }
-  }, [isAdminMode, showAdminMode, stagedClaims, sentClaims, discardedClaims])
+  }, [isAdminMode, showAdminMode])
 
   // Polling for pipeline status (only in admin mode)
   useEffect(() => {
@@ -439,7 +445,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
       }
 
       // Send re-sends via POST to /resend endpoint (matches by speaker+claim text)
-      for (const claim of resendClaims) {
+      await Promise.all(resendClaims.map(async (claim) => {
         const response = await fetch(`${BACKEND_URL}/api/fact-checks/resend`, {
           method: 'POST',
           headers: getFetchHeaders(),
@@ -450,13 +456,12 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
             original_claim: claim.originalClaim || null
           })
         })
-
         if (!response.ok) {
           debug.warn(`Error re-sending claim:`, response.status)
         } else {
           debug.log(`Re-send for "${claim.name}" started`)
         }
-      }
+      }))
       if (resendClaims.length > 0) {
         results.push(`${resendClaims.length} Re-sends`)
       }
@@ -501,7 +506,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
 
   // Group fact-checks by speaker
   // Supports exact match and partial match (e.g., "Connemann" matches "Gitta Connemann")
-  const groupedBySpeaker = speakers.reduce((acc, speaker) => {
+  const groupedBySpeaker = useMemo(() => speakers.reduce((acc, speaker) => {
     acc[speaker] = factChecks.filter(fc => {
       const factCheckSpeaker = fc.sprecher || ''
       // Exact match
@@ -511,7 +516,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
       return false
     })
     return acc
-  }, {})
+  }, {}), [speakers, factChecks])
 
   return (
     <>

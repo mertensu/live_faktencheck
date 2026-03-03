@@ -8,12 +8,12 @@ export function ShowPage({ showKey }) {
   const navigate = useNavigate()
   const [episodes, setEpisodes] = useState([])
   const [selectedEpisode, setSelectedEpisode] = useState(null)
-  const [showName, setShowName] = useState(showKey.charAt(0).toUpperCase() + showKey.slice(1))
+  const defaultShowName = showKey.charAt(0).toUpperCase() + showKey.slice(1)
+  const [showName, setShowName] = useState(defaultShowName)
 
   // Load episodes for this show
   useEffect(() => {
     const controller = new AbortController()
-    const defaultShowName = showKey.charAt(0).toUpperCase() + showKey.slice(1)
 
     const loadEpisodes = async () => {
       try {
@@ -53,16 +53,6 @@ export function ShowPage({ showKey }) {
 
     return () => controller.abort()
   }, [showKey, episodeFromUrl, navigate])
-
-  const handleEpisodeChange = (episodeKey) => {
-    setSelectedEpisode(episodeKey)
-    const episode = episodes.find(e => e.key === episodeKey)
-    if (episode) {
-      setShowName(episode.config.name || showName)
-      // Navigate with React Router (respects basename)
-      navigate(`/${showKey}/${episodeKey}`, { replace: true })
-    }
-  }
 
   if (!selectedEpisode) {
     return <div>Lade Episoden...</div>
