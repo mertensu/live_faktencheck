@@ -1,35 +1,28 @@
 import { useState, useEffect } from 'react'
-import { BACKEND_URL, getFetchHeaders, safeJsonParse, debug } from '../services/api'
-
-const DEFAULT_SHOWS = []
+import { BACKEND_URL, FETCH_HEADERS, safeJsonParse, debug, isStaticMode } from '../services/api'
 
 export function useShows() {
-  const [shows, setShows] = useState(DEFAULT_SHOWS)
+  const [shows, setShows] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
   useEffect(() => {
     const controller = new AbortController()
 
-    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    const isStaticMode = import.meta.env.PROD && !isLocalhost
-
     const loadShows = async () => {
       try {
         let data
         if (isStaticMode) {
           const response = await fetch('/data/shows.json', { signal: controller.signal })
-          if (response.ok) {
-            data = await response.json()
-          }
+          if (!response.ok) throw new Error(`Failed to load shows: ${response.status}`)
+          data = await response.json()
         } else {
           const response = await fetch(`${BACKEND_URL}/api/config/shows`, {
-            headers: getFetchHeaders(),
+            headers: FETCH_HEADERS,
             signal: controller.signal
           })
-          if (response.ok) {
-            data = await safeJsonParse(response, 'Error loading shows')
-          }
+          if (!response.ok) throw new Error(`Failed to load shows: ${response.status}`)
+          data = await safeJsonParse(response, 'Error loading shows')
         }
         if (data?.shows?.length > 0) {
           setShows(data.shows)

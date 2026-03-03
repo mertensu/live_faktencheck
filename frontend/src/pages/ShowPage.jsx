@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { BACKEND_URL, getFetchHeaders, safeJsonParse, debug } from '../services/api'
+import { BACKEND_URL, FETCH_HEADERS, safeJsonParse, debug } from '../services/api'
 import { FactCheckPage } from './FactCheckPage'
 
 export function ShowPage({ showKey }) {
@@ -18,7 +18,7 @@ export function ShowPage({ showKey }) {
     const loadEpisodes = async () => {
       try {
         const response = await fetch(`${BACKEND_URL}/api/config/shows/${showKey}/episodes`, {
-          headers: getFetchHeaders(),
+          headers: FETCH_HEADERS,
           signal: controller.signal
         })
         if (response.ok) {

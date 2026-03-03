@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
-import { BACKEND_URL, N8N_VERIFIED_WEBHOOK, getFetchHeaders, safeJsonParse, debug } from '../services/api'
+import { BACKEND_URL, N8N_VERIFIED_WEBHOOK, FETCH_HEADERS, safeJsonParse, debug } from '../services/api'
 import { AdminView } from '../components/AdminView'
 import { SpeakerColumns } from '../components/SpeakerColumns'
 import { BackendErrorDisplay } from '../components/BackendErrorDisplay'
@@ -80,7 +80,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
       const key = episodeKey || showKey || showName.toLowerCase()
       try {
         const response = await fetch(`${BACKEND_URL}/api/config/${key}`, {
-          headers: getFetchHeaders(),
+          headers: FETCH_HEADERS,
           signal: controller.signal
         })
         if (response.ok) {
@@ -146,7 +146,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
         const timeoutId = setTimeout(() => controller.abort(), 5000)
 
         const response = await fetch(url, {
-          headers: getFetchHeaders(),
+          headers: FETCH_HEADERS,
           signal: controller.signal
         })
 
@@ -211,7 +211,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
           ? `${BACKEND_URL}/api/pending-claims?episode=${episodeKey}`
           : `${BACKEND_URL}/api/pending-claims`
         const response = await fetch(pendingUrl, {
-          headers: getFetchHeaders(),
+          headers: FETCH_HEADERS,
           signal: controller.signal
         })
 
@@ -295,7 +295,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
       currentController = controller
       try {
         const response = await fetch(`${BACKEND_URL}/api/pipeline-status`, {
-          headers: getFetchHeaders(),
+          headers: FETCH_HEADERS,
           signal: controller.signal
         })
         if (!isMounted || !response.ok) return
@@ -322,7 +322,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
     try {
       const response = await fetch(`${BACKEND_URL}/api/pipeline-status/${blockId}/retrigger`, {
         method: 'POST',
-        headers: getFetchHeaders()
+        headers: FETCH_HEADERS
       })
       if (!response.ok) {
         const err = await response.json().catch(() => ({}))
@@ -427,7 +427,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
 
         const response = await fetch(`${BACKEND_URL}/api/approve-claims`, {
           method: 'POST',
-          headers: getFetchHeaders(),
+          headers: FETCH_HEADERS,
           body: JSON.stringify({
             block_id: `staged_${Date.now()}`,
             claims: claimsToSend,
@@ -448,7 +448,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
       await Promise.all(resendClaims.map(async (claim) => {
         const response = await fetch(`${BACKEND_URL}/api/fact-checks/resend`, {
           method: 'POST',
-          headers: getFetchHeaders(),
+          headers: FETCH_HEADERS,
           body: JSON.stringify({
             name: claim.name,
             claim: claim.claim,
