@@ -172,11 +172,6 @@ class TestClaimExtractorInit:
     def test_init_requires_api_key(self):
         """ClaimExtractor raises error without API key."""
         with patch.dict("os.environ", {}, clear=True):
-            # Remove both possible API key env vars
-            import os
-            os.environ.pop("GEMINI_API_KEY", None)
-            os.environ.pop("GOOGLE_API_KEY", None)
-
             with pytest.raises(ValueError) as exc_info:
                 ClaimExtractor()
 
@@ -190,10 +185,6 @@ class TestClaimExtractorInit:
 
     def test_init_default_model(self, mock_genai_client):
         """ClaimExtractor uses default model when not specified."""
-        with patch.dict("os.environ", {"GEMINI_API_KEY": "test-key"}):
-            # Remove model env var if present
-            import os
-            os.environ.pop("GEMINI_MODEL_CLAIM_EXTRACTION", None)
-
+        with patch.dict("os.environ", {"GEMINI_API_KEY": "test-key"}, clear=True):
             extractor = ClaimExtractor()
             assert extractor.model_name == "gemini-2.5-flash"

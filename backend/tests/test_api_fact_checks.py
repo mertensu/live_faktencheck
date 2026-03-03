@@ -286,6 +286,89 @@ class TestHealthEndpoint:
         assert data["current_episode"] is None
 
 
+class TestResendFactCheckEndpoint:
+    """Tests for POST /api/fact-checks/resend endpoint."""
+
+    async def test_resend_matches_by_fact_check_id(self, client, mock_all_services):
+        """POST /api/fact-checks/resend re-runs by fact_check_id when provided."""
+        db = state.get_db()
+        await db.add_fact_check({
+            "sprecher": "Original Speaker",
+            "behauptung": "Original claim",
+            "consistency": "unklar",
+            "begruendung": "",
+            "quellen": [],
+            "timestamp": "2024-01-01T10:00:00",
+            "episode_key": "ep1",
+        })
+
+        response = await client.post("/api/fact-checks/resend", json={
+            "name": "Original Speaker",
+            "claim": "Updated claim text",
+            "fact_check_id": 1,
+        })
+
+        assert response.status_code == 202
+        data = response.json()
+        assert data["status"] == "processing"
+        assert "1" in data["message"]
+
+    async def test_resend_matches_by_original_claim(self, client, mock_all_services):
+        """POST /api/fact-checks/resend matches by speaker + original_claim."""
+        db = state.get_db()
+        await db.add_fact_check({
+            "sprecher": "Speaker A",
+            "behauptung": "The exact original claim",
+            "consistency": "unklar",
+            "begruendung": "",
+            "quellen": [],
+            "timestamp": "2024-01-01T10:00:00",
+            "episode_key": "ep1",
+        })
+
+        response = await client.post("/api/fact-checks/resend", json={
+            "name": "Speaker A",
+            "claim": "The exact original claim",
+            "original_claim": "The exact original claim",
+        })
+
+        assert response.status_code == 202
+        assert response.json()["status"] == "processing"
+
+    async def test_resend_creates_new_when_no_match(self, client, mock_all_services):
+        """POST /api/fact-checks/resend creates new fact-check when no match found."""
+        response = await client.post("/api/fact-checks/resend", json={
+            "name": "Unknown Speaker",
+            "claim": "A claim with no existing match",
+        })
+
+        assert response.status_code == 202
+        data = response.json()
+        assert data["status"] == "processing"
+        assert "new" in data["message"].lower() or "New" in data["message"]
+
+    async def test_resend_falls_back_to_claim_match(self, client, mock_all_services):
+        """POST /api/fact-checks/resend falls back to matching by speaker + claim."""
+        db = state.get_db()
+        await db.add_fact_check({
+            "sprecher": "Speaker B",
+            "behauptung": "The fallback claim",
+            "consistency": "hoch",
+            "begruendung": "",
+            "quellen": [],
+            "timestamp": "2024-01-01T10:00:00",
+            "episode_key": "ep1",
+        })
+
+        response = await client.post("/api/fact-checks/resend", json={
+            "name": "Speaker B",
+            "claim": "The fallback claim",
+        })
+
+        assert response.status_code == 202
+        assert response.json()["status"] == "processing"
+
+
 class TestSetEpisodeEndpoint:
     """Tests for POST /api/set-episode endpoint."""
 

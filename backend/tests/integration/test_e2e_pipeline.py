@@ -27,7 +27,7 @@ FIXTURES_DIR = Path(__file__).parent / "fixtures"
 TEST_AUDIO_FILE = FIXTURES_DIR / "test.wav"
 
 # Valid consistency values from the fact-checker
-VALID_CONSISTENCY_VALUES = {"hoch", "mittel", "niedrig", "unklar"}
+VALID_CONSISTENCY_VALUES = {"hoch", "niedrig", "unklar", "keine Datenlage"}
 
 
 def skip_if_missing_keys():
@@ -127,7 +127,7 @@ assert len(results) > 0
 
 # Step 4: Verify results
 print("[TEST] Step 4: Verifying results...", flush=True)
-valid_values = {{"hoch", "mittel", "niedrig", "unklar"}}
+valid_values = {{"hoch", "niedrig", "unklar", "keine Datenlage"}}
 for result in results:
     assert "speaker" in result
     assert "original_claim" in result
@@ -237,7 +237,7 @@ assert len(results) > 0
 
 # Step 3: Verify results
 print("[TEST] Step 3: Verifying results...", flush=True)
-valid_values = {"hoch", "mittel", "niedrig", "unklar"}
+valid_values = {"hoch", "niedrig", "unklar", "keine Datenlage"}
 for result in results:
     assert "speaker" in result
     assert "original_claim" in result

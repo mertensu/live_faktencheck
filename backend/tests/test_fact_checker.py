@@ -206,10 +206,6 @@ class TestFactCheckerInit:
     def test_init_requires_gemini_api_key(self):
         """FactChecker raises error without Gemini API key."""
         with patch.dict("os.environ", {"TAVILY_API_KEY": "tavily-key"}, clear=True):
-            import os
-            os.environ.pop("GEMINI_API_KEY", None)
-            os.environ.pop("GOOGLE_API_KEY", None)
-
             with pytest.raises(ValueError) as exc_info:
                 FactChecker()
 
@@ -218,9 +214,6 @@ class TestFactCheckerInit:
     def test_init_requires_tavily_api_key(self, mock_create_agent):
         """FactChecker raises error without Tavily API key."""
         with patch.dict("os.environ", {"GEMINI_API_KEY": "gemini-key"}, clear=True):
-            import os
-            os.environ.pop("TAVILY_API_KEY", None)
-
             with pytest.raises(ValueError) as exc_info:
                 FactChecker()
 
@@ -231,10 +224,7 @@ class TestFactCheckerInit:
         with patch.dict("os.environ", {
             "GEMINI_API_KEY": "test-key",
             "TAVILY_API_KEY": "test-tavily-key",
-        }):
-            import os
-            os.environ.pop("GEMINI_MODEL_FACT_CHECKER", None)
-
+        }, clear=True):
             checker = FactChecker()
             assert checker.model_name == "gemini-2.5-pro"
 

@@ -17,10 +17,6 @@ from backend.services.cost_tracker import (
 class TestCostTrackerPricing:
     """Tests for cost calculation logic."""
 
-    def setup_method(self):
-        """Reset singleton before each test."""
-        CostTracker.reset_instance()
-
     def test_get_pricing_exact_match(self):
         """Test pricing lookup with exact model name match."""
         tracker = CostTracker(model_name="gemini-2.5-pro")
@@ -98,10 +94,6 @@ class TestCostTrackerPricing:
 
 class TestCostTrackerExtraction:
     """Tests for extracting usage stats from LangGraph results."""
-
-    def setup_method(self):
-        """Reset singleton before each test."""
-        CostTracker.reset_instance()
 
     def test_extract_usage_stats_empty_result(self):
         """Test extraction from empty result."""
@@ -227,10 +219,6 @@ class TestCostTrackerExtraction:
 class TestCostTrackerSingleton:
     """Tests for singleton pattern."""
 
-    def setup_method(self):
-        """Reset singleton before each test."""
-        CostTracker.reset_instance()
-
     def test_singleton_returns_same_instance(self):
         """Test that get_instance returns the same object."""
         tracker1 = CostTracker.get_instance("gemini-2.5-pro")
@@ -256,10 +244,6 @@ class TestCostTrackerSingleton:
 
 class TestCostTrackerPersistence:
     """Tests for JSON file persistence."""
-
-    def setup_method(self):
-        """Reset singleton before each test."""
-        CostTracker.reset_instance()
 
     def test_log_claim_cost_updates_session_totals(self):
         """Test that log_claim_cost updates session accumulators."""
@@ -346,7 +330,7 @@ class TestCostTrackerPersistence:
                     tracker = CostTracker(model_name="gemini-2.5-pro")
 
                     stats = {"input_tokens": 100, "output_tokens": 50, "tavily_searches": 2, "llm_calls": 2}
-                    tracker.log_claim_cost(stats, speaker="New", claim="New claim", consistency="mittel")
+                    tracker.log_claim_cost(stats, speaker="New", claim="New claim", consistency="niedrig")
 
                     # Check file contents
                     with open(cost_file, "r") as f:
