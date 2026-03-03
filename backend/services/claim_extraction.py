@@ -169,16 +169,8 @@ Article: {text}"""
         user_message = f"Behauptungen:\n{claims_text}"
 
         try:
-            response = await self.client.aio.models.generate_content(
-                model=self.model_name,
-                contents=user_message,
-                config={
-                    'system_instruction': system_prompt,
-                    'response_mime_type': 'application/json',
-                    'response_schema': ClaimList,
-                }
-            )
-            selected = [{"name": c.name, "claim": c.claim} for c in response.parsed.claims]
+            extracted = await self._extract_async(system_prompt, user_message)
+            selected = [{"name": c.name, "claim": c.claim} for c in extracted]
             logger.info(f"Autopilot: selected {len(selected)} claims")
             return selected[:max_claims]
         except Exception:

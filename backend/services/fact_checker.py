@@ -33,15 +33,6 @@ class Source(BaseModel):
 class FactCheckResponse(BaseModel):
     speaker: str
     original_claim: str
-    # Strict version: clear thresholds only
-    # consistency: Literal["hoch", "niedrig", "unklar", "keine Datenlage"] = Field(description=(
-    #     "Empirical consistency of the claim. Choose exactly one of four levels:\n"
-    #     "- 'hoch': Clear and unambiguous empirical support. Reliable data or studies directly corroborate the claim.\n"
-    #     "- 'niedrig': The available data or empirical evidence contradicts the claim.\n"
-    #     "- 'unklar': Conflicting studies or evidence exist; no clear determination can be made.\n"
-    #     "- 'keine Datenlage': No relevant data or empirical evidence could be found on this topic."
-    # ))
-    # Loose version: hoch/niedrig explicitly cover predominantly-supported/contradicted claims
     consistency: Literal["hoch", "niedrig", "unklar", "keine Datenlage"] = Field(description=(
         "Empirical consistency of the claim. Choose exactly one of four levels:\n"
         "- 'hoch': The available data supports the claim — use this also when evidence predominantly supports it, even if not entirely conclusive.\n"
@@ -116,6 +107,13 @@ class FactChecker:
             f"recursion_limit: {self.recursion_limit}"
         )
 
+    def _build_user_message(self, speaker: str, claim: str, context: str = None) -> str:
+        """Build the user message for a single claim fact-check."""
+        msg = f"- **Speaker:** {speaker}\n- **Claim:** {claim}"
+        if context:
+            msg += f"\n- **Context:** {context}"
+        return msg
+
     async def check_claim_async(self, speaker: str, claim: str, context: str = None) -> Dict[str, Any]:
         """
         Fact-check a single claim using LangGraph ReAct agent with Tavily search (async).
@@ -132,11 +130,7 @@ class FactChecker:
 
         current_date = datetime.now().strftime("%B %Y")
         system_prompt = self.prompt_template.replace("{current_date}", current_date)
-
-        user_message = f"""- **Speaker:** {speaker}
-- **Claim:** {claim}"""
-        if context:
-            user_message += f"\n- **Context:** {context}"
+        user_message = self._build_user_message(speaker, claim, context)
 
         return await self._check_claim_async(speaker, claim, system_prompt, user_message)
 
@@ -267,28 +261,19 @@ class FactChecker:
         """
         return asyncio.run(self.check_claims_async(claims, context=context))
 
-    def _check_claims_sequential(self, claims: List[Dict[str, str]], context: str = None) -> List[Dict[str, Any]]:
-        """Process claims one by one (sync)."""
-        return asyncio.run(self._check_claims_sequential_async(claims, context=context))
-
     async def _check_claims_sequential_async(self, claims: List[Dict[str, str]], context: str = None) -> List[Dict[str, Any]]:
         """Process claims one by one (async)."""
+        current_date = datetime.now().strftime("%B %Y")
+        system_prompt = self.prompt_template.replace("{current_date}", current_date)
         results = []
         for i, claim_data in enumerate(claims):
             logger.info(f"Processing claim {i + 1}/{len(claims)}")
-            result = await self.check_claim_async(
-                speaker=claim_data.get("name", "Unknown"),
-                claim=claim_data.get("claim", ""),
-                context=context
-            )
+            speaker = claim_data.get("name", "Unknown")
+            claim = claim_data.get("claim", "")
+            user_message = self._build_user_message(speaker, claim, context)
+            result = await self._check_claim_async(speaker, claim, system_prompt, user_message)
             results.append(result)
         return results
-
-    def _check_claims_parallel(self, claims: List[Dict[str, str]], context: str = None) -> List[Dict[str, Any]]:
-        """
-        Process claims concurrently using asyncio.gather with a semaphore.
-        """
-        return asyncio.run(self._check_claims_parallel_async(claims, context=context))
 
     async def _check_claims_parallel_async(self, claims: List[Dict[str, str]], context: str = None) -> List[Dict[str, Any]]:
         """Async implementation of parallel claim checking."""
@@ -303,12 +288,7 @@ class FactChecker:
                 speaker = claim_data.get("name", "Unknown")
                 claim = claim_data.get("claim", "")
                 logger.info(f"Processing claim {index + 1}/{len(claims)}: {claim[:50]}...")
-
-                user_message = f"""- **Speaker:** {speaker}
-- **Claim:** {claim}"""
-                if context:
-                    user_message += f"\n- **Context:** {context}"
-
+                user_message = self._build_user_message(speaker, claim, context)
                 result = await self._check_claim_async(speaker, claim, system_prompt, user_message)
                 logger.info(f"Completed claim {index + 1}/{len(claims)}: {result.get('consistency', 'unknown')}")
                 return result

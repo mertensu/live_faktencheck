@@ -273,7 +273,7 @@ class TestFactCheckResponse:
 
     def test_consistency_literal_values(self):
         """FactCheckResponse consistency must be valid literal."""
-        for valid_value in ["hoch", "niedrig", "mittel", "unklar"]:
+        for valid_value in ["hoch", "niedrig", "unklar", "keine Datenlage"]:
             response = FactCheckResponse(
                 speaker="Test",
                 original_claim="Claim",

@@ -21,9 +21,7 @@ Environment variables (set in .env):
 import os
 from pathlib import Path
 from datetime import datetime
-from typing import List, Literal
 
-from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 
 # Load .env from project root (must happen before imports that read env vars)
@@ -36,20 +34,7 @@ from langchain.agents import create_agent  # noqa: E402
 
 from backend.utils import load_prompt  # noqa: E402
 from .trusted_domains import TRUSTED_DOMAINS  # noqa: E402
-from .fact_checker import DEFAULT_MODEL  # noqa: E402
-
-
-class FactCheckResponse(BaseModel):
-    """Structured response for fact-check results."""
-    speaker: str
-    original_claim: str
-    consistency: Literal["hoch", "niedrig", "mittel", "unklar"] = Field(
-        description="Consistency of the claim, i.e. how well it withstands scrutiny"
-    )
-    evidence: str = Field(
-        description="Detailed German explanation using evidence-based phrasing"
-    )
-    sources: List[dict] = Field(description="Primary sources with 'url' and 'title' fields")
+from .fact_checker import DEFAULT_MODEL, FactCheckResponse  # noqa: E402
 
 
 FALLBACK_PROMPT = """You are a professional German fact-checker.
