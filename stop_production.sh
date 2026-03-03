@@ -102,13 +102,12 @@ if [ -f .backend_pid ]; then
         print_warning "Backend process not found"
     fi
     rm -f .backend_pid
-else
-    if pgrep -f "python.*backend.app" > /dev/null; then
-        pkill -f "python.*backend.app" || true
-        print_success "Backend stopped"
-    else
-        print_info "Backend not running"
-    fi
+fi
+# Kill any remaining backend/uvicorn processes (handles reload=True child processes)
+pkill -f "python.*backend.app" 2>/dev/null || true
+lsof -ti:5000 2>/dev/null | xargs kill -9 2>/dev/null || true
+if ! lsof -ti:5000 > /dev/null 2>&1 && ! pgrep -f "python.*backend.app" > /dev/null 2>&1; then
+    print_success "Backend fully stopped"
 fi
 
 # Stop Dev Frontend
