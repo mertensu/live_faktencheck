@@ -129,6 +129,22 @@ export const formatBegruendung = (text) => {
 }
 
 export function ClaimCard({ claim, onSelect }) {
+  if (claim.status === 'processing') {
+    return (
+      <div
+        className="claim-card claim-card--processing"
+        data-tooltip="Recherche läuft, bitte noch ein wenig Geduld"
+      >
+        <div className="claim-header">
+          <div className="claim-text">
+            <span className="claim-processing-spinner" aria-hidden="true" />
+            {claim.behauptung}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   const consistencyClass = getConsistencyClass(claim.consistency)
 
   return (

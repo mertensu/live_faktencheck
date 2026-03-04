@@ -56,7 +56,8 @@ class Database:
                 begruendung TEXT NOT NULL DEFAULT '',
                 quellen TEXT NOT NULL DEFAULT '[]',
                 timestamp TEXT NOT NULL,
-                episode_key TEXT
+                episode_key TEXT,
+                status TEXT NOT NULL DEFAULT ''
             );
 
             CREATE INDEX IF NOT EXISTS idx_fact_checks_speaker_claim
@@ -78,6 +79,15 @@ class Database:
         """)
         await self.db.commit()
 
+        # Migration: add status column to existing fact_checks tables
+        try:
+            await self.db.execute(
+                "ALTER TABLE fact_checks ADD COLUMN status TEXT NOT NULL DEFAULT ''"
+            )
+            await self.db.commit()
+        except Exception:
+            pass  # Column already exists
+
     # =========================================================================
     # Fact-Checks CRUD
     # =========================================================================
@@ -92,14 +102,15 @@ class Database:
             json.dumps(data.get("quellen", []), ensure_ascii=False),
             data["timestamp"],
             data.get("episode_key"),
+            data.get("status", ""),
         )
 
     async def add_fact_check(self, fact_check: dict) -> int:
         """Insert a fact-check and return its auto-generated ID."""
         cursor = await self.db.execute(
             """INSERT INTO fact_checks
-               (sprecher, behauptung, consistency, begruendung, quellen, timestamp, episode_key)
-               VALUES (?, ?, ?, ?, ?, ?, ?)""",
+               (sprecher, behauptung, consistency, begruendung, quellen, timestamp, episode_key, status)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
             self._fact_check_params(fact_check),
         )
         await self.db.commit()
@@ -130,7 +141,7 @@ class Database:
         cursor = await self.db.execute(
             """UPDATE fact_checks
                SET sprecher = ?, behauptung = ?, consistency = ?,
-                   begruendung = ?, quellen = ?, timestamp = ?, episode_key = ?
+                   begruendung = ?, quellen = ?, timestamp = ?, episode_key = ?, status = ?
                WHERE id = ?""",
             (*self._fact_check_params(data), fact_check_id),
         )
@@ -165,6 +176,7 @@ class Database:
             "quellen": json.loads(row["quellen"]),
             "timestamp": row["timestamp"],
             "episode_key": row["episode_key"],
+            "status": row["status"],
         }
 
     # =========================================================================

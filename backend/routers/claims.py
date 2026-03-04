@@ -199,8 +199,25 @@ async def approve_claims(
         if context:
             logger.info(f"Using context from config for episode {episode_key}")
 
-    # Start fact-checking in background
-    background_tasks.add_task(process_fact_checks_async, request.claims, episode_key, context)
+    # Insert placeholder fact-checks immediately so users see them while research runs
+    now = datetime.now().isoformat()
+    placeholder_ids = []
+    for claim in request.claims:
+        placeholder = {
+            "sprecher": claim.get("name", ""),
+            "behauptung": claim.get("claim", ""),
+            "consistency": "",
+            "begruendung": "",
+            "quellen": [],
+            "timestamp": now,
+            "episode_key": episode_key,
+            "status": "processing",
+        }
+        pid = await db.add_fact_check(placeholder)
+        placeholder_ids.append(pid)
+
+    # Start fact-checking in background, passing placeholder IDs for in-place update
+    background_tasks.add_task(process_fact_checks_async, request.claims, episode_key, context, placeholder_ids)
 
     return ProcessingResponse(
         status="processing",
@@ -209,9 +226,10 @@ async def approve_claims(
     )
 
 
-async def process_fact_checks_async(claims: list, episode_key: str, context: str = None):
+async def process_fact_checks_async(claims: list, episode_key: str, context: str = None, placeholder_ids: list = None):
     """
     Background task: fact-check claims using FactChecker service.
+    Updates placeholder rows (inserted by approve_claims) in place.
     """
     try:
         logger.info(f"Starting fact-check for {len(claims)} claims...")
@@ -224,12 +242,16 @@ async def process_fact_checks_async(claims: list, episode_key: str, context: str
         else:
             results = await asyncio.to_thread(fact_checker.check_claims, claims, context=context)
 
-        # Store results
+        # Store results: update placeholders in place, or insert new rows
         db = state.get_db()
-        for result in results:
+        for i, result in enumerate(results):
             fact_check = build_fact_check_dict(to_dict(result), episode_key)
-            await db.add_fact_check(fact_check)
-            logger.info(f"Fact-check complete: {fact_check['sprecher']} - {fact_check['consistency']}")
+            if placeholder_ids and i < len(placeholder_ids):
+                await db.update_fact_check(placeholder_ids[i], fact_check)
+                logger.info(f"Fact-check updated (placeholder {placeholder_ids[i]}): {fact_check['sprecher']} - {fact_check['consistency']}")
+            else:
+                await db.add_fact_check(fact_check)
+                logger.info(f"Fact-check complete: {fact_check['sprecher']} - {fact_check['consistency']}")
 
         logger.info(f"Fact-checking complete. {len(results)} results stored.")
 

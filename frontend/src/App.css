@@ -665,6 +665,46 @@
   border-left-color: var(--verdict-unknown-border);
 }
 
+/* Processing state */
+.claim-card--processing {
+  opacity: 0.55;
+  cursor: default;
+  position: relative;
+}
+
+.claim-card--processing:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(30, 30, 30, 0.88);
+  color: #fff;
+  font-size: 0.75rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: 4px;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.claim-processing-spinner {
+  display: inline-block;
+  width: 11px;
+  height: 11px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: claim-spin 0.75s linear infinite;
+  margin-right: 7px;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+@keyframes claim-spin {
+  to { transform: rotate(360deg); }
+}
+
 .claim-header {
   display: flex;
   justify-content: space-between;
