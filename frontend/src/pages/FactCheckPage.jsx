@@ -68,8 +68,9 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
   const [speakers, setSpeakers] = useState(DEFAULT_SPEAKERS)  // Load config from backend
   const [backendError, setBackendError] = useState(null)  // Backend connection error
 
-  // Static mode: production build on non-localhost → load from /data/<episode>.json once
-  const isStaticMode = isProduction && !isLocalhost
+  // Static mode: production build on non-localhost → try /data/<episode>.json first,
+  // fall back to live polling if no static file exists (live session in progress)
+  const [isStaticMode, setIsStaticMode] = useState(isProduction && !isLocalhost)
 
   // Load episode configuration from backend (skipped in static mode — config comes from JSON)
   useEffect(() => {
@@ -104,7 +105,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
     loadEpisodeConfig()
 
     return () => controller.abort()
-  }, [showName, showKey, episodeKey])
+  }, [showName, showKey, episodeKey, isStaticMode])
 
   useEffect(() => {
     if (!isStaticMode || isAdminMode) return
@@ -120,7 +121,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
         setFactChecks(data.fact_checks || [])
         if (data.speakers?.length > 0) setSpeakers(data.speakers)
       })
-      .catch(() => {}) // silently fail — no static file yet
+      .catch(() => setIsStaticMode(false)) // no static file → fall back to live polling
   }, [isStaticMode, isAdminMode, episodeKey, showKey, showName])
 
   // Polling for fact-checks (only in normal mode, only when backend is available)
@@ -193,7 +194,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
       if (currentController) currentController.abort()
       clearInterval(interval)
     }
-  }, [isAdminMode, episodeKey])
+  }, [isAdminMode, isStaticMode, episodeKey])
 
   // Polling for pending claims (only in admin mode and only local)
   useEffect(() => {
