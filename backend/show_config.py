@@ -9,6 +9,7 @@ try:
         get_show_config,
         get_speakers,
         get_info,
+        get_reference_links,
         get_all_shows,
         get_episodes_for_show,
         get_all_episodes,
@@ -30,6 +31,9 @@ except ImportError:
 
     def get_info(episode_key=None):
         return ""
+
+    def get_reference_links(episode_key=None):
+        return []
 
     def get_all_shows():
         return []

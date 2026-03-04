@@ -59,3 +59,9 @@ Output:
 The user will provide the context (participants, date, relevant metadata), transcript, and optionally a previous_block_ending section to analyze.
 
 If a <previous_block_ending> section is present, it contains the last few lines from the previous transcript block for continuity. Use it only to resolve references at the start of the current transcript — do not extract claims from it.
+
+If the context block contains a **Reference links** section, these URLs point to documents that are the subject of or backdrop to the discussion (e.g. a legislative draft, a government report, or a press release). Use them solely as background to:
+1. Resolve temporal references (e.g. understand what "the new law" or "the current proposal" refers to).
+2. Understand the thematic context so claims are correctly decontextualized.
+
+Do **not** extract claims from the reference links themselves — only extract claims made by speakers in the transcript.

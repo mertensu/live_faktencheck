@@ -15,7 +15,7 @@ from fastapi import APIRouter, BackgroundTasks, UploadFile, File, Form
 from backend.models import ProcessingResponse
 from backend.state import processing_lock
 from backend.utils import to_dict, truncate
-from backend.show_config import get_info
+from backend.show_config import get_info, get_reference_links
 from backend.services.registry import get_transcription_service, get_claim_extractor
 from backend.routers.claims import process_fact_checks_async
 import backend.state as state
@@ -86,7 +86,8 @@ async def receive_audio_block(
     }
 
     # Start background processing (pass path, not bytes, to avoid holding memory in handler)
-    background_tasks.add_task(process_audio_pipeline_async, block_id, audio_path, ep_key, context_info)
+    reference_links = get_reference_links(ep_key)
+    background_tasks.add_task(process_audio_pipeline_async, block_id, audio_path, ep_key, context_info, reference_links)
 
     return ProcessingResponse(
         status="processing",
@@ -96,7 +97,7 @@ async def receive_audio_block(
     )
 
 
-async def process_audio_pipeline_async(block_id: str, audio_path: str, episode_key: str, info: str):
+async def process_audio_pipeline_async(block_id: str, audio_path: str, episode_key: str, info: str, reference_links: list = None):
     """
     Background pipeline: audio -> transcription -> claim extraction -> pending claims
     """
@@ -143,9 +144,9 @@ async def process_audio_pipeline_async(block_id: str, audio_path: str, episode_k
         claim_extractor = get_claim_extractor()
         # Use async method if available, otherwise wrap sync call
         if hasattr(claim_extractor, 'extract_async'):
-            claims = await claim_extractor.extract_async(transcript, info, previous_context=previous_context)
+            claims = await claim_extractor.extract_async(transcript, info, previous_context=previous_context, reference_links=reference_links or [])
         else:
-            claims = await asyncio.to_thread(claim_extractor.extract, transcript, info, previous_context=previous_context)
+            claims = await asyncio.to_thread(claim_extractor.extract, transcript, info, previous_context=previous_context, reference_links=reference_links or [])
         logger.info(f"[{block_id}] Extracted {len(claims)} claims")
 
         if not claims:
@@ -171,7 +172,7 @@ async def process_audio_pipeline_async(block_id: str, audio_path: str, episode_k
         if os.getenv("AUTO_APPROVE", "false").lower() == "true":
             logger.info(f"[{block_id}] AUTO_APPROVE enabled, selecting best claims...")
             selected = await claim_extractor.select_async(pending_block["claims"], max_claims=3)
-            await process_fact_checks_async(selected, episode_key, info)
+            await process_fact_checks_async(selected, episode_key, info, reference_links=reference_links)
 
         logger.info(f"[{block_id}] Pipeline complete. {len(claims)} claims added to pending.")
         _set_event_status(block_id, "done", f"{len(claims)} Claims extrahiert")

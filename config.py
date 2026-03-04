@@ -13,6 +13,7 @@ SHOW_CONFIG = {
         "name": "Test",
         "description": "Test-Umgebung für Fact-Checks",
         "info": "Test Sendung - Sprecher A interviewt Sprecher B",
+        "reference_links": [],  # Optional: URLs to reference documents (laws, press releases, etc.)
         "speakers": [
             "Sprecher A",
             "Sprecher B",
@@ -162,6 +163,11 @@ def get_info(episode_key=None):
     """Gibt die Kontext-Information für eine Episode zurück (Datum, Quelle, Teilnehmer etc.)"""
     config = get_show_config(episode_key)
     return config.get("info", "")
+
+def get_reference_links(episode_key=None):
+    """Gibt die optionalen Referenz-Links für eine Episode zurück (Gesetzentwürfe, Pressemitteilungen etc.)"""
+    config = get_show_config(episode_key)
+    return config.get("reference_links", [])
 
 def get_all_shows():
     """Gibt alle verfügbaren Shows zurück (z.B. ['maischberger', 'miosga', 'test'])"""

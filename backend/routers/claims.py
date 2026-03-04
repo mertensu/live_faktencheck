@@ -20,7 +20,7 @@ from backend.models import (
 from backend.utils import to_dict, truncate, build_fact_check_dict
 import backend.state as state
 
-from backend.show_config import get_info
+from backend.show_config import get_info, get_reference_links
 from backend.services.registry import get_claim_extractor, get_fact_checker
 
 logger = logging.getLogger(__name__)
@@ -215,6 +215,9 @@ async def approve_claims(
         if context:
             logger.info(f"Using context from config for episode {episode_key}")
 
+    # Load reference links from config for this episode
+    reference_links = get_reference_links(episode_key)
+
     # Insert placeholder fact-checks immediately so users see them while research runs
     now = datetime.now().isoformat()
     placeholder_ids = []
@@ -233,7 +236,7 @@ async def approve_claims(
         placeholder_ids.append(pid)
 
     # Start fact-checking in background, passing placeholder IDs for in-place update
-    background_tasks.add_task(process_fact_checks_async, request.claims, episode_key, context, placeholder_ids)
+    background_tasks.add_task(process_fact_checks_async, request.claims, episode_key, context, placeholder_ids, reference_links)
 
     return ProcessingResponse(
         status="processing",
@@ -254,7 +257,7 @@ async def _mark_placeholder_error(db, pid: int, message: str = "Fehler bei der R
         })
 
 
-async def process_fact_checks_async(claims: list, episode_key: str, context: str = None, placeholder_ids: list = None):
+async def process_fact_checks_async(claims: list, episode_key: str, context: str = None, placeholder_ids: list = None, reference_links: list = None):
     """
     Background task: fact-check claims using FactChecker service.
     Updates placeholder rows (inserted by approve_claims) in place.
@@ -266,9 +269,9 @@ async def process_fact_checks_async(claims: list, episode_key: str, context: str
 
         # Use async method if available, otherwise wrap sync call
         if hasattr(fact_checker, 'check_claims_async'):
-            results = await fact_checker.check_claims_async(claims, context=context)
+            results = await fact_checker.check_claims_async(claims, context=context, reference_links=reference_links or [])
         else:
-            results = await asyncio.to_thread(fact_checker.check_claims, claims, context=context)
+            results = await asyncio.to_thread(fact_checker.check_claims, claims, context=context, reference_links=reference_links or [])
 
         # Store results: update placeholders in place, or insert new rows
         db = state.get_db()
