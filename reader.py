@@ -48,7 +48,7 @@ def get_tty_input(prompt: str, env_var: str = None) -> str:
         try:
             sys.stdin = open('/dev/tty', 'r')
         except OSError:
-            print(f"Error: Cannot prompt when stdin is piped.")
+            print("Error: Cannot prompt when stdin is piped.")
             print(f"Please provide as environment variable: {env_var}='...' python reader.py")
             sys.exit(1)
 
@@ -71,14 +71,10 @@ def read_headline() -> str:
 def read_publication_date() -> str:
     """Prompt for publication date, default to current month/year."""
     default_date = datetime.now().strftime("%B %Y")
-
-    # Check env var first
-    env_date = os.getenv("PUBLICATION_DATE")
-    if env_date:
-        print(f"Using PUBLICATION_DATE from environment: {env_date}")
-        return env_date
-
-    date_input = get_tty_input(f"Enter publication date (default: {default_date}):")
+    date_input = get_tty_input(
+        f"Enter publication date (default: {default_date}):",
+        env_var="PUBLICATION_DATE",
+    )
     return date_input if date_input else default_date
 
 
@@ -116,7 +112,7 @@ def send_to_backend(text: str, headline: str, publication_date: str):
         if response.ok:
             result = response.json()
             print(f"\n{'='*50}")
-            print(f"Sent successfully!")
+            print("Sent successfully!")
             print(f"Status: {result.get('status')}")
             print(f"Message: {result.get('message')}")
             print(f"Source ID: {result.get('source_id')}")
@@ -127,7 +123,7 @@ def send_to_backend(text: str, headline: str, publication_date: str):
             try:
                 error = response.json()
                 print(f"Details: {error.get('error', response.text)}")
-            except:
+            except Exception:
                 print(f"Details: {response.text}")
             return False
 

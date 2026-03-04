@@ -125,7 +125,8 @@ SHOW_CONFIG = {
 
 # Allow start_dev.sh to override the "test" entry with a real episode's config.
 # Written by start_dev.sh when called with a real episode key; ignored otherwise.
-import json as _json, os as _os
+import json as _json  # noqa: E402
+import os as _os  # noqa: E402
 _override_path = _os.path.join(_os.path.dirname(__file__), ".test_override.json")
 if _os.path.exists(_override_path):
     with open(_override_path) as _f:
@@ -156,7 +157,7 @@ def get_all_shows():
     for episode_key, config in SHOW_CONFIG.items():
         show = config.get("show", episode_key.split("-")[0])
         shows.add(show)
-    return sorted(list(shows))
+    return sorted(shows)
 
 def get_episodes_for_show(show_key):
     """Gibt alle Episoden für eine Show zurück"""
@@ -167,7 +168,7 @@ def get_episodes_for_show(show_key):
                 "key": episode_key,
                 "name": config.get("episode_name", config.get("description", episode_key)),
                 "description": config.get("description", ""),
-                "config": config
+                "show_name": config.get("name", show_key),
             })
     return sorted(episodes, key=lambda x: x["key"], reverse=True)
 

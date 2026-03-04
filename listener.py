@@ -245,9 +245,8 @@ class AudioRecorder:
         print(f"\nRecording ended after {total_duration:.1f} seconds in current block")
         with self.lock:
             num_frames = len(self.frames)
-            has_frames = bool(self.frames)
         print(f"Collected chunks: {num_frames}")
-        if has_frames:
+        if num_frames:
             print("Sending remaining data...")
             send_thread = self.save_and_send(reset_frames=False)
             if send_thread:

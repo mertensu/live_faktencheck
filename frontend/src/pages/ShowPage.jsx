@@ -31,14 +31,14 @@ export function ShowPage({ showKey }) {
             const found = episodesList.find(e => e.key === episodeFromUrl)
             if (found) {
               setSelectedEpisode(found.key)
-              setShowName(found.config.name || defaultShowName)
+              setShowName(found.show_name || defaultShowName)
             } else if (episodesList.length > 0) {
               setSelectedEpisode(episodesList[0].key)
-              setShowName(episodesList[0].config.name || defaultShowName)
+              setShowName(episodesList[0].show_name || defaultShowName)
             }
           } else if (episodesList.length > 0) {
             setSelectedEpisode(episodesList[0].key)
-            setShowName(episodesList[0].config.name || defaultShowName)
+            setShowName(episodesList[0].show_name || defaultShowName)
             // Navigate to first episode (with React Router, respects basename)
             navigate(`/${showKey}/${episodesList[0].key}`, { replace: true })
           }

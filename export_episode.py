@@ -18,13 +18,15 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
+from config import get_speakers, SHOW_CONFIG
+
 DB_PATH = Path(__file__).parent / "backend" / "data" / "factcheck.db"
 
 CONSISTENCY_LABELS = {
     "hoch": "✅ Belegt",
-    "mittel": "⚠️ Teilweise belegt",
     "niedrig": "❌ Nicht belegt / Irreführend",
     "unklar": "❓ Unklar / Nicht überprüfbar",
+    "keine Datenlage": "⬜ Keine Datenlage",
 }
 
 
@@ -61,9 +63,12 @@ def load_fact_checks(episode_key: str) -> list[dict]:
     ]
 
 
+def _print_speaker_counts(grouped: dict[str, list]) -> None:
+    for speaker, checks in grouped.items():
+        print(f"  {speaker}: {len(checks)} Claims")
+
+
 def export_as_json(episode_key: str, fact_checks: list[dict]) -> None:
-    from config import get_speakers
-    from backend.show_config import SHOW_CONFIG
     speakers = get_speakers(episode_key)
 
     output = {
@@ -77,9 +82,7 @@ def export_as_json(episode_key: str, fact_checks: list[dict]) -> None:
     out_path = data_dir / f"{episode_key}.json"
     out_path.write_text(json.dumps(output, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"✓ {len(fact_checks)} Fact-Checks exportiert → {out_path}")
-    for speaker in speakers:
-        count = sum(1 for fc in fact_checks if fc["sprecher"] == speaker)
-        print(f"  {speaker}: {count} Claims")
+    _print_speaker_counts(group_by_speaker(fact_checks, speakers))
 
     # Update shows.json with current published episodes
     shows = []
@@ -141,9 +144,9 @@ def render_markdown(episode_key: str, grouped: dict[str, list]) -> str:
 
     lines = [
         f"# Fact-Check: {episode_key}",
-        f"",
+        "",
         f"Exportiert am {date_str} · {total} Fact-Checks",
-        f"",
+        "",
         "---",
         "",
     ]
@@ -202,8 +205,7 @@ def main():
     output_path.write_text(markdown, encoding="utf-8")
     total = sum(len(v) for v in grouped.values())
     print(f"✓ {total} Fact-Checks exportiert → {output_path}")
-    for speaker, checks in grouped.items():
-        print(f"  {speaker}: {len(checks)} Claims")
+    _print_speaker_counts(grouped)
 
 
 if __name__ == "__main__":
