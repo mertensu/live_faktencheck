@@ -114,7 +114,23 @@ async def process_text_pipeline_async(text: str, headline: str, source_id: str, 
         if os.getenv("AUTO_APPROVE", "false").lower() == "true":
             logger.info(f"[{block_id}] AUTO_APPROVE enabled, selecting best claims...")
             selected = await claim_extractor.select_async(pending_block["claims"], max_claims=3)
-            await process_fact_checks_async(selected, pending_block["episode_key"], headline)
+            # Insert processing placeholders so viewers see spinners immediately
+            now = datetime.now().isoformat()
+            placeholder_ids = []
+            for claim in selected:
+                placeholder = {
+                    "sprecher": claim.get("name", ""),
+                    "behauptung": claim.get("claim", ""),
+                    "consistency": "",
+                    "begruendung": "",
+                    "quellen": [],
+                    "timestamp": now,
+                    "episode_key": pending_block["episode_key"],
+                    "status": "processing",
+                }
+                pid = await db.add_fact_check(placeholder)
+                placeholder_ids.append(pid)
+            await process_fact_checks_async(selected, pending_block["episode_key"], headline, placeholder_ids)
 
         logger.info(f"[{block_id}] Pipeline complete. {len(claims)} claims added to pending.")
 
