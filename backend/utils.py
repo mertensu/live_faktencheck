@@ -32,6 +32,7 @@ def build_fact_check_dict(
         "quellen": [to_dict(s) for s in sources] if sources else [],
         "timestamp": datetime.now().isoformat(),
         "episode_key": episode_key,
+        "status": "",
     }
 
 

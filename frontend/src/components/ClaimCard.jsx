@@ -145,6 +145,22 @@ export function ClaimCard({ claim, onSelect }) {
     )
   }
 
+  if (claim.status === 'error') {
+    return (
+      <div className="claim-card claim-card--error">
+        <div className="claim-header">
+          <div className="claim-text">
+            <span className="claim-error-icon" aria-hidden="true">!</span>
+            {claim.behauptung}
+          </div>
+        </div>
+        {claim.begruendung && (
+          <div className="claim-error-message">{claim.begruendung}</div>
+        )}
+      </div>
+    )
+  }
+
   const consistencyClass = getConsistencyClass(claim.consistency)
 
   return (

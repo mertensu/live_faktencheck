@@ -226,6 +226,18 @@ async def approve_claims(
     )
 
 
+async def _mark_placeholder_error(db, pid: int, message: str = "Fehler bei der Recherche"):
+    """Mark a processing placeholder as error if it's still in processing state."""
+    existing = await db.get_fact_check_by_id(pid)
+    if existing and existing.get("status") == "processing":
+        await db.update_fact_check(pid, {
+            "consistency": "",
+            "begruendung": message,
+            "quellen": [],
+            "status": "error",
+        })
+
+
 async def process_fact_checks_async(claims: list, episode_key: str, context: str = None, placeholder_ids: list = None):
     """
     Background task: fact-check claims using FactChecker service.
@@ -253,7 +265,18 @@ async def process_fact_checks_async(claims: list, episode_key: str, context: str
                 await db.add_fact_check(fact_check)
                 logger.info(f"Fact-check complete: {fact_check['sprecher']} - {fact_check['consistency']}")
 
+        # Mark remaining placeholders as error if fewer results than expected
+        if placeholder_ids:
+            for j in range(len(results), len(placeholder_ids)):
+                await _mark_placeholder_error(db, placeholder_ids[j], "Kein Ergebnis erhalten")
+                logger.warning(f"Placeholder {placeholder_ids[j]} had no result, marked as error")
+
         logger.info(f"Fact-checking complete. {len(results)} results stored.")
 
     except Exception:
         logger.exception("Error in fact-check processing")
+        # Clean up any remaining processing placeholders
+        if placeholder_ids:
+            db = state.get_db()
+            for pid in placeholder_ids:
+                await _mark_placeholder_error(db, pid)

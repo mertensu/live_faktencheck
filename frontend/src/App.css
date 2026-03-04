@@ -705,6 +705,36 @@
   to { transform: rotate(360deg); }
 }
 
+/* Error state */
+.claim-card--error {
+  border-left-color: var(--verdict-false-border);
+  background: var(--verdict-false-bg);
+  cursor: default;
+}
+
+.claim-error-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--verdict-false-border);
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 700;
+  margin-right: 7px;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+.claim-error-message {
+  font-size: 0.85rem;
+  color: #991B1B;
+  margin-top: 0.5rem;
+  padding-left: 23px;
+}
+
 .claim-header {
   display: flex;
   justify-content: space-between;
