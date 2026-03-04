@@ -407,7 +407,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
   // Send all staged claims to backend for fact-checking
   const sendStagedClaims = async () => {
     if (stagedClaims.length === 0) {
-      alert('Keine Claims zum Senden ausgewahlt!')
+      alert('Keine Claims zum Senden ausgewählt!')
       return
     }
 

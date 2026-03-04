@@ -21,7 +21,7 @@ export function Navigation() {
   return (
     <nav className={`main-navigation${visible ? '' : ' main-navigation--hidden'}`}>
       <div className="nav-container">
-        <Link to="/" className="nav-logo">Fakten-Check Live</Link>
+        <Link to="/" className="nav-logo">Live-Faktencheck</Link>
         <div className="nav-links">
           <Link to="/about" className={location.pathname === '/about' ? 'active' : ''}>
             About
