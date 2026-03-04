@@ -22,6 +22,18 @@ SHOW_CONFIG = {
         "episode_name": "Test Episode"
     },
 
+    "bericht-aus-berlin-reiche-2026-03-01": {
+        "name": "Bericht aus Berlin",
+        "description": "Sendung vom 1.März 2026",
+        "info": "Bericht aus Berlin: Matthias Deiß interviewt Katherina Reiche, Bundeswirtschaftsministerin (CDU). Sendung vom 1. März 2026",
+        "speakers": [
+            "Matthias Deiß",
+            "Katherina Reiche"
+        ],
+        "show": " bericht-aus-berlin",
+        "episode_name": "Interview mit Katherina Reiche"
+    },
+
     # Maischberger Episoden
     "maischberger-2025-09-19": {
         "name": "Maischberger",

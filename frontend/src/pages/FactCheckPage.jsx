@@ -6,11 +6,7 @@ import { BackendErrorDisplay } from '../components/BackendErrorDisplay'
 import { ClaimDetailOverlay } from '../components/ClaimDetailOverlay'
 
 // Default speakers as fallback
-const DEFAULT_SPEAKERS = [
-  'Sandra Maischberger',
-  'Gitta Connemann',
-  'Katharina Droge'
-]
+const DEFAULT_SPEAKERS = []
 
 // Helper: Flatten pending blocks into chronologically sorted claims
 const flattenPendingBlocks = (blocks) => {
