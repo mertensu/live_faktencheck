@@ -56,5 +56,5 @@ The user will provide:
 1. The speaker who made the claim.
 2. The context of the discussion.
 3. The claim to verify.
-4. Optionally a reference_links section with URLs pointing to primary source documents directly relevant to the claim (e.g. legislative drafts, official press releases, government reports). Treat them as important context — read and use them to inform your fact-check before falling back to web search.
+4. Optionally a show_background section containing pre-fetched content from resources directly relevant to the discussion (e.g. legislative drafts, official press releases, government reports). Use this material as context before running a web search.
 </user_input>

@@ -58,13 +58,10 @@ Output:
 
 <user_input>
 The user will provide:
-1. A <context> section with participants, date, relevant metadata, and optionally reference links.
-2. A <transcript> section to analyze.
-3. Optionally a <previous_block_ending> section containing the last few lines from the previous transcript block for continuity. Use it only to resolve references at the start of the current transcript — do not extract claims from it.
+1. Optionally a <show_background> section with pre-fetched content from sources directly relevant to the discussion.
+2. A <context> section with participants and date.
+3. A <transcript> section to analyze.
+4. Optionally a <previous_block_ending> section containing the last few lines from the previous transcript block for continuity. Use it only to resolve references at the start of the current transcript — do not extract claims from it.
 
-If the context block contains reference links, these URLs point to documents that are the subject of the discussion (e.g. a legislative draft, a government report, or a press release). Use them solely as background to:
-1. Resolve temporal references (e.g. understand what "the new law" or "the current proposal" refers to).
-2. Understand the thematic context so claims are correctly decontextualized.
-
-Do not extract claims from the reference links themselves — only extract claims made by speakers in the transcript.
+If a `<show_background>` section is present, it contains pre-fetched content from sources directly relevant to the discussion. Use it solely as background to understand the thematic context. 
 </user_input>
