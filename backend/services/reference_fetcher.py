@@ -20,8 +20,10 @@ def clean_extracted_text(text: str) -> str:
     text = re.sub(r'!\[.*?\]\([^)]*\)', '', text)
     # Replace markdown links with just their text: [text](url) -> text
     text = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', text)
-    # Reduce multiple blank lines to a maximum of two (one blank line)
-    text = re.sub(r'\n{3,}', '\n\n', text)
+    # Replace newlines with spaces
+    text = re.sub(r'\n+', ' ', text)
+    # Collapse multiple spaces
+    text = re.sub(r' {2,}', ' ', text)
     return text.strip()
 
 # Module-level cache: frozenset of URLs -> show_background string
