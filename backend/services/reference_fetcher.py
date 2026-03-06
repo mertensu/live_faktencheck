@@ -8,8 +8,21 @@ and fact-checking receive the actual document text as show background.
 import asyncio
 import logging
 import os
+import re
 
 logger = logging.getLogger(__name__)
+
+def clean_extracted_text(text: str) -> str:
+    """Clean up markdown artifacts like images and links from scraped text."""
+    if not text:
+        return ""
+    # Remove markdown images: ![alt](url)
+    text = re.sub(r'!\[.*?\]\([^)]*\)', '', text)
+    # Replace markdown links with just their text: [text](url) -> text
+    text = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', text)
+    # Reduce multiple blank lines to a maximum of two (one blank line)
+    text = re.sub(r'\n{3,}', '\n\n', text)
+    return text.strip()
 
 # Module-level cache: frozenset of URLs -> show_background string
 _cache: dict[frozenset[str], str] = {}
@@ -61,8 +74,10 @@ async def fetch_show_background(urls: list[str]) -> str | None:
         for item in response.get("results", []):
             raw_content = item.get("raw_content", "")
             if raw_content:
-                logger.info(f"Fetched {len(raw_content)} chars from {item.get('url', '?')}")
-                sections.append(raw_content)
+                cleaned_content = clean_extracted_text(raw_content)
+                logger.info(f"Fetched {len(raw_content)} chars from {item.get('url', '?')}, cleaned to {len(cleaned_content)}")
+                if cleaned_content:
+                    sections.append(cleaned_content)
 
         if not sections:
             logger.warning("No content extracted from any reference URL")
