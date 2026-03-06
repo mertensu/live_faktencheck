@@ -31,6 +31,9 @@ SHOW_CONFIG = {
             "Matthias Deiß",
             "Katherina Reiche"
         ],
+        "reference_links": [
+            "https://www.zdfheute.de/wirtschaft/heizungsgesetz-schwarz-rote-koalition-mieter-eigentuemer-waermeplanung-100.html"
+        ],
         "show": " bericht-aus-berlin",
         "episode_name": "Interview mit Katherina Reiche"
     },
