@@ -58,10 +58,10 @@ Output:
 
 <user_input>
 The user will provide:
-1. Optionally a <show_background> section with pre-fetched content from sources directly relevant to the discussion.
+1. Optionally a <show_background> section with pre-fetched content informing about the background of the discussion.
 2. A <context> section with participants and date.
 3. A <transcript> section to analyze.
 4. Optionally a <previous_block_ending> section containing the last few lines from the previous transcript block for continuity. Use it only to resolve references at the start of the current transcript — do not extract claims from it.
 
-If a `<show_background>` section is present, it contains pre-fetched content from sources directly relevant to the discussion. Use it solely as background to understand the thematic context. 
+If a `<show_background>` section is present, it contains pre-fetched content informing about the background of the discussion. Use it solely as background to understand the thematic context. 
 </user_input>
