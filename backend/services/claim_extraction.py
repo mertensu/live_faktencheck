@@ -33,6 +33,8 @@ class ClaimList(BaseModel):
 class ClaimExtractor:
     """Service for extracting verifiable claims from transcripts using Gemini."""
 
+    _first_extraction_logged = False
+
     def __init__(self):
         # New SDK supports both GEMINI_API_KEY and GOOGLE_API_KEY
         api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
@@ -113,6 +115,22 @@ Participants and date: {info}
 
     async def _extract_async(self, system_prompt: str, user_message: str) -> List[ExtractedClaim]:
         """Async implementation of claim extraction."""
+        # Log first extraction to a file for prompt inspection
+        if not ClaimExtractor._first_extraction_logged:
+            try:
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                log_path = os.path.join("logs", "prompt_dumps", f"{timestamp}_claim_extraction.txt")
+                os.makedirs(os.path.dirname(log_path), exist_ok=True)
+                with open(log_path, "w", encoding="utf-8") as f:
+                    f.write("=== SYSTEM PROMPT ===\n")
+                    f.write(system_prompt)
+                    f.write("\n\n=== USER MESSAGE ===\n")
+                    f.write(user_message)
+                ClaimExtractor._first_extraction_logged = True
+                logger.info(f"First claim extraction prompt dumped to {log_path}")
+            except Exception:
+                logger.exception("Failed to dump first claim extraction prompt")
+
         try:
             response = await self.client.aio.models.generate_content(
                 model=self.model_name,

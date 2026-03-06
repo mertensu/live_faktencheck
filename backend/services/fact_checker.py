@@ -46,6 +46,8 @@ class FactCheckResponse(BaseModel):
 class FactChecker:
     """Service for fact-checking claims using LangGraph ReAct agent with Gemini and Tavily."""
 
+    _first_claim_logged = False
+
     def __init__(self):
         # Get API keys
         google_api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
@@ -157,6 +159,22 @@ class FactChecker:
 
     async def _check_claim_async(self, speaker: str, claim: str, system_prompt: str, user_message: str) -> Dict[str, Any]:
         """Async implementation of claim checking."""
+        # Log first claim check to a file for prompt inspection
+        if not FactChecker._first_claim_logged:
+            try:
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                log_path = os.path.join("logs", "prompt_dumps", f"{timestamp}_fact_checker.txt")
+                os.makedirs(os.path.dirname(log_path), exist_ok=True)
+                with open(log_path, "w", encoding="utf-8") as f:
+                    f.write("=== SYSTEM PROMPT ===\n")
+                    f.write(system_prompt)
+                    f.write("\n\n=== USER MESSAGE ===\n")
+                    f.write(user_message)
+                FactChecker._first_claim_logged = True
+                logger.info(f"First fact check prompt dumped to {log_path}")
+            except Exception:
+                logger.exception("Failed to dump first fact check prompt")
+
         try:
             agent = create_agent(
                 model=self.llm,
