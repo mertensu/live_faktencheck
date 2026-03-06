@@ -174,7 +174,25 @@ async def process_audio_pipeline_async(block_id: str, audio_path: str, episode_k
         if os.getenv("AUTO_APPROVE", "false").lower() == "true":
             logger.info(f"[{block_id}] AUTO_APPROVE enabled, selecting best claims...")
             selected = await claim_extractor.select_async(pending_block["claims"], max_claims=3)
-            await process_fact_checks_async(selected, episode_key, info, show_background=show_background)
+            
+            # Insert processing placeholders so viewers see spinners immediately
+            now = datetime.now().isoformat()
+            placeholder_ids = []
+            for claim in selected:
+                placeholder = {
+                    "sprecher": claim.get("name", ""),
+                    "behauptung": claim.get("claim", ""),
+                    "consistency": "",
+                    "begruendung": "",
+                    "quellen": [],
+                    "timestamp": now,
+                    "episode_key": episode_key,
+                    "status": "processing",
+                }
+                pid = await db.add_fact_check(placeholder)
+                placeholder_ids.append(pid)
+                
+            await process_fact_checks_async(selected, episode_key, info, placeholder_ids=placeholder_ids, show_background=show_background)
 
         logger.info(f"[{block_id}] Pipeline complete. {len(claims)} claims added to pending.")
         _set_event_status(block_id, "done", f"{len(claims)} Claims extrahiert")
