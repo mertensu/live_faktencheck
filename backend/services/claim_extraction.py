@@ -13,17 +13,19 @@ from datetime import datetime
 from google import genai
 from pydantic import BaseModel, Field
 
-from backend.utils import load_prompt
+from backend.utils import load_prompt, load_lang_config
 
 logger = logging.getLogger(__name__)
 
 # Default model if not specified in environment
 DEFAULT_MODEL = "gemini-2.5-flash"
 
+_lang = load_lang_config()
+
 class ExtractedClaim(BaseModel):
     """A standalone, decontextualized factual claim."""
-    name: str = Field(description="Full name of the speaker (proper noun).")
-    claim: str = Field(description="The German decontextualized claim (Atomic Claim).")
+    name: str = Field(description=_lang["schema"]["extracted_claim"]["name_description"])
+    claim: str = Field(description=_lang["schema"]["extracted_claim"]["claim_description"])
 
 class ClaimList(BaseModel):
     """List of extracted factual claims."""

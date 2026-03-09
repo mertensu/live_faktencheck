@@ -16,7 +16,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_tavily import TavilySearch
 from langchain.agents import create_agent
 
-from backend.utils import load_prompt, to_dict
+from backend.utils import load_prompt, load_lang_config, to_dict
 from .cost_tracker import get_cost_tracker
 from .trusted_domains import TRUSTED_DOMAINS
 
@@ -25,23 +25,21 @@ logger = logging.getLogger(__name__)
 # Default model if not specified in environment
 DEFAULT_MODEL = "gemini-2.5-pro"
 
+_lang = load_lang_config()
+
 # 1. Define the Data Structure
 class Source(BaseModel):
-    url: str = Field(description="URL to the source")
-    title: str = Field(description="Short informative description of the source, e.g. 'Statistisches Bundesamt - Bevölkerungsdaten 2024'")
+    url: str = Field(description=_lang["schema"]["source"]["url_description"])
+    title: str = Field(description=_lang["schema"]["source"]["title_description"])
 
 class FactCheckResponse(BaseModel):
     speaker: str
     original_claim: str
-    consistency: Literal["hoch", "niedrig", "unklar", "keine Datenlage"] = Field(description=(
-        "Empirical consistency of the claim. Choose exactly one of four levels:\n"
-        "- 'hoch': The available data supports the claim — use this also when evidence predominantly supports it, even if not entirely conclusive.\n"
-        "- 'niedrig': The available data contradicts the claim — use this also when evidence predominantly contradicts it, even if not entirely conclusive.\n"
-        "- 'unklar': Conflicting studies or evidence exist with no clear direction either way; genuinely impossible to determine.\n"
-        "- 'keine Datenlage': No relevant data or empirical evidence could be found on this topic."
-    ))
-    evidence: str = Field(description="Detailed and well-structured German explanation using evidence-based phrasing")
-    sources: List[Source] = Field(description="Primary sources with URL and short informative title")
+    consistency: Literal["hoch", "niedrig", "unklar", "keine Datenlage"] = Field(
+        description=_lang["schema"]["fact_check_response"]["consistency_description"]
+    )
+    evidence: str = Field(description=_lang["schema"]["fact_check_response"]["evidence_description"])
+    sources: List[Source] = Field(description=_lang["schema"]["fact_check_response"]["sources_description"])
 
 class FactChecker:
     """Service for fact-checking claims using LangGraph ReAct agent with Gemini and Tavily."""
