@@ -13,8 +13,11 @@ try:
         get_all_shows,
         get_episodes_for_show,
         get_all_episodes,
+        get_show_name,
+        get_episode_name,
         DEFAULT_SHOW,
         SHOW_CONFIG,
+        SHOWS,
     )
 except ImportError:
     import logging

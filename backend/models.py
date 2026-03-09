@@ -93,11 +93,9 @@ class HealthResponse(BaseModel):
 class ShowPreview(BaseModel):
     key: str
     name: str
-    description: Optional[str] = None
-    info: Optional[str] = None
-    type: str = "show"
-    speakers: List[str] = []
+    date: Optional[str] = None
     episode_name: Optional[str] = None
+    type: str = "show"
     publish: bool = False
 
 class ShowsDetailedResponse(BaseModel):

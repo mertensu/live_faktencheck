@@ -14,7 +14,7 @@ from backend.models import (
     ShowsDetailedResponse,
     EpisodesResponse,
 )
-from backend.show_config import SHOW_CONFIG, get_show_config, get_episodes_for_show
+from backend.show_config import SHOW_CONFIG, get_show_config, get_episodes_for_show, get_show_name, get_episode_name, get_speakers
 import backend.state as state
 
 logger = logging.getLogger(__name__)
@@ -33,12 +33,10 @@ async def get_all_shows_endpoint():
             [
                 {
                     "key": episode_key,
-                    "name": config.get("name", episode_key.capitalize()),
-                    "description": config.get("description", ""),
-                    "info": config.get("info", ""),
+                    "name": get_show_name(config.get("show", episode_key)),
+                    "date": config.get("date", ""),
+                    "episode_name": get_episode_name(episode_key),
                     "type": config.get("type", "show"),
-                    "speakers": config.get("speakers", []),
-                    "episode_name": config.get("episode_name", ""),
                     "publish": config.get("publish", False),
                 }
                 for episode_key, config in SHOW_CONFIG.items()
@@ -68,7 +66,7 @@ async def get_episode_config_endpoint(episode_key: str):
     """Return configuration for an episode"""
     try:
         config = get_show_config(episode_key)
-        return config
+        return {**config, "speakers": get_speakers(episode_key)}
     except Exception as e:
         logger.error(f"Error loading config for {episode_key}: {e}")
         raise HTTPException(status_code=500, detail=str(e))

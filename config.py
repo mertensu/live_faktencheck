@@ -3,154 +3,149 @@ Zentrale Konfiguration für Sendungsdetails und Sprecher
 
 Jede spezifische Sendung (Episode) bekommt einen eigenen Eintrag.
 Format: "show-name-date" oder "show-name-description"
-Beispiel: "maischberger-2025-09-19" oder "maischberger-connemann-droege"
+Beispiel: "maischberger-2025-09-19"
+
+Felder pro Episode:
+  show            - Show-Schlüssel (muss in SHOWS enthalten sein)
+  date            - Sendedatum (z.B. "19. September 2025")
+  guests          - Gäste im Format "Name (Rolle/Partei)", Moderator zuerst
+  context         - Optionaler Themen-Hintergrund für LLM
+  reference_links - Optionale Referenz-URLs (Gesetzentwürfe, Pressemitteilungen etc.)
+  publish         - True = in Produktion sichtbar (Standard: False)
+  type            - "show" oder "youtube" (Standard: "show")
 """
+
+import re
+
+# Anzeigename je Show-Schlüssel
+SHOWS = {
+    "maischberger": "Maischberger",
+    "lanz": "Markus Lanz",
+    "miosga": "Miosga",
+    "unter-den-linden": "Unter den Linden",
+    "bericht-aus-berlin": "Bericht aus Berlin",
+    "atalay": "Pinar Atalay",
+    "youtube": "YouTube",
+    "test": "Test",
+}
 
 # Sendungsdetails - Jede Episode ist ein eigener Eintrag
 SHOW_CONFIG = {
-    # Test
     "test": {
-        "name": "Test",
-        "description": "Test-Umgebung für Fact-Checks",
-        "info": "Test Sendung - Sprecher A interviewt Sprecher B",
-        "reference_links": [],  # Optional: URLs to reference documents (laws, press releases, etc.)
-        "speakers": [
-            "Sprecher A",
-            "Sprecher B",
-            "Autor"  # For article mode
-        ],
-        "show": "test",  # Zu welcher Show gehört diese Episode
-        "episode_name": "Test Episode"
+        "show": "test",
+        "date": "",
+        "guests": ["Sprecher A", "Sprecher B", "Autor"],
+        "reference_links": [],
+        "type": "show",
     },
 
     "bericht-aus-berlin-reiche-2026-03-01": {
-        "name": "Bericht aus Berlin",
-        "description": "Sendung vom 1.März 2026",
-        "info": "Bericht aus Berlin: Matthias Deiß interviewt Katherina Reiche, Bundeswirtschaftsministerin (CDU). Sendung vom 1. März 2026",
-        "speakers": [
-            "Matthias Deiß",
-            "Katherina Reiche"
+        "show": "bericht-aus-berlin",
+        "date": "1. März 2026",
+        "guests": [
+            "Matthias Deiß (Moderator)",
+            "Katherina Reiche (Bundeswirtschaftsministerin, CDU)",
         ],
         "reference_links": [
             "https://www.zdfheute.de/wirtschaft/heizungsgesetz-schwarz-rote-koalition-mieter-eigentuemer-waermeplanung-100.html"
         ],
-        "show": " bericht-aus-berlin",
-        "episode_name": "Interview mit Katherina Reiche"
+        "type": "show",
     },
 
-    # Maischberger Episoden
     "maischberger-2025-09-19": {
-        "name": "Maischberger",
-        "description": "Sendung vom 19. September 2025",
-        "info": "Sandra Maischberger interviewt Gitta Connemann (CDU) und Katharina Dröge (B90/Grüne). Sendung vom 19.September 2025",
-        "speakers": [
-            "Sandra Maischberger",
-            "Gitta Connemann",
-            "Katharina Dröge"
-        ],
         "show": "maischberger",
-        "episode_name": "19. September 2025 - Gitta Connemann & Katharina Dröge"
+        "date": "19. September 2025",
+        "guests": [
+            "Sandra Maischberger (Moderatorin)",
+            "Gitta Connemann (CDU)",
+            "Katharina Dröge (B90/Grüne)",
+        ],
+        "type": "show",
     },
 
-    # Maischberger Episoden
     "maischberger-2025-09-30": {
-        "name": "Maischberger",
-        "description": "Sendung vom 30. September 2025",
-        "info": "Sandra Maischberger interviewt Philipp Amthor (CDU) und Ines Schwerdtner (Linke). Sendung vom 30.September 2025",
-        "speakers": [
-            "Sandra Maischberger",
-            "Philipp Amthor",
-            "Ines Schwerdtner"
-        ],
         "show": "maischberger",
-        "episode_name": "30. September 2025 - Philipp Amthor & Ines Schwerdtner"
+        "date": "30. September 2025",
+        "guests": [
+            "Sandra Maischberger (Moderatorin)",
+            "Philipp Amthor (CDU)",
+            "Ines Schwerdtner (Linke)",
+        ],
+        "type": "show",
     },
 
     "maischberger-2026-01-28": {
-        "name": "Maischberger",
-        "description": "Sendung vom 28. Januar 2026",
-        "info": "Sandra Maischberger interviewt Gregor Gysi (Linke) und Philipp Amthor (CDU). Sendung vom 28.Januar 2026",
-        "speakers": [
-            "Sandra Maischberger",
-            "Gregor Gysi",
-            "Philipp Amthor"
-        ],
         "show": "maischberger",
-        "episode_name": "28. Januar 2026 - Gregor Gysi & Philipp Amthor"
+        "date": "28. Januar 2026",
+        "guests": [
+            "Sandra Maischberger (Moderatorin)",
+            "Gregor Gysi (Linke)",
+            "Philipp Amthor (CDU)",
+        ],
+        "type": "show",
     },
 
-    # Miosga Episoden
     "miosga-2025-10": {
-        "name": "Miosga",
-        "description": "Sendung vom Oktober 2025",
-        "info": "Caren Miosga interviewt Heidi Reichinnek (Linke). Sendung vom Oktober 2025",
-        "speakers": [
-            "Caren Miosga",
-            "Heidi Reichinnek"
-        ],
         "show": "miosga",
-        "episode_name": "Oktober 2025 - Heidi Reichinnek"
+        "date": "Oktober 2025",
+        "guests": [
+            "Caren Miosga (Moderatorin)",
+            "Heidi Reichinnek (Linke)",
+        ],
+        "type": "show",
     },
 
-   
-    # Markus Lanz Episoden
     "lanz-2026-02-06": {
-        "name": "Markus Lanz",
-        "description": "Sendung vom 6. Februar 2026",
-        "info": "Markus Lanz diskutiert mit seinen Gästen über Regierung, Haushalt und Investitionen. Gäste: Veronika Grimm (Wirtschaftswissenschaftlerin, Mitglied im Sachverständigenrat), Dirk Wiese (SPD-Politiker, MdB), Wiebke Winter (CDU-Politikerin) und Daniel Friedrich Sturm (Journalist). Grimm warnt, dass der Bundeshaushalt 2029 durch Zinsrückzahlungen, Soziales und Verteidigung ausgeschöpft sei. Wiese bekräftigt, dass Reformen folgen werden. Sendung vom 6. Februar 2026.",
-        "speakers": [
-            "Markus Lanz",
-            "Veronika Grimm",
-            "Dirk Wiese",
-            "Wiebke Winter",
-            "Daniel Friedrich Sturm"
-        ],
         "show": "lanz",
-        "episode_name": "6. Februar 2026 - Grimm, Wiese, Winter & Sturm"
+        "date": "6. Februar 2026",
+        "guests": [
+            "Markus Lanz (Moderator)",
+            "Veronika Grimm (Wirtschaftswissenschaftlerin, Mitglied im Sachverständigenrat)",
+            "Dirk Wiese (SPD-Politiker, MdB)",
+            "Wiebke Winter (CDU-Politikerin)",
+            "Daniel Friedrich Sturm (Journalist)",
+        ],
+        "context": "Grimm warnt, dass der Bundeshaushalt 2029 durch Zinsrückzahlungen, Soziales und Verteidigung ausgeschöpft sei. Wiese bekräftigt, dass Reformen folgen werden.",
+        "type": "show",
     },
 
-    # Pinar Atalay Episoden
     "atalay-2026-02-09": {
-        "name": "Pinar Atalay",
-        "description": "Sendung vom 9. Februar 2026",
-        "info": "Pinar Atalay diskutiert mit Heidi Reichinnek (Die Linke) und Philipp Amthor (CDU) über Wachstum vs. Umverteilung, Social-Media-Regeln und den Umgang mit der AfD.",
-        "speakers": [
-            "Pinar Atalay",
-            "Heidi Reichinnek",
-            "Philipp Amthor"
-        ],
         "show": "atalay",
-        "episode_name": "9. Februar 2026 - Heidi Reichinnek & Philipp Amthor",
-        "publish": True
+        "date": "9. Februar 2026",
+        "guests": [
+            "Pinar Atalay (Moderatorin)",
+            "Heidi Reichinnek (Die Linke)",
+            "Philipp Amthor (CDU)",
+        ],
+        "context": "Thema: Wachstum vs. Umverteilung, Social-Media-Regeln und Umgang mit der AfD.",
+        "publish": True,
+        "type": "show",
     },
 
-    # Unter den Linden Episoden
     "unter-den-linden-2026-02-23": {
-        "name": "Unter den Linden",
-        "description": "Sendung vom 23. Februar 2026",
-        "info": "Moderatorin Michaela Kolster diskutiert mit Andreas Audretsch (B'90/Grüne, stv. Vorsitzender Bundestagsfraktion) und Philipp Amthor (CDU, Parlamentarischer Staatssekretär beim Bundesminister für Digitales und Staatsmodernisierung). Thema: Der Staat ist überfordert – Bröckelnde Brücken, eine marode Bahn und langsame Digitalisierung – unsere Infrastruktur funktioniert vielerorts nicht. Gleichzeitig klafft im Bundeshaushalt bis 2029 eine Lücke von über 170 Milliarden Euro. Die SPD fordert Steuererhöhungen für Topverdienende. Die Union hingegen warnt vor einer Überlastung der Wirtschaft und fordert Steuersenkungen für Unternehmen und Bürger:innen für mehr Wachstum. Die Debatte um das Bürgergeld, Rente, Krankenversicherung und massive Investitionen in die Verteidigung. Sind wir diesen Herausforderungen gewachsen? Wie viel Staat kann sich Deutschland noch leisten?",
-        "speakers": [
-            "Michaela Kolster",
-            "Andreas Audretsch",
-            "Philipp Amthor"
-        ],
         "show": "unter-den-linden",
-        "episode_name": "23. Februar 2026 - Andreas Audretsch & Philipp Amthor"
+        "date": "23. Februar 2026",
+        "guests": [
+            "Michaela Kolster (Moderatorin)",
+            "Andreas Audretsch (B90/Grüne, stv. Vorsitzender Bundestagsfraktion)",
+            "Philipp Amthor (CDU, Parlamentarischer Staatssekretär beim Bundesminister für Digitales und Staatsmodernisierung)",
+        ],
+        "context": "Der Staat ist überfordert – Bröckelnde Brücken, eine marode Bahn und langsame Digitalisierung. Im Bundeshaushalt bis 2029 klafft eine Lücke von über 170 Milliarden Euro. SPD fordert Steuererhöhungen für Topverdienende, Union warnt vor Überlastung der Wirtschaft.",
+        "type": "show",
     },
 
     "youtube-rieck-2026-01-17": {
-        "name": "youtube",
-        "description": "Sendung vom 17. Januar 2026",
-        "info": "Video von Christian Rieck vom 17. Januar 2026. Er berichtet über die Erbschaftsteuerreform der SPD dargelegt im Konzeptpapier: https://spd-landesgruppe-ost.de/wp-content/uploads/2026/01/FairErben-Konzept-zur-Reform-der-Erbschaftsteuer-2.pdf",
-        "speakers": [
-            "Christian Rieck"
-        ],
         "show": "youtube",
+        "date": "17. Januar 2026",
+        "guests": [
+            "Christian Rieck",
+        ],
+        "context": "Video über die Erbschaftsteuerreform der SPD, dargelegt im SPD-Konzeptpapier.",
+        "reference_links": [
+            "https://spd-landesgruppe-ost.de/wp-content/uploads/2026/01/FairErben-Konzept-zur-Reform-der-Erbschaftsteuer-2.pdf"
+        ],
         "type": "youtube",
-        "episode_name": "17. Januar 2026 - Christian Rieck"
     },
-
-
 }
 
 # Allow start_dev.sh to override the "test" entry with a real episode's config.
@@ -165,48 +160,95 @@ if _os.path.exists(_override_path):
 # Standard-Sendung (für listener.py wenn keine spezifische Sendung gewählt wird)
 DEFAULT_SHOW = "test"
 
+
+# --- Helpers ---
+
+def _guest_name(guest: str) -> str:
+    """Extract name from 'Name (Role)' format."""
+    return re.sub(r'\s*\([^)]*\)\s*$', '', guest).strip()
+
+def _is_moderator(guest: str) -> bool:
+    return bool(re.search(r'\(Moderator', guest, re.IGNORECASE))
+
+
+# --- Public API ---
+
+def get_show_name(show_key: str) -> str:
+    """Returns the display name for a show key."""
+    return SHOWS.get(show_key, show_key.replace('-', ' ').capitalize())
+
 def get_show_config(episode_key=None):
     """Gibt die Konfiguration für eine Episode zurück"""
     if episode_key is None:
         episode_key = DEFAULT_SHOW
     return SHOW_CONFIG.get(episode_key, SHOW_CONFIG[DEFAULT_SHOW])
 
-def get_speakers(episode_key=None):
-    """Gibt die Sprecher für eine Episode zurück"""
+def get_speakers(episode_key=None) -> list:
+    """Gibt die Sprecher-Namen für eine Episode zurück (ohne Rollen-Klammern)"""
     config = get_show_config(episode_key)
-    return config.get("speakers", [])
+    return [_guest_name(g) for g in config.get("guests", [])]
 
-def get_info(episode_key=None):
-    """Gibt die Kontext-Information für eine Episode zurück (Datum, Quelle, Teilnehmer etc.)"""
+def get_info(episode_key=None) -> str:
+    """Gibt den LLM-Kontext für eine Episode zurück (Name, Gäste, Datum, Thema)"""
     config = get_show_config(episode_key)
-    return config.get("info", "")
+    show_key = config.get("show", episode_key or DEFAULT_SHOW)
+    show_name = get_show_name(show_key)
+    date = config.get("date", "")
+    guests = config.get("guests", [])
+    context = config.get("context", "")
 
-def get_reference_links(episode_key=None):
-    """Gibt die optionalen Referenz-Links für eine Episode zurück (Gesetzentwürfe, Pressemitteilungen etc.)"""
+    parts = []
+    if guests:
+        parts.append(f"{show_name}: {', '.join(guests)}.")
+    else:
+        parts.append(f"{show_name}.")
+    if date:
+        parts.append(f"Sendung vom {date}.")
+    if context:
+        parts.append(context)
+
+    return " ".join(parts)
+
+def get_episode_name(episode_key=None) -> str:
+    """Gibt den Anzeigenamen einer Episode zurück (Datum + Gäste ohne Moderator)"""
+    config = get_show_config(episode_key)
+    date = config.get("date", "")
+    guests = config.get("guests", [])
+    non_mod_names = [_guest_name(g) for g in guests if not _is_moderator(g)]
+
+    if date and non_mod_names:
+        return f"{date} - {' & '.join(non_mod_names)}"
+    if date:
+        return date
+    return episode_key or DEFAULT_SHOW
+
+def get_reference_links(episode_key=None) -> list:
+    """Gibt die optionalen Referenz-Links für eine Episode zurück"""
     config = get_show_config(episode_key)
     return config.get("reference_links", [])
 
-def get_all_shows():
-    """Gibt alle verfügbaren Shows zurück (z.B. ['maischberger', 'miosga', 'test'])"""
+def get_all_shows() -> list:
+    """Gibt alle Show-Schlüssel zurück, die in SHOW_CONFIG vorkommen"""
     shows = set()
-    for episode_key, config in SHOW_CONFIG.items():
-        show = config.get("show", episode_key.split("-")[0])
-        shows.add(show)
+    for config in SHOW_CONFIG.values():
+        show_key = config.get("show")
+        if show_key:
+            shows.add(show_key)
     return sorted(shows)
 
-def get_episodes_for_show(show_key):
+def get_episodes_for_show(show_key: str) -> list:
     """Gibt alle Episoden für eine Show zurück"""
     episodes = []
     for episode_key, config in SHOW_CONFIG.items():
         if config.get("show") == show_key:
             episodes.append({
                 "key": episode_key,
-                "name": config.get("episode_name", config.get("description", episode_key)),
-                "description": config.get("description", ""),
-                "show_name": config.get("name", show_key),
+                "name": get_episode_name(episode_key),
+                "description": f"Sendung vom {config['date']}" if config.get("date") else "",
+                "show_name": get_show_name(show_key),
             })
     return sorted(episodes, key=lambda x: x["key"], reverse=True)
 
-def get_all_episodes():
-    """Gibt alle verfügbaren Episoden zurück"""
+def get_all_episodes() -> list:
+    """Gibt alle verfügbaren Episode-Schlüssel zurück"""
     return list(SHOW_CONFIG.keys())

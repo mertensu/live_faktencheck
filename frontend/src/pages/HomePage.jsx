@@ -31,7 +31,7 @@ export function HomePage() {
               <div className="shows-list">
                 {publishedShows.map(show => {
                   const episodeKey = show.key || show
-                  const showInfo = show.info || show.description || ""
+                  const showInfo = show.date || ""
                   return (
                     <Link key={episodeKey} to={`/${episodeKey}`} className="show-item">
                       <div className="show-item-content">
@@ -84,7 +84,7 @@ export function HomePage() {
               <div className="shows-list">
                 {shows.filter(s => (s.key || s) !== 'test' && (!s.type || s.type === 'show')).map(show => {
                   const episodeKey = show.key || show
-                  const showInfo = show.info || show.description || ""
+                  const showInfo = show.date || ""
 
                   return (
                     <Link key={episodeKey} to={`/${episodeKey}`} className="show-item">
@@ -108,7 +108,7 @@ export function HomePage() {
                 <div className="shows-list">
                   {shows.filter(s => s.type === 'youtube').map(show => {
                     const episodeKey = show.key || show
-                    const showInfo = show.info || show.description || ""
+                    const showInfo = show.date || ""
 
                     return (
                       <Link key={episodeKey} to={`/${episodeKey}`} className="show-item">
