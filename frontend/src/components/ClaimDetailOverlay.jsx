@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { getConsistencyColor, getConsistencyClass, formatBegruendung } from './ClaimCard'
+import { getConsistencyColor, getConsistencyClass, formatBegruendung, stripDateAnnotation } from './ClaimCard'
 
 export function ClaimDetailOverlay({ claim, onClose }) {
   const [isClosing, setIsClosing] = useState(false)
@@ -37,7 +37,7 @@ export function ClaimDetailOverlay({ claim, onClose }) {
             <div className="claim-detail-speaker">{claim.sprecher}</div>
           )}
 
-          <h2 className="claim-detail-heading">{claim.behauptung}</h2>
+          <h2 className="claim-detail-heading">{stripDateAnnotation(claim.behauptung)}</h2>
 
           {claim.consistency && (
             <div className="claim-detail-verdict-row">

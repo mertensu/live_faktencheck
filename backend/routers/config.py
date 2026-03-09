@@ -40,6 +40,7 @@ async def get_all_shows_endpoint():
                     "publish": config.get("publish", False),
                 }
                 for episode_key, config in SHOW_CONFIG.items()
+                if episode_key != "test"
             ],
             key=lambda x: x["key"],
             reverse=True,

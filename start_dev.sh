@@ -54,10 +54,9 @@ if key not in SHOW_CONFIG:
     sys.exit(1)
 cfg = dict(SHOW_CONFIG[key])
 cfg.pop('publish', None)
-cfg['episode_name'] = 'Dev: ' + cfg.get('episode_name', key)
 with open('.test_override.json', 'w') as f:
     json.dump(cfg, f, ensure_ascii=False, indent=2)
-print(f'  speakers: {cfg[\"speakers\"]}')
+print(f'  guests: {cfg.get(\"guests\", [])}')
 " || { print_error "Could not copy config for '$EPISODE_KEY'"; exit 1; }
     print_success "Test config set from '$EPISODE_KEY'"
 fi

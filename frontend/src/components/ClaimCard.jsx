@@ -1,5 +1,11 @@
 import React from 'react'
 
+// Strip date annotations like "(Stand März 2026)" or "(im März 2026)" from claim text
+export const stripDateAnnotation = (text) => {
+  if (!text) return text
+  return text.replace(/\s*\((Stand|im)\s+\w+\s+\d{4}\)/g, '')
+}
+
 // Markdown regex patterns - compiled once at module load for better performance
 const MARKDOWN_BOLD_PATTERN = /\*\*(.+?)\*\*/g
 const MARKDOWN_ITALIC_PATTERN = /(?<!\*)\*([^*]+?)\*(?!\*)/g
@@ -138,7 +144,7 @@ export function ClaimCard({ claim, onSelect }) {
         <div className="claim-header">
           <div className="claim-text">
             <span className="claim-processing-spinner" aria-hidden="true" />
-            {claim.behauptung}
+            {stripDateAnnotation(claim.behauptung)}
           </div>
         </div>
       </div>
@@ -151,7 +157,7 @@ export function ClaimCard({ claim, onSelect }) {
         <div className="claim-header">
           <div className="claim-text">
             <span className="claim-error-icon" aria-hidden="true">!</span>
-            {claim.behauptung}
+            {stripDateAnnotation(claim.behauptung)}
           </div>
         </div>
         {claim.begruendung && (
@@ -172,7 +178,7 @@ export function ClaimCard({ claim, onSelect }) {
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onSelect(claim) }}
     >
       <div className="claim-header">
-        <div className="claim-text">{claim.behauptung}</div>
+        <div className="claim-text">{stripDateAnnotation(claim.behauptung)}</div>
         <span className="expand-button" aria-hidden="true">▶</span>
       </div>
     </div>
