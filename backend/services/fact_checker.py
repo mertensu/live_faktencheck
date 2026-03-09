@@ -111,12 +111,14 @@ class FactChecker:
 
     def _build_user_message(self, speaker: str, claim: str, context: str = None, show_background: str | None = None) -> str:
         """Build the user message for a single claim fact-check."""
-        msg = f"- **Speaker:** {speaker}\n- **Claim:** {claim}"
-        if context:
-            msg += f"\n- **Context:** {context}"
+        parts = []
         if show_background:
-            msg += f"\n- **Show Background:**\n{show_background}"
-        return msg
+            parts.append(f"<show_background>\n{show_background}\n</show_background>")
+        if context:
+            parts.append(f"<context>\n{context}\n</context>")
+        parts.append(f"<speaker>\n{speaker}\n</speaker>")
+        parts.append(f"<claim>\n{claim}\n</claim>")
+        return "\n\n".join(parts)
 
     async def check_claim_async(self, speaker: str, claim: str, context: str = None, show_background: str | None = None) -> Dict[str, Any]:
         """

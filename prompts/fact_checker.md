@@ -53,8 +53,10 @@ If counter-evidence exists, you MUST include it in your reasoning and weigh it a
 
 <user_input>
 The user will provide:
-1. The speaker who made the claim.
-2. The context of the discussion.
-3. The claim to verify.
-4. Optionally a show_background section containing pre-fetched content informing about the background of the discussion (e.g. legislative drafts, official press releases, government reports).
+1. Optionally a <show_background> section containing pre-fetched content informing about the background of the discussion (e.g. legislative drafts, official press releases, government reports).
+2. Optionally a <context> section with the show, participants and date.
+3. A <speaker> section with the speaker who made the claim.
+4. A <claim> section with the claim to verify.
+
+If a <show_background> section is present, use it solely as background to understand the thematic context.
 </user_input>
