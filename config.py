@@ -124,6 +124,20 @@ SHOW_CONFIG = {
         "publish": True
     },
 
+    # Unter den Linden Episoden
+    "unter-den-linden-2026-02-23": {
+        "name": "Unter den Linden",
+        "description": "Sendung vom 23. Februar 2026",
+        "info": "Moderatorin Michaela Kolster diskutiert mit Andreas Audretsch (B'90/Grüne, stv. Vorsitzender Bundestagsfraktion) und Philipp Amthor (CDU, Parlamentarischer Staatssekretär beim Bundesminister für Digitales und Staatsmodernisierung). Thema: Der Staat ist überfordert – Bröckelnde Brücken, eine marode Bahn und langsame Digitalisierung – unsere Infrastruktur funktioniert vielerorts nicht. Gleichzeitig klafft im Bundeshaushalt bis 2029 eine Lücke von über 170 Milliarden Euro. Die SPD fordert Steuererhöhungen für Topverdienende. Die Union hingegen warnt vor einer Überlastung der Wirtschaft und fordert Steuersenkungen für Unternehmen und Bürger:innen für mehr Wachstum. Die Debatte um das Bürgergeld, Rente, Krankenversicherung und massive Investitionen in die Verteidigung. Sind wir diesen Herausforderungen gewachsen? Wie viel Staat kann sich Deutschland noch leisten?",
+        "speakers": [
+            "Michaela Kolster",
+            "Andreas Audretsch",
+            "Philipp Amthor"
+        ],
+        "show": "unter-den-linden",
+        "episode_name": "23. Februar 2026 - Andreas Audretsch & Philipp Amthor"
+    },
+
     "youtube-rieck-2026-01-17": {
         "name": "youtube",
         "description": "Sendung vom 17. Januar 2026",
