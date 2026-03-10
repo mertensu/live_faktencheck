@@ -62,6 +62,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
   const discardedClaimsRef = useRef(discardedClaims)
   discardedClaimsRef.current = discardedClaims
   const [speakers, setSpeakers] = useState(DEFAULT_SPEAKERS)  // Load config from backend
+  const [displayTitle, setDisplayTitle] = useState(showName)  // Full show title (updated from config)
   const [backendError, setBackendError] = useState(null)  // Backend connection error
 
   // Static mode: production build on non-localhost → try /data/<episode>.json first,
@@ -87,6 +88,11 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
             debug.log(`Config loaded for ${key}:`, config)
           } else {
             debug.warn(`No speakers in config for ${key}, using fallback`)
+          }
+          if (config.show_name && config.date) {
+            setDisplayTitle(`${config.show_name} vom ${config.date}`)
+          } else if (config.show_name) {
+            setDisplayTitle(config.show_name)
           }
         } else {
           debug.warn(`Could not load config for ${key}, using fallback`)
@@ -116,6 +122,11 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
       .then(data => {
         setFactChecks(data.fact_checks || [])
         if (data.speakers?.length > 0) setSpeakers(data.speakers)
+        if (data.show_name && data.date) {
+          setDisplayTitle(`${data.show_name} vom ${data.date}`)
+        } else if (data.show_name) {
+          setDisplayTitle(data.show_name)
+        }
       })
       .catch(() => setIsStaticMode(false)) // no static file → fall back to live polling
   }, [isStaticMode, isAdminMode, episodeKey, showKey, showName])
@@ -520,7 +531,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
       <header className="app-header">
         <div className="factcheck-header-content">
           <div>
-            <h1>Fakten-Check - {showName}</h1>
+            <h1>Fakten-Check - {displayTitle}</h1>
           </div>
           {showAdminMode && (
             <button

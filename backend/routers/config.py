@@ -68,7 +68,7 @@ async def get_episode_config_endpoint(episode_key: str):
     episode = EPISODES.get(episode_key)
     if episode is None:
         raise HTTPException(status_code=404, detail=f"Unknown episode: {episode_key}")
-    return {**dataclasses.asdict(episode), "speakers": episode.speakers}
+    return {**dataclasses.asdict(episode), "speakers": episode.speakers, "show_name": get_show_name(episode.show)}
 
 
 @router.post('/set-episode')

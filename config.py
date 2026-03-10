@@ -85,7 +85,7 @@ class Episode:
 EPISODES: dict[str, Episode] = {
     "bericht-aus-berlin-reiche-2026-03-01": Episode(
         key="bericht-aus-berlin-reiche-2026-03-01",
-        show="bericht-aus-berlin",
+        show="Bericht aus Berlin",
         date="1. März 2026",
         guests=[
             "Matthias Deiß (Moderator)",
@@ -99,7 +99,7 @@ EPISODES: dict[str, Episode] = {
 
     "maischberger-2025-09-19": Episode(
         key="maischberger-2025-09-19",
-        show="maischberger",
+        show="Sandra Maischberger",
         date="19. September 2025",
         guests=[
             "Sandra Maischberger (Moderatorin)",
@@ -110,7 +110,7 @@ EPISODES: dict[str, Episode] = {
 
     "maischberger-2025-09-30": Episode(
         key="maischberger-2025-09-30",
-        show="maischberger",
+        show="Sandra Maischberger",
         date="30. September 2025",
         guests=[
             "Sandra Maischberger (Moderatorin)",
@@ -121,7 +121,7 @@ EPISODES: dict[str, Episode] = {
 
     "maischberger-2026-01-28": Episode(
         key="maischberger-2026-01-28",
-        show="maischberger",
+        show="Sandra Maischberger",
         date="28. Januar 2026",
         guests=[
             "Sandra Maischberger (Moderatorin)",
@@ -132,7 +132,7 @@ EPISODES: dict[str, Episode] = {
 
     "miosga-2025-10": Episode(
         key="miosga-2025-10",
-        show="miosga",
+        show="Caren Miosga",
         date="Oktober 2025",
         guests=[
             "Caren Miosga (Moderatorin)",
@@ -142,7 +142,7 @@ EPISODES: dict[str, Episode] = {
 
     "lanz-2026-02-06": Episode(
         key="lanz-2026-02-06",
-        show="lanz",
+        show="Markus Lanz",
         date="6. Februar 2026",
         guests=[
             "Markus Lanz (Moderator)",
@@ -156,7 +156,7 @@ EPISODES: dict[str, Episode] = {
 
     "atalay-2026-02-09": Episode(
         key="atalay-2026-02-09",
-        show="atalay",
+        show="Pinar Atalay",
         date="9. Februar 2026",
         guests=[
             "Pinar Atalay (Moderatorin)",
@@ -169,7 +169,7 @@ EPISODES: dict[str, Episode] = {
 
     "unter-den-linden-2026-02-23": Episode(
         key="unter-den-linden-2026-02-23",
-        show="unter-den-linden",
+        show="Unter den Linden",
         date="23. Februar 2026",
         guests=[
             "Michaela Kolster (Moderatorin)",
@@ -181,7 +181,7 @@ EPISODES: dict[str, Episode] = {
 
     "youtube-rieck-2026-01-17": Episode(
         key="youtube-rieck-2026-01-17",
-        show="youtube",
+        show="Youtube-Video von Christian Rieck",
         date="17. Januar 2026",
         guests=[
             "Christian Rieck",
@@ -199,7 +199,7 @@ EPISODES: dict[str, Episode] = {
 
 def get_show_name(show_key: str) -> str:
     """Returns the display name for a show key."""
-    return SHOWS.get(show_key, show_key.replace('-', ' ').capitalize())
+    return SHOWS.get(show_key, show_key)
 
 def get_episodes_for_show(show_key: str) -> list[dict]:
     """Returns all episodes for a show as dicts."""

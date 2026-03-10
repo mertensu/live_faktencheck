@@ -73,6 +73,8 @@ def export_as_json(episode_key: str, fact_checks: list[dict]) -> None:
     speakers = ep.speakers if ep else []
 
     output = {
+        "show_name": get_show_name(ep.show) if ep else "",
+        "date": ep.date if ep else "",
         "speakers": speakers,
         "fact_checks": fact_checks,
     }
