@@ -16,7 +16,7 @@ from pathlib import Path
 import pyaudio
 import requests
 
-from config import get_info, DEFAULT_SHOW
+from config import EPISODES
 
 # Audio constants
 FORMAT = pyaudio.paInt16
@@ -28,23 +28,22 @@ BLOCK_DURATION = 120  # Send audio block every 120 seconds (default)
 
 
 def get_current_show():
-    """Determine current show from parameter, env var, or default"""
-    # 1. Command line parameter (e.g., python listener.py test)
+    """Determine current show from parameter or env var"""
+    # 1. Command line parameter (e.g., python listener.py maischberger-2026-01-28)
     if len(sys.argv) > 1 and not sys.argv[1].startswith('--'):
         show_key = sys.argv[1].lower()
         print(f"Show from parameter: {show_key}")
         return show_key
 
-    # 2. Environment variable (e.g., SHOW=test python listener.py)
+    # 2. Environment variable (e.g., SHOW=maischberger-2026-01-28 python listener.py)
     env_show = os.environ.get('SHOW')
     if env_show:
         show_key = env_show.lower()
         print(f"Show from environment: {show_key}")
         return show_key
 
-    # 3. Fallback: DEFAULT_SHOW from config.py
-    print(f"Using default show: {DEFAULT_SHOW}")
-    return DEFAULT_SHOW
+    print("Error: no episode key provided. Pass as argument or set SHOW env var.", file=sys.stderr)
+    sys.exit(1)
 
 
 def set_backend_episode(backend_url, show):
@@ -374,7 +373,8 @@ def setup_input_listeners(recorder):
 
 def main():
     show = get_current_show()
-    info = get_info(show)
+    ep = EPISODES.get(show)
+    info = ep.info if ep else ""
     debug = os.environ.get('DEBUG', '').lower() in ('true', '1', 'yes') or '--debug' in sys.argv
     backend_url = os.getenv("BACKEND_URL", "http://localhost:5000")
 

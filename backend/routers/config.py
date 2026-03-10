@@ -4,6 +4,7 @@ Configuration endpoints.
 Handles show/episode configuration and health checks.
 """
 
+import dataclasses
 import logging
 
 from fastapi import APIRouter, HTTPException
@@ -14,7 +15,7 @@ from backend.models import (
     ShowsDetailedResponse,
     EpisodesResponse,
 )
-from backend.show_config import SHOW_CONFIG, get_show_config, get_episodes_for_show, get_show_name, get_episode_name, get_speakers
+from config import EPISODES, get_show_name, get_episodes_for_show
 import backend.state as state
 
 logger = logging.getLogger(__name__)
@@ -32,15 +33,14 @@ async def get_all_shows_endpoint():
         detailed_shows = sorted(
             [
                 {
-                    "key": episode_key,
-                    "name": get_show_name(config.get("show", episode_key)),
-                    "date": config.get("date", ""),
-                    "episode_name": get_episode_name(episode_key),
-                    "type": config.get("type", "show"),
-                    "publish": config.get("publish", False),
+                    "key": ep.key,
+                    "name": get_show_name(ep.show),
+                    "date": ep.date,
+                    "episode_name": ep.episode_name,
+                    "type": ep.type,
+                    "publish": ep.publish,
                 }
-                for episode_key, config in SHOW_CONFIG.items()
-                if episode_key != "test"
+                for ep in EPISODES.values()
             ],
             key=lambda x: x["key"],
             reverse=True,
@@ -65,12 +65,10 @@ async def get_episodes_for_show_endpoint(show_key: str):
 @router.get('/config/{episode_key}')
 async def get_episode_config_endpoint(episode_key: str):
     """Return configuration for an episode"""
-    try:
-        config = get_show_config(episode_key)
-        return {**config, "speakers": get_speakers(episode_key)}
-    except Exception as e:
-        logger.error(f"Error loading config for {episode_key}: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+    episode = EPISODES.get(episode_key)
+    if episode is None:
+        raise HTTPException(status_code=404, detail=f"Unknown episode: {episode_key}")
+    return {**dataclasses.asdict(episode), "speakers": episode.speakers}
 
 
 @router.post('/set-episode')

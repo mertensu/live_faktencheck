@@ -12,7 +12,7 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-EPISODE_KEY="test"
+EPISODE_KEY=""
 AUTOPILOT=false
 BACKEND_PORT=5000
 FRONTEND_DIR="frontend"
@@ -28,6 +28,13 @@ for arg in "$@"; do
     fi
 done
 
+if [ -z "$EPISODE_KEY" ]; then
+    echo "Error: episode key required."
+    echo "Usage: ./start_dev.sh <episode_key> [--autopilot]"
+    echo "Example: ./start_dev.sh maischberger-2026-01-28"
+    exit 1
+fi
+
 print_header() {
     echo -e "\n${BLUE}════════════════════════════════════════${NC}"
     echo -e "${BLUE}$1${NC}"
@@ -39,27 +46,17 @@ print_error()   { echo -e "${RED}❌ $1${NC}"; }
 print_warning() { echo -e "${YELLOW}⚠️  $1${NC}"; }
 print_info()    { echo -e "${BLUE}ℹ️  $1${NC}"; }
 
-if [ "$EPISODE_KEY" = "test" ]; then
-    print_info "Using generic 'test' config. Pass a real episode key to inherit its speakers."
-    rm -f .test_override.json
-else
-    print_info "Copying config from '$EPISODE_KEY' → 'test' episode..."
-    uv run python -c "
-import json, sys
+uv run python -c "
+import sys
 sys.path.insert(0, '.')
-from config import SHOW_CONFIG
+from config import EPISODES
 key = '$EPISODE_KEY'
-if key not in SHOW_CONFIG:
-    print(f'Unknown episode key: {key}')
+if key not in EPISODES:
+    print(f'Unknown episode key: {key}', file=sys.stderr)
     sys.exit(1)
-cfg = dict(SHOW_CONFIG[key])
-cfg.pop('publish', None)
-with open('.test_override.json', 'w') as f:
-    json.dump(cfg, f, ensure_ascii=False, indent=2)
-print(f'  guests: {cfg.get(\"guests\", [])}')
-" || { print_error "Could not copy config for '$EPISODE_KEY'"; exit 1; }
-    print_success "Test config set from '$EPISODE_KEY'"
-fi
+ep = EPISODES[key]
+print(f'  guests: {ep.guests}')
+" || { print_error "Unknown episode key: '$EPISODE_KEY'"; exit 1; }
 
 echo "$EPISODE_KEY" > .current_episode
 

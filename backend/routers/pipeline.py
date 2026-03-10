@@ -13,7 +13,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException
 
 import backend.state as state
-from backend.show_config import get_info
+from config import EPISODES
 
 logger = logging.getLogger(__name__)
 
@@ -82,8 +82,9 @@ async def retrigger_pipeline(block_id: str):
             detail=f"Audio-Datei für Block '{block_id}' nicht gefunden (Pfad: {audio_file})"
         )
 
-    ep_key = ev.get("episode_key") or state.current_episode_key or "test"
-    context_info = get_info(ep_key)
+    ep_key = ev.get("episode_key") or state.current_episode_key or ""
+    ep = EPISODES.get(ep_key)
+    context_info = ep.info if ep else ""
 
     # Reset event to processing
     ev["status"] = "processing"

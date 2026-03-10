@@ -20,7 +20,7 @@ from backend.models import (
 from backend.utils import to_dict, truncate, build_fact_check_dict
 import backend.state as state
 
-from backend.show_config import get_info, get_reference_links
+from config import EPISODES
 from backend.services.registry import get_claim_extractor, get_fact_checker
 from backend.services.reference_fetcher import fetch_show_background
 
@@ -212,12 +212,14 @@ async def approve_claims(
 
     # Fall back to config info if no context found in pending block
     if not context:
-        context = get_info(episode_key)
-        if context:
+        ep = EPISODES.get(episode_key)
+        if ep:
+            context = ep.info
             logger.info(f"Using context from config for episode {episode_key}")
 
     # Load reference links and pre-fetch as show background
-    reference_links = get_reference_links(episode_key)
+    ep = EPISODES.get(episode_key)
+    reference_links = ep.reference_links if ep else []
     show_background = await fetch_show_background(reference_links)
 
     # Insert placeholder fact-checks immediately so users see them while research runs

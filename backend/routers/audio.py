@@ -15,7 +15,7 @@ from fastapi import APIRouter, BackgroundTasks, UploadFile, File, Form
 from backend.models import ProcessingResponse
 from backend.state import processing_lock
 from backend.utils import to_dict, truncate
-from backend.show_config import get_info, get_reference_links
+from config import EPISODES
 from backend.services.registry import get_transcription_service, get_claim_extractor
 from backend.services.reference_fetcher import fetch_show_background
 from backend.routers.claims import process_fact_checks_async
@@ -62,8 +62,9 @@ async def receive_audio_block(
     - info: (optional) Context information override
     """
     audio_data = await audio.read()
-    ep_key = episode_key or state.current_episode_key or 'test'
-    context_info = info or get_info(ep_key)
+    ep_key = episode_key or state.current_episode_key or ''
+    ep = EPISODES.get(ep_key)
+    context_info = info or (ep.info if ep else "")
 
     # Generate block_id here so it can be tracked immediately
     now = datetime.now(timezone.utc)
@@ -87,7 +88,7 @@ async def receive_audio_block(
     }
 
     # Start background processing (pass path, not bytes, to avoid holding memory in handler)
-    reference_links = get_reference_links(ep_key)
+    reference_links = ep.reference_links if ep else []
     show_background = await fetch_show_background(reference_links)
     background_tasks.add_task(process_audio_pipeline_async, block_id, audio_path, ep_key, context_info, show_background)
 

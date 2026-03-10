@@ -18,7 +18,7 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-from config import get_speakers, SHOW_CONFIG
+from config import EPISODES, get_show_name
 
 DB_PATH = Path(__file__).parent / "backend" / "data" / "factcheck.db"
 
@@ -69,7 +69,8 @@ def _print_speaker_counts(grouped: dict[str, list]) -> None:
 
 
 def export_as_json(episode_key: str, fact_checks: list[dict]) -> None:
-    speakers = get_speakers(episode_key)
+    ep = EPISODES.get(episode_key)
+    speakers = ep.speakers if ep else []
 
     output = {
         "speakers": speakers,
@@ -85,20 +86,17 @@ def export_as_json(episode_key: str, fact_checks: list[dict]) -> None:
     _print_speaker_counts(group_by_speaker(fact_checks, speakers))
 
     # Update shows.json with current published episodes
-    shows = []
-    for key, cfg in SHOW_CONFIG.items():
-        if key == "test":
-            continue
-        shows.append({
-            "key": key,
-            "name": cfg.get("name", key),
-            "description": cfg.get("description", ""),
-            "info": cfg.get("info", ""),
-            "type": cfg.get("type", "show"),
-            "speakers": cfg.get("speakers", []),
-            "episode_name": cfg.get("episode_name", ""),
-            "publish": cfg.get("publish", False),
-        })
+    shows = [
+        {
+            "key": ep.key,
+            "name": get_show_name(ep.show),
+            "date": ep.date,
+            "episode_name": ep.episode_name,
+            "type": ep.type,
+            "publish": ep.publish,
+        }
+        for ep in EPISODES.values()
+    ]
     shows.sort(key=lambda x: x["key"], reverse=True)
     shows_path = data_dir / "shows.json"
     shows_path.write_text(json.dumps({"shows": shows}, ensure_ascii=False, indent=2), encoding="utf-8")
