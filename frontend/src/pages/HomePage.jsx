@@ -3,7 +3,16 @@ import { useShows } from '../hooks/useShows'
 
 function getEpisodeDisplayName(show) {
   if (typeof show === 'object') {
-    if (show.episode_name) return `${show.name} - ${show.episode_name}`
+    if (show.episode_name) {
+      // Strip date prefix from episode_name (format: "DD. Month YYYY - Guests")
+      let episodePart = show.episode_name
+      if (show.date && episodePart.startsWith(show.date + ' - ')) {
+        episodePart = episodePart.slice((show.date + ' - ').length)
+      } else if (show.date && episodePart === show.date) {
+        episodePart = null
+      }
+      return episodePart ? `${show.name} - Gäste: ${episodePart}` : show.name
+    }
     if (show.name) return show.name
   }
   if (typeof show === 'string') return show.charAt(0).toUpperCase() + show.slice(1)

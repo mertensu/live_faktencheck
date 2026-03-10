@@ -979,6 +979,7 @@
   gap: 0.75rem;
   max-height: 400px;
   overflow-y: auto;
+  padding-bottom: 0.75rem;
 }
 
 .admin-claim-item {
