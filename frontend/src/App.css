@@ -1325,7 +1325,7 @@
 .claim-collection {
   border: 1px solid var(--border-light);
   border-radius: var(--radius-md);
-  overflow: hidden;
+  overflow: clip;
 }
 
 .collection-header {
@@ -1415,6 +1415,13 @@
   border-top: 1px solid var(--border-light);
   max-height: 60vh;
   overflow-y: auto;
+}
+
+.collection-claims::after {
+  content: '';
+  display: block;
+  min-height: 0.5rem;
+  flex-shrink: 0;
 }
 
 /* Pipeline Status Strip */
