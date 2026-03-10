@@ -92,7 +92,8 @@ EPISODES: dict[str, Episode] = {
             "Katherina Reiche (Bundeswirtschaftsministerin, CDU)",
         ],
         reference_links=[
-            "https://www.zdfheute.de/wirtschaft/heizungsgesetz-schwarz-rote-koalition-mieter-eigentuemer-waermeplanung-100.html"
+            "https://www.zdfheute.de/wirtschaft/heizungsgesetz-schwarz-rote-koalition-mieter-eigentuemer-waermeplanung-100.html",
+            "https://www.verivox.de/gas/nachrichten/biogastarife-verteuern-heizkosten-um-rund-25-prozent-1121484/",
         ],
     ),
 
