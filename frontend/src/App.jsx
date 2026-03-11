@@ -5,6 +5,7 @@ import { Navigation } from './components/Navigation'
 import { Footer } from './components/Footer'
 import { HomePage } from './pages/HomePage'
 import { AboutPage } from './pages/AboutPage'
+import { TrustedDomainsPage } from './pages/TrustedDomainsPage'
 import { FactCheckPage } from './pages/FactCheckPage'
 
 function EpisodeRoute() {
@@ -22,6 +23,7 @@ function App() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/about" element={<AboutPage />} />
+          <Route path="/trusted-domains" element={<TrustedDomainsPage />} />
           <Route path="/:episodeKey" element={<EpisodeRoute />} />
         </Routes>
         <Footer />

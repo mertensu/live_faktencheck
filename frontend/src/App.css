@@ -290,6 +290,32 @@
   margin-bottom: 1rem;
 }
 
+/* Trusted Domains */
+.trusted-domains-category {
+  margin-bottom: 1.5rem;
+}
+
+.trusted-domains-list {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+  margin: 0;
+}
+
+.trusted-domains-list li a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-family: monospace;
+  font-size: 0.9rem;
+}
+
+.trusted-domains-list li a:hover {
+  color: var(--text-main);
+  text-decoration: underline;
+}
+
 /* Workflow Diagram */
 .workflow-diagram {
   margin: 2.5rem 0;

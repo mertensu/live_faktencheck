@@ -16,6 +16,7 @@ from backend.models import (
     EpisodesResponse,
 )
 from config import EPISODES, get_show_name, get_episodes_for_show
+from backend.services.trusted_domains import TRUSTED_DOMAINS_BY_CATEGORY
 import backend.state as state
 
 logger = logging.getLogger(__name__)
@@ -86,6 +87,12 @@ async def set_current_episode(request: SetEpisodeRequest):
         return {"status": "success", "episode_key": episode_key, "cleared_pending": deleted}
     else:
         raise HTTPException(status_code=400, detail="episode_key missing")
+
+
+@router.get('/trusted-domains')
+async def get_trusted_domains():
+    """Return trusted domains grouped by category."""
+    return TRUSTED_DOMAINS_BY_CATEGORY
 
 
 @router.get('/health', response_model=HealthResponse)
