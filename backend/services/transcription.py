@@ -23,7 +23,7 @@ class TranscriptionService:
         aai.settings.api_key = api_key
 
         config = aai.TranscriptionConfig(
-            language_detection=True,
+            language_code="de",
             speaker_labels=True,
         )
         self.transcriber = aai.Transcriber(config=config)
