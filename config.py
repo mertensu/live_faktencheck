@@ -106,6 +106,7 @@ EPISODES: dict[str, Episode] = {
             "Gitta Connemann (CDU)",
             "Katharina Dröge (B90/Grüne)",
         ],
+        publish=True,
     ),
 
     "maischberger-2025-09-30": Episode(
@@ -164,7 +165,7 @@ EPISODES: dict[str, Episode] = {
             "Philipp Amthor (CDU)",
         ],
         context="Thema: Wachstum vs. Umverteilung, Social-Media-Regeln und Umgang mit der AfD.",
-        publish=True,
+        publish=False,
     ),
 
     "unter-den-linden-2026-02-23": Episode(
