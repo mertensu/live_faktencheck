@@ -23,9 +23,8 @@ export function HomePage() {
   const { shows, loading } = useShows()
   const isProduction = import.meta.env.PROD
 
-  // Production: show only published episodes
+  // Production: shows.json only contains published episodes
   if (isProduction) {
-    const publishedShows = shows.filter(s => s.publish)
     return (
       <div className="home-page">
         <section className="hero-section">
@@ -35,10 +34,10 @@ export function HomePage() {
             <div className="loading-container">
               <div className="loading-spinner"></div>
             </div>
-          ) : publishedShows.length > 0 ? (
+          ) : shows.length > 0 ? (
             <section className="shows-section">
               <div className="shows-list">
-                {publishedShows.map(show => {
+                {shows.map(show => {
                   const episodeKey = show.key || show
                   const showInfo = show.date || ""
                   return (

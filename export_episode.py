@@ -87,7 +87,7 @@ def export_as_json(episode_key: str, fact_checks: list[dict]) -> None:
     print(f"✓ {len(fact_checks)} Fact-Checks exportiert → {out_path}")
     _print_speaker_counts(group_by_speaker(fact_checks, speakers))
 
-    # Update shows.json with current published episodes
+    # Update shows.json with published episodes only
     shows = [
         {
             "key": ep.key,
@@ -95,9 +95,9 @@ def export_as_json(episode_key: str, fact_checks: list[dict]) -> None:
             "date": ep.date,
             "episode_name": ep.episode_name,
             "type": ep.type,
-            "publish": ep.publish,
         }
         for ep in EPISODES.values()
+        if ep.publish
     ]
     shows.sort(key=lambda x: x["key"], reverse=True)
     shows_path = data_dir / "shows.json"
