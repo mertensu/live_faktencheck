@@ -1,0 +1,84 @@
+{
+  "show_name": "Maischberger",
+  "date": "19. September 2025",
+  "speakers": [
+    "Sandra Maischberger",
+    "Gitta Connemann",
+    "Katharina Dröge"
+  ],
+  "fact_checks": [
+    {
+      "id": 88,
+      "sprecher": "Gitta Connemann",
+      "behauptung": "Während der Amtszeit von Robert Habeck als Wirtschaftsminister gab es drei Jahre Rezession in Deutschland.",
+      "consistency": "niedrig",
+      "begruendung": "Die Behauptung, es habe während der Amtszeit von Robert Habeck als Wirtschaftsminister drei Jahre Rezession gegeben, wird von den Daten des Statistischen Bundesamtes (Destatis) nicht gestützt. Robert Habeck trat sein Amt im Dezember 2021 an, der relevante Zeitraum für die Behauptung sind die Jahre 2022, 2023 und 2024.\n\nDie jährliche Entwicklung des preisbereinigten Bruttoinlandsprodukts (BIP) zeigt ein differenziertes Bild:\n- **2022:** Die deutsche Wirtschaft wuchs um 1,9 %.\n- **2023:** Das BIP sank um 0,2 %. Dieses Jahr kann als Rezessionsjahr bezeichnet werden.\n- **2024:** Die Wirtschaft wuchs leicht um 0,2 %.\n\nVon den drei betrachteten Jahren gab es also nur in einem Jahr einen Rückgang der Wirtschaftsleistung.\n\nEine \"technische Rezession\" ist definiert als ein Rückgang des BIP in zwei aufeinanderfolgenden Quartalen. Auch hier zeigt die quartalsweise Betrachtung keine durchgehende dreijährige Rezession:\n- Im Winterhalbjahr 2022/2023 gab es eine technische Rezession, als das BIP im 4. Quartal 2022 (revidiert -0,4 %) und im 1. Quartal 2023 (revidiert -0,1 %) schrumpfte.\n- Davor und danach gab es jedoch Quartale mit Wachstum oder Stagnation. Beispielsweise wuchs die Wirtschaft im 1. Quartal 2022 (+0,2 %), stagnierte im 2. Quartal 2023 (0,0 %) und wuchs wieder im 1. Quartal 2024 (+0,2 %).\n\nZusammenfassend lässt sich sagen, dass die deutsche Wirtschaft in diesem Zeitraum zwar eine schwache Phase mit einer technischen Rezession und einem negativen Gesamtjahr 2023 durchlief, die Behauptung einer dreijährigen Rezession jedoch nicht mit den offiziellen Wirtschaftsdaten übereinstimmt. Es gab in diesem Zeitraum auch Phasen des Wachstums.",
+      "quellen": [
+        {
+          "url": "https://www.destatis.de/DE/Presse/Pressemitteilungen/2024/04/PD24_173_811.html",
+          "title": "Statistisches Bundesamt - Bruttoinlandsprodukt im 1. Quartal 2024"
+        },
+        {
+          "url": "https://www.destatis.de/DE/Presse/Pressemitteilungen/2023/07/PD23_299_811.html",
+          "title": "Statistisches Bundesamt - Bruttoinlandsprodukt im 2. Quartal 2023"
+        },
+        {
+          "url": "https://www.destatis.de/DE/Presse/Pressekonferenzen/2023/bip2022/statement-bip.pdf?__blob=publicationFile",
+          "title": "Statistisches Bundesamt - Bruttoinlandsprodukt 2022"
+        },
+        {
+          "url": "https://www.destatis.de/DE/Presse/Pressekonferenzen/2025/bip2024/statement-bip.pdf?__blob=publicationFile",
+          "title": "Statistisches Bundesamt - Bruttoinlandsprodukt 2024 (Erste Berechnungen)"
+        }
+      ],
+      "timestamp": "2026-03-12T11:41:42.661875",
+      "episode_key": "maischberger-2025-09-19"
+    },
+    {
+      "id": 89,
+      "sprecher": "Gitta Connemann",
+      "behauptung": "Während der Amtszeit von Robert Habeck als Wirtschaftsminister gab es die höchsten Insolvenzen.",
+      "consistency": "niedrig",
+      "begruendung": "Die Behauptung, dass es während der Amtszeit von Robert Habeck die höchsten Insolvenzzahlen gab, wird von den Daten des Statistischen Bundesamtes (Destatis) nicht gestützt. Zwar ist die Zahl der Unternehmensinsolvenzen in diesem Zeitraum deutlich angestiegen, sie liegt jedoch weit unter den historischen Höchstwerten.\n\nRobert Habeck trat sein Amt im Dezember 2021 an. Die Entwicklung der Unternehmensinsolvenzen stellt sich seitdem wie folgt dar:\n- **Anstieg seit 2022:** Nach einem historischen Tiefstand während der Corona-Pandemie, der auch auf die teilweise Aussetzung der Insolvenzantragspflicht zurückzuführen war, begannen die Zahlen ab 2022 wieder zu steigen.\n- **Zahlen für 2024/2025:** Für den Zeitraum von Januar bis November 2025 meldete das Statistische Bundesamt 22.027 Unternehmensinsolvenzen. Für das Gesamtjahr 2024 lag die Zahl bei rund 22.400. Dies stellt den höchsten Stand seit etwa zehn Jahren dar.\n\nIm historischen Vergleich zeigt sich jedoch ein anderes Bild:\n- **Historische Höchststände:** Die mit Abstand höchsten Zahlen an Unternehmensinsolvenzen wurden in den Jahren nach der Dotcom-Blase und der Finanzkrise verzeichnet. Im Jahr 2003 erreichte die Zahl der Unternehmensinsolvenzen mit über 39.000 ihren Höhepunkt. Auch im Jahr 2009 lag sie mit über 32.000 deutlich höher als die aktuellen Werte.\n\nZusammenfassend lässt sich sagen, dass die Zahl der Unternehmensinsolvenzen während der Amtszeit von Robert Habeck von einem sehr niedrigen Niveau aus stark angestiegen ist. Die Behauptung, es habe sich um die \"höchsten Insolvenzen\" gehandelt, ist im langjährigen Vergleich jedoch nicht zutreffend. Die aktuellen Zahlen liegen signifikant unter den Rekordwerten der 2000er Jahre.",
+      "quellen": [
+        {
+          "url": "https://www.destatis.de/DE/Themen/Branchen-Unternehmen/Unternehmen/Gewerbemeldungen-Insolvenzen/Tabellen/lrins01.html",
+          "title": "Statistisches Bundesamt - Insolvenzen nach Jahren (Langzeitreihe)"
+        },
+        {
+          "url": "https://www.destatis.de/DE/Presse/Pressemitteilungen/2026/02/PD26_050_52411.html",
+          "title": "Statistisches Bundesamt - Pressemitteilung zu Insolvenzen im November 2025"
+        },
+        {
+          "url": "https://www.zeit.de/wirtschaft/unternehmen/2025-01/unternehmen-insolvenz-statistisches-bundesamt-2024",
+          "title": "Zeit Online - \"Statistisches Bundesamt: Insolvenzen steigen 2024 deutlich\""
+        }
+      ],
+      "timestamp": "2026-03-12T11:41:42.662818",
+      "episode_key": "maischberger-2025-09-19"
+    },
+    {
+      "id": 90,
+      "sprecher": "Katharina Dröge",
+      "behauptung": "Robert Habeck hat als Wirtschaftsminister die Gaspreise gesenkt.",
+      "consistency": "hoch",
+      "begruendung": "Die Behauptung, Robert Habeck habe als Wirtschaftsminister die Gaspreise gesenkt, ist eine Vereinfachung eines komplexen Geschehens, aber sie ist in ihrer Kernaussage durch die Entwicklungen und politischen Maßnahmen zwischen 2022 und 2025 gestützt. Die Gaspreise für Endverbraucher und im Großhandel sind nach einem historischen Höchststand im Jahr 2022 tatsächlich deutlich gesunken. Das Handeln des von Habeck geführten Wirtschaftsministeriums trug zu dieser Entwicklung auf zwei Ebenen bei.\n\n**1. Direkte Preissenkung für Verbraucher durch die Gaspreisbremse:**\nAls Reaktion auf die explodierenden Energiekosten infolge des russischen Angriffs auf die Ukraine und des darauffolgenden Lieferstopps führte die Bundesregierung die sogenannte Gaspreisbremse ein. Diese maßgeblich vom Bundeswirtschaftsministerium gestaltete Maßnahme deckelte ab März 2023 den Gaspreis für 80 % des prognostizierten Jahresverbrauchs von privaten Haushalten und kleinen Unternehmen bei 12 Cent pro Kilowattstunde. Für die Verbraucher war dies eine direkte und spürbare Senkung der Kosten im Vergleich zu den teilweise extrem hohen Marktpreisen.\n\n**2. Stabilisierung der Märkte durch Sicherung der Versorgung:**\nDer Hauptgrund für den extremen Preisanstieg 2022 war die Angst vor einer Gasmangellage nach dem Wegfall der russischen Lieferungen. Eine zentrale Aufgabe von Wirtschaftsminister Habeck war die Sicherung der Energieversorgung. Unter hohem Tempo wurden der Bau von schwimmenden LNG-Terminals an den deutschen Küsten vorangetrieben und neue Lieferverträge geschlossen. Diese Maßnahmen erhöhten die Versorgungssicherheit Deutschlands erheblich und trugen entscheidend dazu bei, die Panik an den Märkten zu beenden. Eine stabilisierte und diversifizierte Versorgung ist eine Grundvoraussetzung für fallende Großhandelspreise. Nach dem Höhepunkt im Sommer 2022 fielen die Preise am europäischen Handelsplatz TTF in den Jahren 2023 und 2024 deutlich.\n\n**Weitere wichtige Einflussfaktoren:**\nEs ist jedoch zu beachten, dass die Politik der Bundesregierung nicht der alleinige Grund für den Preisrückgang war. Weitere wesentliche Faktoren trugen dazu bei:\n*   **Geringere Nachfrage:** Einsparungen bei privaten Haushalten und eine konjunkturbedingt gedrosselte Produktion in der Industrie senkten den Gasverbrauch.\n*   **Milde Witterung:** Insbesondere der milde Winter 2022/2023 sorgte für einen geringeren Heizbedarf und entlastete die Gasspeicher.\n*   **Gefüllte Gasspeicher:** Die erfolgreiche Füllung der Speicher vor den Wintern, ebenfalls ein politisches Ziel, schuf zusätzliche Sicherheit und dämpfte die Preiserwartungen.\n\nZusammenfassend lässt sich sagen, dass die Gaspreise während der Amtszeit von Robert Habeck nach einem historischen Peak signifikant gesunken sind. Seine Politik hat durch direkte Subventionen (Gaspreisbremse) und indirekt durch die erfolgreiche Stabilisierung der Gasversorgung maßgeblich zu diesem Ergebnis beigetragen. Auch wenn andere marktwirtschaftliche und klimatische Faktoren den Preisrückgang begünstigten, ist die Behauptung, Habeck habe die Preise gesenkt, mit den verfügbaren Daten in hohem Maße konsistent.",
+      "quellen": [
+        {
+          "url": "https://www.bundeswirtschaftsministerium.de/Redaktion/DE/Schlaglichter-der-Wirtschaftspolitik/2023/01/03-im-fokus.html",
+          "title": "Bundeswirtschaftsministerium: Gas- und Strompreisbremse entlasten Haushalte und Unternehmen"
+        },
+        {
+          "url": "https://www.diw.de/de/diw_01.c.893582.de/publikationen/diw_aktuell/2024_0092/gasversorgung_in_deutschland_stabil__ausbau_von_lng-infrastruktur_nicht_notwendig.html",
+          "title": "DIW Berlin: Gasversorgung in Deutschland stabil: Ausbau von LNG-Infrastruktur nicht notwendig"
+        },
+        {
+          "url": "https://www.ieg.fraunhofer.de/de/presse/pressemitteilungen/2022/Gutachten-Gasversorgungssicherheit-ESYS.html",
+          "title": "Fraunhofer IEG: Gutachten »Europäische Gasversorgungssicherheit«"
+        }
+      ],
+      "timestamp": "2026-03-12T11:41:42.663272",
+      "episode_key": "maischberger-2025-09-19"
+    }
+  ]
+}
