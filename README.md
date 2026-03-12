@@ -184,10 +184,12 @@ frontend/public/data/
 ```bash
 uv run python export_episode.py <episode-key> --json
 # → writes frontend/public/data/<episode-key>.json
-# → rewrites frontend/public/data/shows.json (full episode index)
+# → rewrites frontend/public/data/shows.json (published episodes only)
 ```
 
-The `shows.json` index is always rewritten from `EPISODES` in `config.py`. It contains **all** episodes — the frontend filters by `publish: true` on the production domain.
+Running `export_episode.py --json` is what makes fact-checks permanent: it moves them from local SQLite into static JSON files that get committed to git and deployed to Cloudflare. The per-episode file (e.g. `maischberger-2025-09-19.json`) holds the actual fact-checks; `shows.json` is just the index that makes the episode appear in the list on the production domain.
+
+`shows.json` only includes episodes with `publish=True` — unpublished episodes are never written to it and won't appear on the production domain.
 
 ### The `publish` Flag
 
@@ -196,12 +198,10 @@ The `publish` flag in `config.py` controls which episodes are visible on the pub
 ```python
 Episode(
     key="maischberger-2026-03-01",
-    publish=True,   # visible on live-faktencheck.de
-    # publish=False  (default) → dev only
+    publish=True,   # included in shows.json → visible on live-faktencheck.de
+    # publish=False  (default) → dev only, never written to shows.json
 )
 ```
-
-The static JSON for unpublished episodes can still exist in `frontend/public/data/` — the frontend simply won't list or link to them on the production domain.
 
 ## Project Structure
 
