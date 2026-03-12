@@ -66,9 +66,9 @@ if [ "$PERMANENT" = true ]; then
     git push
     print_success "Pushed — Cloudflare build started"
 
-    # Step 3: Wait for Cloudflare build (~60s) while tunnel still serves live data
-    print_info "Waiting 60s for Cloudflare build to complete..."
-    sleep 60
+    # Step 3: Wait for Cloudflare build (~5min) while tunnel still serves live data
+    print_info "Waiting 5min for Cloudflare build to complete..."
+    sleep 300
     print_success "Cloudflare build should be live now"
 fi
 
