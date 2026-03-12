@@ -87,22 +87,7 @@ def export_as_json(episode_key: str, fact_checks: list[dict]) -> None:
     print(f"✓ {len(fact_checks)} Fact-Checks exportiert → {out_path}")
     _print_speaker_counts(group_by_speaker(fact_checks, speakers))
 
-    # Update shows.json with published episodes only
-    shows = [
-        {
-            "key": ep.key,
-            "name": get_show_name(ep.show),
-            "date": ep.date,
-            "episode_name": ep.episode_name,
-            "type": ep.type,
-        }
-        for ep in EPISODES.values()
-        if ep.publish
-    ]
-    shows.sort(key=lambda x: x["key"], reverse=True)
-    shows_path = data_dir / "shows.json"
-    shows_path.write_text(json.dumps({"shows": shows}, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"✓ shows.json aktualisiert → {shows_path}")
+    update_shows_json()
 
 
 def group_by_speaker(fact_checks: list[dict], order: list[str] | None = None) -> dict[str, list]:
@@ -175,9 +160,29 @@ def render_markdown(episode_key: str, grouped: dict[str, list]) -> str:
     return "\n".join(lines)
 
 
+def update_shows_json() -> None:
+    data_dir = Path(__file__).parent / "frontend" / "public" / "data"
+    data_dir.mkdir(parents=True, exist_ok=True)
+    shows = [
+        {
+            "key": ep.key,
+            "name": get_show_name(ep.show),
+            "date": ep.date,
+            "episode_name": ep.episode_name,
+            "type": ep.type,
+        }
+        for ep in EPISODES.values()
+        if ep.publish
+    ]
+    shows.sort(key=lambda x: x["key"], reverse=True)
+    shows_path = data_dir / "shows.json"
+    shows_path.write_text(json.dumps({"shows": shows}, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(f"✓ shows.json aktualisiert ({len(shows)} Episoden) → {shows_path}")
+
+
 def main():
     parser = argparse.ArgumentParser(description="Exportiere Fact-Checks einer Episode als Markdown oder JSON.")
-    parser.add_argument("episode_key", help="Episode-Key, z.B. 'atalay-2026-02-09'")
+    parser.add_argument("episode_key", nargs="?", help="Episode-Key, z.B. 'atalay-2026-02-09'")
     parser.add_argument("--output", "-o", help="Ausgabedatei (Standard: <episode_key>.md)")
     parser.add_argument(
         "--order",
@@ -188,7 +193,19 @@ def main():
         action="store_true",
         help="Als JSON exportieren nach frontend/public/data/<episode_key>.json (für Prod-Deployment)",
     )
+    parser.add_argument(
+        "--update-shows",
+        action="store_true",
+        help="Nur shows.json aus config.py neu generieren (kein episode_key nötig)",
+    )
     args = parser.parse_args()
+
+    if args.update_shows:
+        update_shows_json()
+        return
+
+    if not args.episode_key:
+        parser.error("episode_key ist erforderlich (außer bei --update-shows)")
 
     fact_checks = load_fact_checks(args.episode_key)
 

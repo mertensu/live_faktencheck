@@ -1,3 +1,11 @@
 {
-  "shows": []
+  "shows": [
+    {
+      "key": "maischberger-2025-09-19",
+      "name": "Maischberger",
+      "date": "19. September 2025",
+      "episode_name": "19. September 2025 - Gitta Connemann & Katharina Dröge",
+      "type": "show"
+    }
+  ]
 }
