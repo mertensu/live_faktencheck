@@ -1,6 +1,9 @@
+import { useState } from 'react'
 import { WorkflowDiagram } from '../components/WorkflowDiagram'
 
 export function AboutPage() {
+  const [diagramOpen, setDiagramOpen] = useState(false)
+
   return (
     <div className="about-page">
       <div className="about-content">
@@ -19,15 +22,29 @@ export function AboutPage() {
         </p>
         <p><small>*mit einer Verzögerung von wenigen (&lt; 5) Minuten</small></p>
         <h2>Wie es funktioniert</h2>
-        <WorkflowDiagram />
+        <div className="diagram-desktop">
+          <WorkflowDiagram />
+        </div>
+        <button className="diagram-show-btn" onClick={() => setDiagramOpen(true)}>
+          Ablauf als Diagramm anzeigen ↗
+        </button>
+
+        {diagramOpen && (
+          <div className="diagram-modal-overlay" onClick={() => setDiagramOpen(false)}>
+            <button className="diagram-modal-close" onClick={() => setDiagramOpen(false)}>✕ Schließen</button>
+            <div className="diagram-modal-inner" onClick={e => e.stopPropagation()}>
+              <WorkflowDiagram />
+            </div>
+          </div>
+        )}
         <p>
           Die Sendungen werden in zeitlich begrenzte Blöcke aufgeteilt und dann live transkribiert. Diese Transkripte werden an ein großes Sprachmodell (LLM) weitergereicht,
-          welches überprüfbare Behauptungen extrahiert und diese automatisch den jeweiligen Sprechern zuweist. Diese Aussagen werden daraufhin auf Relevanz und Korrektheit geprüft und schließlich
-          einem weiteren Agenten (LLM) zur Bewertung übergeben. Es folgt ein iterativer Prozess, bei dem im Web nach relevanten Statistiken und Daten gesucht wird —
+          welches überprüfbare Behauptungen extrahiert und diese automatisch den jeweiligen Sprechern zuweist. Diese Aussagen werden daraufhin von einem Moderator ("Human-in-the-loop") auf Relevanz und Korrektheit geprüft und schließlich
+          einem weiteren Agenten (LLM) zur Bewertung freigegeben. Es folgt ein iterativer Prozess, bei dem im Web nach relevanten Statistiken und Daten gesucht wird —
           beschränkt auf vertrauenswürdige Quellen wie offizielle Regierungsseiten oder anerkannte Institute —,
           diese Informationen dann mit Blick auf die Aussagen eingeordnet werden und, sofern keine erschöpfende
           Schlussfolgerung möglich ist, ein weiterer Recherche-Block folgt. Das Modell nimmt eine Bewertung vor (wie sehr wird die Aussage durch Daten gestützt),
-          gibt eine ausführliche Erklärung ab sowie die der Entscheidung zugrunde liegenden Quellen an. Für Details sei auf das <a href="https://github.com/mertensu/live_faktencheck">Github-Repository</a> verwiesen.
+          gibt eine ausführliche Erklärung ab sowie die der Entscheidung zugrunde liegenden Quellen an. Für Details sei auf das <a href="https://github.com/mertensu/live_faktencheck">Github-Projekt</a> verwiesen.
         </p>
         <h2>Hinweis</h2>
         <p>

@@ -317,6 +317,84 @@
   text-decoration: underline;
 }
 
+/* Diagram toggle: desktop shows inline, mobile shows button */
+.diagram-desktop {
+  display: block;
+}
+
+.diagram-show-btn {
+  display: none;
+  margin: 1rem 0;
+  padding: 0.6rem 1.25rem;
+  background: white;
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.diagram-show-btn:hover {
+  border-color: var(--accent-blue);
+  color: var(--accent-blue);
+}
+
+@media (max-width: 640px) {
+  .diagram-desktop {
+    display: none;
+  }
+
+  .diagram-show-btn {
+    display: block;
+  }
+}
+
+/* Diagram fullscreen modal */
+.diagram-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: white;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.diagram-modal-close {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  background: var(--bg-main);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-sm);
+  padding: 0.4rem 0.75rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  z-index: 1001;
+}
+
+.diagram-modal-inner {
+  padding: 2rem;
+  width: 90%;
+  max-width: 900px;
+}
+
+/* Portrait mobile: rotate 90° so diagram appears in landscape */
+@media (orientation: portrait) and (max-width: 640px) {
+  .diagram-modal-inner {
+    position: fixed;
+    width: 100vh;
+    height: 100vw;
+    top: 50%;
+    left: 50%;
+    padding: 3rem 1.5rem 1.5rem;
+    transform: translate(-50%, -50%) rotate(90deg);
+    overflow: auto;
+  }
+}
+
 /* Workflow Diagram */
 .workflow-diagram {
   margin: 2.5rem 0;

@@ -9,8 +9,7 @@ export function Footer() {
           die Richtigkeit, Vollständigkeit oder Aktualität der Informationen übernommen.
         </p>
         <p className="footer-meta">
-          Diese Seite dient ausschließlich zu Informationszwecken. Bei Fragen oder Anmerkungen kontaktieren
-          Sie bitte den Betreiber dieser Seite.
+          Diese Seite dient ausschließlich zu Informationszwecken. Bei Fragen oder Anmerkungen wenden Sie sich bitte an info@live-faktencheck.de.
         </p>
       </div>
     </footer>
