@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react'
-import { BACKEND_URL, safeJsonParse } from '../services/api'
+import { BACKEND_URL, isStaticMode, safeJsonParse } from '../services/api'
 
 export function TrustedDomainsPage() {
   const [categories, setCategories] = useState(null)
   const [error, setError] = useState(null)
 
   useEffect(() => {
-    fetch(`${BACKEND_URL}/api/trusted-domains`)
+    const url = isStaticMode
+      ? '/data/trusted-domains.json'
+      : `${BACKEND_URL}/api/trusted-domains`
+    fetch(url)
       .then(r => safeJsonParse(r, 'trusted-domains'))
       .then(setCategories)
       .catch(e => setError(e.message))
