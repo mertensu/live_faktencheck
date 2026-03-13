@@ -56,6 +56,7 @@ TRUSTED_DOMAINS_BY_CATEGORY = {
     ],
     "EU-Quellen": [
         "ec.europa.eu",
+        "ec.europa.eu/eurostat"
     ],
     "Qualitätsjournalismus": [
         "faz.net",
