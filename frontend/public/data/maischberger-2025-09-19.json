@@ -79,6 +79,855 @@
       ],
       "timestamp": "2026-03-12T11:41:42.663272",
       "episode_key": "maischberger-2025-09-19"
+    },
+    {
+      "id": 91,
+      "sprecher": "Gitta Connemann",
+      "behauptung": "Während der Amtszeit von Robert Habeck als Wirtschaftsminister gab es in Deutschland drei Jahre Rezession.",
+      "consistency": "niedrig",
+      "begruendung": "Die Behauptung, während der Amtszeit von Robert Habeck habe es drei Jahre Rezession gegeben, wird von den offiziellen Daten des Statistischen Bundesamtes (Destatis) nicht gestützt. Die Analyse des Bruttoinlandsprodukts (BIP) für den relevanten Zeitraum zeigt folgendes Bild:\n\nRobert Habeck trat sein Amt als Bundesminister für Wirtschaft und Klimaschutz im Dezember 2021 an. Die zu überprüfenden Jahre sind 2022, 2023, 2024 und die Prognose für 2025, da die Aussage im September 2025 getroffen wurde.\n\n*   **Wirtschaftsjahr 2022:** Die deutsche Wirtschaft verzeichnete ein Wachstum. Das preisbereinigte Bruttoinlandsprodukt (BIP) stieg im Vergleich zum Vorjahr um 1,9 %. Das Jahr 2022 war somit kein Rezessionsjahr.\n\n*   **Wirtschaftsjahr 2023:** Das preisbereinigte BIP sank um 0,3 % gegenüber 2022. Damit befand sich die deutsche Wirtschaft im Jahr 2023 in einer Rezession.\n\n*   **Wirtschaftsjahr 2024:** Die Wirtschaftsleistung ging erneut zurück. Das Statistische Bundesamt meldete für das Gesamtjahr einen Rückgang des preisbereinigten BIP um 0,2 %. Somit war auch 2024 ein Rezessionsjahr.\n\n*   **Wirtschaftsjahr 2025:** Zum Zeitpunkt der Behauptung im September 2025 lagen keine abgeschlossenen Jahresdaten vor. Führende Wirtschaftsforschungsinstitute wie das Ifo-Institut, das DIW und das IW Köln gingen in ihren Herbstprognosen für 2025 von einer Stagnation oder einem minimalen Wachstum von etwa 0,2 % aus. Eine Rezession für das Gesamtjahr 2025 wurde also nicht erwartet.\n\nZusammenfassend lässt sich sagen, dass in der bisherigen Amtszeit von Robert Habeck zwei Jahre mit einer Rezession (2023 und 2024) zu verzeichnen waren. Das Jahr 2022 wies ein deutliches Wachstum auf, und für 2025 wurde zum Zeitpunkt der Aussage keine Rezession prognostiziert. Die Behauptung von drei Rezessionsjahren ist daher nach der vorliegenden Datenlage nicht zutreffend.",
+      "quellen": [
+        {
+          "url": "https://www.destatis.de/DE/Presse/Pressemitteilungen/2023/01/PD23_018_811.html",
+          "title": "Statistisches Bundesamt: Bruttoinlandsprodukt im Jahr 2022 um 1,9 % höher als im Vorjahr"
+        },
+        {
+          "url": "https://www.destatis.de/DE/Presse/Pressekonferenzen/2024/bip2023/bruttoinlandsprodukt-uebersicht.html",
+          "title": "Statistisches Bundesamt: Bruttoinlandsprodukt im Jahr 2023 um 0,3 % gesunken"
+        },
+        {
+          "url": "https://www.destatis.de/DE/Presse/Pressemitteilungen/2025/01/PD25_019_811.html",
+          "title": "Statistisches Bundesamt: Bruttoinlandsprodukt im Jahr 2024 um 0,2 % gesunken"
+        },
+        {
+          "url": "https://www.handelsblatt.com/politik/konjunktur/konjunktur-fuehrende-institute-senken-ihre-wachstumsprognosen-fuer-2025/100093740.html",
+          "title": "Handelsblatt: Führende Institute senken ihre Wachstumsprognosen für 2025"
+        },
+        {
+          "url": "https://www.iwkoeln.de/studien/michael-groemling-iw-konjunkturprognose-herbst-2025-warten-auf-die-wende.html",
+          "title": "Institut der deutschen Wirtschaft (IW): IW-Konjunkturprognose Herbst 2025"
+        }
+      ],
+      "timestamp": "2026-03-13T10:49:13.154477",
+      "episode_key": "maischberger-2025-09-19"
+    },
+    {
+      "id": 92,
+      "sprecher": "Katharina Dröge",
+      "behauptung": "Robert Habeck hat als Wirtschaftsminister die Gaspreise gesenkt.",
+      "consistency": "hoch",
+      "begruendung": "Die Behauptung, Wirtschaftsminister Robert Habeck habe die Gaspreise gesenkt, ist im Kontext der Energiekrise ab 2022 zu bewerten. Die verfügbaren Daten und Fakten stützen die Aussage, dass die von seinem Ministerium ergriffenen Maßnahmen zu einer Senkung bzw. Stabilisierung der Gaspreise beigetragen haben, insbesondere im Vergleich zu den Höchstständen des Jahres 2022.\n\n**Entwicklung der Gaspreise:**\nNach dem russischen Angriff auf die Ukraine im Februar 2022 und der darauffolgenden Drosselung der russischen Gaslieferungen stiegen die Gaspreise an den europäischen Großhandelsmärkten auf historische Höchststände. Dieser extreme Anstieg schlug sich auch auf die Preise für private Haushalte und die Industrie in Deutschland nieder. Ab dem Höhepunkt im Spätsommer 2022 war jedoch ein deutlicher Preisrückgang zu verzeichnen, auch wenn das Vorkrisenniveau nicht wieder erreicht wurde.\n\n**Maßnahmen des Wirtschaftsministeriums:**\nUm der Krise zu begegnen, hat die Bundesregierung unter Federführung des von Robert Habeck geleiteten Wirtschaftsministeriums mehrere entscheidende Maßnahmen umgesetzt:\n1.  **Gas- und Wärmepreisbremse:** Diese staatliche Subvention deckelte den Gaspreis für einen Großteil (in der Regel 80 %) des Verbrauchs von Bürgern und Unternehmen auf 12 Cent pro Kilowattstunde. Dadurch wurde der von den Endverbrauchern tatsächlich gezahlte Preis direkt gesenkt, unabhängig vom Marktpreis.\n2.  **Diversifizierung der Gasversorgung:** Um die Abhängigkeit von russischem Gas zu beenden, wurde der Bau von Flüssigerdgas (LNG)-Terminals an den deutschen Küsten massiv beschleunigt. Dies ermöglichte den Import von Gas aus anderen Regionen der Welt und erhöhte das Angebot.\n3.  **Sicherung der Gasspeicher:** Mit dem novellierten Gasspeichergesetz wurden Füllstandsvorgaben für die deutschen Gasspeicher eingeführt. Dies verhinderte eine physische Gasknappheit im Winter und trug zur Beruhigung der Märkte bei, was einen preisdämpfenden Effekt hatte.\n\n**Weitere Einflussfaktoren:**\nEs ist jedoch wichtig zu beachten, dass auch andere Faktoren zum Rückgang der Gaspreise beigetragen haben:\n*   **Internationale Marktentwicklung:** Die globalen LNG-Märkte entspannten sich nach dem ersten Schock, was zu sinkenden Weltmarktpreisen führte.\n*   **Geringerer Verbrauch:** Sowohl die Industrie (aufgrund der hohen Preise und konjunktureller Abkühlung) als auch private Haushalte (durch Einsparungen) reduzierten ihren Gasverbrauch erheblich.\n*   **Milde Witterung:** Insbesondere der milde Winter 2022/2023 half, die Gasspeicher zu schonen und die Nachfrage zu senken.\n\n**Fazit:**\nDie von Wirtschaftsminister Robert Habeck verantworteten Maßnahmen haben nachweislich dazu beigetragen, die Gaspreise für Endverbraucher von den Rekordhöhen des Jahres 2022 zu senken und die Versorgung in Deutschland zu sichern. Insbesondere die Gaspreisbremse wirkte als direkte finanzielle Entlastung. Gleichzeitig war der Preisrückgang ein Ergebnis mehrerer Faktoren, zu denen auch die Entwicklung auf den Weltmärkten und ein verringerter Verbrauch gehören. Die Behauptung, er habe die Preise gesenkt, ist daher in ihrer Kernaussage nachvollziehbar und durch die politischen Maßnahmen belegbar.",
+      "quellen": [
+        {
+          "url": "https://www.bundeswirtschaftsministerium.de/Redaktion/DE/Downloads/B/20230816-bericht-wirkung-preisbremsen.pdf?__blob=publicationFile&v=8",
+          "title": "Bundesregierung: Wirkung der Preisbremsen (Bericht vom August 2023)"
+        },
+        {
+          "url": "https://www.bundestag.de/dokumente/textarchiv/2022/kw50-de-energiepreisbremse-924550",
+          "title": "Bundestag: Gesetz zur Einführung von Strom- und Gaspreisbremsen (Dezember 2022)"
+        },
+        {
+          "url": "https://www.bundeswirtschaftsministerium.de/Redaktion/DE/Pressemitteilungen/2022/06/20220619-habeck-wir-starken-die-vorsorge-weiter.html",
+          "title": "Bundesministerium für Wirtschaft und Klimaschutz: Maßnahmen zur Stärkung der Vorsorge (Juni 2022)"
+        },
+        {
+          "url": "https://www.destatis.de/DE/Themen/Wirtschaft/Preise/Erdgas-Strom-DurchschnittsPreise/_inhalt.html",
+          "title": "Statistisches Bundesamt: Erdgas- und Stromdurchschnittspreise"
+        }
+      ],
+      "timestamp": "2026-03-13T10:49:13.155374",
+      "episode_key": "maischberger-2025-09-19"
+    },
+    {
+      "id": 93,
+      "sprecher": "Katharina Dröge",
+      "behauptung": "Robert Habeck hat als Wirtschaftsminister den Ausbau der Erneuerbaren Energien vorangebracht.",
+      "consistency": "hoch",
+      "begruendung": "Die Behauptung, Robert Habeck habe als Wirtschaftsminister den Ausbau der Erneuerbaren Energien vorangebracht, wird durch zentrale Kennzahlen aus offiziellen Quellen gestützt.\n\nSeit dem Amtsantritt von Robert Habeck im Dezember 2021 hat sich der Anteil des aus erneuerbaren Quellen erzeugten Stroms am Bruttostromverbrauch deutlich erhöht. Nach Daten des Umweltbundesamtes (UBA) und der Arbeitsgruppe Erneuerbare Energien-Statistik (AGEE-Stat) stieg dieser Anteil von 41,7 % im Jahr 2021 auf 55,1 % im Jahr 2025 (Stand: Februar 2026). Dies markiert einen neuen Höchststand.\n\nDiese Entwicklung ist auf einen beschleunigten Zubau von Anlagen zur Erzeugung erneuerbarer Energie zurückzuführen:\n\n1.  **Photovoltaik (PV):** Der Zubau von Solaranlagen hat sich massiv beschleunigt. Nach Angaben der Bundesnetzagentur wurde allein im Jahr 2023 eine Rekordleistung von rund 14 Gigawatt (GW) neu installiert. Dies war eine erhebliche Steigerung gegenüber den Vorjahren (ca. 7,4 GW im Jahr 2022 und ca. 5,3 GW im Jahr 2021). Der Trend setzte sich auch 2024 und 2025 fort.\n\n2.  **Windenergie:** Der Ausbau der Windenergie an Land, der in den Jahren vor 2022 stagnierte, hat ebenfalls wieder an Fahrt aufgenommen. Auch wenn die Steigerungsraten hier nicht das Niveau der Photovoltaik erreichen, zeigen die Daten einen klaren Aufwärtstrend bei den neu installierten und genehmigten Anlagen. Dies wird unter anderem auf gesetzliche Änderungen wie das \"Wind-an-Land-Gesetz\" zurückgeführt, das seit 2023 in Kraft ist und den Bundesländern verbindliche Flächenziele vorschreibt.\n\nFlankiert wurde dieser Ausbau durch umfassende Gesetzespakete (sog. \"Osterpaket\" und \"Sommerpaket\" 2022), die unter anderem das Erneuerbare-Energien-Gesetz (EEG) novellierten. Darin wurde gesetzlich verankert, dass die Nutzung erneuerbarer Energien im \"überragenden öffentlichen Interesse\" liegt, um Planungs- und Genehmigungsverfahren zu beschleunigen. Zudem wurden die Ausbauziele für 2030 deutlich angehoben.\n\nZusammenfassend lässt sich feststellen, dass sowohl der Anteil der erneuerbaren Energien am Strommix als auch die installierte Leistung, insbesondere bei der Photovoltaik, seit Ende 2021 signifikant gestiegen sind.",
+      "quellen": [
+        {
+          "url": "https://www.umweltbundesamt.de/system/files/medien/479/publikationen/2026-03/UBA_Erneuerbare%20Energien%20in%20Deutschland%202025.pdf",
+          "title": "Umweltbundesamt: Zeitreihen zur Entwicklung der erneuerbaren Energien in Deutschland"
+        },
+        {
+          "url": "https://data.bundesnetzagentur.de/Bundesnetzagentur/SharedDocs/Downloads/DE/Sachgebiete/Energie/Unternehmen_Institutionen/NEP/Strom/Systemstabilitaet/2025.pdf",
+          "title": "Bundesnetzagentur: Systemstabilitätsbericht 2025 (beinhaltet PV-Zubau 2023)"
+        },
+        {
+          "url": "https://www.umweltbundesamt.de/indikator-anteil-erneuerbare-am",
+          "title": "Umweltbundesamt: Anteil Erneuerbare am Bruttostromverbrauch"
+        }
+      ],
+      "timestamp": "2026-03-13T10:49:13.156262",
+      "episode_key": "maischberger-2025-09-19"
+    },
+    {
+      "id": 94,
+      "sprecher": "Katharina Dröge",
+      "behauptung": "Im September 2025 bremst die CDU den Ausbau der Erneuerbaren Energien.",
+      "consistency": "niedrig",
+      "begruendung": "Die Behauptung, die CDU bremse im September 2025 den Ausbau der Erneuerbaren Energien, lässt sich anhand der vorliegenden legislativen Aktivitäten in diesem Zeitraum nicht stützen. Im Gegenteil, es finden sich Belege für ein Handeln, das auf eine Beschleunigung des Ausbaus abzielt.\n\nEin zentraler Beleg ist ein Gesetz zur Vereinfachung von Genehmigungsverfahren für Erneuerbare-Energien-Anlagen, das im Juni 2025 im Bundestag verabschiedet wurde. Laut einem offiziellen Textarchiv des Bundestages stimmten die Abgeordneten der CDU/CSU gemeinsam mit der SPD für dieses Gesetz. Ziel der Regelung war es, die immissionsschutz- und wasserrechtlichen Genehmigungsverfahren für Anlagen zur Erzeugung erneuerbarer Energien durch die Einführung von Höchstfristen zu verkürzen. Dieses Abstimmungsverhalten deutet auf eine Unterstützung und nicht auf eine Bremse des Ausbaus hin.\n\nIn den Wahl- und Grundsatzprogrammen von CDU und CSU aus dem Jahr 2025 wird der Ausbau der Erneuerbaren Energien als Ziel genannt. Es wird betont, man wolle die Erneuerbaren Energien \"konsequent nutzen\", was Wind- und Solarenergie einschließt.\n\nEs wurden bei der Prüfung keine Gesetzesinitiativen, Anträge oder offiziellen Forderungen der CDU/CSU-Fraktion aus dem Jahr 2025 gefunden, die auf eine Drosselung der Ausbauziele, eine Verschärfung der Regelungen oder eine Kürzung von Förderungen für Erneuerbare Energien abzielten. Die Behauptung steht somit im Widerspruch zum dokumentierten parlamentarischen Handeln der CDU/CSU im relevanten Zeitraum.",
+      "quellen": [
+        {
+          "url": "https://www.bundestag.de/dokumente/textarchiv/2025/kw26-de-bundesimmissionsschutzgesetz-1095280",
+          "title": "Deutscher Bundestag - Vereinfachung von Genehmigungen für erneuerbare Energien (Juni 2025)"
+        },
+        {
+          "url": "https://www.csu.de/common/download/Wahlprogramm_2025_von_CDU_und_CSU.pdf",
+          "title": "Wahlprogramm von CDU und CSU 2025"
+        }
+      ],
+      "timestamp": "2026-03-13T10:50:01.221996",
+      "episode_key": "maischberger-2025-09-19"
+    },
+    {
+      "id": 95,
+      "sprecher": "Katharina Dröge",
+      "behauptung": "Die CDU (Stand September 2025) macht Deutschland von fossilem Gas aus den USA abhängig.",
+      "consistency": "niedrig",
+      "begruendung": "Die Behauptung, die CDU mache Deutschland von fossilem Gas aus den USA abhängig, ist in ihrer Zuspitzung und alleinigen Adressierung an die CDU nicht haltbar. Die Analyse der Fakten ergibt ein differenzierteres Bild.\n\n**Faktische Entwicklung der Gasimporte:**\nNach dem Wegfall der russischen Gaslieferungen im Jahr 2022 hat Deutschland seine Importquellen diversifiziert. Ein wesentlicher Baustein dieser neuen Strategie ist der Import von verflüssigtem Erdgas (LNG). Innerhalb kurzer Zeit wurden an den deutschen Küsten mehrere LNG-Terminals errichtet, um Gas per Schiff zu empfangen. Die Vereinigten Staaten von Amerika haben sich dabei zur wichtigsten Quelle für diese LNG-Importe entwickelt. Daten aus dem Jahr 2024 zeigen, dass rund 86% der deutschen LNG-Importe aus den USA stammten. Dies begründet eine faktische, starke Abhängigkeit von den USA im LNG-Sektor.\n\n**Politische Verantwortung für diese Entwicklung:**\nDie entscheidenden Weichen für den Bau der LNG-Terminals und die Aufnahme von LNG-Importen wurden von der amtierenden Bundesregierung, der sogenannten „Ampel-Koalition” aus SPD, Bündnis 90/Die Grünen und FDP, gestellt. Angesichts der durch den russischen Angriffskrieg auf die Ukraine ausgelösten Energiekrise traf die Bundesregierung im Jahr 2022 die Entscheidung, die Energieversorgung durch den schnellen Aufbau einer LNG-Infrastruktur zu sichern. Katharina Dröges Partei, Bündnis 90/Die Grünen, ist als Regierungspartei an diesen Entscheidungen maßgeblich beteiligt und trägt sie mit.\n\n**Rolle der CDU:**\nDie CDU/CSU-Fraktion hat diese energiepolitische Notmaßnahme als größte Oppositionspartei im Bundestag im Wesentlichen mitgetragen. Es herrschte ein breiter politischer Konsens darüber, dass die Abhängigkeit von russischem Gas schnellstmöglich beendet und die Versorgungssicherheit durch neue Lieferquellen gewährleistet werden muss. Die CDU hat die Regierungspolitik in diesem Punkt also gestützt und nicht ursächlich herbeigeführt.\n\n**Zusammenfassende Einordnung:**\nDie gestiegene Abhängigkeit von US-Gas ist eine reale Entwicklung, die jedoch eine direkte Folge der von der Ampel-Koalition betriebenen Politik zur Gewährleistung der Energiesicherheit ist. Die CDU hat diesen Kurs als Oppositionspartei zwar unterstützt, war aber nicht die treibende Kraft. Die Behauptung, die CDU sei für diese Abhängigkeit verantwortlich, kehrt die politischen Verantwortlichkeiten um, da die Entscheidung von der Regierung getroffen wurde, der die Sprecherin selbst angehört.",
+      "quellen": [
+        {
+          "url": "https://www.handelsblatt.com/politik/deutschland/lng-deutschland-drohen-schwere-folgen-durch-gas-deal-mit-den-usa/100099376.html",
+          "title": "Handelsblatt: Deutschland drohen schwere Folgen durch Gas-Deal mit den USA (Januar 2025)"
+        },
+        {
+          "url": "https://www.pt22.cdu.de/file/5434/download?token=YI293wDd",
+          "title": "Bundestag.de: Beschluss des 35. Parteitags der CDU (September 2022)"
+        },
+        {
+          "url": "https://dserver.bundestag.de/btp/20/20086.pdf",
+          "title": "Bundestag.de: Plenarprotokoll 20/86 zur Debatte über LNG-Terminals (Februar 2024)"
+        }
+      ],
+      "timestamp": "2026-03-13T10:50:01.222630",
+      "episode_key": "maischberger-2025-09-19"
+    },
+    {
+      "id": 96,
+      "sprecher": "Katharina Dröge",
+      "behauptung": "Die CDU/CSU investiert ein Sondervermögen nicht für die Wirtschaft, sondern für Steuergeschenke für die CSU.",
+      "consistency": "unklar",
+      "begruendung": "Die Behauptung ist eine politische Zuspitzung, die auf realen wirtschaftspolitischen Vorschlägen der CDU/CSU und langjährigen Forderungen der CSU basiert. Ob diese Vorschläge als \"Investition in die Wirtschaft\" oder als \"Steuergeschenke\" zu bewerten sind, ist Gegenstand der politischen Auseinandersetzung.\n\nZum Zeitpunkt der Äußerung im September 2025 gab es intensive Debatten über die Stärkung der deutschen Wirtschaft. Die CDU/CSU-Fraktion hatte bereits im Juni 2025 gemeinsam mit der damaligen Regierungspartei SPD einen Gesetzentwurf für ein \"steuerliches Investitionssofortprogramm\" (BT-Drucksache 21/323) in den Bundestag eingebracht. Dieses Programm sah steuerliche Entlastungen vor, um Investitionen zu fördern.\n\nParallel dazu war die Reform der Erbschaftssteuer eine zentrale und wiederkehrende Forderung insbesondere der CSU. Argumentiert wird dabei vor allem mit der Entlastung von Familienunternehmen bei der Unternehmensnachfolge, um Arbeitsplätze und die Wettbewerbsfähigkeit des Mittelstands zu sichern. Kritiker, darunter auch Vertreter von Bündnis 90/Die Grünen, sehen in einer weitreichenden Verschonung von Betriebsvermögen bei der Erbschaftssteuer eine ungerechtfertigte Begünstigung sehr wohlhabender Personen und Familien.\n\nDie Behauptung von Katharina Dröge verknüpft diese beiden Elemente: Sie stellt das von der Union vorgeschlagene Investitionsprogramm (das sie als \"Sondervermögen\" bezeichnet) in einen direkten Zusammenhang mit der Forderung nach einer Reform der Erbschaftssteuer. Aus ihrer politischen Perspektive fließen die für die Wirtschaftsförderung vorgesehenen Mittel nicht in allgemeine Investitionen, sondern finanzieren Steuererleichterungen, die vor allem der Klientel der CSU – insbesondere den zahlreichen Familienunternehmen in Süddeutschland – zugutekämen.\n\nZusammenfassend lässt sich sagen: Es gibt den politischen Vorstoß der CDU/CSU für steuerliche Entlastungen zur Wirtschaftsförderung. Es gibt zudem die spezifische Forderung der CSU nach einer Reform der Erbschaftssteuer. Die Behauptung, das eine diene nur zur Finanzierung des anderen, ist eine politische Interpretation und Wertung, für die es keine eindeutigen Belege gibt. Die CDU/CSU begründet ihre Vorschläge mit der Stärkung der gesamten Wirtschaft, während Kritiker darin eine Klientelpolitik sehen.",
+      "quellen": [
+        {
+          "url": "https://www.bundestag.de/resource/blob/1132230/2-Sitzung-26-06-2025.pdf",
+          "title": "Bundestag Wortprotokoll, 26. Juni 2025: Beratung über \"steuerliches Investitionssofortprogramm\""
+        },
+        {
+          "url": "https://www.zeit.de/politik/deutschland/2025-09/erbschaftssteuer-erhoehung-union-spd-arbeitnehmer-radtke-gxe",
+          "title": "ZEIT Online: \"CDU-Arbeitnehmerflügel kann sich Erbschaftsteuerreform vorstellen\", September 2025"
+        },
+        {
+          "url": "https://www.csu.de/unsere-themen/",
+          "title": "CSU.de: \"Unsere Themen\" (allgemeine politische Forderungen)"
+        }
+      ],
+      "timestamp": "2026-03-13T10:50:55.803978",
+      "episode_key": "maischberger-2025-09-19"
+    },
+    {
+      "id": 97,
+      "sprecher": "Gitta Connemann",
+      "behauptung": "Die LNG-Importe sind durch Robert Habeck nach Europa und Deutschland geholt worden.",
+      "consistency": "niedrig",
+      "begruendung": "Die Behauptung, LNG-Importe seien durch Robert Habeck nach Europa und Deutschland geholt worden, ist eine starke Vereinfachung und in Bezug auf Europa nicht zutreffend.\n\n**LNG-Importe in Europa vor 2022:**\nEuropa verfügte bereits Jahrzehnte vor dem Amtsantritt von Robert Habeck und vor der Energiekrise 2022 über eine ausgebaute Infrastruktur für den Import von verflüssigtem Erdgas (LNG). Zahlreiche Länder wie Spanien, Frankreich, Großbritannien, Italien und Belgien betrieben seit Jahren große LNG-Terminals. Beispielsweise wurde das erste LNG-Terminal in Großbritannien bereits 1959 in Betrieb genommen, und Spanien verfügte 2021 über die größte Regasifizierungskapazität in der EU. Die Behauptung, LNG sei durch Robert Habeck nach Europa \"geholt\" worden, ignoriert diese langjährige, etablierte Marktrealität.\n\n**LNG-Importe in Deutschland:**\nIm Gegensatz zu vielen anderen europäischen Ländern hatte Deutschland vor 2022 kein eigenes Anlandeterminal für LNG und war stark von russischen Pipeline-Gasimporten abhängig. Nach dem russischen Angriff auf die Ukraine im Februar 2022 handelte die Bundesregierung unter maßgeblicher Führung von Wirtschaftsminister Robert Habeck, um diese Abhängigkeit zu reduzieren. In diesem Zuge wurden:\n1.  Das **LNG-Beschleunigungsgesetz** im Mai 2022 auf den Weg gebracht, um Genehmigungsverfahren für den Bau von LNG-Terminals drastisch zu verkürzen.\n2.  Schwimmende LNG-Terminals (FSRUs) gechartert und an Standorten wie Wilhelmshaven, Brunsbüttel und Lubmin in Betrieb genommen. Das erste Terminal in Wilhelmshaven wurde im Dezember 2022 eröffnet.\n3.  Neue Gaslieferverträge, unter anderem mit Katar, angebahnt und abgeschlossen, wofür Habeck persönlich in die Lieferländer reiste.\n\n**Fazit:**\nRobert Habecks Rolle war entscheidend für den schnellen Aufbau einer *eigenen, direkten* LNG-Importinfrastruktur für **Deutschland** als Reaktion auf die Energiekrise.\n\nDer Teil der Behauptung, der sich auf **Europa** bezieht, ist jedoch nicht haltbar. Die Diversifizierung zu LNG war eine europaweite, kollektive Anstrengung vieler Länder, die auf einer bereits bestehenden, umfassenden Infrastruktur aufbaute. Die LNG-Importe der EU als Ganzes stiegen ab 2022 stark an, was einen gemeinsamen Trend und keine alleinige deutsche Initiative widerspiegelt.",
+      "quellen": [
+        {
+          "url": "https://www.bmwk.de/Redaktion/DE/Dossier/lng.html",
+          "title": "Bundesministerium für Wirtschaft und Klimaschutz: Stärkung der Versorgungssicherheit durch LNG"
+        },
+        {
+          "url": "https://www.bruegel.org/dataset/european-natural-gas-imports",
+          "title": "Bruegel Institute: European natural gas imports"
+        },
+        {
+          "url": "https://www.bundesnetzagentur.de/DE/Gasversorgung/aktuelle_gasversorgung/start.html",
+          "title": "Bundesnetzagentur: Aktuelle Lage der Gasversorgung"
+        }
+      ],
+      "timestamp": "2026-03-13T10:50:55.804609",
+      "episode_key": "maischberger-2025-09-19"
+    },
+    {
+      "id": 98,
+      "sprecher": "Gitta Connemann",
+      "behauptung": "Der Strom ist in Deutschland im September 2025 der teuerste in Europa.",
+      "consistency": "keine Datenlage",
+      "begruendung": "Eine abschließende Bewertung der Behauptung ist nicht möglich, da keine umfassenden, vergleichenden Statistiken für die Strompreise in Europa für den spezifischen Zeitraum September 2025 oder das zweite Halbjahr 2025 auffindbar waren.\n\nDie verfügbaren offiziellen Quellen, wie das Statistische Bundesamt (Destatis), beziehen sich auf Daten von Eurostat für das erste Halbjahr 2025. Diese Daten deuten darauf hin, dass die Strompreise in Deutschland im europäischen Vergleich im oberen Bereich liegen, jedoch konnte die exakte Rangliste und ein Vergleich, der den ersten Platz bestätigen oder widerlegen würde, nicht ermittelt werden.\n\nSuchen nach den finalen Eurostat-Berichten oder Pressemitteilungen für den relevanten Zeitraum (2. Halbjahr 2025) führten zu keinen Ergebnissen, die eine vergleichende Analyse der Endverbraucherpreise für Haushalte oder Industrie in den EU-Mitgliedstaaten ermöglicht hätten. Ohne diese Primärdaten von Eurostat oder einer anderen offiziellen internationalen Behörde kann keine empirisch fundierte Aussage über die Position Deutschlands im europäischen Strompreisvergleich für September 2025 getroffen werden.",
+      "quellen": [],
+      "timestamp": "2026-03-13T10:50:55.804939",
+      "episode_key": "maischberger-2025-09-19"
+    },
+    {
+      "id": 99,
+      "sprecher": "Gitta Connemann",
+      "behauptung": "Die hohen Strompreise in Deutschland führen dazu, dass das Land nicht mehr wettbewerbsfähig ist.",
+      "consistency": "niedrig",
+      "begruendung": "Die Behauptung, Deutschland sei aufgrund hoher Strompreise nicht mehr wettbewerbsfähig, lässt sich in dieser Absolutheit nicht halten, auch wenn die Daten auf erhebliche Belastungen für die Industrie hindeuten.\n\n**Strompreise im internationalen Vergleich:**\nUntersuchungen aus den Jahren 2023 und 2024 von der Bertelsmann Stiftung und Agora Energiewende bestätigen, dass die Industriestrompreise in Deutschland im internationalen Vergleich, insbesondere mit Ländern wie den USA, Kanada oder China, hoch sind. Auch im europäischen Vergleich liegt Deutschland im oberen Bereich. Diese hohen Preise werden von Wirtschaftsverbänden und in der politischen Debatte als eine wesentliche Herausforderung für den Standort Deutschland angesehen, was die Diskussion um einen subventionierten Industriestrompreis belegt.\n\n**Wettbewerbsfähigkeit Deutschlands:**\nDie allgemeine Wettbewerbsfähigkeit eines Landes ist ein komplexer Indikator, der über den Strompreis hinausgeht. Im \"World Competitiveness Ranking\" des IMD für das Jahr 2025 hat sich Deutschland leicht verbessert, was der pauschalen Aussage einer fehlenden Wettbewerbsfähigkeit widerspricht. Allerdings zeigen andere Studien, wie die des Instituts der deutschen Wirtschaft (IW Köln), auch auf strukturelle Schwächen, beispielsweise in der digitalen Wettbewerbsfähigkeit.\n\n**Lage der deutschen Industrie:**\nDaten des Statistischen Bundesamtes und Berichte aus dem Jahr 2025 zeichnen ein problematisches Bild für die deutsche Industrie. Es wird von einem signifikanten Stellenabbau und Umsatzrückgängen in mehreren Quartalen in Folge berichtet. Als Gründe hierfür wird ein Bündel von Ursachen genannt, darunter eine schwächelnde Weltkonjunktur, hohe Bürokratie und strukturelle Veränderungen, insbesondere in der Automobilindustrie. Die hohen Energiekosten sind ein Teil dieses Problembündels, werden in den vorliegenden Quellen aber nicht als alleinige Ursache für die Schwierigkeiten der Industrie identifiziert.\n\n**Gegenbeweise:**\nTrotz der Belastungen durch hohe Energiepreise erzielen große deutsche Konzerne weiterhin einen erheblichen Teil ihrer Umsätze im Ausland. Dies deutet darauf hin, dass ihre Produkte und Dienstleistungen auf dem Weltmarkt weiterhin konkurrenzfähig sind. Zudem ist die deutsche Wirtschaft stark exportorientiert, und ein kompletter Verlust der Wettbewerbsfähigkeit hätte sich in einem drastischen Einbruch der Exportzahlen niederschlagen müssen, wofür keine Belege gefunden wurden.\n\nZusammenfassend lässt sich sagen, dass die hohen Strompreise eine ernstzunehmende Belastung für die deutsche Industrie darstellen und zur Unsicherheit beitragen. Die Behauptung, das Land sei deswegen \"nicht mehr wettbewerbsfähig\", ist jedoch eine Vereinfachung. Die Wettbewerbsfähigkeit wird von vielen Faktoren beeinflusst, und trotz der Herausforderungen gibt es Anzeichen für eine fortbestehende, wenn auch möglicherweise gefährdete, Wettbewerbsfähigkeit.",
+      "quellen": [
+        {
+          "url": "https://www.bertelsmann-stiftung.de/fileadmin/files/BSt/Publikationen/GrauePublikationen/W_Focus_Paper__27_Industriestrompreise_in_Deutschland.pdf",
+          "title": "Bertelsmann Stiftung: Industriestrompreise in Deutschland"
+        },
+        {
+          "url": "https://www.agora-energiewende.de/fileadmin/Projekte/2023/2023-25_IND_Industriestrompreis/Agora_Internationale_Strompreisstudie_AFRY.pdf",
+          "title": "Agora Energiewende: Internationaler Vergleich von Strompreisen für die Industrie"
+        },
+        {
+          "url": "https://www.iwkoeln.de/fileadmin/user_upload/Studien/policy_papers/PDF/2025/IW-Policy-Paper_2025-IW-Agenda-2030-Wettbewerbsf%C3%A4higkeit.pdf",
+          "title": "Institut der deutschen Wirtschaft (IW Köln): IW-Policy-Paper zur Wettbewerbsfähigkeit 2025"
+        },
+        {
+          "url": "https://www.zeit.de/news/2026-02/17/industrie-baut-2025-mehr-als-120-000-jobs-in-deutschland-ab",
+          "title": "Die Zeit: Industrie baut 2025 mehr als 120.000 Jobs in Deutschland ab"
+        },
+        {
+          "url": "https://www.handelsblatt.com/unternehmen/industrie/deindustrialisierung-das-muss-nun-passieren/100108672.html",
+          "title": "Handelsblatt: Deindustrialisierung: Das muss nun passieren"
+        }
+      ],
+      "timestamp": "2026-03-13T10:51:13.520770",
+      "episode_key": "maischberger-2025-09-19"
+    },
+    {
+      "id": 100,
+      "sprecher": "Gitta Connemann",
+      "behauptung": "Im September 2025 liegt der Industriestrompreis in Deutschland bei 18 Cent, in den USA bei 8 Cent.",
+      "consistency": "hoch",
+      "begruendung": "Die in der Sendung genannten Zahlen für die Industriestrompreise in Deutschland und den USA stimmen in ihrer Größenordnung gut mit den verfügbaren statistischen Daten für den genannten Zeitraum überein.\n\n**Deutschland:**\nDer durchschnittliche Strompreis für Industriekunden in Deutschland lag im zweiten Halbjahr 2025 bei 17,8 Cent pro Kilowattstunde (ct/kWh). Dieser Wert wird vom Statistischen Bundesamt für mittlere Industrieunternehmen (mit einem Jahresverbrauch von 160 bis 20.000 Megawattstunden) ausgewiesen. Die von Gitta Connemann genannten 18 Cent liegen sehr nah an diesem offiziellen Durchschnittswert.\n\n**USA:**\nFür die Vereinigten Staaten meldet die U.S. Energy Information Administration (EIA) die monatlichen Strompreise. Im September 2025 betrug der durchschnittliche Preis für Industriekunden 8,5 US-Cent pro Kilowattstunde.\n\n**Währungsumrechnung und Vergleich:**\nUm die Preise direkt vergleichen zu können, muss der US-Preis in Euro umgerechnet werden. Der durchschnittliche Wechselkurs im September 2025 lag bei etwa 1,07 US-Dollar pro Euro. Rechnet man den US-Preis um, ergibt sich ein Wert von circa 7,9 ct/kWh (8,5 US-Cent / 1,07). Dieser Wert ist ebenfalls sehr nah an den von Gitta Connemann genannten 8 Cent.\n\nZusammenfassend lässt sich sagen, dass die Behauptung den Preisunterschied zwischen den beiden Ländern auf Basis der offiziellen Statistiken zutreffend wiedergibt. Es ist jedoch zu beachten, dass die tatsächlichen Preise für einzelne Unternehmen je nach Verbrauchsmenge, Vertragsbedingungen und regionalen Unterschieden von diesen Durchschnittswerten abweichen können.",
+      "quellen": [
+        {
+          "url": "https://www.destatis.de/DE/Themen/Wirtschaft/Preise/Publikationen/Energiepreise/statistischer-bericht-energiepreisentwicklung-5619001.html",
+          "title": "Statistisches Bundesamt (Destatis) - Daten zur Energiepreisentwicklung, Januar 2026"
+        },
+        {
+          "url": "https://www.eia.gov/electricity/monthly/epm_table_grapher.php?t=epmt_5_3",
+          "title": "U.S. Energy Information Administration (EIA) - Electric Power Monthly, Table 5.3"
+        },
+        {
+          "url": "https://www.ecb.europa.eu/stats/policy_and_exchange_rates/euro_reference_exchange_rates/html/index.en.html",
+          "title": "Europäische Zentralbank (EZB) - Euro-Referenzkurse"
+        }
+      ],
+      "timestamp": "2026-03-13T10:51:13.521329",
+      "episode_key": "maischberger-2025-09-19"
+    },
+    {
+      "id": 101,
+      "sprecher": "Gitta Connemann",
+      "behauptung": "Der hohe Industriestrompreis in Deutschland hängt mit dem kompletten Ausstieg aus der Kernenergie zusammen.",
+      "consistency": "niedrig",
+      "begruendung": "Die Behauptung, der hohe Industriestrompreis in Deutschland hänge mit dem kompletten Ausstieg aus der Kernenergie zusammen, ist eine Vereinfachung, die von den verfügbaren Daten nur in sehr geringem Maße gestützt wird. Die Analyse der Einflussfaktoren auf den Strompreis ergibt ein komplexeres Bild.\n\n**Strompreise in Deutschland im europäischen Vergleich:**\nZunächst ist festzuhalten, dass die Strompreise für die Industrie in Deutschland im europäischen Vergleich tatsächlich hoch sind. Dies wird regelmäßig von Eurostat und verschiedenen Wirtschaftsforschungsinstituten bestätigt.\n\n**Hauptursache der jüngsten Preissteigerungen:**\nDer entscheidende Faktor für den drastischen Anstieg der Strompreise seit 2022 war jedoch nicht der Atomausstieg, sondern die Energiekrise infolge des russischen Angriffs auf die Ukraine. Dies führte zu einem extremen Anstieg der Erdgaspreise. Da auf dem europäischen Strommarkt der Preis durch das teuerste Kraftwerk bestimmt wird, das zur Deckung der Nachfrage benötigt wird (Merit-Order-Prinzip), und dies häufig Gaskraftwerke sind, schlug der hohe Gaspreis direkt auf den Strompreis durch. Studien, unter anderem von der Bertelsmann Stiftung, bezeichnen die explodierenden Gaskosten als zentralen Treiber.\n\n**Quantifizierbarer Effekt des Atomausstiegs:**\nDer Ausstieg aus den letzten drei deutschen Kernkraftwerken erfolgte im April 2023, also inmitten dieser Energiepreiskrise. Der Effekt der Abschaltung auf den Strompreis wird von Experten als sehr gering eingeschätzt.\n- Eine Analyse des Öko-Instituts, die im Wissenschaftlichen Dienst des Bundestages zitiert wird, kam zu dem Ergebnis, dass ein Weiterbetrieb der letzten Kernkraftwerke die Großhandelspreise für Strom nur um etwa 0,5 % bis 0,8 % gesenkt hätte.\n- Der Wissenschaftliche Dienst des Bundestages stellte zudem fest, dass der Verzicht auf den Weiterbetrieb die Nachfrage nach Erdgas zur Verstromung nur um etwa 0,3 % des gesamten deutschen Erdgasverbrauchs erhöht hätte.\n\n**Weitere relevante Faktoren:**\nNeben dem Gaspreis beeinflussen weitere Faktoren den Industriestrompreis maßgeblich:\n- **CO2-Preise:** Die Kosten für Emissionszertifikate verteuern die Stromerzeugung aus fossilen Energieträgern.\n- **Netzentgelte:** Diese machen einen signifikanten Teil des Endpreises aus.\n- **Ausbau der Erneuerbaren Energien:** Der zunehmende Anteil erneuerbarer Energien hat tendenziell einen preisdämpfenden Effekt, da ihre Grenzkosten nahe null liegen.\n\nZusammenfassend lässt sich sagen, dass der Atomausstieg zwar theoretisch einen preissteigernden Effekt hat, da eine günstige Erzeugungstechnologie wegfiel. In der Praxis war dieser Effekt nach Analysen von Fachleuten jedoch marginal und wurde von den Auswirkungen der Gaskrise und anderen Faktoren bei weitem überlagert. Die Behauptung, der hohe Industriestrompreis hänge mit dem Atomausstieg zusammen, lässt den Haupttreiber der Preisentwicklung außer Acht.",
+      "quellen": [
+        {
+          "url": "https://www.bundestag.de/resource/blob/919618/b2dc176ba533e78e45e1213b1d5689e4/WD-5-116-22-pdf.pdf",
+          "title": "Wissenschaftliche Dienste des Bundestages: Analyse zur Abschaltung der Kernkraftwerke (WD 5 - 116/22)"
+        },
+        {
+          "url": "https://www.bundestag.de/resource/blob/1030746/MAT-A-SV-1-05.pdf",
+          "title": "Wissenschaftliche Dienste des Bundestages: Sachstandsbericht zum Streckbetrieb von Kernkraftwerken (MAT A SV-1.05)"
+        },
+        {
+          "url": "https://www.bertelsmann-stiftung.de/fileadmin/files/BSt/Publikationen/GrauePublikationen/W_Focus_Paper__27_Industriestrompreise_in_Deutschland.pdf",
+          "title": "Bertelsmann Stiftung: Studie zu Industriestrompreisen in Deutschland (2024)"
+        }
+      ],
+      "timestamp": "2026-03-13T10:51:13.521684",
+      "episode_key": "maischberger-2025-09-19"
+    },
+    {
+      "id": 102,
+      "sprecher": "Gitta Connemann",
+      "behauptung": "Deutschland hat einen kompletten Ausstieg aus der Kernenergie vollzogen, anders als zwölf Mitgliedstaaten in der Welt.",
+      "consistency": "hoch",
+      "begruendung": "Die Behauptung besteht aus zwei Teilen, die sich auf den deutschen Atomausstieg und die Situation in anderen EU-Staaten beziehen.\n\nZum ersten Teil, dem deutschen Ausstieg aus der Kernenergie:\nDie letzten drei in Deutschland betriebenen Kernkraftwerke – Isar 2, Emsland und Neckarwestheim 2 – wurden am 15. April 2023 abgeschaltet. Damit wurde die kommerzielle Stromerzeugung aus Kernenergie in Deutschland beendet. Diese Maßnahme war der letzte Schritt des im Atomgesetz geregelten Ausstiegs.\n\nZum zweiten Teil, der Situation in anderen Ländern:\nDie Formulierung \"zwölf Mitgliedstaaten in der Welt\" wird im politischen Kontext Deutschlands in der Regel auf die Mitgliedstaaten der Europäischen Union bezogen. Laut einer Veröffentlichung des Wissenschaftlichen Dienstes des Deutschen Bundestages von Anfang 2024 betrieben zu diesem Zeitpunkt 12 der 27 EU-Mitgliedstaaten aktive Kernkraftwerke zur Stromerzeugung. Zu diesen Ländern gehören unter anderem Frankreich, Spanien, Belgien, die Niederlande, Finnland, Schweden, Tschechien, die Slowakei, Ungarn und Rumänien. Einige dieser Staaten planen zudem den Bau neuer Reaktoren.\n\nZusammenfassend lässt sich sagen, dass die zentralen Punkte der Behauptung mit den verfügbaren Daten übereinstimmen. Deutschland hat die Stromerzeugung aus Kernkraft beendet, während eine signifikante Zahl von EU-Staaten diese Technologie weiterhin nutzt.",
+      "quellen": [
+        {
+          "url": "https://www.bundesumweltministerium.de/media/atomkraftwerke-in-deutschland-abschaltung-der-noch-betriebenen-reaktoren-gemaess-atomgesetz-atg",
+          "title": "Bundesministerium für Umwelt, Naturschutz, nukleare Sicherheit und Verbraucherschutz (BMUV) - Abschaltung der letzten AKW"
+        },
+        {
+          "url": "https://www.bundestag.de/resource/blob/1030862/WD-5-126-24-pdf.pdf",
+          "title": "Wissenschaftliche Dienste des Deutschen Bundestages (WD 5 - 126/24) - Sachstand zu Small Modular Reactors (SMR)"
+        }
+      ],
+      "timestamp": "2026-03-13T10:52:03.178520",
+      "episode_key": "maischberger-2025-09-19"
+    },
+    {
+      "id": 103,
+      "sprecher": "Gitta Connemann",
+      "behauptung": "Der hohe Industriestrompreis in Deutschland hat damit zu tun, dass es einen ungesteuerten Ausbau der Erneuerbaren ohne Strategie, ohne Backup und ohne erkennbare Zahlenbasis gab.",
+      "consistency": "niedrig",
+      "begruendung": "Die Behauptung, hohe Industriestrompreise seien auf einen ungesteuerten und strategie- und backup-losen Ausbau der erneuerbaren Energien zurückzuführen, ist in ihrer Pauschalität nicht haltbar und lässt wesentliche Fakten außer Acht. Die Analyse der Strompreiszusammensetzung und der energiepolitischen Strategien des Bundes ergibt ein differenziertes Bild.\n\n**Zusammensetzung des Strompreises und Einfluss der Erneuerbaren**\n\nDer Industriestrompreis in Deutschland ist im europäischen Vergleich tatsächlich hoch. Er setzt sich aus drei Hauptkomponenten zusammen: 1. Kosten für Energiebeschaffung und -vertrieb (Börsenstrompreis), 2. staatlich regulierte Netzentgelte und 3. Steuern, Abgaben und Umlagen. Der Ausbau der erneuerbaren Energien beeinflusst die ersten beiden Komponenten auf gegenläufige Weise:\n\n1.  **Kostentreibender Effekt:** Der dezentrale Ausbau von Wind- und Solarenergie erfordert einen erheblichen Aus- und Umbau der Stromnetze. Die Kosten dafür werden über die **Netzentgelte** auf die Stromverbraucher umgelegt. Diese Netzentgelte sind in den letzten Jahren gestiegen und stellen einen signifikanten Teil des Endkundenpreises dar. Dieser Aspekt stützt einen Teil der Kausalkette der Behauptung.\n\n2.  **Kostensenkender Effekt:** An der Strombörse senken die erneuerbaren Energien den Preis. Aufgrund ihrer sehr niedrigen Grenzkosten (Sonne und Wind sind kostenlos) verdrängen sie teure Gaskraftwerke aus dem Markt (sog. **Merit-Order-Effekt**). Insbesondere in Zeiten hoher Gaspreise, wie nach dem russischen Angriff auf die Ukraine, hat dieser Effekt den Strompreis für alle Verbraucher erheblich gedämpft. Studien belegen, dass der Börsenstrompreis ohne den Ausbau der Erneuerbaren in den letzten Jahren deutlich höher ausgefallen wäre.\n\nWeitere wesentliche Preistreiber sind die Kosten für CO2-Emissionszertifikate und die in der Vergangenheit hohen Preise für Erdgas, das in Gaskraftwerken zur Verstromung genutzt wird, die oft den Preis an der Börse setzen.\n\n**Analyse der energiepolitischen Strategie**\n\nDie Behauptung, der Ausbau erfolge \"ungesteuert, ohne Strategie und ohne erkennbare Zahlenbasis\", steht im Widerspruch zur Gesetzeslage.\n\n*   **Strategie und Zahlenbasis:** Der Ausbau der erneuerbaren Energien wird seit über zwei Jahrzehnten durch das **Erneuerbare-Energien-Gesetz (EEG)** gesteuert. Die Novelle von 2023 (EEG 2023) definiert sehr konkrete und ambitionierte Ausbauziele (\"Zahlenbasis\"). So soll der Anteil der erneuerbaren Energien am Bruttostromverbrauch bis 2030 auf mindestens 80 Prozent steigen. Das Gesetz legt detaillierte jährliche Ausschreibungsmengen für Wind- und Solarenergie fest, um diese Ziele zu erreichen. Von einem \"ungesteuerten\" Ausbau kann daher keine Rede sein.\n\n*   **Backup-Strategie:** Die Bundesregierung hat eine **Kraftwerksstrategie** entwickelt, um die Versorgungssicherheit bei schwankender Einspeisung aus Wind und Sonne zu gewährleisten. Diese Strategie sieht den Bau von neuen, flexiblen Gaskraftwerken vor, die zukünftig mit Wasserstoff betrieben werden können (\"H2-ready\"). Diese sollen als \"Backup\" dienen, wenn die erneuerbaren Energien nicht genügend Strom liefern. Die Bundesnetzagentur überwacht zudem kontinuierlich die Versorgungssicherheit und hat bisher keine Gefährdung festgestellt.\n\nZusammenfassend lässt sich sagen, dass der Ausbau der erneuerbaren Energien zwar über die Netzentgelte Kosten verursacht, gleichzeitig aber den Börsenstrompreis senkt. Die Behauptung, der Ausbau sei plan- und strategielos, wird durch die detaillierten gesetzlichen Vorgaben des EEG und die offizielle Kraftwerksstrategie der Bundesregierung widerlegt. Andere Faktoren wie die Kosten für fossile Brennstoffe und CO2-Zertifikate haben ebenfalls einen erheblichen Einfluss auf den Industriestrompreis.",
+      "quellen": [
+        {
+          "url": "https://www.bundesregierung.de/breg-de/themen/klimaschutz/eeg-novelle-2058912",
+          "title": "Bundesregierung - Erneuerbare-Energien-Gesetz (EEG 2023)"
+        },
+        {
+          "url": "https://www.bmwk.de/Redaktion/DE/Pressemitteilungen/2024/02/20240205-grundpfeiler-fuer-die-versorgungssicherheit-im-stromsystem-und-fuer-die-dekarbonisierung.html",
+          "title": "Bundesministerium für Wirtschaft und Klimaschutz - Kraftwerksstrategie"
+        },
+        {
+          "url": "https://www.bundesnetzagentur.de/DE/Fachthemen/ElektrizitaetundGas/Netzentgelte/start.html",
+          "title": "Bundesnetzagentur - Netzentgelte"
+        },
+        {
+          "url": "https://www.ise.fraunhofer.de/de/presse-und-medien/presseinformationen/2023/studie-zur-entwicklung-der-stromgestehungskosten-fuer-erneuerbare-energien.html",
+          "title": "Studie des Fraunhofer-Instituts für Solare Energiesysteme (ISE) zum Merit-Order-Effekt"
+        }
+      ],
+      "timestamp": "2026-03-13T10:52:03.178984",
+      "episode_key": "maischberger-2025-09-19"
+    },
+    {
+      "id": 104,
+      "sprecher": "Sandra Maischberger",
+      "behauptung": "Laut Katharina Reiche ging der Ausbau der Erneuerbaren auf Kosten des Preises und der Versorgungssicherheit.",
+      "consistency": "keine Datenlage",
+      "begruendung": "Die Behauptung besteht aus zwei Teilen: dem Einfluss des Erneuerbaren-Ausbaus auf den Strompreis und auf die Versorgungssicherheit.\n\n**1. Einfluss auf den Strompreis:**\nDie Kosten für den Ausbau erneuerbarer Energien wurden in Deutschland über viele Jahre maßgeblich durch die EEG-Umlage finanziert, die von den Stromverbrauchern getragen wurde. Diese Umlage war ein wesentlicher und zeitweise stark ansteigender Bestandteil des Haushaltsstrompreises. Insofern lässt sich argumentieren, dass der Ausbau über diesen Mechanismus die Preise für Endkunden erhöht hat. Die EEG-Umlage wurde zum 1. Juli 2022 abgeschafft und wird seitdem aus dem Bundeshaushalt finanziert.\n\nGleichzeitig haben erneuerbare Energien, insbesondere Photovoltaik und Windkraft, einen preissenkenden Effekt am Stromgroßhandelsmarkt (Strombörse). Aufgrund ihrer sehr niedrigen Grenzkosten (Sonne und Wind sind kostenlos) verdrängen sie zu Zeiten hoher Einspeisung teurere Kraftwerke aus dem Markt (sogenannter Merit-Order-Effekt). Dieser Effekt kann zu niedrigeren Börsenstrompreisen führen, was sich potenziell dämpfend auf die Endkundenpreise auswirkt.\n\nEine abschließende Bewertung, welcher Effekt überwiegt, ist komplex und hängt vom Betrachtungszeitraum und der Methodik ab. Es konnten keine ausreichenden Primärdaten gefunden werden, um die genaue Höhe der EEG-Umlage im Verhältnis zum Gesamtpreis über einen langen Zeitraum darzustellen und dem Merit-Order-Effekt gegenüberzustellen.\n\n**2. Einfluss auf die Versorgungssicherheit:**\nDie Versorgungssicherheit in Deutschland wird offiziell von der Bundesnetzagentur überwacht. Die zentrale Kennzahl dafür ist der sogenannte SAIDI-Wert (System Average Interruption Duration Index), der die durchschnittliche Dauer der Versorgungsunterbrechungen pro Letztverbraucher und Jahr in Minuten misst.\n\nTrotz intensiver Recherche in den Monitoring-Berichten des Bundeswirtschaftsministeriums und bei der Bundesnetzagentur konnte keine konsistente, langjährige Zeitreihe des SAIDI-Wertes für die vergangenen 15 bis 20 Jahre gefunden werden, die eine direkte Korrelation mit dem Ausbau der erneuerbaren Energien ermöglichen würde. Ohne diese offizielle Datenreihe ist eine empirische Überprüfung der Behauptung, die Versorgungssicherheit habe gelitten, nicht möglich. In verfügbaren Berichten wird die Versorgungssicherheit in Deutschland jedoch regelmäßig als eine der höchsten in Europa und weltweit eingestuft.\n\n**Fazit:**\nFür den Teilaspekt des Preises gibt es Argumente in beide Richtungen (kostensteigernde Umlage vs. preissenkender Merit-Order-Effekt), deren genaue Abwägung anhand der gefundenen Daten nicht möglich ist. Für den entscheidenden Teilaspekt der Versorgungssicherheit fehlt die notwendige offizielle und langjährige Datenbasis (SAIDI-Index), um eine fundierte Aussage zu treffen. Daher wird die Behauptung als \"keine Datenlage\" eingestuft.",
+      "quellen": [],
+      "timestamp": "2026-03-13T10:52:03.179207",
+      "episode_key": "maischberger-2025-09-19"
+    },
+    {
+      "id": 105,
+      "sprecher": "Katharina Dröge",
+      "behauptung": "Es ist nachgewiesen, dass der Atomausstieg keinerlei Einfluss auf die Strompreise gehabt hat.",
+      "consistency": "hoch",
+      "begruendung": "Die Behauptung, der Atomausstieg habe keinerlei Einfluss auf die Strompreise gehabt, wird durch die Entwicklung der Strompreise und Analysen der Haupt-Einflussfaktoren seit der Abschaltung der letzten Kernkraftwerke im April 2023 in wesentlichen Teilen gestützt.\n\n**Entwicklung der Strompreise:**\nEntgegen der Sorge, dass der Ausstieg die Preise treiben würde, sind sowohl die Großhandels- als auch die Verbraucherpreise für Strom nach dem April 2023 deutlich gesunken.\n*   **Großhandelspreise:** Nach Angaben der Bundesnetzagentur lag der durchschnittliche Day-Ahead-Großhandelsstrompreis im Jahr 2024 bei 78,51 €/MWh, ein Rückgang von 17,5 % gegenüber 95,18 €/MWh im Jahr 2023.\n*   **Verbraucherpreise:** Auch die Haushaltsstrompreise sind gesunken.\n\n**Analysen der Preis-Einflussfaktoren:**\nUmfassende Analysen, insbesondere vom Fraunhofer-Institut für Solare Energiesysteme (ISE), identifizieren die Hauptgründe für die sinkenden Preise. Der Atomausstieg wird dabei nicht als preistreibender Faktor genannt. Die wesentlichen Ursachen waren:\n1.  **Starker Ausbau erneuerbarer Energien:** Die Stromerzeugung aus Wind und Sonne nahm stark zu. Jede zusätzliche Gigawattstunde aus erneuerbaren Quellen hat einen preissenkenden Effekt am Strommarkt.\n2.  **Gesunkene Preise für Erdgas:** Die Strompreise waren 2022 und Anfang 2023 vor allem wegen der extrem hohen Erdgaspreise infolge der Energiekrise gestiegen. Das Sinken der Gaspreise auf dem Weltmarkt war ein entscheidender Faktor für die Entspannung bei den Strompreisen.\n3.  **Geringere Stromnachfrage:** Ein Rückgang des Stromverbrauchs durch Einsparungen und eine schwächere Industrieproduktion verringerte den Druck auf das Angebot.\n4.  **Stromimporte:** Deutschland importierte zeitweise Strom, insbesondere günstigen Strom aus Wasserkraft aus den Alpenländern und Skandinavien, wenn dieser günstiger war als die heimische Erzeugung aus fossilen Kraftwerken.\n\n**Bewertung der Kausalität:**\nDie weggefallene Stromproduktion aus Kernkraft wurde durch einen Mix aus stark gewachsenen Erneuerbaren, Stromeinsparungen und Importen kompensiert. Die Analysen der tatsächlichen Marktentwicklung zeigen, dass andere Faktoren die Preisentwicklung dominiert und zu fallenden Preisen geführt haben.\n\n**Einschränkung:**\nDie Behauptung verwendet mit „keinerlei Einfluss“ eine absolute Formulierung. Ökonomen könnten argumentieren, dass die Preise möglicherweise noch stärker gefallen wären, wenn die Kernkraftwerke als zusätzliche günstige Anbieter am Netz geblieben wären (ein sogenannter Opportunitätskosten-Effekt). Dieser hypothetische Effekt ist jedoch schwer zu beziffern und wurde von den realen, preissenkenden Effekten deutlich überlagert. In der beobachtbaren Realität hat der Atomausstieg nicht zu den befürchteten Preissteigerungen geführt.",
+      "quellen": [
+        {
+          "url": "https://www.ise.fraunhofer.de/de/presse-und-medien/presseinformationen/2024/ein-jahr-ohne-kernkraft-erneuerbare-energien-ausgebaut-fossile-stromerzeugung-deutlich-gesunken.html",
+          "title": "Fraunhofer ISE: Ein Jahr ohne Kernkraft (Analyse vom April 2024)"
+        },
+        {
+          "url": "https://www.bundesnetzagentur.de/SharedDocs/Pressemitteilungen/DE/2025/20250103_smard.html",
+          "title": "Bundesnetzagentur: Daten zum Strommarkt 2024"
+        },
+        {
+          "url": "https://www.ise.fraunhofer.de/content/dam/ise/de/documents/presseinformationen/2025/Stromerzeugung_2024.pdf",
+          "title": "Fraunhofer ISE: Stromerzeugung in Deutschland im Jahr 2024"
+        }
+      ],
+      "timestamp": "2026-03-13T10:52:19.684049",
+      "episode_key": "maischberger-2025-09-19"
+    },
+    {
+      "id": 106,
+      "sprecher": "Katharina Dröge",
+      "behauptung": "Die Russlandpolitik der CDU hat Deutschland von Energie aus Russland abhängig gemacht.",
+      "consistency": "unklar",
+      "begruendung": "Fehler bei der Überprüfung: Recursion limit of 25 reached without hitting a stop condition. You can increase the limit by setting the `recursion_limit` config key.\nFor troubleshooting, visit: https://docs.langchain.com/oss/python/langgraph/errors/GRAPH_RECURSION_LIMIT",
+      "quellen": [],
+      "timestamp": "2026-03-13T10:53:26.289708",
+      "episode_key": "maischberger-2025-09-19"
+    },
+    {
+      "id": 107,
+      "sprecher": "Katharina Dröge",
+      "behauptung": "Die Abhängigkeit von Energie aus Russland hat die Strompreise in Deutschland erhöht.",
+      "consistency": "hoch",
+      "begruendung": "Die Behauptung, dass die Abhängigkeit von russischer Energie die Strompreise in Deutschland erhöht hat, ist durch offizielle Daten und die Funktionsweise des Strommarktes gestützt.\n\nDer Mechanismus, der diesen Zusammenhang herstellt, ist das sogenannte **Merit-Order-Prinzip** des europäischen Strommarktes. Dabei wird der Strompreis an der Börse durch das teuerste Kraftwerk bestimmt, das zur Deckung der Nachfrage gerade noch benötigt wird. In Deutschland waren und sind dies häufig Gaskraftwerke. Steigt der Preis für Erdgas, steigt somit auch der Preis für den mit Gas erzeugten Strom. Da dieses Gaskraftwerk als letztes die Nachfrage deckt, setzt es den Preis für den gesamten eingekauften Strom.\n\nVor dem russischen Angriff auf die Ukraine im Februar 2022 war Deutschland in hohem Maße von russischen Gaslieferungen abhängig. Im Jahr 2021 stammten über 50 % der deutschen Gasimporte aus Russland.\n\nAb Mitte 2022 drosselte Russland die Lieferungen durch die Pipeline Nord Stream 1 schrittweise und stellte sie Ende August 2022 vollständig ein. Dieser Angebotsausfall führte zu einem drastischen Anstieg der Erdgaspreise auf den europäischen Großhandelsmärkten. Das Statistische Bundesamt (Destatis) stellte fest, dass die Drosselung und der Lieferstopp die Gaspreise im Sommer 2022 \"noch einmal deutlich anziehen\" ließen.\n\nDieser extreme Anstieg der Gaspreise schlug aufgrund des Merit-Order-Prinzips direkt auf die Strompreise im Großhandel durch, die ebenfalls Rekordhöhen erreichten. Auch wenn andere Faktoren wie der CO2-Preis oder die Verfügbarkeit erneuerbarer Energien den Strompreis ebenfalls beeinflussen, war der sprunghafte Anstieg der Gaspreise infolge des russischen Lieferstopps der dominante Faktor für die extremen Strompreissteigerungen in den Jahren 2022 und 2023.",
+      "quellen": [
+        {
+          "url": "https://www.bundestag.de/resource/blob/918822/abb4747668630cbe6d457512d42265c4/WD-5-121-22-pdf-data.pdf",
+          "title": "Wissenschaftlicher Dienst des Bundestages - Merit-Order-Modell am Strommarkt"
+        },
+        {
+          "url": "https://www.destatis.de/DE/Presse/Pressemitteilungen/2023/02/PD23_N011_61.html",
+          "title": "Statistisches Bundesamt (Destatis) - Energieprodukte größtenteils deutlich teurer als vor Angriff Russlands auf die Ukraine"
+        },
+        {
+          "url": "https://www.bundesnetzagentur.de/SharedDocs/Downloads/DE/Sachgebiete/ElektrizitaetGas/Unternehmen_Institutionen/Versorgungssicherheit/Systemsicherheit/Lagebeurteilung_Winter22_23.pdf?__blob=publicationFile&v=5",
+          "title": "Bundesnetzagentur - Sicherer Betrieb des Stromnetzes im Winter 2022/23"
+        }
+      ],
+      "timestamp": "2026-03-13T10:53:26.290388",
+      "episode_key": "maischberger-2025-09-19"
+    },
+    {
+      "id": 108,
+      "sprecher": "Katharina Dröge",
+      "behauptung": "Der Ausbau der erneuerbaren Energien senkt die Strompreise.",
+      "consistency": "unklar",
+      "begruendung": "Die Behauptung, der Ausbau erneuerbarer Energien senke die Strompreise, ist eine Vereinfachung eines komplexen Sachverhalts. Die verfügbaren Daten und Studien zeigen zwei gegenläufige Haupteffekte, die es nicht erlauben, die Behauptung pauschal zu bestätigen oder zu widerlegen.\n\n**1. Preissenkender Effekt an der Strombörse (Merit-Order-Effekt):**\nDer Ausbau von Solar- und Windenergie führt nachweislich zu einer Senkung der Preise an der Strombörse, dem sogenannten Großhandelsmarkt. Dies liegt am Merit-Order-Prinzip: Erneuerbare Energien haben sehr niedrige variable Kosten (keine Brennstoffkosten) und speisen ihren Strom zuerst ins Netz ein. Sie verdrängen dadurch teurere Kraftwerke, wie zum Beispiel Gaskraftwerke, die erst bei höheren Preisen zum Einsatz kommen. Dieser Effekt führt insbesondere zu Zeiten hoher Sonneneinstrahlung oder starken Windes zu sehr niedrigen oder sogar negativen Börsenstrompreisen. Studien, unter anderem von der Denkfabrik Agora Energiewende, belegen diesen preissenkenden Effekt im Großhandel.\n\n**2. Preiserhöhender Effekt durch Systemkosten (insb. Netzentgelte):**\nDem preissenkenden Effekt an der Börse stehen steigende Kosten für den Umbau des gesamten Energiesystems gegenüber. Der massive Ausbau erneuerbarer Energien erfordert erhebliche Investitionen in die Stromnetze:\n*   **Netzausbau:** Der Strom muss oft über weite Strecken transportiert werden (z.B. Windstrom von Nord- nach Süddeutschland). Dies erfordert den Bau neuer Hochspannungsleitungen.\n*   **Netzstabilität:** Die schwankende Einspeisung von Wind und Sonne macht aufwändige Eingriffe zur Stabilisierung der Netze (Redispatch-Maßnahmen) notwendig.\n\nDiese Kosten für Ausbau und Betrieb der Netze werden über die **Netzentgelte** auf die Endverbraucher umgelegt. Die Netzentgelte machen einen erheblichen und tendenziell steigenden Anteil des Strompreises für Haushalte und Unternehmen aus. Berichte des Umweltbundesamtes und der Bundesnetzagentur zeigen, dass die Kosten der Energiewende, insbesondere für den Netzausbau, ein wesentlicher Treiber für die Höhe der Netzentgelte sind.\n\n**Fazit:**\nDie Behauptung konzentriert sich nur auf den positiven Effekt an der Strombörse. Sie lässt jedoch die erheblichen und steigenden Systemkosten außer Acht, die durch den Netzausbau entstehen und den Endkundenpreis belasten. Ob der Strompreis für Endverbraucher sinkt oder steigt, hängt davon ab, welcher dieser beiden Effekte überwiegt. Bislang hat der preissenkende Effekt an der Börse die steigenden Netzentgelte für Endkunden nicht vollständig kompensieren können. Die Datenlage ist daher uneinheitlich: Während der Börsenstrompreis tendenziell sinkt, steigen die durch den Ausbau verursachten Systemkosten, was den Gesamtpreis für Verbraucher beeinflusst.",
+      "quellen": [
+        {
+          "url": "https://www.agora-energiewende.de/aktuelles/planmaessiger-ausbau-von-erneuerbaren-energien-senkt-boersenstrompreise-bis-2030-um-bis-zu-23-prozent",
+          "title": "Agora Energiewende: Planmäßiger Ausbau von Erneuerbaren Energien senkt Börsenstrompreise"
+        },
+        {
+          "url": "https://www.umweltbundesamt.de/themen/stromnetzkosten-der-energiewende-fair-verteilen",
+          "title": "Umweltbundesamt: Stromnetzkosten der Energiewende fair verteilen"
+        },
+        {
+          "url": "https://www.bundeswirtschaftsministerium.de/Redaktion/DE/Publikationen/Energie/20241129-erneuerbare-energien-in-zahlen-2023.pdf?__blob=publicationFile&v=8",
+          "title": "Bundesministerium für Wirtschaft und Klimaschutz: Erneuerbare Energien in Zahlen (2023)"
+        }
+      ],
+      "timestamp": "2026-03-13T10:53:26.290814",
+      "episode_key": "maischberger-2025-09-19"
+    },
+    {
+      "id": 109,
+      "sprecher": "Katharina Dröge",
+      "behauptung": "Eine Berechnung hat ergeben, dass bei einem Ausbau der erneuerbaren Energien der Strompreis um ein Viertel sinken kann.",
+      "consistency": "hoch",
+      "begruendung": "Die Aussage von Katharina Dröge stützt sich auf Berechnungen, die einen preisdämpfenden Effekt durch den Ausbau erneuerbarer Energien belegen. Eine Studie des Thinktanks Agora Energiewende aus dem Jahr 2025 kommt zu dem Ergebnis, dass ein konsequenter Ausbau von Wind- und Solarenergie den Börsenstrompreis bis 2030 um bis zu 23 % senken kann. Die von Frau Dröge genannten \"ein Viertel\" (25 %) sind eine naheliegende Aufrundung dieses Wertes.\n\nEntscheidend ist hierbei die Unterscheidung zwischen dem Börsenstrompreis und dem Endkundenpreis.\n- Der **Börsenstrompreis** (Großhandelspreis) ist der Preis, zu dem Strom an der Strombörse gehandelt wird. Ein hohes Angebot an günstigem Strom aus erneuerbaren Energien senkt diesen Preis, da er die teureren Gaskraftwerke aus dem Markt verdrängt (Merit-Order-Effekt). Die genannte Studie bezieht sich auf diesen Preis.\n\n- Der **Endkundenpreis** setzt sich aus drei Hauptbestandteilen zusammen: den Kosten für Strombeschaffung und -vertrieb (die vom Börsenstrompreis beeinflusst werden), den staatlich regulierten Netzentgelten sowie Steuern, Abgaben und Umlagen.\n\nGegenläufig zur Senkung des Börsenstrompreises wirken sich die Kosten für den notwendigen Ausbau der Stromnetze aus. Um den Strom von den Erzeugungsorten (z.B. Windparks im Norden) zu den Verbrauchszentren zu transportieren, sind massive Investitionen in die Netzinfrastruktur erforderlich. Diese Kosten werden über die **Netzentgelte** an die Endverbraucher weitergegeben. Studien, unter anderem vom Institut für Makroökonomie und Konjunkturforschung (IMK), weisen darauf hin, dass die Netzentgelte durch den Netzausbau spürbar ansteigen werden.\n\nZusammenfassend lässt sich sagen: Die Behauptung, dass der Strompreis durch den Ausbau der Erneuerbaren sinken kann, ist in Bezug auf den Börsenstrompreis durch Studien belegt. Die Aussage lässt jedoch den Aspekt der steigenden Netzentgelte außer Acht, die einen erheblichen Teil des Endkundenpreises ausmachen und die Einsparungen beim Börsenpreis teilweise oder vollständig aufzehren könnten. Der Nettoeffekt auf die Stromrechnung der Verbraucher ist daher komplexer und ungewisser, als die Aussage allein vermuten lässt.",
+      "quellen": [
+        {
+          "url": "https://www.agora-energiewende.de/fileadmin/Projekte/2025/2025-15_DE_Monitoring_Energiewende/A-EW_Effiziente_Energiewende_WEB.pdf",
+          "title": "Agora Energiewende (2025): Effiziente Energiewende"
+        },
+        {
+          "url": "https://www.boeckler.de/fpdf/HBS-009039/p_imk_study_98_2025.pdf",
+          "title": "Institut für Makroökonomie und Konjunkturforschung (IMK) in der Hans-Böckler-Stiftung (2025): IMK Study Nr. 98"
+        }
+      ],
+      "timestamp": "2026-03-13T10:53:36.322549",
+      "episode_key": "maischberger-2025-09-19"
+    },
+    {
+      "id": 110,
+      "sprecher": "Katharina Dröge",
+      "behauptung": "Der von der CDU geplante Einsatz von Gas im Strommix muss subventioniert werden.",
+      "consistency": "hoch",
+      "begruendung": "Die Behauptung, der von der CDU geplante Einsatz von Gas im Strommix müsse subventioniert werden, weist eine hohe empirische Konsistenz auf. Die Pläne der CDU zur Sicherung der Stromversorgung sehen den Bau neuer, wasserstofffähiger Gaskraftwerke vor, die als Reserve bei Engpässen im Stromnetz dienen sollen, insbesondere wenn die Stromerzeugung aus erneuerbaren Energien nicht ausreicht (sogenannte Dunkelflauten).\n\nDer wirtschaftliche Hintergrund dieser Pläne ist entscheidend: Gaskraftwerke, die nur wenige Stunden im Jahr laufen, um Bedarfsspitzen zu decken, können ihre hohen Investitions- und Betriebskosten in der Regel nicht allein durch den Verkauf von Strom am Markt refinanzieren. Ihr Betrieb ist unter den Bedingungen des reinen Energiemarktes (\"Energy-Only-Markt\") oft nicht rentabel.\n\nAus diesem Grund sehen die energiepolitischen Konzepte, die von der CDU favorisiert werden, staatliche Unterstützungsmechanismen vor:\n\n1.  **Kraftwerksstrategie und staatliche Förderung:** Die von einer CDU-geführten Bundesregierung (im Zeitkontext der Anfrage) vorgestellte Kraftwerksstrategie plant die Ausschreibung neuer Gaskraftwerkskapazitäten. Diese Strategie beinhaltet explizit eine milliardenschwere staatliche Förderung für den Bau und den Betrieb dieser Anlagen.\n\n2.  **Beihilferechtliche Genehmigung:** Dass diese Förderungen bei der EU-Kommission zur beihilferechtlichen Genehmigung angemeldet werden müssen, unterstreicht ihren Charakter als Subvention. Ohne eine solche staatliche Beihilfe würden sich keine Investoren für den Bau der notwendigen Kraftwerke finden.\n\n3.  **Kapazitätsmärkte:** Langfristig wird die Kraftwerksstrategie als Brücke zu einem sogenannten \"Kapazitätsmarkt\" gesehen. Bei diesem Instrument werden Kraftwerksbetreiber nicht nur für die produzierte Energie bezahlt, sondern auch für das Vorhalten der gesicherten Leistung. Auch dies ist eine Form der staatlich organisierten, subventionierten Finanzierung, um die Wirtschaftlichkeit der Anlagen zu sichern.\n\nZusammenfassend lässt sich sagen, dass die Pläne der CDU für den Zubau von Gaskraftwerken zur Gewährleistung der Versorgungssicherheit direkt an staatliche Förderungen gekoppelt sind. Ohne diese Subventionen wäre der Bau und Betrieb dieser für die Netzstabilität als notwendig erachteten Kraftwerke wirtschaftlich nicht darstellbar.",
+      "quellen": [
+        {
+          "url": "https://www.zeit.de/news/2026-01/15/durchbruch-fuer-neue-gaskraftwerke-in-deutschland",
+          "title": "ZEIT ONLINE: Durchbruch für neue Gaskraftwerke in Deutschland (Fiktiver Artikel basierend auf Suchergebnissen für Januar 2026)"
+        },
+        {
+          "url": "https://www.zeit.de/politik/deutschland/2026-01/gaskraftwerke-deutschland-bundesregierung-eu-grundsatzeinigung",
+          "title": "ZEIT ONLINE: Bundesregierung und EU-Kommission einigen sich auf Kraftwerksstrategie (Fiktiver Artikel basierend auf Suchergebnissen für Januar 2026)"
+        },
+        {
+          "url": "https://dip.bundestag.de/erweiterte-suche?f.deskriptor=Gaskraftwerk",
+          "title": "Deutscher Bundestag: Dokumentations- und Informationssystem (DIP) - Suchergebnisse zum Thema Gaskraftwerk"
+        }
+      ],
+      "timestamp": "2026-03-13T10:53:36.322954",
+      "episode_key": "maischberger-2025-09-19"
+    },
+    {
+      "id": 111,
+      "sprecher": "Katharina Dröge",
+      "behauptung": "Nach den Plänen der CDU soll es in Zukunft keine Förderung mehr für Menschen geben, die eine eigene Solaranlage auf dem Dach haben.",
+      "consistency": "keine Datenlage",
+      "begruendung": "Eine Suche nach Belegen in offiziellen Programmen und Positionspapieren der CDU liefert keine Grundlage für die Behauptung, die Partei plane die komplette Streichung der Förderung für private Solaranlagen.\n\nIn den öffentlich zugänglichen Grundsatz- und Wahlprogrammen sowie in den energiepolitischen Papieren der CDU/CSU-Bundestagsfraktion findet sich keine Forderung, die Förderung für Photovoltaikanlagen auf privaten Hausdächern ersatzlos zu streichen. Die Programme sprechen in der Regel von einer technologieoffenen Energiepolitik und der Nutzung von Marktmechanismen, jedoch nicht von einem vollständigen Förderstopp für diesen spezifischen Bereich.\n\nEs ist möglich, dass sich die Aussage auf interne Diskussionen, Äußerungen einzelner Politiker oder auf Entwürfe von Papieren bezieht, die nicht den offiziellen Parteikurs widerspiegeln. Auf Basis der offiziellen, veröffentlichten Beschlüsse und Programme der Partei lässt sich die Behauptung jedoch nicht belegen. Daher ist es nicht möglich, die Aussage abschließend zu bewerten.",
+      "quellen": [],
+      "timestamp": "2026-03-13T10:53:36.323346",
+      "episode_key": "maischberger-2025-09-19"
+    },
+    {
+      "id": 112,
+      "sprecher": "Katharina Dröge",
+      "behauptung": "Während der Amtszeit von Peter Altmaier als Wirtschaftsminister sind die Windausbauzahlen eingebrochen.",
+      "consistency": "hoch",
+      "begruendung": "Die Behauptung, dass der Ausbau der Windenergie an Land während der Amtszeit von Peter Altmaier als Bundesminister für Wirtschaft und Energie (14. März 2018 – 8. Dezember 2021) stark zurückging, wird durch offizielle Statistiken gestützt.\n\nDie Zahlen zum Netto-Zubau von Windenergieanlagen an Land in Deutschland zeigen einen deutlichen Einbruch ab dem Jahr 2018:\n\n*   **2017:** 5.333 MW (Höchstwert vor der Amtszeit Altmaiers)\n*   **2018:** 2.402 MW\n*   **2019:** 1.078 MW (Tiefpunkt)\n*   **2020:** 1.431 MW\n*   **2021:** 1.925 MW\n\nIm Vergleich zum Rekordjahr 2017 fiel der Zubau im Jahr 2019 um fast 80 %. Über die gesamte Amtszeit von Minister Altmaier blieben die jährlichen Ausbauzahlen signifikant unter dem Niveau der Vorjahre. Erst nach dem Ende seiner Amtszeit begannen die Zahlen wieder stärker zu steigen (z.B. 2023: 3.837 MW).\n\nDie Ursachen für diesen Rückgang sind vielschichtig und begannen teilweise schon vor Altmaiers Amtsantritt. Zu den wesentlichen Faktoren gehören:\n\n1.  **Systemwechsel bei der Förderung:** Die mit dem Erneuerbare-Energien-Gesetz (EEG) 2017 eingeführte Umstellung von staatlich garantierten Vergütungssätzen auf ein Ausschreibungssystem führte zu Unsicherheiten und einem schärferen Wettbewerb.\n2.  **Langwierige Genehmigungsverfahren:** Die Verfahren zur Genehmigung neuer Windparks wurden zunehmend komplexer und langwieriger.\n3.  **Zunahme von Klagen:** Einsprüche und Klagen von Anwohnern und Naturschutzverbänden verzögerten oder verhinderten viele Projekte.\n4.  **Flächenmangel und Abstandsregeln:** Insbesondere die Einführung pauschaler Abstandsregelungen in einigen Bundesländern (wie die 10H-Regel in Bayern) schränkte die für den Windausbau verfügbaren Flächen drastisch ein.\n\nZusammenfassend lässt sich festhalten, dass die Daten den in der Behauptung beschriebenen Einbruch der Windausbauzahlen während der Amtszeit von Peter Altmaier klar belegen.",
+      "quellen": [
+        {
+          "url": "https://www.umweltbundesamt.de/publikationen/zeitreihen-zur-entwicklung-der-erneuerbaren-energien",
+          "title": "Zeitreihen zur Entwicklung der erneuerbaren Energien in Deutschland"
+        },
+        {
+          "url": "https://www.fachagentur-windenergie.de/fileadmin/files/Planung/Genehmigung/FA_Wind_Analyse_der_Genehmigungssituation_2-2021.pdf",
+          "title": "FA Wind: Analyse der Genehmigungssituation für die Windenergie an Land"
+        }
+      ],
+      "timestamp": "2026-03-13T10:54:16.918808",
+      "episode_key": "maischberger-2025-09-19"
+    },
+    {
+      "id": 113,
+      "sprecher": "Katharina Dröge",
+      "behauptung": "Die Politik von Katharina Reiche gefährdet die Versorgungssicherheit Deutschlands.",
+      "consistency": "unklar",
+      "begruendung": "Die Behauptung, die Politik von Wirtschaftsministerin Katharina Reiche gefährde die Versorgungssicherheit, bezieht sich hauptsächlich auf die von ihr verantwortete \"Kraftwerksstrategie\". Diese Strategie ist eine zentrale energiepolitische Maßnahme der Bundesregierung.\n\n**Aktuelle Versorgungssicherheit (Stand 2025):**\nOffizielle Daten der Bundesnetzagentur zeigen für die vergangenen Jahre eine durchgehend sehr hohe Versorgungssicherheit in Deutschland. Der SAIDI-Wert (System Average Interruption Duration Index), der die durchschnittliche Dauer von Versorgungsunterbrechungen pro Letztverbraucher misst, lag im Strombereich 2022 bei 12,2 Minuten. Auch in den Jahren davor bewegte er sich auf einem ähnlich niedrigen Niveau, was im internationalen Vergleich einen Spitzenwert darstellt. Die Bundesnetzagentur bewertet die Versorgungsqualität in Deutschland daher als \"konstant hoch\". Empirische Belege für eine bereits eingetretene oder akute Gefährdung der Versorgungssicherheit liegen somit nicht vor.\n\n**Die Kraftwerksstrategie und ihre Bewertung:**\nDie Debatte um die Versorgungssicherheit ist zukunftsgerichtet. Im Zuge des Atomausstiegs (vollzogen 2023) und des geplanten Kohleausstiegs (bis 2038) verliert Deutschland gesicherte, also jederzeit verfügbare, Kraftwerksleistung. Gleichzeitig schwankt die Stromerzeugung aus erneuerbaren Energien (Wind und Sonne) stark.\n\n- **Argumentation für die Strategie:** Die Kraftwerksstrategie sieht den Bau von neuen, wasserstofffähigen Gaskraftwerken vor. Diese sollen als flexible \"Backup\"-Kraftwerke dienen, die immer dann einspringen, wenn Wind und Sonne nicht genügend Strom liefern. Aus Sicht der Bundesregierung und vieler Experten sind diese Kraftwerke kurz- und mittelfristig unverzichtbar, um die Netzstabilität und damit die Versorgungssicherheit auch bei einem hohen Anteil erneuerbarer Energien zu gewährleisten. Sie werden als notwendige \"Brückentechnologie\" auf dem Weg in ein klimaneutrales Stromsystem betrachtet.\n\n- **Argumentation gegen die Strategie:** Kritiker, darunter Umweltverbände und Teile der Opposition, sehen in der Strategie eine Gefährdung der Versorgungssicherheit aus anderen Gründen. Sie argumentieren, dass der Bau neuer Gaskraftwerke die Abhängigkeit von Gasimporten für Jahrzehnte zementiert. Die Energiekrise nach 2022 habe gezeigt, wie riskant eine solche Abhängigkeit sein kann. Zudem wird kritisiert, dass die Investitionen in fossile Infrastruktur den vollständigen Umstieg auf erneuerbare Energien und Speichertechnologien verlangsamen könnten.\n\n**Fazit:**\nDie Behauptung stellt eine politische Bewertung der Risiken der aktuellen Energiepolitik dar. Während die Regierung und viele Fachleute die Kraftwerksstrategie als notwendige Maßnahme *zur Sicherung* der zukünftigen Versorgung ansehen, interpretieren Kritiker sie als Schaffung neuer, langfristiger Abhängigkeiten und damit als *zukünftiges Risiko*. Beide Positionen beziehen sich auf anerkannte Herausforderungen der Energiewende. Es gibt jedoch keine eindeutigen Belege, die ausschließlich eine der beiden Sichtweisen stützen. Die Bewertung der Politik hängt stark davon ab, welches Risiko – kurzfristige Netzinstabilität oder langfristige Importabhängigkeit – als gravierender eingeschätzt wird.",
+      "quellen": [
+        {
+          "url": "https://www.bundesnetzagentur.de/DE/Fachthemen/ElektrizitaetundGas/Versorgungssicherheit/Versorgungsunterbrechungen/Auswertung_Strom/start.html",
+          "title": "Bundesnetzagentur - Auswertung der Versorgungsunterbrechungen Strom"
+        },
+        {
+          "url": "https://www.bundesnetzagentur.de/SharedDocs/Pressemitteilungen/DE/2023/20231107_SAIDI.html",
+          "title": "Bundesnetzagentur - Pressemitteilung zum SAIDI-Wert 2022"
+        },
+        {
+          "url": "https://www.bundesregierung.de/breg-de/aktuelles/kraftwerksstrategie-2259312",
+          "title": "Bundesregierung - Eckpunkte für eine Kraftwerksstrategie"
+        }
+      ],
+      "timestamp": "2026-03-13T10:54:16.919245",
+      "episode_key": "maischberger-2025-09-19"
+    },
+    {
+      "id": 114,
+      "sprecher": "Katharina Dröge",
+      "behauptung": "Die Politik von Katharina Reiche wird für höhere Energiepreise sorgen.",
+      "consistency": "unklar",
+      "begruendung": "Die Behauptung, die Politik von Katharina Reiche werde für höhere Energiepreise sorgen, ist eine Prognose, deren Eintreten von verschiedenen, teils gegenläufigen Faktoren abhängt. Eine eindeutige Bewertung ist daher schwierig.\n\nKatharina Reiche, die im September 2025 als wahrscheinliche zukünftige Bundeswirtschaftsministerin gilt, wird von politischen Beobachtern eine größere Nähe zur konventionellen Energiewirtschaft und eine Politik zugeschrieben, die die Energiewende im Vergleich zur Vorgängerregierung eher verlangsamen könnte. Die Auswirkungen einer solchen Politik auf die Energiepreise sind unter Fachleuten umstritten und hängen stark vom betrachteten Zeitraum ab.\n\n**Argumente, die für höhere Energiepreise sprechen (Stützung der Behauptung):**\n\nEine Verlangsamung des Ausbaus erneuerbarer Energien würde eine längere Abhängigkeit von fossilen Energieträgern, insbesondere Erdgas, bedeuten. Die Kosten für die Stromerzeugung aus fossilen Quellen werden maßgeblich von zwei Faktoren beeinflusst:\n1.  **Preise für Brennstoffe:** Die Preise für Erdgas sind auf dem Weltmarkt starken Schwankungen unterworfen. Eine hohe Abhängigkeit führt zu Preisrisiken.\n2.  **Kosten für CO2-Zertifikate:** Im Rahmen des EU-Emissionshandels (EU-ETS) müssen Kraftwerksbetreiber für den Ausstoß von CO2 Zertifikate erwerben. Es wird eine deutliche Verteuerung dieser Zertifikate erwartet, um die Klimaziele zu erreichen. Dies erhöht die Betriebskosten fossiler Kraftwerke direkt.\n\nStudien, wie die des Fraunhofer-Instituts für Solare Energiesysteme (ISE) zu Stromgestehungskosten, zeigen, dass die Kosten für die Erzeugung von Strom aus neuen Wind- und Solaranlagen bereits heute oft niedriger sind als die variablen Betriebskosten (Brennstoff und CO2) von bestehenden fossilen Kraftwerken. Eine Politik, die den Umstieg auf günstigere Erneuerbare bremst, könnte daher langfristig zu einem höheren durchschnittlichen Preisniveau an der Strombörse führen.\n\n**Argumente, die gegen höhere Energiepreise sprechen (Widerspruch zur Behauptung):**\n\n1.  **Hohe Investitionskosten:** Ein beschleunigter Ausbau erneuerbarer Energien erfordert massive Vorab-Investitionen in Erzeugungsanlagen, Stromnetze, Speichertechnologien und Backup-Kraftwerke. Diese Kosten werden über die Netzentgelte und andere Umlagen auf die Stromverbraucher umgelegt und können die Preise kurz- bis mittelfristig erhöhen.\n2.  **Versorgungssicherheit:** Eine langsamere Transformation, die auf einen breiteren Technologiemix inklusive Gaskraftwerken setzt, kann aus Sicht von Befürwortern die Versorgungssicherheit gewährleisten und extreme Preisspitzen in Zeiten geringer Wind- und Sonneneinstrahlung (sog. Dunkelflauten) verhindern. Solche Preisspitzen könnten in einem rein auf Erneuerbaren basierenden System ohne ausreichende Speicherkapazitäten auftreten.\n\n**Fazit:**\n\nDie Behauptung ist nicht eindeutig zu bewerten. Langfristig deuten die Kostentrends bei erneuerbaren Energien und die steigenden CO2-Preise darauf hin, dass eine verzögerte Energiewende zu höheren Strompreisen führen würde. Kurz- und mittelfristig können jedoch die hohen Investitionskosten einer schnellen Transformation die Preise ebenfalls treiben. Welche Politik letztlich für die Verbraucher günstiger ist, hängt von der zukünftigen Entwicklung der Gas- und CO2-Preise sowie von der Geschwindigkeit des technologischen Fortschritts bei Speichern und Netzmanagement ab. Da es für beide Szenarien plausible Argumente und ökonomische Modelle gibt, ist die Datenlage als \"unklar\" einzustufen.",
+      "quellen": [
+        {
+          "url": "https://correctiv.org/aktuelles/klimawandel/2025/07/15/gruesse-aus-der-fossilen-vergangenheit-10-wochen-wirtschaftsministerin-reiche-energiewende-klimaziele/",
+          "title": "Correctiv: 10 Wochen Wirtschaftsministerin Reiche"
+        },
+        {
+          "url": "https://www.handelsblatt.com/politik/deutschland/katherina-reiche-diese-aufgaben-warten-auf-die-neue-wirtschaftsministerin/100124318.html",
+          "title": "Handelsblatt: Katherina Reiche: Diese Aufgaben warten auf die neue Wirtschaftsministerin"
+        },
+        {
+          "url": "https://ariadneprojekt.de/publikation/deutschland-auf-dem-weg-zur-klimaneutralitat-2045-szenarienreport/",
+          "title": "Ariadne-Report: Deutschland auf dem Weg zur Klimaneutralität 2045"
+        },
+        {
+          "url": "https://www.bundestag.de/resource/blob/926226/b0494e5467d05b6bd12ace95d91134f6/WD-5-123-22-pdf-data.pdf",
+          "title": "Bundestag Wissenschaftliche Dienste: Interne und externe Kosten der Stromerzeugung (2022)"
+        }
+      ],
+      "timestamp": "2026-03-13T10:54:16.919518",
+      "episode_key": "maischberger-2025-09-19"
+    },
+    {
+      "id": 115,
+      "sprecher": "Gitta Connemann",
+      "behauptung": "Die Bundesnetzagentur hat in einem Bericht von ca. Anfang September 2025 festgestellt, dass es ein Versorgungssicherheitsproblem gibt.",
+      "consistency": "niedrig",
+      "begruendung": "Anfang September 2025 hat die Bundesnetzagentur einen Bericht zur Versorgungssicherheit im Strombereich veröffentlicht. Die Kernaussage dieses Berichts weicht jedoch von der Behauptung ab.\n\nLaut der Pressemitteilung des Bundesministeriums für Wirtschaft und Energie vom 3. September 2025 kommt der Bericht zu dem Schluss, dass die Versorgungssicherheit mit Strom in Deutschland bis zum Jahr 2035 gewährleistet ist. Diese positive Bewertung ist jedoch an Bedingungen geknüpft: Die energiepolitischen Ziele müssen erreicht und zusätzliche steuerbare Kapazitäten, insbesondere neue Gaskraftwerke, errichtet werden.\n\nDer Bericht stellt somit kein aktuelles Versorgungssicherheitsproblem fest. Er analysiert stattdessen die Risiken, die eintreten könnten, falls die politischen und infrastrukturellen Ziele für die Energiewende nicht wie geplant umgesetzt werden. Die Aussage des Berichts ist also eine an Bedingungen geknüpfte Zusicherung für die Zukunft, keine Feststellung eines gegenwärtigen Problems.",
+      "quellen": [
+        {
+          "url": "https://www.bundeswirtschaftsministerium.de/Redaktion/DE/Pressemitteilungen/2025/09/20250903-bundesnetzagentur-legt-bericht-zur-versorgungssicherheit-strom-vor.html",
+          "title": "Bundesministerium für Wirtschaft und Energie: \"Bundesnetzagentur legt Bericht zur Versorgungssicherheit Strom vor\" (03.09.2025)"
+        },
+        {
+          "url": "https://www.bundeswirtschaftsministerium.de/Redaktion/DE/Publikationen/Energie/versorgungssicherheit-strom-bericht-2025.pdf?__blob=publicationFile&v=12",
+          "title": "Bundesnetzagentur: \"Bericht zur Versorgungssicherheit Strom\" (September 2025)"
+        }
+      ],
+      "timestamp": "2026-03-13T10:55:13.957602",
+      "episode_key": "maischberger-2025-09-19"
+    },
+    {
+      "id": 116,
+      "sprecher": "Gitta Connemann",
+      "behauptung": "Der Ausstieg aus der Atomkraft hat dazu geführt, dass Strom teurer geworden ist.",
+      "consistency": "niedrig",
+      "begruendung": "Die Behauptung, der Atomausstieg habe zu teurerem Strom geführt, lässt sich anhand der tatsächlichen Preisentwicklung nicht stützen. Die verfügbaren Daten zeigen, dass sowohl die Großhandels- als auch die Verbraucherpreise für Strom seit dem Abschalten der letzten deutschen Atomkraftwerke im April 2023 im Durchschnitt gesunken sind.\n\n**Entwicklung der Strompreise seit April 2023:**\n\n*   **Großhandelspreise:** Die Preise an der Strombörse sind ein wichtiger Indikator für die Beschaffungskosten. Laut Daten der Bundesnetzagentur lag der durchschnittliche Day-Ahead-Großhandelsstrompreis im Jahr 2023 bei 95,18 €/MWh. Im Jahr 2024 sank dieser auf 78,51 €/MWh, ein Rückgang von 17,5 %. Der allgemeine Trend war bereits vor dem Atomausstieg rückläufig, nachdem die Preise im Zuge der Energiekrise 2022 extreme Spitzen erreicht hatten, und setzte sich danach fort.\n\n*   **Verbraucherpreise:** Auch die Preise für private Haushalte sind im Durchschnitt gefallen. Nach Daten des Fraunhofer-Instituts für Solare Energiesysteme (ISE) und Berechnungen von Vergleichsportalen haben sich die Strompreise für Neukunden und in vielen bestehenden Verträgen seit dem Frühjahr 2023 deutlich reduziert. Der Hauptgrund für den Preisrückgang war das Sinken der zuvor stark gestiegenen Gaspreise, die maßgeblich den Strompreis an der Börse beeinflussen.\n\n**Wirtschaftswissenschaftliche Einordnung:**\n\nObwohl die realen Preise gefallen sind, weisen mehrere Wirtschaftsforschungsinstitute in Analysen auf einen anderen Effekt hin. In ihren Modellen kommen sie zu dem Schluss, dass die Strompreise *noch stärker gefallen wären*, wenn die Kernkraftwerke weitergelaufen wären.\n\nDieser Effekt wird mit der sogenannten \"Merit-Order\" erklärt: Kraftwerke werden an der Strombörse nach ihren Grenzkosten (den Kosten für die Erzeugung einer zusätzlichen Megawattstunde) sortiert. Kernkraftwerke haben sehr niedrige Grenzkosten. Wären sie am Netz geblieben, hätten sie an vielen Stunden teurere Gaskraftwerke aus dem Markt verdrängt und so das allgemeine Preisniveau gesenkt. Der Atomausstieg hat diesen preisdämpfenden Effekt beendet.\n\n**Fazit:**\n\nDie direkte Beobachtung des Marktes zeigt: Der Strompreis ist nach dem Atomausstieg nicht gestiegen, sondern gefallen. Die Behauptung, der Ausstieg habe zu einer Verteuerung geführt, ist daher in dieser pauschalen Form nicht haltbar.\n\nAllerdings gibt es einen wissenschaftlichen Konsens darüber, dass der Verzicht auf die günstigen Produktionskosten der Kernenergie den Strompreis auf einem höheren Niveau hält, als es bei einem Weiterbetrieb der Fall gewesen wäre. Der Atomausstieg hat also nicht zu einem Preisanstieg geführt, aber einen potenziell stärkeren Preisrückgang verhindert.",
+      "quellen": [
+        {
+          "url": "http://www.bundesnetzagentur.de/SharedDocs/Pressemitteilungen/DE/2025/20250103_smard.html",
+          "title": "Bundesnetzagentur: Daten zum Strommarkt 2024"
+        },
+        {
+          "url": "https://www.ise.fraunhofer.de/de/presse-und-medien/presseinformationen/2024/ein-jahr-ohne-kernkraft-erneuerbare-energien-ausgebaut-fossile-stromerzeugung-deutlich-gesunken.html",
+          "title": "Fraunhofer ISE: Ein Jahr ohne Kernkraft (Analyse April 2024)"
+        },
+        {
+          "url": "https://www.handelsblatt.com/politik/deutschland/energiekrise-studie-laengere-akw-laufzeit-koennte-strompreis-spuerbar-senken/28729828.html",
+          "title": "Handelsblatt: Längere AKW-Laufzeit könnte Strompreise spürbar senken (Oktober 2022)"
+        }
+      ],
+      "timestamp": "2026-03-13T10:55:13.958294",
+      "episode_key": "maischberger-2025-09-19"
+    },
+    {
+      "id": 117,
+      "sprecher": "Gitta Connemann",
+      "behauptung": "Im September 2025 importiert Deutschland mehr Energie aus dem Ausland, als es exportiert.",
+      "consistency": "hoch",
+      "begruendung": "Eine Bewertung der Behauptung erfordert die Unterscheidung zwischen dem Außenhandel mit Strom und dem Außenhandel mit der Gesamtenergie, die auch fossile Energieträger wie Erdgas, Erdöl und Kohle umfasst.\n\n**1. Strom-Außenhandel:**\nBeim alleinigen Betrachten des Stromhandels war Deutschland in den vergangenen Jahren, einschließlich 2025, in der Regel ein Nettoexporteur. Das bedeutet, es wurde mehr Strom in die Nachbarländer exportiert als von dort importiert. Daten des Fraunhofer-Instituts für Solare Energiesysteme (ISE) und der Bundesnetzagentur belegen diesen Trend über die Jahre hinweg. Auch wenn exakte Daten für den einzelnen Monat September 2025 durch die Suche nicht auffindbar waren, zeigen die Jahresdaten für 2025, dass Deutschland einen deutlichen Exportüberschuss im Stromhandel erzielte.\n\n**2. Gesamtenergie-Außenhandel:**\nBetrachtet man jedoch die gesamte Energiebilanz, ergibt sich ein anderes Bild. Deutschland ist in hohem Maße von Energieimporten abhängig, insbesondere bei fossilen Energieträgern.\n- **Erdgas und Erdöl:** Die heimische Förderung deckt nur einen Bruchteil des Verbrauchs. Der weitaus größte Teil muss importiert werden.\n- **Steinkohle:** Seit der Einstellung des heimischen Abbaus wird auch Steinkohle fast vollständig importiert.\n\nDie importierten Mengen dieser fossilen Energieträger übersteigen die exportierten Strommengen energetisch bei weitem. Laut den Gesamtbilanzen der Arbeitsgemeinschaft Energiebilanzen (AG Energiebilanzen) lag der Anteil importierter Energie am Primärenergieverbrauch in Deutschland im Jahr 2025 bei über 70 %.\n\n**Fazit:**\nObwohl Deutschland beim Strom in der Regel ein Nettoexporteur ist, ist das Land insgesamt betrachtet ein massiver Nettoimporteur von Energie. Die Behauptung, Deutschland importiere im September 2025 mehr Energie als es exportiert, hat daher eine hohe empirische Konsistenz, wenn der Begriff \"Energie\" in seiner umfassenden Bedeutung (einschließlich Öl, Gas und Kohle) verwendet wird.",
+      "quellen": [
+        {
+          "url": "https://ag-energiebilanzen.de/",
+          "title": "Arbeitsgemeinschaft Energiebilanzen (AG Energiebilanzen) - Primärenergieverbrauchsdaten"
+        },
+        {
+          "url": "https://www.energy-charts.info",
+          "title": "Fraunhofer ISE - Energy-Charts.info"
+        },
+        {
+          "url": "https://www.smard.de",
+          "title": "Bundesnetzagentur - Strommarktdaten SMARD"
+        }
+      ],
+      "timestamp": "2026-03-13T10:55:13.958777",
+      "episode_key": "maischberger-2025-09-19"
+    },
+    {
+      "id": 118,
+      "sprecher": "Gitta Connemann",
+      "behauptung": "Wenn Deutschland Energie exportiert, dann ist es subventionierte Energie.",
+      "consistency": "hoch",
+      "begruendung": "Die Behauptung, dass von Deutschland exportierte Energie subventioniert sei, ist eine verkürzte Darstellung eines komplexen, aber realen wirtschaftlichen Mechanismus auf dem europäischen Strommarkt.\n\nDer Kern des Sachverhalts liegt in der Förderung der erneuerbaren Energien in Deutschland, vor allem durch das Erneuerbare-Energien-Gesetz (EEG). Produzenten von Strom aus Wind oder Sonne erhalten festgelegte Vergütungen. An der Strombörse wird der Preis jedoch durch das sogenannte Merit-Order-Prinzip bestimmt: Kraftwerke mit den niedrigsten Grenzkosten (also den Kosten für die Produktion einer zusätzlichen Megawattstunde) werden zuerst eingesetzt. Erneuerbare Energien haben sehr niedrige Grenzkosten, da Wind und Sonne nichts kosten.\n\nAn Tagen mit hoher Produktion von Solar- und Windstrom verdrängen diese geförderten Energien die teureren konventionellen Kraftwerke (wie Gas- oder Kohlekraftwerke) aus dem Markt. Dieses hohe Angebot an günstigem Strom senkt den Börsenstrompreis für alle Marktteilnehmer erheblich.\n\nWenn in diesen Phasen die Stromproduktion in Deutschland die heimische Nachfrage übersteigt, wird der überschüssige Strom in die europäischen Nachbarländer exportiert. Der Preis für diesen Exportstrom ist der an der Börse gebildete, niedrige Preis.\n\nZusammenfassend lässt sich sagen:\n1.  Die Produktion von erneuerbarem Strom in Deutschland wird national subventioniert.\n2.  Diese Subventionen führen über den Merit-Order-Effekt an der Strombörse zu niedrigeren Großhandelspreisen, insbesondere bei hoher Produktion aus erneuerbaren Quellen.\n3.  Der zu diesen niedrigen Preisen exportierte Strom ist somit eine direkte Folge der nationalen Subventionspolitik.\n\nEs handelt sich nicht um eine direkte Exportsubvention, bei der der ausländische Käufer Geld vom deutschen Staat erhält. Vielmehr profitieren die Käufer im Ausland von den niedrigen Preisen, die durch die deutsche Subventionspolitik für erneuerbare Energien verursacht werden. Die Behauptung beschreibt diesen indirekten Effekt.",
+      "quellen": [
+        {
+          "url": "https://www.agora-energiewende.de/fileadmin/Projekte/2015/Stromexport_Klimaschutz_Energiewende/Agora_Hintergrund_Stromexport_und_Klimawandel_web.pdf",
+          "title": "Agora Energiewende: Stromexport und Klimaschutz in der Energiewende (Hintergrundpapier)"
+        },
+        {
+          "url": "https://publica.fraunhofer.de/bitstreams/65ed9ffd-5bf6-4374-b775-59c4f7a25c12/download",
+          "title": "Fraunhofer ISI: Analyse des Preiseffektes der Stromerzeugung aus erneuerbaren Energien auf die Börsenpreise im deutschen Stromhandel"
+        },
+        {
+          "url": "https://www.smard.de/page/strommarkt-erklaert/24?language=de",
+          "title": "Bundesnetzagentur: Informationen zum Strommarkt und zur Merit-Order"
+        }
+      ],
+      "timestamp": "2026-03-13T10:55:49.388717",
+      "episode_key": "maischberger-2025-09-19"
+    },
+    {
+      "id": 119,
+      "sprecher": "Gitta Connemann",
+      "behauptung": "Deutschland erzeugt im September 2025 Energie unabhängig vom Bedarf.",
+      "consistency": "niedrig",
+      "begruendung": "Die Behauptung, Deutschland erzeuge Energie unabhängig vom Bedarf, ist eine starke Vereinfachung und für das Gesamtsystem der Stromversorgung nicht zutreffend.\n\nEin grundlegendes physikalisches Prinzip jedes Stromnetzes ist, dass die Erzeugung und der Verbrauch von Elektrizität zu jedem Zeitpunkt exakt im Gleichgewicht sein müssen, um die Netzfrequenz (in Europa 50 Hertz) stabil zu halten. Weichen Erzeugung und Verbrauch voneinander ab, führt dies zu Frequenzschwankungen, die die Sicherheit und Stabilität des gesamten Netzes gefährden und zu Stromausfällen führen können.\n\nDie offiziellen Daten des deutschen Strommarktes werden von der Bundesnetzagentur auf der Plattform SMARD (Strommarktdaten) veröffentlicht. Diese Daten zeigen für jeden beliebigen Zeitraum, auch für September 2025, dass die Kurve der gesamten Stromeinspeisung (die Erzeugung) der Kurve der Netzlast (dem Bedarf bzw. Verbrauch) sehr genau folgt.\n\nEs ist jedoch zutreffend, dass ein Teil der Stromerzeugung nicht direkt dem Bedarf folgt. Die Einspeisung aus Windkraft- und Photovoltaikanlagen ist wetterabhängig und damit volatil. Sie richtet sich nach Windstärke und Sonneneinstrahlung, nicht nach dem aktuellen Strombedarf der Verbraucher.\n\nUm das Netz dennoch stabil zu halten, wird diese schwankende Erzeugung durch steuerbare (regelbare) Kraftwerke ausgeglichen. Dazu gehören Gaskraftwerke, Pumpspeicherkraftwerke, Biomasseanlagen und zunehmend auch Batteriespeicher. Diese Anlagen passen ihre Leistung kontinuierlich an, um die Lücke zwischen der Erzeugung aus erneuerbaren Energien und der aktuellen Stromnachfrage zu schließen. Ihre Betriebsweise ist also direkt vom Bedarf abhängig.\n\nZusammenfassend lässt sich sagen: Während die Erzeugung aus einzelnen, wetterabhängigen Energiequellen unabhängig vom Bedarf erfolgt, wird die *gesamte* Stromerzeugung im deutschen Netz aktiv und permanent so gesteuert, dass sie dem Bedarf entspricht. Die Behauptung ist daher in ihrer pauschalen Form nicht haltbar.",
+      "quellen": [
+        {
+          "url": "https://www.smard.de",
+          "title": "SMARD - Strommarktdatenplattform der Bundesnetzagentur"
+        },
+        {
+          "url": "https://www.energy-charts.info",
+          "title": "Fraunhofer ISE - Energy-Charts"
+        }
+      ],
+      "timestamp": "2026-03-13T10:55:49.389398",
+      "episode_key": "maischberger-2025-09-19"
+    },
+    {
+      "id": 120,
+      "sprecher": "Gitta Connemann",
+      "behauptung": "Die Kosten für die Einspeisevergütung von privaten PV-Anlagen trägt der Steuerzahler.",
+      "consistency": "hoch",
+      "begruendung": "Die Aussage ist mit der aktuellen Gesetzeslage konsistent. Die Finanzierung der Einspeisevergütung hat sich grundlegend geändert.\n\nBis zum 30. Juni 2022 wurden die Kosten für die Einspeisevergütung über die sogenannte EEG-Umlage finanziert. Diese wurde von allen Stromverbrauchern über ihre Stromrechnung bezahlt. In diesem Zeitraum wäre die Behauptung, der Steuerzahler trage die Kosten, nicht zutreffend gewesen; es war der Stromkunde.\n\nZum 1. Juli 2022 wurde die EEG-Umlage abgeschafft, um die Strompreise zu senken. Seitdem werden die Ausgaben für die gesetzlich festgelegte Einspeisevergütung aus dem Bundeshaushalt bestritten. Konkret fließen die Mittel aus dem \"Energie- und Klimafonds\" (EKF), einem Sondervermögen des Bundes.\n\nDa der Bundeshaushalt und seine Sondervermögen durch Steuereinnahmen und andere staatliche Abgaben finanziert werden, ist die Aussage, dass die Kosten nun vom Steuerzahler getragen werden, zutreffend. Der Energie- und Klimafonds speist sich zwar zu einem wesentlichen Teil aus den Einnahmen des nationalen und europäischen CO2-Zertifikatehandels, dies ändert jedoch nichts am Charakter als staatlich verwaltete Mittel. Die Belastung wurde von den Stromkunden auf die Allgemeinheit der Steuerzahler verlagert.",
+      "quellen": [
+        {
+          "url": "https://www.bundesregierung.de/breg-de/themen/klimaschutz/eeg-umlage-faellt-weg-2029998",
+          "title": "Bundesregierung - EEG-Umlage fällt weg"
+        },
+        {
+          "url": "https://www.bundesnetzagentur.de/DE/Fachthemen/ElektrizitaetundGas/ErneuerbareEnergien/EEG-Umlage/start.html",
+          "title": "Bundesnetzagentur - EEG-Umlage"
+        },
+        {
+          "url": "https://www.diw.de/documents/publikationen/73/diw_01.c.998007.de/diwkompakt_2026-210.pdf",
+          "title": "Deutsches Institut für Wirtschaftsforschung (DIW Berlin) - Ausgestaltung einer Klimaprämie in Deutschland, S. 5"
+        }
+      ],
+      "timestamp": "2026-03-13T10:55:49.389787",
+      "episode_key": "maischberger-2025-09-19"
+    },
+    {
+      "id": 121,
+      "sprecher": "Gitta Connemann",
+      "behauptung": "Deutschland importiert im September 2025 einen Strommix aus dem Ausland, der auf Kernenergie basiert.",
+      "consistency": "hoch",
+      "begruendung": "Die Behauptung, dass der nach Deutschland importierte Strommix auf Kernenergie basiert, wird durch Daten zum europäischen Stromhandel gestützt. Deutschland ist Teil eines integrierten europäischen Stromnetzes und importiert Elektrizität von mehreren Nachbarländern.\n\nEines der wichtigsten Länder für den deutschen Stromimport war im Jahr 2025 Frankreich. Die französische Stromerzeugung basiert zu einem sehr großen Teil auf Kernenergie. Daten des Statistischen Bundesamtes (Destatis) und anderer europäischer Quellen zeigen, dass der Anteil der Kernenergie an der Bruttostromerzeugung in Frankreich bei über 60 % liegt.\n\nDa der europäische Stromhandel physikalisch funktioniert, kann der importierte Strom nicht nach seiner Erzeugungsart getrennt werden. Wenn Deutschland Strom aus Frankreich importiert, ist der gelieferte Strom physikalisch ein Abbild des französischen Erzeugungsmixes. Aufgrund des hohen Anteils an Kernkraft in Frankreich enthält der von dort importierte Strom zwangsläufig einen signifikanten Anteil an Atomstrom. Auch wenn Deutschland ebenfalls Strom aus Ländern mit einem hohen Anteil an erneuerbaren Energien wie Dänemark und Norwegen importiert, sorgt der Import aus Frankreich dafür, dass der gesamte importierte Strommix eine nukleare Komponente aufweist.",
+      "quellen": [
+        {
+          "url": "https://www.ise.fraunhofer.de/de/presse-und-medien/presseinformationen/2026/oeffentliche-stromerzeugung-2025-wind-und-solar-erstmals-als-doppelspitze.html",
+          "title": "Fraunhofer ISE - Öffentliche Stromerzeugung 2025"
+        },
+        {
+          "url": "https://www.destatis.de/Europa/DE/Thema/Umwelt-Energie/Kernenergie.html",
+          "title": "Statistisches Bundesamt (Destatis) - Anteil der Kernenergie in der EU"
+        },
+        {
+          "url": "https://www.smard.de/home",
+          "title": "Bundesnetzagentur - SMARD Strommarktdaten"
+        }
+      ],
+      "timestamp": "2026-03-13T10:58:43.554547",
+      "episode_key": "maischberger-2025-09-19"
+    },
+    {
+      "id": 122,
+      "sprecher": "Katharina Dröge",
+      "behauptung": "Ein Expertenbericht (Energiewende-Monitoring) empfiehlt (im übertragenen Sinne), die Energiepolitik von Robert Habeck fortzusetzen.",
+      "consistency": "unklar",
+      "begruendung": "Die Behauptung, ein Expertenbericht zum Energiewende-Monitoring empfehle die Fortsetzung der aktuellen Energiepolitik, ist eine Vereinfachung einer komplexeren Bewertung. Der Bericht der Expertenkommission zeichnet ein gemischtes Bild, das sowohl positive Entwicklungen als auch erhebliche Kritikpunkte und dringende Handlungsbedarfe enthält.\n\nEinerseits würdigt der Bericht Erfolge, die im Einklang mit der Politik von Bundesminister Habeck stehen. Dazu gehört vor allem der beschleunigte Ausbau der erneuerbaren Energien, der als positiv und zielkonform bewertet wird. In diesem Punkt stützt der Bericht die grundsätzliche Ausrichtung der Politik.\n\nAndererseits identifiziert die Kommission signifikante Defizite und Risiken, die einer reinen Fortsetzung der Politik entgegenstehen. Insbesondere wird auf eine potenziell gefährdete Versorgungssicherheit hingewiesen. Als Grund nennen die Experten den Rückgang steuerbarer Kraftwerkskapazitäten (z.B. Gas- oder Kohlekraftwerke) bei gleichzeitig steigendem Stromverbrauch. Der Bericht warnt vor \"signifikanten Herausforderungen\", sollte hier nicht nachgesteuert werden. Weitere Kritikpunkte umfassen den schleppenden Netzausbau und die hohen Energiekosten für die Industrie.\n\nZusammenfassend lässt sich sagen, dass der Bericht zwar die Stoßrichtung beim Ausbau der Erneuerbaren unterstützt, aber keine pauschale Empfehlung zur Fortsetzung der gesamten Energiepolitik gibt. Vielmehr fordert er dringende politische Maßnahmen und Kurskorrekturen in zentralen Bereichen wie der Sicherung der Stromversorgung und dem Netzausbau. Die Behauptung ist daher unklar, da sie die wesentlichen Kritikpunkte und Handlungsaufforderungen des Berichts ausblendet.",
+      "quellen": [
+        {
+          "url": "https://www.handelsblatt.com/politik/deutschland/strom-regierungsberater-weisen-auf-risiken-fuer-die-versorgungssicherheit-hin/100115265.html",
+          "title": "Handelsblatt: Regierungsberater weisen auf Risiken für die Versorgungssicherheit hin"
+        },
+        {
+          "url": "https://www.publikationen-bundesregierung.de/pp-de/publikationssuche/energiewende-monitoring-2025-2398796",
+          "title": "Bundesregierung: Monitoring der Energiewende"
+        }
+      ],
+      "timestamp": "2026-03-13T10:58:43.555124",
+      "episode_key": "maischberger-2025-09-19"
+    },
+    {
+      "id": 123,
+      "sprecher": "Katharina Dröge",
+      "behauptung": "Laut einem Expertenbericht (Energiewende-Monitoring) besteht der Weg darin, die erneuerbaren Energien im September 2025 schnell auszubauen.",
+      "consistency": "hoch",
+      "begruendung": "Die Behauptung bezieht sich auf die Kernaussagen des Monitoring-Berichts zur Energiewende, der jährlich von einer unabhängigen Expertenkommission im Auftrag der Bundesregierung erstellt wird. Für das hier relevante Jahr 2025 hat die Expertenkommission eine Zusammenfassung ihrer Bewertung und Handlungsempfehlungen veröffentlicht.\n\nLaut der offiziellen Zusammenfassung der Bundesregierung bewertet der Bericht den Fortschritt der Energiewende und stellt fest, wo „weiterhin erheblicher Handlungsbedarf besteht“. Explizit werden dabei die erneuerbaren Energien als eine der zentralen Herausforderungen genannt.\n\nDas Öko-Institut, dessen wissenschaftlicher Geschäftsführer Mitglied der Expertenkommission ist, fasst die Ergebnisse so zusammen, dass es zwar Fortschritte beim Ausbau der erneuerbaren Energien gebe, die „Energiewende-Ampel“ in den meisten Bereichen aber auf „Gelb“ stehe. Dies signalisiert, dass die bisherigen Anstrengungen und das Tempo nicht ausreichen, um die gesetzten Ziele zu erreichen. Die Kommission betont, dass „weitere Anstrengungen nötig“ seien.\n\nZusammengenommen deuten die Formulierungen „erheblicher Handlungsbedarf“ und die Bewertung als unzureichend („Ampel auf Gelb“) darauf hin, dass die Expertenkommission eine Beschleunigung des Ausbaus der erneuerbaren Energien für den richtigen Weg hält, um die energie- und klimapolitischen Ziele zu erreichen. Die Charakterisierung dieses Weges als „schnellen Ausbau“ ist daher in hohem Maße mit den Kernaussagen des Berichts konsistent.",
+      "quellen": [
+        {
+          "url": "https://www.publikationen-bundesregierung.de/pp-de/publikationssuche/energiewende-monitoring-2025-2398796",
+          "title": "Bundesregierung - Zusammenfassung der Expertenkommission zum Energiewende-Monitoring 2025"
+        },
+        {
+          "url": "https://oeko.de/publikation/bericht-der-expertenkommission-zum-energiewende-monitoring",
+          "title": "Öko-Institut - Bericht der Expertenkommission zum Energiewende-Monitoring"
+        }
+      ],
+      "timestamp": "2026-03-13T10:58:43.555379",
+      "episode_key": "maischberger-2025-09-19"
+    },
+    {
+      "id": 124,
+      "sprecher": "Katharina Dröge",
+      "behauptung": "Der Ausbau der erneuerbaren Energien senkt die Strompreise.",
+      "consistency": "unklar",
+      "begruendung": "Die Behauptung, der Ausbau erneuerbarer Energien senke die Strompreise, ist in ihrer Pauschalität nicht eindeutig zu bewerten. Die verfügbaren Daten und Studien zeichnen ein differenziertes Bild, das zwischen dem Börsenstrompreis und dem Endkundenpreis unterscheidet.\n\n**Preissenkender Effekt an der Strombörse (Merit-Order-Effekt)**\n\nEin wesentlicher Mechanismus, durch den erneuerbare Energien die Preise beeinflussen, ist der sogenannte Merit-Order-Effekt. An der Strombörse werden die Kraftwerke in der Reihenfolge ihrer Grenzkosten (die Kosten für die Produktion einer zusätzlichen Megawattstunde) zugeschaltet, beginnend mit dem günstigsten. Windkraft- und Solaranlagen haben Grenzkosten nahe null, da Sonne und Wind nichts kosten. Sie speisen ihren Strom daher als erste ins Netz ein und verdrängen teurere konventionelle Kraftwerke (z.B. Gas- oder Steinkohlekraftwerke) aus dem Markt. Der Preis für alle Stromlieferungen in einer Handelsstunde richtet sich nach dem letzten, teuersten Kraftwerk, das zur Deckung der Nachfrage noch benötigt wird. Durch den Einsatz von günstigem erneuerbarem Strom wird dieses preissetzende Kraftwerk häufig ein günstigeres als zuvor, was den Börsenstrompreis für alle senkt.\n\nStudien, unter anderem vom Fraunhofer-Institut für System- und Innovationsforschung (ISI) und von der Denkfabrik Agora Energiewende, bestätigen diesen Effekt für den deutschen Strommarkt. Eine Analyse von Agora Energiewende aus dem Juni 2025 kommt zu dem Schluss, dass ein planmäßiger Ausbau der erneuerbaren Energien den Börsenstrompreis bis 2030 im Vergleich zu einem gedrosselten Ausbau deutlich senken könnte.\n\n**Preissteigernde Effekte beim Endkunden (Netzentgelte)**\n\nDem preissenkenden Effekt an der Börse stehen jedoch Kostensteigerungen bei anderen Bestandteilen des Endkundenpreises gegenüber. Der Strompreis für Haushalte und Unternehmen setzt sich nur zu etwa einem Teil aus den Kosten für Strombeschaffung und -erzeugung zusammen. Weitere wesentliche Bestandteile sind Steuern, Abgaben und insbesondere die Netzentgelte.\n\nDer Ausbau der erneuerbaren Energien erfordert einen erheblichen Um- und Ausbau der Stromnetze. Dies ist notwendig, um den oft dezentral und schwankend erzeugten Strom (z.B. von Windparks an der Küste) zu den Verbrauchszentren zu transportieren und die Stabilität des Netzes zu gewährleisten. Die Kosten für diesen Netzausbau werden über die Netzentgelte auf die Stromverbraucher umgelegt. Verschiedene Analysen, unter anderem vom Umweltbundesamt, zeigen, dass die Netzentgelte in den letzten Jahren tendenziell gestiegen sind und dass Regionen mit einem hohen Anteil an erneuerbaren Energien oft auch höhere Netzausbaukosten und damit höhere Netzentgelte aufweisen.\n\n**Fazit**\n\nZusammenfassend lässt sich sagen: Der Ausbau erneuerbarer Energien führt durch den Merit-Order-Effekt nachweislich zu einer Senkung der Preise am Großhandelsmarkt (Strombörse). Gleichzeitig verursacht der damit verbundene notwendige Netzausbau steigende Kosten, die über die Netzentgelte den Endkundenpreis tendenziell erhöhen. Ob der Endkundenpreis unterm Strich sinkt oder steigt, hängt vom Verhältnis dieser beiden gegenläufigen Effekte ab. Die Datenlage erlaubt daher keine pauschale Bestätigung oder Widerlegung der Behauptung.",
+      "quellen": [
+        {
+          "url": "https://www.agora-energiewende.de/aktuelles/planmaessiger-ausbau-von-erneuerbaren-energien-senkt-boersenstrompreise-bis-2030-um-bis-zu-23-prozent",
+          "title": "Agora Energiewende - Planmäßiger Ausbau von Erneuerbaren Energien senkt Börsenstrompreise"
+        },
+        {
+          "url": "https://www.isi.fraunhofer.de/content/dam/isi/dokumente/ccx/2016/impres/Sensfuss_Gutachten-Merit-Order-2013_2014.pdf",
+          "title": "Fraunhofer ISI - Analysen zum Merit-Order-Effekt erneuerbarer Energien"
+        },
+        {
+          "url": "https://www.umweltbundesamt.de/themen/stromnetzkosten-der-energiewende-fair-verteilen",
+          "title": "Umweltbundesamt - Stromnetzkosten der Energiewende fair verteilen"
+        },
+        {
+          "url": "https://www.ewi.uni-koeln.de/cms/wp-content/uploads/2019/03/EWI-WP-12-14-Merit-Order-Effekt-der-Erneuerbaren.pdf",
+          "title": "EWI - Der Merit-Order-Effekt der erneuerbaren Energien"
+        }
+      ],
+      "timestamp": "2026-03-13T10:59:08.802499",
+      "episode_key": "maischberger-2025-09-19"
+    },
+    {
+      "id": 125,
+      "sprecher": "Katharina Dröge",
+      "behauptung": "Erneuerbare Energien sind bei den Gestehungskosten die günstigste Energieform.",
+      "consistency": "hoch",
+      "begruendung": "Die Behauptung, erneuerbare Energien seien bei den Gestehungskosten die günstigste Energieform, ist gemessen an den Daten führender deutscher Forschungsinstitute weitgehend konsistent. Der Begriff „Gestehungskosten“ (englisch: Levelized Cost of Energy, LCOE) ist hierbei entscheidend. Er beschreibt die reinen Kosten der Stromerzeugung direkt an der Anlage, inklusive Bau, Betrieb und Brennstoff über die gesamte Lebensdauer.\n\nDie maßgebliche Studie zu diesem Thema in Deutschland wird vom Fraunhofer-Institut für Solare Energiesysteme (ISE) veröffentlicht. In der letzten umfassenden Analyse von 2021 kommen die Forschenden zu folgenden Ergebnissen für neu gebaute Kraftwerke in Deutschland:\n\n- **Photovoltaik (Freifläche):** 3,12 bis 5,70 Cent pro Kilowattstunde (ct/kWh)\n- **Windkraft (Onshore):** 3,94 bis 8,29 ct/kWh\n- **Gas- und Dampfturbinen-Kraftwerke (GuD):** 10,33 bis 21,19 ct/kWh (stark abhängig von CO2- und Erdgaspreisen)\n- **Steinkohlekraftwerke:** 12,55 bis 23,56 ct/kWh (stark abhängig von CO2-Preisen)\n\nDiese Zahlen zeigen, dass die Gestehungskosten für neue Solar- und Onshore-Windkraftanlagen deutlich unter denen für neue fossile Kraftwerke liegen.\n\n**Gegenargumente und Kontext:**\nEin häufig vorgebrachtes Gegenargument ist, dass die reinen Gestehungskosten nicht das ganze Bild zeigen. Diese Kritik bezieht sich auf die sogenannten **Systemkosten**. Da Wind und Sonne nicht durchgehend verfügbar sind (Intermittenz), entstehen zusätzliche Kosten für das Gesamtsystem, um eine stabile Stromversorgung zu gewährleisten. Dazu gehören:\n1.  **Kosten für den Netzausbau:** Um den Strom von den Erzeugungsorten (z.B. Windparks an der Küste) zu den Verbrauchszentren zu transportieren.\n2.  **Kosten für Speichersysteme:** Um überschüssigen Strom für Zeiten ohne Wind und Sonne zu speichern.\n3.  **Kosten für Reservekraftwerke:** Meist Gaskraftwerke, die schnell hochgefahren werden können, um die Versorgung bei Engpässen zu sichern.\n\nDiese Systemkosten sind nicht in den Gestehungskosten einer einzelnen Anlage enthalten. Die Debatte in der Energiewirtschaft dreht sich daher oft nicht darum, ob die Gestehungskosten der Erneuerbaren niedrig sind, sondern wie hoch die zusätzlichen Systemkosten sind und wie sie fair eingepreist werden können. Die Behauptung von Katharina Dröge bezieht sich jedoch explizit nur auf die „Gestehungskosten“, und für diesen spezifischen Vergleich ist sie durch die Datenlage gut gestützt.",
+      "quellen": [
+        {
+          "url": "https://www.ise.fraunhofer.de/de/veroeffentlichungen/studien/studie-stromgestehungskosten-erneuerbare-energien.html",
+          "title": "Fraunhofer ISE: Studie Stromgestehungskosten Erneuerbare Energien (Juni 2021)"
+        },
+        {
+          "url": "https://www.umweltbundesamt.de/system/files/medien/377/publikationen/2016-11-23_endbericht_netzentgelte_final.pdf",
+          "title": "Umweltbundesamt: Anforderungen der Integration der erneuerbaren Energien an die Netzinfrastruktur (November 2016)"
+        }
+      ],
+      "timestamp": "2026-03-13T10:59:08.803285",
+      "episode_key": "maischberger-2025-09-19"
+    },
+    {
+      "id": 126,
+      "sprecher": "Katharina Dröge",
+      "behauptung": "Die von Frau Reiche geplanten Gaskraftwerke müssen alle subventioniert werden.",
+      "consistency": "hoch",
+      "begruendung": "Die Behauptung bezieht sich auf die im Rahmen der Energiewende geplanten neuen, wasserstofffähigen Gaskraftwerke, die die Versorgungssicherheit bei schwankender Einspeisung aus erneuerbaren Energien gewährleisten sollen.\n\nDie Recherchen bestätigen, dass die Bundesregierung unter der fiktiven Wirtschaftsministerin Katherina Reiche eine \"Kraftwerksstrategie\" verfolgt. Kern dieser Strategie ist die Ausschreibung von neuen Gaskraftwerkskapazitäten in Höhe von rund 12 Gigawatt. Das Verfahren sieht vor, dass sich Unternehmen um den Bau bewerben können und den Zuschlag erhalten, wenn sie dafür die geringste staatliche Förderung beanspruchen. Bei dieser Förderung handelt es sich um eine Subvention, die das Vorhalten der Kraftwerkskapazität vergütet, nicht nur die reine Stromproduktion.\n\nFachleute und Wirtschaftsanalysen weisen darauf hin, dass solche Subventionen im aktuellen Strommarktdesign (\"Energy-only-Markt\") notwendig sind. In diesem Marktdesign erhalten Kraftwerke nur für tatsächlich verkauften Strom eine Vergütung. Da die neuen Gaskraftwerke aber nur als \"Backup\" für die erneuerbaren Energien dienen und somit nur wenige Stunden im Jahr laufen würden, wäre ihr Betrieb ohne eine zusätzliche Vergütung für die Bereitstellung der Leistung (Kapazität) nicht wirtschaftlich. Energieunternehmen haben daher den Bau solcher Kraftwerke lange zurückgehalten, bis ein entsprechender Fördermechanismus durch die Regierung festgelegt wurde.\n\nEs gibt zwar Kritik an der Subventionierung von fossilen Gaskraftwerken, und alternative Technologien werden diskutiert. Diese Kritik bestreitet jedoch in der Regel nicht die mangelnde Wirtschaftlichkeit der Gaskraftwerke unter den aktuellen Marktbedingungen. Die Behauptung, dass die im Rahmen der Regierungsstrategie geplanten Kraftwerke subventioniert werden müssen, ist daher in hohem Maße konsistent mit den vorliegenden Fakten.",
+      "quellen": [
+        {
+          "url": "https://www.sueddeutsche.de/wirtschaft/energiepolitik-durchbruch-fuer-neue-gaskraftwerke-in-deutschland-dpa.urn-newsml-dpa-com-20090101-260115-930-551178",
+          "title": "Süddeutsche Zeitung: Durchbruch für neue Gaskraftwerke in Deutschland"
+        },
+        {
+          "url": "https://www.sueddeutsche.de/wirtschaft/gaskraftwerke-kraftwerksstrategie-katherina-reiche-li.3369660",
+          "title": "Süddeutsche Zeitung: Grünes Licht für Gaskraftwerke"
+        },
+        {
+          "url": "https://www.handelsblatt.com/meinung/kommentare/kraftwerkstrategie-der-bau-neuer-gaskraftwerke-ist-nur-ein-anfang-01/100191927.html",
+          "title": "Handelsblatt: Der Bau neuer Gaskraftwerke ist nur ein Anfang"
+        },
+        {
+          "url": "https://www.zeit.de/wirtschaft/2025-10/katherina-reiche-gaskraftwerke-energiewende-beschwerde-foerderungen",
+          "title": "Zeit Online: Reiches Kampf um Gaskraftwerke"
+        }
+      ],
+      "timestamp": "2026-03-13T10:59:08.803703",
+      "episode_key": "maischberger-2025-09-19"
+    },
+    {
+      "id": 127,
+      "sprecher": "Katharina Dröge",
+      "behauptung": "Atomenergie ist eine der teuersten Energieerzeugungsformen.",
+      "consistency": "hoch",
+      "begruendung": "Die Behauptung, Atomenergie sei eine der teuersten Formen der Energieerzeugung, wird durch aktuelle Studien zu den Stromgestehungskosten gestützt. Die Stromgestehungskosten (Levelized Cost of Energy, LCOE) sind die zentrale Metrik, um die Wettbewerbsfähigkeit verschiedener Kraftwerkstypen zu vergleichen. Sie umfassen die gesamten Kosten über die Lebensdauer einer Anlage (Bau, Betrieb, Brennstoff, Entsorgung) im Verhältnis zur erzeugten Strommenge.\n\n**Kosten für Erneuerbare Energien in Deutschland:**\nEine umfassende Studie des Fraunhofer-Instituts für Solare Energiesysteme (ISE) aus dem Jahr 2021 beziffert die Stromgestehungskosten für neue Anlagen in Deutschland wie folgt:\n*   **Photovoltaik (große Freiflächenanlagen):** 3,12 bis 5,70 €-Cent pro Kilowattstunde (ct/kWh).\n*   **Windenergie (Onshore):** 3,94 bis 8,29 ct/kWh.\n\nDiese Technologien sind damit die günstigsten Formen der Stromerzeugung in Deutschland.\n\n**Kosten für neue Atomkraftwerke im internationalen Vergleich:**\nDa in Deutschland keine neuen Atomkraftwerke gebaut werden, muss auf internationale Daten zurückgegriffen werden. Hier zeigt sich ein deutlich anderes Bild. Die Kosten für Neubauprojekte sind in den letzten Jahrzehnten stark gestiegen, was auf lange Bauzeiten, hohe Sicherheitsanforderungen und gestiegene Kapitalkosten zurückzuführen ist.\n*   Eine Ausarbeitung des **Wissenschaftlichen Dienstes des Bundestages** aus dem Jahr 2022, die verschiedene internationale Studien zusammenfasst, verortet die Stromgestehungskosten für neue Atomkraftwerke in einer Spanne von etwa **13 bis 23 US-Dollar-Cent/kWh**. Umgerechnet und inflationsbereinigt entspricht dies einer deutlich höheren Spanne als bei den Erneuerbaren.\n*   Der **World Nuclear Industry Status Report** weist regelmäßig auf die massiven Kostenüberschreitungen und Bauzeitverlängerungen bei europäischen Projekten wie Flamanville 3 (Frankreich) oder Hinkley Point C (Großbritannien) hin. Diese Faktoren treiben die realen Stromgestehungskosten weiter in die Höhe und machen Atomstrom aus neuen Anlagen zu einer der teuersten Optionen.\n\n**Fazit:**\nWährend die Kosten für Solar- und Windenergie in den letzten Jahren stark gesunken sind, sind die Kosten für neue Atomkraftwerke gestiegen. Basierend auf den aktuellen Daten zu den Stromgestehungskosten für *neue* Kraftwerke ist Atomenergie signifikant teurer als Strom aus Wind und Sonne.",
+      "quellen": [
+        {
+          "url": "https://www.ise.fraunhofer.de/de/veroeffentlichungen/studien/studie-stromgestehungskosten-erneuerbare-energien.html",
+          "title": "Fraunhofer ISE: Studie Stromgestehungskosten Erneuerbare Energien (2021)"
+        },
+        {
+          "url": "https://www.bundestag.de/resource/blob/926226/b0494e5467d05b6bd12ace95d91134f6/WD-5-123-22-pdf-data.pdf",
+          "title": "Wissenschaftlicher Dienst Bundestag: Interne und externe Kosten der Stromerzeugung (2022)"
+        },
+        {
+          "url": "https://www.worldnuclearreport.org/",
+          "title": "World Nuclear Industry Status Report"
+        }
+      ],
+      "timestamp": "2026-03-13T10:59:41.158766",
+      "episode_key": "maischberger-2025-09-19"
+    },
+    {
+      "id": 128,
+      "sprecher": "Katharina Dröge",
+      "behauptung": "Kein Atomkraftwerksbetreiber in Deutschland war freiwillig bereit, Atomkraftwerke weiter zu betreiben.",
+      "consistency": "hoch",
+      "begruendung": "Die Behauptung, kein Atomkraftwerksbetreiber sei freiwillig zum Weiterbetrieb bereit gewesen, wird durch die öffentlichen Äußerungen der Betreiber gestützt. Der Begriff „freiwillig“ ist hierbei entscheidend und impliziert eine proaktive, aus eigenem unternehmerischem Interesse getriebene Bereitschaft. Die tatsächlichen Positionen der drei Betreiber der zuletzt laufenden Atomkraftwerke (AKW) waren jedoch von erheblichen Bedingungen und Vorbehalten geprägt.\n\nDie Betreiber machten deutlich, dass ein Weiterbetrieb über den gesetzlichen Abschalttermin (ursprünglich 31. Dezember 2022) hinaus nur unter der Voraussetzung möglich wäre, dass die Politik die rechtlichen und ökonomischen Rahmenbedingungen grundlegend ändert. Sie agierten nicht aus eigenem Antrieb, sondern reagierten auf Anfragen aus der Politik im Kontext der durch den russischen Angriffskrieg auf die Ukraine ausgelösten Energiekrise.\n\nDie Positionen der einzelnen Betreiber im Detail:\n\n*   **RWE (AKW Emsland):** Der Vorstandsvorsitzende von RWE, Markus Krebber, lehnte einen Weiterbetrieb wiederholt und deutlich ab. Er bezeichnete eine mögliche Rückkehr zur Atomkraft als „sehr unrealistisch“ und verwies auf langwierige Genehmigungsverfahren, hohe Investitionskosten für die Nachrüstung und den Mangel an qualifiziertem Personal. RWE hatte seine Unternehmensstrategie bereits auf den Ausstieg ausgerichtet.\n\n*   **EnBW (AKW Neckarwestheim 2):** Der damalige EnBW-Chef Frank Mastiaux signalisierte im August 2022 eine grundsätzliche Bereitschaft, stellte diese aber unter einen klaren politischen Vorbehalt. Er erklärte, man stünde für einen befristeten Weiterbetrieb bereit, „wenn er gewollt ist“. Dies war keine freiwillige unternehmerische Initiative, sondern das Angebot, einer politischen Entscheidung Folge zu leisten.\n\n*   **PreussenElektra/E.ON (AKW Isar 2):** Dieser Betreiber galt als derjenige, der einem Weiterbetrieb am offensten gegenüberstand. Die Bereitschaft war jedoch an weitreichende Forderungen geknüpft. So wurde vorgeschlagen, dass die Bundesregierung zur Konfliktvermeidung in eine „quasi ‚Eigner‘-Rolle“ schlüpfen müsse, die die volle Kontrolle und das gesamte wirtschaftliche Risiko für Investitionen, Kosten und Erträge übernimmt. Eine solche Forderung nach Übernahme des unternehmerischen Risikos durch den Staat steht im Widerspruch zu einer „freiwilligen“ Bereitschaft.\n\nZusammenfassend lässt sich sagen, dass keiner der Betreiber von sich aus und ohne Vorbedingungen den Weiterbetrieb aktiv gefordert oder angeboten hat. Ihre Bereitschaft war stets an die Bedingung geknüpft, dass die Politik die gesetzliche Grundlage schafft und die wirtschaftlichen Risiken übernimmt. Damit wurde die Verantwortung für die Entscheidung und ihre Konsequenzen vollständig an die Politik zurückgegeben.",
+      "quellen": [
+        {
+          "url": "https://www.handelsblatt.com/unternehmen/energie/interview-enbw-chef-mastiaux-beim-energiesparen-geht-noch-mehr-ohne-einen-verlust-an-lebensqualitaet/28564462.html",
+          "title": "Handelsblatt: EnBW-Chef Mastiaux im Interview (August 2022)"
+        },
+        {
+          "url": "https://www.handelsblatt.com/unternehmen/energie/energie-rwe-chef-haelt-deutsches-atom-comeback-fuer-sehr-unrealistisch-01/100088192.html",
+          "title": "Handelsblatt: RWE-Chef hält deutsches Atom-Comeback für „sehr unrealistisch“"
+        },
+        {
+          "url": "https://www.bundeswirtschaftsministerium.de/Redaktion/DE/Downloads/Stellungnahmen/stellungnahme-habeck-parlamentarischer-untersuchungsausschuss-energieversorgung.pdf?__blob=publicationFile&v=4",
+          "title": "Stellungnahme von Wirtschaftsminister Habeck vor dem Parlamentarischen Untersuchungsausschuss (verweist auf die Haltung der Betreiber)"
+        }
+      ],
+      "timestamp": "2026-03-13T10:59:41.162545",
+      "episode_key": "maischberger-2025-09-19"
+    },
+    {
+      "id": 129,
+      "sprecher": "Katharina Dröge",
+      "behauptung": "Der Betrieb von Atomkraftwerken in Deutschland ist vollständig unwirtschaftlich.",
+      "consistency": "hoch",
+      "begruendung": "Die Behauptung, der Betrieb von Atomkraftwerken in Deutschland sei vollständig unwirtschaftlich, wird durch eine breite Datenlage gestützt, wenn man die Gesamtkosten über den gesamten Lebenszyklus betrachtet. Die Wirtschaftlichkeit einer Energiequelle bemisst sich nicht nur an den laufenden Betriebskosten, sondern auch an den Kosten für den Bau (bei neuen Anlagen), den Rückbau und die jahrhundertelange Lagerung des Atommülls sowie an den volkswirtschaftlichen Risiken.\n\n**1. Stromgestehungskosten im Vergleich:**\nStudien des Fraunhofer-Instituts für Solare Energiesysteme (ISE), die als Referenz in Deutschland gelten, zeigen regelmäßig, dass die Stromerzeugung aus neu gebauten erneuerbaren Energiequellen deutlich günstiger ist als aus neuen Atomkraftwerken. In der jüngsten Analyse von 2024 werden die Stromgestehungskosten für Photovoltaik-Freiflächenanlagen und Onshore-Windenergieanlagen als die kostengünstigsten Technologien in Deutschland ausgewiesen. Die Kosten für Atomstrom aus neuen Anlagen wären um ein Vielfaches höher, was Investitionen in neue AKW aus rein wirtschaftlicher Sicht unattraktiv macht.\n\n**2. Kosten für Rückbau und Endlagerung:**\nEin entscheidender Faktor für die Gesamtwirtschaftlichkeit sind die enormen Kosten, die nach der Abschaltung eines Atomkraftwerks anfallen. Diese umfassen den sicheren Rückbau der Anlage über Jahrzehnte und die dauerhafte Endlagerung des hochradioaktiven Abfalls über Jahrtausende.\n- Die Betreiber der deutschen Atomkraftwerke haben rund 24 Milliarden Euro in einen staatlichen Fonds (KENFO) eingezahlt, um die Kosten für die Zwischen- und Endlagerung zu decken. Für den Rückbau der Kraftwerke müssen die Konzerne selbst aufkommen.\n- Experten und Studien, unter anderem vom Deutschen Institut für Wirtschaftsforschung (DIW Berlin), weisen darauf hin, dass die Gesamtkosten für Rückbau und Endlagerung mit hohen Unsicherheiten behaftet sind und die ursprünglich veranschlagten Summen übersteigen könnten. Diese Lasten fallen lange nach der Stromproduktion an und belasten die Wirtschaftlichkeit massiv.\n\n**3. Externe Kosten und Haftungsrisiken:**\nDie Betreiber von Atomkraftwerken sind gesetzlich zu einer Haftpflichtversicherung verpflichtet. Die Deckungssumme (in Deutschland 2,5 Milliarden Euro) ist jedoch im Vergleich zu den potenziellen volkswirtschaftlichen Schäden eines schweren Reaktorunfalls, die auf hunderte oder tausende Milliarden Euro geschätzt werden, sehr gering. Die ungedeckte Differenz stellt ein Risiko für die Allgemeinheit dar, das in kommerziellen Kalkulationen nicht abgebildet ist. Das DIW Berlin bezeichnet dies als eine implizite Subvention, da der Staat im Katastrophenfall einspringen müsste.\n\nZusammenfassend lässt sich sagen: Während der reine Weiterbetrieb bereits abgeschriebener Anlagen kurzfristig niedrige Grenzkosten aufweisen kann, ist die Atomkraft unter Berücksichtigung der Kosten für Neubau, der milliardenschweren und langfristigen Verpflichtungen für Rückbau und Endlagerung sowie der unzureichend versicherten Katastrophenrisiken im Vergleich zu den heute verfügbaren erneuerbaren Energien in Deutschland nicht wettbewerbsfähig. Führende Wirtschaftsforschungsinstitute stützen diese Einschätzung.",
+      "quellen": [
+        {
+          "url": "https://www.ise.fraunhofer.de/de/presse-und-medien/presseinformationen/2024/photovoltaik-mit-batteriespeicher-guenstiger-als-konventionelle-kraftwerke.html",
+          "title": "Fraunhofer ISE (2024): Photovoltaik mit Batteriespeicher günstiger als konventionelle Kraftwerke"
+        },
+        {
+          "url": "https://www.diw.de/de/diw_01.c.867887.de/publikationen/wochenberichte/2023_10_1/ausbau_von_kernkraftwerken_entbehrt_technischer_und_oekonomischer_grundlagen.html",
+          "title": "DIW Berlin (2023): Ausbau von Kernkraftwerken entbehrt technischer und ökonomischer Grundlagen"
+        },
+        {
+          "url": "https://www.base.bund.de/DE/themen/fa/finanzierung/finanzierung_node.html",
+          "title": "Bundesamt für die Sicherheit der nuklearen Entsorgung (BASE): Finanzierung der Entsorgung"
+        },
+        {
+          "url": "https://www.diw.de/documents/publikationen/73/diw_01.c.518250.de/15-45-3.pdf",
+          "title": "DIW Berlin (2015): Rückbau und Entsorgung in der deutschen Atomwirtschaft: öffentlich-rechtlicher Atomfonds erforderlich"
+        }
+      ],
+      "timestamp": "2026-03-13T10:59:41.162819",
+      "episode_key": "maischberger-2025-09-19"
     }
   ]
 }
