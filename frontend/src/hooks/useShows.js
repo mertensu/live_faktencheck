@@ -25,7 +25,21 @@ export function useShows() {
           data = await safeJsonParse(response, 'Error loading shows')
         }
         if (data?.shows?.length > 0) {
-          setShows(data.shows)
+          // Check if backend is live to mark current episode
+          let liveKey = null
+          try {
+            const healthRes = await fetch(`${BACKEND_URL}/api/health`, { signal: controller.signal })
+            if (healthRes.ok) {
+              const health = await healthRes.json()
+              liveKey = health.current_episode || null
+            }
+          } catch {
+            // Backend not running — no live badge
+          }
+          setShows(liveKey
+            ? data.shows.map(s => s.key === liveKey ? { ...s, live: true } : s)
+            : data.shows
+          )
         }
         setError(null)
       } catch (err) {

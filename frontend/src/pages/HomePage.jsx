@@ -43,7 +43,10 @@ export function HomePage() {
                   return (
                     <Link key={episodeKey} to={`/${episodeKey}`} className="show-item">
                       <div className="show-item-content">
-                        <span className="show-name">{getEpisodeDisplayName(show)}</span>
+                        <div className="show-name-row">
+                          <span className="show-name">{getEpisodeDisplayName(show)}</span>
+                          {show.live && <span className="live-badge">LIVE</span>}
+                        </div>
                         {showInfo && <span className="show-info">{showInfo}</span>}
                       </div>
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -97,7 +100,10 @@ export function HomePage() {
                   return (
                     <Link key={episodeKey} to={`/${episodeKey}`} className="show-item">
                       <div className="show-item-content">
-                        <span className="show-name">{getEpisodeDisplayName(show)}</span>
+                        <div className="show-name-row">
+                          <span className="show-name">{getEpisodeDisplayName(show)}</span>
+                          {show.live && <span className="live-badge">LIVE</span>}
+                        </div>
                         {showInfo && <span className="show-info">{showInfo}</span>}
                       </div>
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

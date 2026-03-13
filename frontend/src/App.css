@@ -220,6 +220,29 @@
   gap: 0.25rem;
 }
 
+.show-name-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.live-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #fff;
+  background: #e53935;
+  padding: 0.15em 0.5em;
+  border-radius: 3px;
+  vertical-align: middle;
+  animation: live-pulse 2s ease-in-out infinite;
+}
+
+@keyframes live-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
 .show-info {
   font-size: 0.9rem;
   color: var(--text-secondary);
