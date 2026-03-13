@@ -41,13 +41,13 @@ export function ClaimDetailOverlay({ claim, onClose }) {
 
           {claim.consistency && (
             <div className="claim-detail-verdict-row">
+              <span className="claim-detail-verdict-label">Vertrauenslevel</span>
               <div
                 className="verdict-badge"
                 style={{ backgroundColor: getConsistencyColor(claim.consistency) }}
               >
-                {claim.consistency}
+                {claim.consistency.toLowerCase() === 'keine datenlage' ? 'keine Bewertung' : claim.consistency}
               </div>
-              <span className="claim-detail-verdict-label">Datenbasierte Fundierung</span>
             </div>
           )}
 
