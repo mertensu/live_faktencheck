@@ -10,22 +10,19 @@ export function AboutPage() {
         <h1>Über live-faktencheck.de</h1>
         <p>
           In unserer digitalisierten Welt sind wir tagtäglich mit einer Flut an Informationen konfrontiert.
-          Die Algorithmen der sozialen Medien begünstigen das Aufsehenerregende, zuweilen also populistische,
+          Die Algorithmen der sozialen Medien filtern diese und begünstigen das Aufsehenerregende, darunter populistische,
           extreme und emotional aufgeladene Ansichten. Gleichermaßen nimmt das wissenschaftlich Nüchterne und
-          Faktenbasierte dabei eine untergeordnete wenn nicht sogar bedeutungslose Rolle ein. Aufgrund der
-          Schnelllebigkeit des Internets können sich Behauptungen oder Ansichten so, ohne eine entsprechende
+          Faktenbasierte durch den fehlenden Polarisierungscharakter eine untergeordnete Rolle ein. Aufgrund der
+          Schnelllebigkeit des Internets können sich so Behauptungen oder Ansichten, ohne eine entsprechende
           fundierte Einordnung oder gar Richtigstellung, rasant verbreiten und festsetzen. Ein umfangreiches,
           gründliches Überprüfen ist mühsam, erfordert
-          Expertise und kostet Zeit. Die daraus resultierende zeitliche Verzögerung zwischen dem Tätigen einer
-          Aussage und deren Überprüfung, befeuert diesen Mechanismus und lässt Falschaussagen lange in den
-          Medien kursieren.
+          Expertise und kostet Zeit und findet daher nur sporadisch statt.
         </p>
         <p>
           Mit diesem Projekt möchte ich einen kleinen Beitrag liefern, um dieser Dynamik etwas entgegensetzen.
           live-faktencheck.de ist eine Plattform, die Aussagen aus Talkshows oder Interviews live* auf ihre
-          empirische Untermauerung prüft. Mithilfe von künstlicher Intelligenz, genauer großen Sprachmodellen,
-          wird dabei eine Einstufung der Vertrauenswürdigkeit vorgenommen sowie eine ausführliche Begründung der
-          Entscheidungsfindung. Darüberhinaus werden die der Entscheidung zugrunde liegenden Quellen angegeben. Um die Gefahr von Halluzinationen des
+          empirische Untermauerung prüft. Mithilfe von künstlicher Intelligenz wird dabei eine Einstufung der Vertrauenswürdigkeit und eine ausführliche Begründung der
+          Entscheidungsfindung vorgenommen. Darüberhinaus werden die der Entscheidung zugrunde liegenden Quellen angegeben. Um die Gefahr von Halluzinationen des
           Sprachmodells, also dem Erzeugen einer plausiblen aber falschen Begründung, zu minimieren, findet
           eine gerichtete, iterative Web-Recherche statt. Das Modell wird gezwungen, eine Liste an
           vertrauenswürdigen Seiten/Domains bei der Suche zu priorisieren (<a href="/trusted-domains">siehe hier</a>).
@@ -59,9 +56,9 @@ export function AboutPage() {
           </div>
         )}
         <p>
-          Die Sendungen werden in zeitlich begrenzte Blöcke aufgeteilt und dann live transkribiert. Diese Transkripte werden an ein großes Sprachmodell (LLM) weitergereicht,
-          welches überprüfbare Behauptungen extrahiert und diese automatisch den jeweiligen Sprechern zuweist. Diese Aussagen werden daraufhin von einem Moderator ("Human-in-the-loop") auf Relevanz und Korrektheit geprüft und schließlich
-          einem weiteren Agenten (LLM) zur Bewertung freigegeben. Es folgt ein iterativer Prozess, bei dem im Web nach relevanten Statistiken und Daten gesucht wird —
+          Die Sendungen werden in zeitlich begrenzte Blöcke aufgeteilt und dann live transkribiert. Das Transkript wird im Anschluss an ein großes Sprachmodell (LLM) weitergereicht,
+          welches überprüfbare Behauptungen extrahiert und diese automatisch den jeweiligen Sprechern zuweist. Ein Moderator prüft diese Aussagen auf Relevanz und stilistische Korrektheit und gibt sie schließlich
+          einem weiteren KI-Agenten zur Bewertung frei. Es folgt ein iterativer Prozess, bei dem im Web nach relevanten Statistiken und Daten gesucht wird —
           beschränkt auf vertrauenswürdige Quellen wie offizielle Regierungsseiten oder anerkannte Institute —,
           diese Informationen dann mit Blick auf die Aussagen eingeordnet werden und, sofern keine erschöpfende
           Schlussfolgerung möglich ist, ein weiterer Recherche-Block folgt. Das Modell nimmt eine Bewertung vor (wie sehr wird die Aussage durch Daten gestützt),
