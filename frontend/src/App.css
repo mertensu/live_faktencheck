@@ -710,11 +710,53 @@
   margin-bottom: 0.75rem;
 }
 
+.speaker-header-top {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+}
+
 .speaker-header h2 {
   font-size: 1.1rem;
   font-weight: 600;
   color: var(--text-main);
   margin-bottom: 0.25rem;
+}
+
+.credibility-score {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.credibility-info {
+  position: relative;
+  margin-left: 0.25rem;
+  cursor: default;
+  font-style: normal;
+}
+
+.credibility-tooltip {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--text-main);
+  color: #fff;
+  font-size: 0.75rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: 4px;
+  width: max-content;
+  max-width: 260px;
+  white-space: normal;
+  line-height: 1.4;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.credibility-info:hover .credibility-tooltip {
+  display: block;
 }
 
 .claim-count {
