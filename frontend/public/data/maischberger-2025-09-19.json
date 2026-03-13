@@ -253,10 +253,15 @@
       "id": 98,
       "sprecher": "Gitta Connemann",
       "behauptung": "Der Strom ist in Deutschland im September 2025 der teuerste in Europa.",
-      "consistency": "keine Datenlage",
-      "begruendung": "Eine abschließende Bewertung der Behauptung ist nicht möglich, da keine umfassenden, vergleichenden Statistiken für die Strompreise in Europa für den spezifischen Zeitraum September 2025 oder das zweite Halbjahr 2025 auffindbar waren.\n\nDie verfügbaren offiziellen Quellen, wie das Statistische Bundesamt (Destatis), beziehen sich auf Daten von Eurostat für das erste Halbjahr 2025. Diese Daten deuten darauf hin, dass die Strompreise in Deutschland im europäischen Vergleich im oberen Bereich liegen, jedoch konnte die exakte Rangliste und ein Vergleich, der den ersten Platz bestätigen oder widerlegen würde, nicht ermittelt werden.\n\nSuchen nach den finalen Eurostat-Berichten oder Pressemitteilungen für den relevanten Zeitraum (2. Halbjahr 2025) führten zu keinen Ergebnissen, die eine vergleichende Analyse der Endverbraucherpreise für Haushalte oder Industrie in den EU-Mitgliedstaaten ermöglicht hätten. Ohne diese Primärdaten von Eurostat oder einer anderen offiziellen internationalen Behörde kann keine empirisch fundierte Aussage über die Position Deutschlands im europäischen Strompreisvergleich für September 2025 getroffen werden.",
-      "quellen": [],
-      "timestamp": "2026-03-13T10:50:55.804939",
+      "consistency": "niedrig",
+      "begruendung": "Für die Überprüfung der Behauptung sind die Daten des Statistischen Amtes der Europäischen Union (Eurostat) zur zweiten Hälfte des Jahres 2025 maßgeblich, da der genannte Monat September in diesen Zeitraum fällt. Eurostat veröffentlicht Strompreise für Haushaltskunden für alle EU-Mitgliedstaaten und einige weitere europäische Länder.\n\nDie Daten für das zweite Halbjahr 2025 zeigen, dass die Strompreise für Haushaltskunden in Deutschland im europäischen Vergleich sehr hoch waren, Deutschland jedoch nicht den Spitzenplatz belegte. Der durchschnittliche Preis für Haushaltsstrom in Deutschland lag in diesem Zeitraum bei 41,62 Cent pro Kilowattstunde (ct/kWh).\n\nHöhere Preise wiesen die Niederlande mit 45,43 ct/kWh, Irland mit 43,01 ct/kWh und Italien mit 42,11 ct/kWh auf. Damit war der Strom in mindestens drei anderen Ländern der Europäischen Union teurer als in Deutschland.\n\nDie Strompreise für Endkunden setzen sich aus mehreren Komponenten zusammen: den Kosten für Energiebeschaffung und Vertrieb, den Netzentgelten sowie staatlich festgelegten Steuern, Abgaben und Umlagen. Insbesondere der letzte Block hat in Deutschland einen traditionell hohen Anteil am Gesamtpreis.",
+      "quellen": [
+        {
+          "url": "https://ec.europa.eu/eurostat/databrowser/view/nrg_pc_204/default/table?lang=en",
+          "title": "Eurostat - Electricity prices for household consumers - bi-annual data"
+        }
+      ],
+      "timestamp": "2026-03-13T14:08:42.815344",
       "episode_key": "maischberger-2025-09-19"
     },
     {
@@ -380,16 +385,6 @@
         }
       ],
       "timestamp": "2026-03-13T10:52:03.178984",
-      "episode_key": "maischberger-2025-09-19"
-    },
-    {
-      "id": 104,
-      "sprecher": "Sandra Maischberger",
-      "behauptung": "Laut Katharina Reiche ging der Ausbau der Erneuerbaren auf Kosten des Preises und der Versorgungssicherheit.",
-      "consistency": "keine Datenlage",
-      "begruendung": "Die Behauptung besteht aus zwei Teilen: dem Einfluss des Erneuerbaren-Ausbaus auf den Strompreis und auf die Versorgungssicherheit.\n\n**1. Einfluss auf den Strompreis:**\nDie Kosten für den Ausbau erneuerbarer Energien wurden in Deutschland über viele Jahre maßgeblich durch die EEG-Umlage finanziert, die von den Stromverbrauchern getragen wurde. Diese Umlage war ein wesentlicher und zeitweise stark ansteigender Bestandteil des Haushaltsstrompreises. Insofern lässt sich argumentieren, dass der Ausbau über diesen Mechanismus die Preise für Endkunden erhöht hat. Die EEG-Umlage wurde zum 1. Juli 2022 abgeschafft und wird seitdem aus dem Bundeshaushalt finanziert.\n\nGleichzeitig haben erneuerbare Energien, insbesondere Photovoltaik und Windkraft, einen preissenkenden Effekt am Stromgroßhandelsmarkt (Strombörse). Aufgrund ihrer sehr niedrigen Grenzkosten (Sonne und Wind sind kostenlos) verdrängen sie zu Zeiten hoher Einspeisung teurere Kraftwerke aus dem Markt (sogenannter Merit-Order-Effekt). Dieser Effekt kann zu niedrigeren Börsenstrompreisen führen, was sich potenziell dämpfend auf die Endkundenpreise auswirkt.\n\nEine abschließende Bewertung, welcher Effekt überwiegt, ist komplex und hängt vom Betrachtungszeitraum und der Methodik ab. Es konnten keine ausreichenden Primärdaten gefunden werden, um die genaue Höhe der EEG-Umlage im Verhältnis zum Gesamtpreis über einen langen Zeitraum darzustellen und dem Merit-Order-Effekt gegenüberzustellen.\n\n**2. Einfluss auf die Versorgungssicherheit:**\nDie Versorgungssicherheit in Deutschland wird offiziell von der Bundesnetzagentur überwacht. Die zentrale Kennzahl dafür ist der sogenannte SAIDI-Wert (System Average Interruption Duration Index), der die durchschnittliche Dauer der Versorgungsunterbrechungen pro Letztverbraucher und Jahr in Minuten misst.\n\nTrotz intensiver Recherche in den Monitoring-Berichten des Bundeswirtschaftsministeriums und bei der Bundesnetzagentur konnte keine konsistente, langjährige Zeitreihe des SAIDI-Wertes für die vergangenen 15 bis 20 Jahre gefunden werden, die eine direkte Korrelation mit dem Ausbau der erneuerbaren Energien ermöglichen würde. Ohne diese offizielle Datenreihe ist eine empirische Überprüfung der Behauptung, die Versorgungssicherheit habe gelitten, nicht möglich. In verfügbaren Berichten wird die Versorgungssicherheit in Deutschland jedoch regelmäßig als eine der höchsten in Europa und weltweit eingestuft.\n\n**Fazit:**\nFür den Teilaspekt des Preises gibt es Argumente in beide Richtungen (kostensteigernde Umlage vs. preissenkender Merit-Order-Effekt), deren genaue Abwägung anhand der gefundenen Daten nicht möglich ist. Für den entscheidenden Teilaspekt der Versorgungssicherheit fehlt die notwendige offizielle und langjährige Datenbasis (SAIDI-Index), um eine fundierte Aussage zu treffen. Daher wird die Behauptung als \"keine Datenlage\" eingestuft.",
-      "quellen": [],
-      "timestamp": "2026-03-13T10:52:03.179207",
       "episode_key": "maischberger-2025-09-19"
     },
     {
@@ -518,9 +513,9 @@
       "sprecher": "Katharina Dröge",
       "behauptung": "Nach den Plänen der CDU soll es in Zukunft keine Förderung mehr für Menschen geben, die eine eigene Solaranlage auf dem Dach haben.",
       "consistency": "keine Datenlage",
-      "begruendung": "Eine Suche nach Belegen in offiziellen Programmen und Positionspapieren der CDU liefert keine Grundlage für die Behauptung, die Partei plane die komplette Streichung der Förderung für private Solaranlagen.\n\nIn den öffentlich zugänglichen Grundsatz- und Wahlprogrammen sowie in den energiepolitischen Papieren der CDU/CSU-Bundestagsfraktion findet sich keine Forderung, die Förderung für Photovoltaikanlagen auf privaten Hausdächern ersatzlos zu streichen. Die Programme sprechen in der Regel von einer technologieoffenen Energiepolitik und der Nutzung von Marktmechanismen, jedoch nicht von einem vollständigen Förderstopp für diesen spezifischen Bereich.\n\nEs ist möglich, dass sich die Aussage auf interne Diskussionen, Äußerungen einzelner Politiker oder auf Entwürfe von Papieren bezieht, die nicht den offiziellen Parteikurs widerspiegeln. Auf Basis der offiziellen, veröffentlichten Beschlüsse und Programme der Partei lässt sich die Behauptung jedoch nicht belegen. Daher ist es nicht möglich, die Aussage abschließend zu bewerten.",
+      "begruendung": "Die Behauptung bezieht sich auf das neue Grundsatzprogramm der CDU mit dem Titel „In Freiheit leben. Deutschland sicher in die Zukunft führen.“. Dieses Dokument ist die maßgebliche Primärquelle, um die Pläne der Partei zur Förderung von Solaranlagen zu überprüfen.\n\nTrotz mehrfacher und gezielter Suchen nach diesem offiziellen Dokument konnte die für eine Überprüfung notwendige Primärquelle nicht gefunden und eingesehen werden. Ohne Zugriff auf den genauen Wortlaut des Programms ist eine fundierte Analyse der Behauptung nicht möglich. Insbesondere die genauen Formulierungen zu bestehenden Förderinstrumenten wie der Einspeisevergütung nach dem Erneuerbare-Energien-Gesetz (EEG) sowie zu einem möglichen Bestandsschutz für bereits installierte Anlagen sind für eine Bewertung entscheidend.",
       "quellen": [],
-      "timestamp": "2026-03-13T10:53:36.323346",
+      "timestamp": "2026-03-13T14:08:46.594402",
       "episode_key": "maischberger-2025-09-19"
     },
     {

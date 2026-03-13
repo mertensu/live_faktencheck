@@ -203,6 +203,30 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
     }
   }, [isAdminMode, isStaticMode, episodeKey])
 
+  // Seed sentClaims from DB when entering admin mode (enables resend for past fact-checks)
+  useEffect(() => {
+    if (!isAdminMode || !showAdminMode) return
+    const url = episodeKey
+      ? `${BACKEND_URL}/api/fact-checks?episode=${episodeKey}`
+      : `${BACKEND_URL}/api/fact-checks`
+    fetch(url, { headers: FETCH_HEADERS })
+      .then(r => r.ok ? r.json() : Promise.reject(r.status))
+      .then(data => {
+        setSentClaims(data.map(fc => ({
+          id: `db_${fc.id}`,
+          originalId: `db_${fc.id}`,
+          name: fc.sprecher,
+          claim: fc.behauptung,
+          sentAt: fc.timestamp,
+          factCheckId: fc.id,
+          originalClaim: fc.behauptung,
+          blockId: null,
+          info: null
+        })))
+      })
+      .catch(err => debug.warn('Could not seed sent claims from DB:', err))
+  }, [isAdminMode, showAdminMode, episodeKey])
+
   // Polling for pending claims (only in admin mode and only local)
   useEffect(() => {
     if (!isAdminMode || !showAdminMode) return
