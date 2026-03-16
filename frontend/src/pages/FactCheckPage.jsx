@@ -225,17 +225,24 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
     fetch(url, { headers: FETCH_HEADERS })
       .then(r => r.ok ? r.json() : Promise.reject(r.status))
       .then(data => {
-        setSentClaims(data.map(fc => ({
-          id: `db_${fc.id}`,
-          originalId: `db_${fc.id}`,
-          name: fc.sprecher,
-          claim: fc.behauptung,
-          sentAt: fc.timestamp,
-          factCheckId: fc.id,
-          originalClaim: fc.behauptung,
-          blockId: null,
-          info: null
-        })))
+        setSentClaims(prev => {
+          // Merge DB entries with existing sent claims (preserve in-session claims)
+          const existingIds = new Set(prev.map(c => c.id))
+          const dbEntries = data
+            .map(fc => ({
+              id: `db_${fc.id}`,
+              originalId: `db_${fc.id}`,
+              name: fc.sprecher,
+              claim: fc.behauptung,
+              sentAt: fc.timestamp,
+              factCheckId: fc.id,
+              originalClaim: fc.behauptung,
+              blockId: null,
+              info: null
+            }))
+            .filter(entry => !existingIds.has(entry.id))
+          return [...prev, ...dbEntries]
+        })
       })
       .catch(err => debug.warn('Could not seed sent claims from DB:', err))
   }, [isAdminMode, showAdminMode, episodeKey])
@@ -385,11 +392,27 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
     if (!claim) return
     setStagedClaims(prev => [...prev, { ...claim }])
     setPendingClaims(prev => prev.filter(c => c.id !== claimId))
+    // Optimistically update pendingBlocks; dismiss from backend if block is now empty
+    const sourceBlock = pendingBlocks.find(b => b.claims.some(c => c.id === claimId))
+    if (sourceBlock && sourceBlock.claims.length === 1) dismissBlock(sourceBlock.blockId)
+    setPendingBlocks(prev => prev
+      .map(block => ({ ...block, claims: block.claims.filter(c => c.id !== claimId) }))
+      .filter(block => block.claims.length > 0)
+    )
     // Clear local edits for this claim
     setLocalEdits(prev => {
       const { [claimId]: _, ...rest } = prev
       return rest
     })
+  }
+
+  // Dismiss a pending block from the backend (best-effort cleanup)
+  const dismissBlock = (blockId) => {
+    if (!blockId) return
+    fetch(`${BACKEND_URL}/api/pending-claims/${blockId}`, {
+      method: 'DELETE',
+      headers: FETCH_HEADERS
+    }).catch(() => {})
   }
 
   // Move claim from staging -> pending (for further editing)
@@ -406,6 +429,19 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
     if (!claim) return
     setDiscardedClaims(prev => [...prev, { ...claim }])
     setPendingClaims(prev => prev.filter(c => c.id !== claimId))
+    // Optimistically update pendingBlocks; dismiss from backend if block is now empty
+    setPendingBlocks(prev => {
+      const updated = prev
+        .map(block => ({ ...block, claims: block.claims.filter(c => c.id !== claimId) }))
+        .filter(block => block.claims.length > 0)
+      // If a block just became empty, dismiss it from backend
+      const emptiedBlock = prev.find(block =>
+        block.claims.some(c => c.id === claimId) &&
+        block.claims.length === 1
+      )
+      if (emptiedBlock) dismissBlock(emptiedBlock.blockId)
+      return updated
+    })
     setLocalEdits(prev => {
       const { [claimId]: _, ...rest } = prev
       return rest
@@ -425,6 +461,8 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
     const claimsToDiscard = pendingClaims.filter(c => c.blockId === blockId && !c.resendOf)
     setDiscardedClaims(prev => [...prev, ...claimsToDiscard])
     setPendingClaims(prev => prev.filter(c => c.blockId !== blockId || c.resendOf))
+    setPendingBlocks(prev => prev.filter(block => block.blockId !== blockId))
+    dismissBlock(blockId)
     setLocalEdits(prev => {
       const next = { ...prev }
       claimsToDiscard.forEach(c => delete next[c.id])
@@ -520,6 +558,11 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
         factCheckId: c.originalFactCheckId || null
       }))
       setSentClaims(prev => [...newSentClaims, ...prev])
+
+      // Dismiss source blocks from backend (best-effort cleanup)
+      const blockIds = [...new Set(stagedClaims.map(c => c.blockId).filter(Boolean))]
+      blockIds.forEach(dismissBlock)
+
       setStagedClaims([])
 
       alert(`Erfolgreich gesendet: ${results.join(', ')}`)

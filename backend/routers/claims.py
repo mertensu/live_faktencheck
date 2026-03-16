@@ -186,6 +186,16 @@ async def receive_pending_claims(request: PendingClaimsRequest):
     )
 
 
+@router.delete('/pending-claims/{block_id}')
+async def dismiss_pending_block(block_id: str):
+    """Delete a pending block (after claims have been staged/discarded/sent)."""
+    db = state.get_db()
+    deleted = await db.delete_pending_block(block_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Block not found")
+    return {"status": "deleted", "block_id": block_id}
+
+
 @router.post('/approve-claims', status_code=202, response_model=ProcessingResponse)
 async def approve_claims(
     request: ClaimApprovalRequest,
