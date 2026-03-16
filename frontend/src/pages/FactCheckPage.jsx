@@ -119,7 +119,20 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
         if (!r.ok) throw new Error(`No static data for ${key}`)
         return r.json()
       })
-      .then(data => {
+      .then(async (data) => {
+        // Check if backend is live for this episode — if so, use live polling instead
+        try {
+          const healthRes = await fetch(`${BACKEND_URL}/api/health`)
+          if (healthRes.ok) {
+            const health = await healthRes.json()
+            if (health.current_episode === key) {
+              setIsStaticMode(false)
+              return
+            }
+          }
+        } catch {
+          // Backend not reachable — stay in static mode
+        }
         setFactChecks(data.fact_checks || [])
         if (data.speakers?.length > 0) setSpeakers(data.speakers)
         if (data.show_name && data.date) {
