@@ -6,5 +6,630 @@
     "Heidi Reichinnek",
     "Philipp Amthor"
   ],
-  "fact_checks": []
+  "fact_checks": [
+    {
+      "id": 140,
+      "sprecher": "Heidi Reichinnek",
+      "behauptung": "Die von der Partei Die Linke geplante Vermögenssteuer setzt bei Vermögen ab einer Million Euro an.",
+      "consistency": "hoch",
+      "begruendung": "Die von Heidi Reichinnek getätigte Aussage über den Beginn der von ihrer Partei geplanten Vermögenssteuer ist mit den offiziellen Positionen der Partei Die Linke konsistent.\n\nIm Steuerkonzept, das die Partei im Rahmen ihres Wahlprogramms vorstellt, wird eine progressive Vermögenssteuer auf das Nettovermögen vorgeschlagen. Kern des Konzepts ist ein persönlicher Freibetrag von 1 Million Euro für Privatvermögen. Für zusammen veranlagte Ehe- oder Lebenspartner verdoppelt sich dieser Freibetrag auf 2 Millionen Euro. Betriebsvermögen sollen einen höheren Freibetrag von 5 Millionen Euro haben.\n\nAuf das den Freibetrag übersteigende Vermögen soll ein progressiver Steuersatz erhoben werden, der bei 1 Prozent beginnt und für sehr hohe Milliardenvermögen ansteigt. Die Aussage, die Steuer setze bei Vermögen ab einer Million Euro an, beschreibt den Sachverhalt für Einzelpersonen korrekt.",
+      "quellen": [
+        {
+          "url": "https://www.die-linke.de/bundestagswahl-2025/wahlprogramm/unser-steuerkonzept/",
+          "title": "Die Linke - Wahlprogramm zur Bundestagswahl 2025"
+        },
+        {
+          "url": "https://www.die-linke.de/partei/parteidemokratie/parteivorstand/parteivorstand-2024-2026/detail-beschluesse-pv/news/es-sollte-keine-milliardaere-geben/",
+          "title": "Beschluss des Parteivorstandes: \"Es sollte keine Milliardäre geben!\""
+        }
+      ],
+      "timestamp": "2026-03-16T12:20:45.283986",
+      "episode_key": "atalay-2026-02-09"
+    },
+    {
+      "id": 141,
+      "sprecher": "Heidi Reichinnek",
+      "behauptung": "Die von der Partei Die Linke geplante Vermögenssteuer beginnt mit einem Steuersatz von einem Prozent.",
+      "consistency": "hoch",
+      "begruendung": "Die Aussage von Heidi Reichinnek stimmt mit dem offiziellen Steuerkonzept der Partei Die Linke überein.\n\nLaut diesem Konzept soll eine progressive Vermögensteuer auf das Nettovermögen (Vermögen abzüglich Schulden) erhoben werden. Für Privatvermögen ist ein Freibetrag von einer Million Euro vorgesehen. Vermögen, das diesen Freibetrag übersteigt, soll mit einem progressiven Satz besteuert werden, der bei einem Prozent beginnt.\n\nFür höhere Vermögen sind höhere Steuersätze vorgesehen, die bis auf fünf Prozent für Vermögensteile über 50 Millionen Euro ansteigen. Für Betriebsvermögen gelten höhere Freibeträge.",
+      "quellen": [
+        {
+          "url": "https://www.die-linke.de/themen/steuern/vermoegensteuer/",
+          "title": "Die Linke - Themen - Steuern - Vermögensteuer"
+        },
+        {
+          "url": "https://www.die-linke.de/partei/parteidemokratie/parteivorstand/parteivorstand-2024-2026/detail-beschluesse-pv/news/es-sollte-keine-milliardaere-geben/",
+          "title": "Beschluss des Parteivorstands: \"Es sollte keine Milliardäre geben!\""
+        }
+      ],
+      "timestamp": "2026-03-16T12:20:45.284684",
+      "episode_key": "atalay-2026-02-09"
+    },
+    {
+      "id": 142,
+      "sprecher": "Philipp Amthor",
+      "behauptung": "Deutschland ist ein Höchststeuerland.",
+      "consistency": "unklar",
+      "begruendung": "Die Aussage, Deutschland sei ein „Höchststeuerland”, ist eine häufig wiederkehrende politische Behauptung, deren Gültigkeit von der gewählten Metrik abhängt. Eine differenzierte Betrachtung der Daten der Organisation für wirtschaftliche Zusammenarbeit und Entwicklung (OECD) ist notwendig.\n\n**1. Belastung von Arbeitseinkommen (Steuern und Sozialabgaben):**\nBei der Belastung von Arbeitnehmern durch Steuern und Sozialabgaben gehört Deutschland zur absoluten Spitzengruppe der Industrieländer. Laut den regelmäßigen Erhebungen der OECD (Bericht „Taxing Wages”) lag die Belastung für einen alleinstehenden Durchschnittsverdiener ohne Kinder in den letzten Jahren bei knapp 48 %. Das bedeutet, dass von jedem Euro Bruttolohn fast 48 Cent an den Staat abgeführt werden. In diesem Vergleich belegt Deutschland seit Jahren den zweiten Platz unter allen OECD-Staaten, nur übertroffen von Belgien. Aus der Perspektive eines durchschnittlichen Arbeitnehmers ist die Belastung also tatsächlich eine der höchsten der Welt.\n\n**2. Gesamtstaatliche Steuer- und Abgabenquote:**\nEin anderes Bild ergibt sich, wenn man die Summe aller staatlichen Einnahmen aus Steuern und Sozialabgaben ins Verhältnis zur gesamten Wirtschaftsleistung (Bruttoinlandsprodukt, BIP) setzt. Diese sogenannte Steuer- und Abgabenquote ist ein Maß für die Belastung der Volkswirtschaft als Ganzes. Hier lag Deutschland laut OECD-Daten zuletzt im oberen Mittelfeld, aber nicht an der Spitze. Länder wie Frankreich, Dänemark, Österreich oder Italien wiesen eine höhere gesamtstaatliche Abgabenquote auf.\n\n**Fazit:**\nDie Behauptung ist stark vereinfachend. Während die direkte Belastung von Arbeitseinkommen durch Steuern und insbesondere Sozialabgaben in Deutschland im internationalen Vergleich tatsächlich zu den höchsten zählt, ist Deutschland gemessen an der gesamten Wirtschaftsleistung kein „Höchststeuerland”. Die Aussage ist daher je nach Betrachtungswinkel teilweise zutreffend, aber in ihrer Absolutheit irreführend.",
+      "quellen": [
+        {
+          "url": "https://www.handelsblatt.com/politik/deutschland/oecd-bei-steuern-und-abgaben-ist-deutschland-vizeweltmeister/29112548.html",
+          "title": "Handelsblatt: OECD: Bei Steuern und Abgaben ist Deutschland Vizeweltmeister"
+        },
+        {
+          "url": "https://www.iwkoeln.de/studien/tobias-hentze-bjoern-kauder-die-steuerbelastung-der-unternehmen-im-internationalen-und-zeitlichen-vergleich.html",
+          "title": "Institut der deutschen Wirtschaft (IW Köln): Die Steuerbelastung der Unternehmen im internationalen und zeitlichen Vergleich"
+        },
+        {
+          "url": "https://www.bundesfinanzministerium.de/Monatsberichte/2022/07/Inhalte/Kapitel-3-Analysen/3-3-steuern-im-internationalen-vergleich.html",
+          "title": "Bundesministerium der Finanzen: Die wichtigsten Steuern im internationalen Vergleich"
+        }
+      ],
+      "timestamp": "2026-03-16T12:20:45.284996",
+      "episode_key": "atalay-2026-02-09"
+    },
+    {
+      "id": 143,
+      "sprecher": "Philipp Amthor",
+      "behauptung": "Die Steuerlast in Deutschland stellt im Februar 2026 einen Wettbewerbsnachteil dar.",
+      "consistency": "hoch",
+      "begruendung": "Die Behauptung, die Steuerlast in Deutschland stelle im Februar 2026 einen Wettbewerbsnachteil dar, wird durch aktuelle vergleichende Daten gestützt. Die Bewertung hängt von zwei zentralen Metriken ab: der spezifischen Steuerlast für Unternehmen und der allgemeinen Abgabenquote eines Landes im internationalen Vergleich.\n\n**1. Unternehmenssteuerbelastung:**\nDie effektive Steuerbelastung für Kapitalgesellschaften (Körperschaftsteuer, Gewerbesteuer und Solidaritätszuschlag) liegt in Deutschland bei durchschnittlich rund 29,8 %. Studien von Wirtschaftsforschungsinstituten wie dem Leibniz-Zentrum für Europäische Wirtschaftsforschung (ZEW) zeigen regelmäßig, dass Deutschland damit in der Gruppe der Hochsteuerländer und deutlich über dem Durchschnitt der OECD- und EU-Staaten liegt. In einer Publikation für das Jahr 2025 bezeichnet das ZEW die Unternehmenssteuern in Deutschland als die \"höchsten\" im internationalen Vergleich, was einen klaren Wettbewerbsnachteil für Unternehmen im globalen Wettbewerb um Investitionen darstellt.\n\n**2. Allgemeine Abgabenquote (Steuern und Sozialabgaben):**\nBetrachtet man die gesamte volkswirtschaftliche Belastung durch Steuern und Sozialabgaben im Verhältnis zum Bruttoinlandsprodukt (BIP), die sogenannte Abgabenquote, ergibt sich ein ähnliches Bild. Nach den neuesten verfügbaren Vergleichsdaten der OECD für das Jahr 2024, aufbereitet vom Institut der deutschen Wirtschaft (IW Köln), liegt die Abgabenquote in Deutschland bei 38,0 %. Dieser Wert liegt signifikant über dem OECD-Durchschnitt von 34,1 %. Im Ranking der Industrienationen gehört Deutschland damit zur Gruppe der Länder mit der höchsten Abgabenlast.\n\nZusammenfassend lässt sich festhalten, dass Deutschland sowohl bei der Besteuerung von Unternehmen als auch bei der gesamten Abgabenquote eine Spitzenposition im internationalen Vergleich einnimmt. Diese hohe Belastung wird in der ökonomischen Debatte durchgängig als ein wesentlicher Faktor für die Wettbewerbsfähigkeit des Standorts Deutschland und als potenzieller Nachteil bewertet.",
+      "quellen": [
+        {
+          "url": "https://www.iwkoeln.de/fileadmin/user_upload/Studien/Gutachten/PDF/2026/IW_Kurzstudie_2026-Unternehmensteuern.pdf",
+          "title": "IW Köln: Die Steuerbelastung der Unternehmen im internationalen Vergleich (Basis: OECD-Daten 2024)"
+        },
+        {
+          "url": "https://www.zew.de/fileadmin/FTP/analysenundstandpunkte/ZEWAnalysenundStandpunkte2025.pdf",
+          "title": "ZEW: Analysen und Standpunkte 2025"
+        },
+        {
+          "url": "https://www.bundesfinanzministerium.de/Monatsberichte/2023/07/Inhalte/Kapitel-3-Analysen/3-2-steuern-im-internationalen-vergleich.html",
+          "title": "Bundesfinanzministerium: Die wichtigsten Steuern im internationalen Vergleich"
+        }
+      ],
+      "timestamp": "2026-03-16T12:21:18.927161",
+      "episode_key": "atalay-2026-02-09"
+    },
+    {
+      "id": 144,
+      "sprecher": "Heidi Reichinnek",
+      "behauptung": "Deutschland ist ein Höchststeuerland für Menschen, die arbeiten.",
+      "consistency": "hoch",
+      "begruendung": "Die Behauptung, Deutschland sei ein Höchststeuerland für arbeitende Menschen, wird durch Daten der Organisation für wirtschaftliche Zusammenarbeit und Entwicklung (OECD) für bestimmte, aber nicht alle Gruppen von Arbeitnehmenden gestützt. Die Belastung durch Steuern und Sozialabgaben auf Arbeitseinkommen, der sogenannte „Steuer- und Abgabenkeil”, ist in Deutschland im internationalen Vergleich hoch, die genaue Platzierung hängt jedoch stark von der Haushaltskonstellation ab.\n\n**Für Alleinstehende ohne Kinder mit Durchschnittseinkommen:**\nFür diese Gruppe trifft die Aussage in hohem Maße zu. Laut dem OECD-Bericht „Taxing Wages 2025” hatte Deutschland im Jahr 2024 mit 47,9 % die zweithöchste Belastungsquote unter allen 38 OECD-Ländern. Nur in Belgien war die Belastung für diesen Haushaltstyp mit 52,6 % noch höher. Der OECD-Durchschnitt lag bei 34,9 %.\n\n**Für Familien:**\nDas Bild ist hier nuancierter. Bei einem Alleinverdiener-Ehepaar mit zwei Kindern und einem Durchschnittseinkommen lag die Belastung in Deutschland bei 33,3 %. Das ist zwar deutlich über dem OECD-Durchschnitt von 25,7 %, im internationalen Ranking belegte Deutschland damit aber Platz 10. Deutschland gehört also auch hier zur Gruppe der Länder mit einer hohen Belastung, aber nicht zur absoluten Spitze.\n\nZusammenfassend lässt sich sagen, dass die verfügbaren Daten die Behauptung insbesondere für alleinstehende Arbeitnehmende stützen, die in Deutschland einer der höchsten Steuer- und Abgabenlasten weltweit ausgesetzt sind. Für Familien ist die Belastung im internationalen Vergleich ebenfalls hoch, aber nicht in der Spitzengruppe. Die generelle Aussage, Deutschland sei ein „Höchststeuerland” für Arbeitende, hat daher eine hohe empirische Konsistenz, auch wenn sie nicht für alle Arbeitnehmergruppen gleichermaßen zutrifft.",
+      "quellen": [
+        {
+          "url": "https://www.oecd.org/content/dam/oecd/en/publications/support-materials/2025/04/taxing-wages-2025_20d1a01d/executive-summary-de.pdf",
+          "title": "OECD (2025), Taxing Wages 2025: Executive Summary (DE)"
+        },
+        {
+          "url": "https://www.oecd.org/content/dam/oecd/en/publications/reports/2025/04/taxing-wages-2025-country-notes_16d47563/germany_59f2afde/510f880a-en.pdf",
+          "title": "OECD (2025), Taxing Wages 2025: Country Note Germany (EN)"
+        }
+      ],
+      "timestamp": "2026-03-16T12:21:18.927879",
+      "episode_key": "atalay-2026-02-09"
+    },
+    {
+      "id": 145,
+      "sprecher": "Philipp Amthor",
+      "behauptung": "Die Vermögensteuer wurde vom Bundesverfassungsgericht gekippt, weil die Bemessungsgrundlage nicht mehr hinreichend festgestellt werden konnte.",
+      "consistency": "niedrig",
+      "begruendung": "Die Behauptung gibt den zentralen Grund für die Entscheidung des Bundesverfassungsgerichts zur Vermögensteuer nicht präzise wieder.\n\nDas Bundesverfassungsgericht hat die damalige Vermögensteuer mit seinem Urteil vom 22. Juni 1995 (Aktenzeichen 2 BvL 37/91) nicht grundsätzlich \"gekippt\", sondern das zugrundeliegende Gesetz für verfassungswidrig erklärt. Der Grund war nicht, dass die Bemessungsgrundlage nicht mehr festgestellt werden konnte, sondern dass die Bewertung verschiedener Vermögensarten gegen den Gleichheitssatz des Grundgesetzes (Art. 3 Abs. 1 GG) verstieß.\n\nDas Gericht beanstandete die systematische Ungleichbehandlung von Immobilienvermögen gegenüber anderen Vermögensarten wie Kapital- oder Barvermögen. Während Kapitalvermögen zum vollen Nennwert (100 %) angesetzt wurde, wurde Grundvermögen auf Basis von jahrzehntealten, nicht mehr marktgerechten Einheitswerten bewertet. Diese Werte lagen weit unter den tatsächlichen Verkehrswerten.\n\nDas Problem war also nicht die Unmöglichkeit der Wertermittlung, sondern die vom Gesetzgeber vorgegebene, ungleiche und damit verfassungswidrige Methode der Bewertung. Das Gericht forderte eine realitätsgerechte Bewertung aller Vermögensarten, um eine gleichmäßige Besteuerung sicherzustellen. Da der Gesetzgeber die geforderte Neuregelung bis Ende 1996 nicht umsetzte, wird die Vermögensteuer seit 1997 nicht mehr erhoben.",
+      "quellen": [
+        {
+          "url": "https://www.bundesverfassungsgericht.de/SharedDocs/Entscheidungen/DE/1995/06/ls19950622_2bvl003791.html",
+          "title": "Bundesverfassungsgericht, Urteil vom 22. Juni 1995 - 2 BvL 37/91"
+        },
+        {
+          "url": "https://www.bundestag.de/resource/blob/661344/d544f1cf115f519182d3329662f49182/WD-4-069-19-pdf-data.pdf",
+          "title": "Wissenschaftliche Dienste des Deutschen Bundestages: Verfassungsmäßigkeit der Vermögensteuer (2019)"
+        }
+      ],
+      "timestamp": "2026-03-16T12:22:29.658265",
+      "episode_key": "atalay-2026-02-09"
+    },
+    {
+      "id": 146,
+      "sprecher": "Heidi Reichinnek",
+      "behauptung": "Die Erbschaftssteuer kann ab 26 Millionen Euro umgangen werden.",
+      "consistency": "niedrig",
+      "begruendung": "Die Behauptung, die Erbschaftssteuer könne ab 26 Millionen Euro umgangen werden, ist eine vereinfachte Darstellung eines komplexen rechtlichen Verfahrens. Es handelt sich nicht um eine pauschale Umgehungsmöglichkeit, sondern um eine an strenge Bedingungen geknüpfte Steuererleichterung für große Betriebsvermögen, die sogenannte „Verschonungsbedarfsprüfung”.\n\n**Gesetzliche Grundlage:**\nDie Regelung findet sich im Erbschaftsteuer- und Schenkungsteuergesetz (ErbStG), insbesondere in § 13a, § 13b und § 28a. Sie wurde eingeführt, um die Fortführung von großen Familienunternehmen und den Erhalt von Arbeitsplätzen nicht durch eine hohe einmalige Steuerlast zu gefährden.\n\n**Funktionsweise der Verschonungsbedarfsprüfung:**\nWird Betriebsvermögen im Wert von mehr als 26 Millionen Euro vererbt, greifen nicht automatisch die üblichen Verschonungsregeln (Steuerbefreiung von 85 % oder 100 %). Stattdessen wird eine „Verschonungsbedarfsprüfung” durchgeführt:\n\n1.  **Steuer wird zunächst voll berechnet:** Das Finanzamt ermittelt die Erbschaftssteuer, die ohne jegliche Verschonung auf das Betriebsvermögen anfallen würde.\n2.  **Einsatz von Privatvermögen:** Der Erbe muss nachweisen, dass er die Steuerschuld nicht aus seinem „verfügbaren Vermögen” begleichen kann. Zu diesem verfügbaren Vermögen zählt die Hälfte des Werts des sonstigen geerbten und des bereits vorhandenen Privatvermögens. Der Erbe ist also gezwungen, einen erheblichen Teil seines nicht-betrieblichen Vermögens zur Zahlung der Steuer einzusetzen.\n3.  **Bedingter Steuererlass:** Nur der Teil der Steuerschuld, der nach dem Einsatz des verfügbaren Vermögens übrig bleibt, wird erlassen.\n4.  **Strenge Auflagen:** Dieser Erlass ist an die gleichen strengen Bedingungen geknüpft wie die reguläre Verschonung für kleinere Betriebsvermögen. Dazu gehören lange Behaltensfristen für das Unternehmen (bis zu sieben Jahre) und der Nachweis über den Erhalt von Arbeitsplätzen (Lohnsummenregelung). Werden diese Auflagen verletzt, wird die Steuer rückwirkend doch fällig.\n\n**Bewertung der Behauptung:**\nDer Begriff „umgangen” suggeriert einen einfachen Weg, die Steuerzahlung komplett zu vermeiden. Die gesetzliche Regelung sieht jedoch einen bedingten, oft nur teilweisen Steuererlass vor, der den Einsatz von erheblichem Privatvermögen erfordert und an langfristige unternehmerische Verpflichtungen gebunden ist. Kritiker sehen in der Regelung dennoch eine ungerechtfertigte Privilegierung von Großerben, da am Ende des Prozesses bei entsprechend geringem Privatvermögen ein vollständiger Steuererlass stehen kann. Die gesetzliche Hürde dafür ist jedoch hoch.\n\nZusammenfassend lässt sich sagen, dass das Gesetz eine Möglichkeit vorsieht, die Steuerlast für Betriebsvermögen über 26 Millionen Euro unter bestimmten Voraussetzungen zu reduzieren oder zu erlassen, aber nicht, sie pauschal zu „umgehen”.",
+      "quellen": [
+        {
+          "url": "https://www.gesetze-im-internet.de/erbstg_1974/__28a.html",
+          "title": "Gesetze im Internet: § 28a ErbStG - Verschonungsbedarfsprüfung"
+        },
+        {
+          "url": "https://erbsth.bundesfinanzministerium.de/erbsth/2020/A-ErbStG-ErbStDV-BewG/ErbStG/IV-Steuerfestsetzung-und-Erhebung/Paragraf-28a/inhalt.html",
+          "title": "Bundesfinanzministerium: Amtliches Erbschaftsteuer-Handbuch (ErbStH 2020) - Hinweise zu § 28a ErbStG"
+        },
+        {
+          "url": "https://www.gesetze-im-internet.de/erbstg_1974/__13a.html",
+          "title": "Gesetze im Internet: § 13a ErbStG - Steuerbefreiung für Betriebsvermögen"
+        }
+      ],
+      "timestamp": "2026-03-16T12:22:29.659128",
+      "episode_key": "atalay-2026-02-09"
+    },
+    {
+      "id": 147,
+      "sprecher": "Heidi Reichinnek",
+      "behauptung": "Bis Februar 2026 gab es eine komplexe Neuberechnung der Grundsteuer.",
+      "consistency": "hoch",
+      "begruendung": "Die Behauptung, dass bis Februar 2026 eine komplexe Neuberechnung der Grundsteuer stattgefunden hat, ist durch die Faktenlage zur Grundsteuerreform in Deutschland gedeckt.\n\nDas Bundesverfassungsgericht hatte die bisherige Bemessungsgrundlage der Grundsteuer für verfassungswidrig erklärt und eine Neuregelung gefordert. Die Umsetzung dieser Reform war ein mehrjähriger, komplexer Prozess:\n\n1.  **Datenerhebung:** Im ersten Schritt mussten Millionen von Grundstückseigentümern in Deutschland eine \"Erklärung zur Feststellung des Grundsteuerwerts\" bei den Finanzämtern einreichen. Die Frist hierfür endete in den meisten Bundesländern am 31. Januar 2023.\n2.  **Neubewertung durch Finanzämter:** Auf Basis dieser Daten haben die Finanzämter in den Jahren 2023 und 2024 die Grundsteuerwerte neu berechnet und entsprechende Bescheide über den \"Grundsteuerwert\" und den \"Grundsteuermessbetrag\" an die Eigentümer versandt. Dieser Schritt allein stellt eine umfassende und komplexe Neuberechnung dar.\n3.  **Anpassung durch die Kommunen:** Anschließend legten die Städte und Gemeinden ihre neuen \"Hebesätze\" fest, mit denen die endgültige Höhe der Grundsteuer berechnet wird.\n4.  **Inkrafttreten:** Die neue Grundsteuer auf Basis dieser Neuberechnung wird seit dem 1. Januar 2025 erhoben.\n\nDa die neue Grundsteuer bereits seit Anfang 2025 in Kraft war, war der Prozess der Neuberechnung bis Februar 2026 abgeschlossen. Es handelte sich um eine der größten Verwaltungsreformen der deutschen Nachkriegsgeschichte.",
+      "quellen": [
+        {
+          "url": "https://www.bundesfinanzministerium.de/Content/DE/FAQ/faq-die-neue-grundsteuer.html",
+          "title": "Bundesfinanzministerium - Fragen und Antworten zur neuen Grundsteuer"
+        },
+        {
+          "url": "https://www.bundesfinanzministerium.de/Monatsberichte/2022/06/Inhalte/Kapitel-3-Analysen/3-1-erklaerung-grundsteuerreform.html",
+          "title": "Bundesfinanzministerium - Umsetzung der Grundsteuerreform"
+        }
+      ],
+      "timestamp": "2026-03-16T12:22:29.659480",
+      "episode_key": "atalay-2026-02-09"
+    },
+    {
+      "id": 148,
+      "sprecher": "Heidi Reichinnek",
+      "behauptung": "Zwei Prozent der Unternehmen wären von der von der Partei Die Linke vorgeschlagenen Vermögensteuer betroffen.",
+      "consistency": "hoch",
+      "begruendung": "\nDie Behauptung von Heidi Reichinnek, dass zwei Prozent der Unternehmen von der von der Partei Die Linke vorgeschlagenen Vermögensteuer betroffen wären, stützt sich auf eine Simulationsrechnung des Deutschen Instituts für Wirtschaftsforschung (DIW Berlin), die im Auftrag der Partei Die Linke erstellt und im Februar 2026 veröffentlicht wurde.\n\nDas Konzept der Linken sieht eine Vermögensteuer auf Nettovermögen vor. Dabei gelten für Privatvermögen andere Freibeträge als für Betriebsvermögen. Konkret ist für Betriebsvermögen ein Freibetrag von 5 Millionen Euro vorgesehen. Das bedeutet, dass nur der Teil des Betriebsvermögens besteuert würde, der diesen Wert übersteigt.\n\nDie DIW-Studie hat die Auswirkungen dieses Vorschlags auf Basis von Daten des Sozio-oekonomischen Panels (SOEP) und der Hochrechnung von Vermögenserhebungen simuliert. Nach diesen Berechnungen würde die geplante Steuer auf Betriebsvermögen aufgrund des hohen Freibetrags von 5 Millionen Euro nur eine sehr begrenzte Anzahl von Unternehmen treffen.\n\nDie Analyse des DIW kommt zu dem Ergebnis, dass bei Einführung einer solchen Steuer rund 75.000 Unternehmen in Deutschland steuerpflichtig wären. Laut Statistischem Bundesamt gab es im Jahr 2024 in Deutschland rund 3,4 Millionen Unternehmen. Bezogen auf diese Gesamtzahl entsprechen 75.000 Unternehmen einem Anteil von etwa 2,2 Prozent.\n\nDie von Heidi Reichinnek genannte Zahl von zwei Prozent ist also eine gerundete Angabe, die mit den Ergebnissen der DIW-Studie in Einklang steht.\n\nEs ist jedoch zu beachten, dass es sich hierbei um eine Simulationsrechnung handelt. Die tatsächliche Zahl der betroffenen Unternehmen könnte abweichen, je nachdem wie Betriebsvermögen im Detail bewertet wird und wie die Unternehmen auf die neue Steuer reagieren (z.B. durch Umstrukturierungen oder Investitionsentscheidungen). Andere Wirtschaftsforschungsinstitute haben in der Vergangenheit darauf hingewiesen, dass die Erhebung einer Vermögensteuer mit erheblichem administrativem Aufwand verbunden ist und zu negativen konjunkturellen Effekten führen könnte. Diese Kritik bezieht sich jedoch in der Regel auf die generelle Einführung einer Vermögensteuer und nicht spezifisch auf die in der DIW-Studie errechnete Anzahl der betroffenen Unternehmen.\n",
+      "quellen": [
+        {
+          "url": "https://www.diw.de/documents/publikationen/73/diw_01.c.998454.de/diwkompakt_2026-211.pdf",
+          "title": "DIW Berlin: Vermögensteuer Die Linke – Aufkommens- und Verteilungswirkungen, Politikberatung kompakt 211, Februar 2026"
+        },
+        {
+          "url": "https://www.destatis.de/DE/Themen/Branchen-Unternehmen/Unternehmen/Unternehmensregister/_inhalt.html",
+          "title": "Statistisches Bundesamt, Unternehmensregister, 2024"
+        }
+      ],
+      "timestamp": "2026-03-16T12:22:29.659841",
+      "episode_key": "atalay-2026-02-09"
+    },
+    {
+      "id": 149,
+      "sprecher": "Heidi Reichinnek",
+      "behauptung": "Die zwei reichsten Menschen in Deutschland besitzen so viel Vermögen wie die ärmere Hälfte der Bevölkerung.",
+      "consistency": "niedrig",
+      "begruendung": "Um die Behauptung zu überprüfen, müssen zwei Werte ermittelt werden: das Vermögen der zwei reichsten Einzelpersonen in Deutschland und das sammelte Nettovermögen der ärmeren Hälfte der deutschen Bevölkerung (rund 42 Millionen Menschen).\n\n**1. Vermögen der zwei reichsten Deutschen:**\nDie Ranglisten der reichsten Menschen werden von verschiedenen Medien wie Forbes oder dem Manager Magazin ermittelt. Die genauen Zahlen sind Schätzungen, geben aber eine verlässliche Größenordnung wieder. Für Anfang 2026 sind die reichsten Einzelpersonen in Deutschland:\n*   **Dieter Schwarz** (Eigentümer der Schwarz-Gruppe, u.a. Lidl, Kaufland) mit einem geschätzten Vermögen von rund **42 Milliarden Euro**.\n*   **Klaus-Michael Kühne** (Mehrheitseigner von Kühne + Nagel, beteiligt an Hapag-Lloyd und Lufthansa) mit einem geschätzten Vermögen von rund **36 Milliarden Euro**.\n\nDas summierte Vermögen dieser beiden Personen beträgt somit circa **78 Milliarden Euro**.\n\n**2. Vermögen der ärmeren Hälfte der Bevölkerung:**\nDie Deutsche Bundesbank sowie das Deutsche Institut für Wirtschaftsforschung (DIW) erheben regelmäßig Daten zur Vermögensverteilung in Deutschland. Die umfassendste Erhebung ist die Studie \"Private Haushalte und ihre Finanzen\" (PHF) der Bundesbank.\n*   Auswertungen dieser Daten zeigen, dass die Vermögensungleichheit in Deutschland sehr ausgeprägt ist.\n*   Die untere (ärmere) Hälfte der Bevölkerung besitzt nur einen sehr geringen Anteil am gesamten Nettovermögen. Laut einer Bundestagsdrucksache, die sich auf entsprechende Analysen bezieht, liegt dieser Anteil bei nur **2,3 Prozent**.\n*   Das gesamte Nettovermögen der privaten Haushalte in Deutschland belief sich Ende 2025 auf eine geschätzte Summe von rund **15 Billionen Euro (15.000 Milliarden Euro)**.\n\nDaraus lässt sich das Vermögen der ärmeren Hälfte berechnen: 2,3 % von 15.000 Milliarden Euro ergeben **345 Milliarden Euro**.\n\n**Abgleich:**\nVergleicht man die beiden Werte, zeigt sich eine deutliche Diskrepanz:\n*   Vermögen der 2 reichsten Personen: **ca. 78 Mrd. €**\n*   Vermögen der ärmeren 50 % der Bevölkerung: **ca. 345 Mrd. €**\n\nDas Vermögen der zwei reichsten Deutschen entspricht damit etwa 23 % des Vermögens der ärmeren Hälfte, aber nicht, wie behauptet, der gleichen Summe. Obwohl die Aussage in ihrer Zuspitzung numerisch nicht haltbar ist, verweist sie auf die hohe und durch offizielle Statistiken belegte Vermögenskonzentration in Deutschland. So besitzt beispielsweise das reichste Prozent der Bevölkerung über ein Drittel des Gesamtvermögens.",
+      "quellen": [
+        {
+          "url": "https://www.forbes.com/real-time-billionaires/#country:Germany",
+          "title": "Forbes: The World's Real-Time Billionaires (Germany)"
+        },
+        {
+          "url": "https://www.bundesbank.de/de/presse/pressenotizen/geldvermoegensbildung-und-aussenfinanzierung-in-deutschland-im-dritten-quartal-2025-936614",
+          "title": "Deutsche Bundesbank: Pressemitteilung zur Geldvermögensbildung Q3 2025"
+        },
+        {
+          "url": "https://dserver.bundestag.de/btd/21/040/2104004.pdf",
+          "title": "Deutscher Bundestag: Drucksache 21/4004 (bezieht sich auf Vermögensanteile)"
+        },
+        {
+          "url": "https://www.diw.de/de/diw_01.c.881390.de/publikationen/wochenberichte/2023_39_1/die_vermoegensverteilung_in_deutschland_hat_sich_seit_der_corona-pandemie_kaum_veraendert.html",
+          "title": "DIW Berlin: Wochenbericht 39/2023 zur Vermögensverteilung"
+        }
+      ],
+      "timestamp": "2026-03-16T12:25:53.283913",
+      "episode_key": "atalay-2026-02-09"
+    },
+    {
+      "id": 150,
+      "sprecher": "Heidi Reichinnek",
+      "behauptung": "Mit der von der Partei Die Linke vorgeschlagenen Vermögenssteuer wären, nach Berücksichtigung verschiedener Effekte, Einnahmen von rund 100 Milliarden Euro möglich.",
+      "consistency": "hoch",
+      "begruendung": "Die Behauptung von Heidi Reichinnek stützt sich auf eine Studie des Deutschen Instituts für Wirtschaftsforschung (DIW Berlin), die im Auftrag der Partei Die Linke erstellt wurde. Diese Studie untersucht die potenziellen Einnahmen einer Vermögensteuer nach dem von der Partei vorgeschlagenen Modell.\n\nDas Konzept der Linken sieht eine progressive Besteuerung von Nettovermögen oberhalb hoher persönlicher Freibeträge vor. Die DIW-Forscher berechneten in ihrem Modell zunächst ein theoretisches Brutto-Aufkommen von rund 147 Milliarden Euro pro Jahr.\n\nAllerdings berücksichtigt diese Summe noch keine Verhaltensänderungen der Steuerpflichtigen. Die Autoren der Studie weisen explizit darauf hin, dass mit erheblichen Ausweichreaktionen zu rechnen ist. Dazu zählen legale Steuergestaltungen, die Verlagerung von Vermögen oder des Wohnsitzes ins Ausland sowie die Nicht- oder Unterbewertung von Vermögenswerten. Diese Faktoren würden die tatsächlichen Einnahmen reduzieren.\n\nUnter Einbeziehung dieser \"verschiedenen Effekte\" schätzen die DIW-Ökonomen in einem Szenario die möglichen Netto-Einnahmen auf rund 100 Milliarden Euro. Die von Reichinnek genannte Zahl ist also eine Schätzung nach Abzug erwarteter Einnahmeverluste durch Steuervermeidung und -flucht.\n\nAndere ökonomische Institute haben für abweichende Modelle einer Vermögensteuer teils deutlich niedrigere Einnahmen prognostiziert. Die Schätzungen sind stark von den jeweiligen Annahmen über Freibeträge, Steuersätze und insbesondere das Ausmaß der Ausweichreaktionen abhängig. Die von der DIW-Studie angenommene Minderung des Aufkommens um etwa ein Drittel (von 147 auf 100 Milliarden Euro) ist ein zentraler, aber unter Ökonomen stark debattierter Punkt.",
+      "quellen": [
+        {
+          "url": "https://www.diw.de/de/diw_01.c.998454.de/publikationen/politikberatung_kompakt/2026/vermoegensteuer_die_linke__aufkommens-_und_verteilungswirkungen.html",
+          "title": "DIW Berlin: Studie zu Aufkommens- und Verteilungswirkungen einer Vermögensteuer nach dem Konzept der Linken"
+        },
+        {
+          "url": "https://www.handelsblatt.com/politik/deutschland/steuern-diw-sieht-milliardenpotenzial-bei-einfuehrung-der-vermoegensteuer-02/100198091.html",
+          "title": "Handelsblatt: DIW sieht Milliardenpotenzial bei Einführung der Vermögensteuer"
+        }
+      ],
+      "timestamp": "2026-03-16T12:25:53.284778",
+      "episode_key": "atalay-2026-02-09"
+    },
+    {
+      "id": 151,
+      "sprecher": "Heidi Reichinnek",
+      "behauptung": "Eine von der Partei Die Linke in Auftrag gegebene Studie kommt zu dem Ergebnis, dass das Konzept der Partei für eine Vermögenssteuer grundsätzlich funktioniert.",
+      "consistency": "hoch",
+      "begruendung": "Die Behauptung bezieht sich auf eine Studie des Deutschen Instituts für Wirtschaftsforschung (DIW Berlin), die im Februar 2026 kurz vor der Sendung veröffentlicht wurde. Die Studie mit dem Titel „Vermögensteuer Die Linke – Aufkommens- und Verteilungswirkungen” wurde tatsächlich von der Partei Die Linke und der Rosa-Luxemburg-Stiftung in Auftrag gegeben.\n\nDie Analyse des DIW untersucht die potenziellen Einnahmen und die Verteilungseffekte des von der Linken vorgeschlagenen Modells einer progressiven Vermögensteuer. Die Kernergebnisse der Studie stützen die Aussage, dass das Konzept grundsätzlich funktionieren kann:\n\n1.  **Potenzielles Steueraufkommen:** Die Studie berechnet, dass das Modell je nach Ausgestaltung und unter bestimmten Annahmen erhebliche jährliche Einnahmen für den Staat generieren könnte. Diese quantitative Analyse bestätigt, dass dem Konzept ein fiskalisches Potenzial zugrunde liegt.\n\n2.  **Verteilungswirkung:** Die Simulationen des DIW zeigen, dass die Steuerlast sich fast ausschließlich auf das oberste Prozent der Vermögensverteilung konzentrieren würde. Die Autoren der Studie schreiben, dass die Vermögensungleichheit dadurch „spürbar” sinken könnte, insbesondere im Bereich der sehr hohen Vermögen.\n\nAllerdings thematisiert die Studie auch erhebliche Risiken und Unsicherheiten, die die praktische Umsetzung und die tatsächlichen Ergebnisse beeinflussen würden:\n\n*   **Ausweichreaktionen:** Die Autoren weisen explizit auf mögliche negative „Anpassungsreaktionen” hin. Dazu zählen legale Steuervermeidung, Steuerhinterziehung oder die Verlagerung von Vermögen ins Ausland (Kapitalflucht). Diese Reaktionen könnten das erwartete Steueraufkommen erheblich reduzieren – im ungünstigsten Szenario um bis zu 60 Prozent.\n\n*   **Ökonomische Nebenwirkungen:** Die Studie und die Berichterstattung darüber erwähnen, dass die Einführung einer Vermögensteuer, insbesondere mit den von der Linken vorgeschlagenen hohen Sätzen, ökonomische Nebenwirkungen haben könnte, etwa auf Investitionen und Unternehmensbewertungen.\n\nZusammenfassend lässt sich sagen, dass die DIW-Studie dem Konzept der Linken eine prinzipielle Funktionsfähigkeit in Bezug auf die Einnahmenerzielung und die beabsichtigte Umverteilungswirkung bescheinigt. Gleichzeitig warnt sie jedoch deutlich vor erheblichen praktischen Herausforderungen und Risiken, die den Erfolg des Konzepts in der Realität stark beeinträchtigen könnten. Die Behauptung, die Studie komme zu dem Ergebnis, das Konzept funktioniere „grundsätzlich”, ist daher mit den Ergebnissen der Studie vereinbar, lässt aber die von den Forschern formulierten wichtigen Vorbehalte und Risiken unerwähnt.",
+      "quellen": [
+        {
+          "url": "https://www.diw.de/documents/publikationen/73/diw_01.c.998454.de/diwkompakt_2026-211.pdf",
+          "title": "DIW Berlin (Februar 2026): Vermögensteuer Die Linke – Aufkommens- und Verteilungswirkungen"
+        },
+        {
+          "url": "https://www.zeit.de/wirtschaft/2026-02/studie-vermoegensteuer-diw-umsetzung-soziale-ungleichheit-einnahmen",
+          "title": "DIE ZEIT (Februar 2026): Was bringt eine Vermögensteuer?"
+        }
+      ],
+      "timestamp": "2026-03-16T12:25:53.285115",
+      "episode_key": "atalay-2026-02-09"
+    },
+    {
+      "id": 152,
+      "sprecher": "Philipp Amthor",
+      "behauptung": "Steuererhöhungen führen nicht zu mehr Wachstum und zu mehr Wirtschaftskraft in Deutschland.",
+      "consistency": "unklar",
+      "begruendung": "Die Behauptung, Steuererhöhungen führten nicht zu mehr Wachstum, ist eine pauschale Aussage zu einer komplexen volkswirtschaftlichen Frage, zu der es unterschiedliche theoretische und empirische Einschätzungen gibt. Die ökonomische Forschung deutet darauf hin, dass die Auswirkungen von Steuererhöhungen stark von der Art der Steuer, der Verwendung der Einnahmen und dem gesamtwirtschaftlichen Umfeld abhängen.\n\n**Unterscheidung nach Steuerarten:**\nIn der Wirtschaftsforschung herrscht weitgehend Konsens darüber, dass verschiedene Steuerarten unterschiedliche Auswirkungen auf das Wirtschaftswachstum haben.\n\n*   **Unternehmensteuern:** Eine Vielzahl von Studien, darunter auch eine Meta-Analyse des ifo Instituts, findet einen negativen Zusammenhang zwischen der Belastung von Unternehmensgewinnen und dem Wirtschaftswachstum. Höhere Unternehmensteuern können Investitionen und die Attraktivität eines Standortes für Kapital reduzieren.\n*   **Einkommensteuern:** Auch bei hohen Steuern auf Arbeitseinkommen wird argumentiert, dass sie die Anreize zur Arbeitsaufnahme und zu Mehrarbeit verringern können, was sich negativ auf das Wachstum auswirken kann.\n*   **Konsumsteuern:** Steuern auf den Verbrauch (wie die Mehrwertsteuer) gelten in der Regel als wachstumsfreundlicher als Steuern auf Einkommen und Unternehmensgewinne. Sie beeinflussen die Entscheidung zwischen Arbeit und Freizeit weniger direkt und belasten das Sparen und Investieren nicht unmittelbar.\n\n**Verwendung der Steuereinnahmen:**\nEin entscheidender Faktor, der in der pauschalen Behauptung fehlt, ist die Verwendung der zusätzlichen Steuereinnahmen. Werden die Einnahmen für wachstumsfördernde öffentliche Investitionen genutzt, kann dies den negativen Effekt der Steuererhöhung ausgleichen oder sogar überkompensieren. Beispiele hierfür sind Investitionen in:\n*   Infrastruktur (Verkehr, Energie, Digitales)\n*   Bildung und Forschung\n*   Effiziente öffentliche Verwaltung\n\nWenn die Einnahmen hingegen primär für konsumtive Staatsausgaben oder Transferleistungen verwendet werden, überwiegt tendenziell der dämpfende Effekt der Steuererhöhung.\n\n**Empirische Evidenz und wissenschaftlicher Diskurs:**\nFührende deutsche Wirtschaftsforschungsinstitute wie das ifo-Institut (München), das Zentrum für Europäische Wirtschaftsforschung (ZEW, Mannheim) oder das Institut der deutschen Wirtschaft (IW, Köln) weisen in ihren Publikationen regelmäßig auf die potenziell wachstumshemmende Wirkung hoher Unternehmens- und Einkommensteuern hin. Gleichzeitig betonen andere Ökonomen und Institute wie das Deutsche Institut für Wirtschaftsforschung (DIW, Berlin) die Notwendigkeit öffentlicher Investitionen, die durch Steuereinnahmen finanziert werden müssen, um langfristiges Wachstum zu sichern.\n\nZusammenfassend lässt sich sagen, dass die pauschale Behauptung zwar einen wichtigen Aspekt der ökonomischen Debatte aufgreift, aber durch die fehlende Differenzierung nach Steuerart und Verwendungszweck der Einnahmen die tatsächlichen Zusammenhänge stark vereinfacht. Es gibt Szenarien, in denen Steuererhöhungen (insbesondere bei Konsumsteuern) zur Finanzierung von Zukunftsinvestitionen das Wachstum langfristig nicht hemmen oder sogar fördern können. Ebenso gibt es deutliche Belege für eine wachstumshemmende Wirkung, insbesondere bei abrupten und starken Erhöhungen von Unternehmens- und Einkommensteuern.",
+      "quellen": [
+        {
+          "url": "https://www.ifo.de/DocDL/ifo_Forschungsbericht_153_Steuersenkungen.pdf",
+          "title": "ifo Forschungsbericht 153: Eine wachstumsorientierte Steuerreform für Deutschland"
+        },
+        {
+          "url": "https://www.ifo.de/DocDL/sd-2021-10-steuerrefom.pdf",
+          "title": "ifo Schnelldienst: Wie Deutschland sein Steuersystem wachstumsfreundlich und gerecht gestalten kann"
+        }
+      ],
+      "timestamp": "2026-03-16T12:26:58.297401",
+      "episode_key": "atalay-2026-02-09"
+    },
+    {
+      "id": 153,
+      "sprecher": "Philipp Amthor",
+      "behauptung": "Deutschland befindet sich im Februar 2026 in einer Situation von wirtschaftlicher Stagnation.",
+      "consistency": "hoch",
+      "begruendung": "Die Behauptung, Deutschland befinde sich im Februar 2026 in einer wirtschaftlichen Stagnation, ist durch die zu diesem Zeitpunkt verfügbaren Wirtschaftsdaten in hohem Maße gestützt. Der Begriff „Stagnation“ beschreibt eine Phase mit sehr geringem oder keinem Wirtschaftswachstum.\n\nDie offiziellen Zahlen des Statistischen Bundesamtes (Destatis), die Mitte Januar 2026 für das Gesamtjahr 2025 veröffentlicht wurden, belegen dies:\n- Das Bruttoinlandsprodukt (BIP) wuchs im Gesamtjahr 2025 preisbereinigt lediglich um 0,2 % im Vergleich zum Vorjahr.\n- Die Entwicklung im Jahresverlauf war ebenfalls sehr schwach. Nach einem leichten Rückgang der Wirtschaftsleistung im zweiten Quartal 2025 (-0,2 %) stagnierte das BIP im dritten Quartal (0,0 %).\n\nEin Wachstum, das über einen längeren Zeitraum nahe dem Nullpunkt liegt, wird in der Wirtschaftswissenschaft und im öffentlichen Diskurs gemeinhin als Stagnation bezeichnet. Die Daten für 2025 zeigen genau dieses Bild einer Wirtschaft, die nicht nennenswert wächst.\n\nFührende Wirtschaftsforschungsinstitute prognostizierten zwar für das laufende Jahr 2026 eine leichte Erholung mit Wachstumsraten zwischen 1,2 % und 1,7 %. Diese Prognosen für die Zukunft ändern jedoch nichts an der Bewertung der Lage zum Zeitpunkt der Aussage, die auf den realisierten Daten des Vorjahres beruht.",
+      "quellen": [
+        {
+          "url": "https://www.destatis.de/DE/Presse/Pressemitteilungen/2026/01/PD26_017_811.html",
+          "title": "Statistisches Bundesamt: Bruttoinlandsprodukt im Jahr 2025 um 0,2 % gewachsen"
+        },
+        {
+          "url": "https://www.destatis.de/DE/Presse/Pressemitteilungen/2025/10/PD25_388_811.html",
+          "title": "Statistisches Bundesamt: Bruttoinlandsprodukt stagniert im 3. Quartal 2025"
+        },
+        {
+          "url": "https://www.boeckler.de/de/pressemitteilungen-2675-imk-prognostiziert-1-2-prozent-wirtschaftswachstum-fuer-2026-73893.htm",
+          "title": "IMK: Prognose für 2026 von 1,2 Prozent Wirtschaftswachstum"
+        }
+      ],
+      "timestamp": "2026-03-16T12:26:58.298039",
+      "episode_key": "atalay-2026-02-09"
+    },
+    {
+      "id": 154,
+      "sprecher": "Philipp Amthor",
+      "behauptung": "Der deutsche Staat hat in den Jahren vor Februar 2026 zunehmend mehr Geld ausgegeben.",
+      "consistency": "hoch",
+      "begruendung": "Die Behauptung, der deutsche Staat habe in den Jahren vor Februar 2026 zunehmend mehr Geld ausgegeben, wird durch die offiziellen Daten des Statistischen Bundesamtes (Destatis) gestützt.\n\n**Nominelle Ausgaben:**\nDie Ausgaben des Öffentlichen Gesamthaushalts (Bund, Länder, Gemeinden und Sozialversicherungen) sind in dem relevanten Zeitraum gestiegen.\n- **2023:** 1.944,2 Milliarden Euro\n- **2024:** 2.082,1 Milliarden Euro\n\nDies entspricht einem nominalen Anstieg von rund 7,1 % von 2023 auf 2024. Ein vorläufiger Bericht für die ersten drei Quartale 2025 zeigte ebenfalls eine Steigerung von 5,6 % im Vergleich zum Vorjahreszeitraum, was auf eine Fortsetzung des Trends hindeutet.\n\n**Verhältnis zur Wirtschaftsleistung (Staatsquote):**\nDie Ausgaben sind nicht nur absolut, sondern auch im Verhältnis zur gesamten Wirtschaftsleistung (Bruttoinlandsprodukt) gewachsen. Die Staatsquote stieg von 48,1 % im Jahr 2023 auf 49,4 % im Jahr 2024. Das bedeutet, dass die Staatsausgaben stärker gewachsen sind als die Wirtschaft insgesamt.\n\n**Inflationsbereinigte (reale) Ausgaben:**\nAuch nach Berücksichtigung der Inflation bleibt der Befund einer Ausgabensteigerung gültig. Die durchschnittliche Inflationsrate lag im Jahr 2024 bei etwa 2,4 %. Der nominale Anstieg der Staatsausgaben von 7,1 % liegt deutlich über dieser Rate, was auch auf ein reales, inflationsbereinigtes Wachstum der staatlichen Ausgaben hindeutet.",
+      "quellen": [
+        {
+          "url": "https://www.destatis.de/DE/Themen/Staat/Oeffentliche-Finanzen/Ausgaben-Einnahmen/Tabellen/ausgaben.html",
+          "title": "Statistisches Bundesamt - Ausgaben des Öffentlichen Gesamthaushalts 2023/2024"
+        },
+        {
+          "url": "https://www.destatis.de/DE/Presse/Pressemitteilungen/2026/01/PD26_005_711.html",
+          "title": "Statistisches Bundesamt - Öffentliches Finanzierungsdefizit im 1. bis 3. Quartal 2025"
+        },
+        {
+          "url": "https://www.bundesfinanzministerium.de/Monatsberichte/Ausgabe/2025/09/Inhalte/Kapitel-6-Statistiken/6-1-s14-entwicklung-der-staatsquote.html",
+          "title": "Bundesministerium der Finanzen - Monatsbericht September 2025 (Entwicklung der Staatsquote)"
+        },
+        {
+          "url": "https://www.boeckler.de/de/pressemitteilungen-2675-imk-hebt-konjunkturprognose-leicht-an-bip-steigt-61362.htm",
+          "title": "Hans-Böckler-Stiftung (IMK) - Konjunkturprognose mit Inflationsrate 2024"
+        }
+      ],
+      "timestamp": "2026-03-16T12:26:58.298315",
+      "episode_key": "atalay-2026-02-09"
+    },
+    {
+      "id": 155,
+      "sprecher": "Philipp Amthor",
+      "behauptung": "Der deutsche Staat nimmt den Bürgerinnen und Bürgern immer mehr Geld ab.",
+      "consistency": "niedrig",
+      "begruendung": "Die Behauptung ist mehrdeutig und ihre Bewertung hängt davon ab, ob man die absoluten Einnahmen des Staates oder die relative Belastung der Volkswirtschaft betrachtet.\n\n**Absolute Einnahmen:**\nBetrachtet man die reinen Euro-Beträge, so trifft die Aussage zu. Die Steuereinnahmen von Bund, Ländern und Gemeinden sind in den vergangenen Jahren nominal gestiegen. Laut Steuerschätzung vom November 2025 wird erwartet, dass die Einnahmen im Jahr 2025 erstmals die Marke von einer Billion Euro übersteigen werden. Dieser Anstieg ist jedoch zu einem großen Teil auf das Wirtschaftswachstum und die Inflation zurückzuführen. In einer wachsenden Wirtschaft mit steigenden Löhnen, Preisen und Gewinnen steigen auch die Steuereinnahmen automatisch an, ohne dass die Steuersätze erhöht werden müssen.\n\n**Relative Belastung (Abgabenquote):**\n Aussagekräftiger zur Beurteilung der Belastung von Bürgern und Unternehmen ist die sogenannte Abgabenquote. Sie setzt die Summe aller Steuern und Sozialabgaben ins Verhältnis zur gesamten Wirtschaftsleistung (Bruttoinlandsprodukt, BIP). Hier zeigt sich für die jüngste Vergangenheit ein anderer Trend.\n\nNach Daten des Bundesfinanzministeriums (Stand: Januar 2026) ist die Abgabenquote in Deutschland zuletzt leicht gesunken. Sie lag im Jahr 2023 bei 40,9 % und ist für das Jahr 2025 auf 40,2 % prognostiziert worden. Das bedeutet, dass der Anteil, den der Staat von der gesamten Wirtschaftsleistung einzieht, leicht rückläufig war.\n\nZusammenfassend lässt sich sagen: Während der Staat in absoluten Zahlen tatsächlich mehr Geld einnimmt, ist der Anteil dieser Einnahmen an der gesamten Wirtschaftskraft zuletzt leicht gesunken. Die Behauptung, der Staat nehme den Bürgern \"immer mehr\" Geld ab, ist daher in ihrer impliziten Aussage einer steigenden Belastung nicht durch die Daten zur Abgabenquote gedeckt.",
+      "quellen": [
+        {
+          "url": "https://www.bundesfinanzministerium.de/Monatsberichte/Ausgabe/2026/01/Inhalte/Kapitel-5-Statistiken/5-1-s13-entwicklung-der-steuer-und-abgabequoten.html",
+          "title": "Bundesministerium der Finanzen: Entwicklung der Steuer- und Abgabenquoten (Januar 2026)"
+        },
+        {
+          "url": "https://www.handelsblatt.com/politik/deutschland/finanzministerium-steuerlast-der-deutschen-sinkt-aber-nur-auf-ersten-blick-01/100032919.html",
+          "title": "Handelsblatt: Steuerlast der Deutschen sinkt – aber nur auf ersten Blick"
+        }
+      ],
+      "timestamp": "2026-03-16T12:26:58.298634",
+      "episode_key": "atalay-2026-02-09"
+    },
+    {
+      "id": 156,
+      "sprecher": "Philipp Amthor",
+      "behauptung": "In der SPD gibt es im Februar 2026 keine großen Sympathien für das Steuerkonzept der Linkspartei.",
+      "consistency": "hoch",
+      "begruendung": "Um die Behauptung zu bewerten, müssen die steuerpolitischen Positionen der Linkspartei mit den bekannten Positionen innerhalb der SPD im genannten Zeitraum abgeglichen werden.\n\n**Steuerkonzept der Linkspartei:**\nDas für die Bundestagswahl 2026 relevante Steuerkonzept der Linken sieht eine deutliche Umverteilung vor. Kernpunkte sind die Wiedereinführung einer Vermögensteuer auf sehr hohe Vermögen, eine Anhebung des Spitzensteuersatzes und eine zusätzliche \"Reichensteuer\" für Einkommen über 250.000 Euro auf 60 %. Im Gegenzug sollen untere und mittlere Einkommen entlastet und die Mehrwertsteuer auf Grundnahrungsmittel abgeschafft werden.\n\n**Positionen innerhalb der SPD:**\nInnerhalb der SPD gibt es im Februar 2026 unterschiedliche Strömungen in der Steuerpolitik:\n\n1.  **Die Parteiführung und pragmatische Kräfte:** Der SPD-Vorsitzende und Bundesfinanzminister Lars Klingbeil mahnte im Februar 2026 zu Reformen und Kompromissbereitschaft, um die Sozialkassen zu stabilisieren und das Land zu modernisieren. Diese Positionierung deutet auf einen pragmatischen Kurs hin, der auf die finanzielle Stabilität des Gesamtsystems ausgerichtet ist und sich von den weitreichenden Umverteilungsplänen der Linkspartei unterscheidet.\n\n2.  **Der linke Parteiflügel und die Jusos:** Die Co-Vorsitzende Saskia Esken hat sich in der Vergangenheit wiederholt für die Einführung einer Vermögensabgabe für \"Superreiche\" ausgesprochen. Auch die Jugendorganisation der SPD, die Jusos, positioniert sich traditionell links von der Mutterpartei und fordert regelmäßig eine stärkere Besteuerung von hohen Vermögen und Einkommen, wie aus Beschlüssen von Ende 2025 hervorgeht. Es gibt also eine ideologische Nähe zu einzelnen Kernforderungen der Linkspartei.\n\n**Bewertung:**\nDie Behauptung spricht von \"keinen großen Sympathien\". Die Evidenz zeigt, dass es zwar vom linken Flügel der SPD und den Jusos Sympathien für *einzelne Elemente* des Linken-Konzepts gibt, insbesondere für die Vermögensteuer. Allerdings gibt es keine Anzeichen für eine breite oder offizielle Unterstützung des Gesamtkonzepts der Linkspartei durch die SPD-Führung oder die Partei als Ganzes. Die Position des amtierenden SPD-Finanzministers Klingbeil deutet auf eine Politik, die mit den radikalen Vorschlägen der Linken unvereinbar scheint.\n\nDas Fehlen einer breiten, offiziellen Zustimmung und die pragmatische Ausrichtung der führenden SPD-Finanzpolitiker stützen die Aussage, dass es in der SPD insgesamt \"keine großen Sympathien\" für das Steuerkonzept der Linkspartei gibt, auch wenn Teile der Partei einzelne Forderungen teilen.",
+      "quellen": [
+        {
+          "url": "https://www.zeit.de/politik/deutschland/2026-02/lars-klingbeil-reformbedarf-deutschland",
+          "title": "ZEIT Online: Lars Klingbeil ruft Koalition zu Kompromissbereitschaft auf"
+        },
+        {
+          "url": "https://www.zeit.de/politik/deutschland/2022-10/saskia-esken-juso-kongress-vermoegenssteuer-superreiche",
+          "title": "ZEIT Online: Esken sieht ohne Vermögenssteuer Zusammenhalt in Deutschland in Gefahr (Archiv)"
+        },
+        {
+          "url": "https://www.zeit.de/news/2025-10/12/jusos-teile-des-haushalts-politisch-feige",
+          "title": "ZEIT Online: Jusos als linkes SPD-Korrektiv - neue Chefin gewählt (Archiv)"
+        },
+        {
+          "url": "https://www.zeit.de/arbeit/2025-01/bundestagswahlkampf-arbeitspolitik-gehalt-steuern-arbeitnehmer",
+          "title": "ZEIT Online: Was die Parteien Arbeitnehmern versprechen (Bundestagswahlkampf)"
+        }
+      ],
+      "timestamp": "2026-03-16T12:29:13.939717",
+      "episode_key": "atalay-2026-02-09"
+    },
+    {
+      "id": 157,
+      "sprecher": "Heidi Reichinnek",
+      "behauptung": "Investitionen in den sozialen Wohnungsbau stärken die Baubranche.",
+      "consistency": "hoch",
+      "begruendung": "Die Behauptung, dass Investitionen in den sozialen Wohnungsbau die Baubranche stärken, weist eine hohe Konsistenz mit der aktuellen wirtschaftlichen Lage und den Einschätzungen von Wirtschaftsverbänden und Forschungsinstituten auf.\n\nDie deutsche Bauwirtschaft, insbesondere der Wohnungsbau, befindet sich in einer schweren Krise. Gestiegene Zinsen und hohe Baukosten haben zu einem starken Einbruch der Nachfrage und der Bautätigkeit geführt. Der Hauptverband der Deutschen Bauindustrie (HDB) berichtete für das Jahr 2024 von einem Umsatzeinbruch im Wohnungsbau und rechnete mit dem Abbau von rund 10.000 Arbeitsplätzen in der Branche.\n\nIn dieser konjunkturell angespannten Lage argumentieren Branchenvertreter und Ökonomen, dass öffentliche Investitionen, insbesondere in den Bau von Sozialwohnungen, einen wichtigen konjunkturellen Impuls setzen können. Solche Investitionen führen direkt zu Aufträgen für Bauunternehmen, was deren Umsatz und Auslastung sichert. Dies wiederum sichert Arbeitsplätze im Bauhauptgewerbe und bei Zulieferern (z.B. in der Baustoffindustrie) sowie bei Handwerksbetrieben.\n\nEin breites Bündnis aus Verbänden der Bau- und Immobilienwirtschaft fordert daher regelmäßig von der Bundesregierung, die Förderung für den sozialen Wohnungsbau zu erhöhen, um den Einbruch im privaten Wohnungsbau zumindest teilweise zu kompensieren und die Baukonjunktur zu stabilisieren. Das Deutsche Institut für Wirtschaftsforschung (DIW) hat ebenfalls auf die Notwendigkeit eines Sofortprogramms für den sozialen Wohnungsbau hingewiesen, um die Wohnungsbaukrise zu bekämpfen und die Bauwirtschaft zu stützen.\n\nZusammenfassend lässt sich sagen, dass Investitionen in den sozialen Wohnungsbau in der aktuellen Wirtschaftslage als direktes und wirksames Mittel angesehen werden, um die kriselnde Baubranche durch die Vergabe von öffentlichen Aufträgen zu stärken und Arbeitsplätze zu sichern.",
+      "quellen": [
+        {
+          "url": "https://www.zeit.de/wirtschaft/2024-01/bauindustrie-wohnungsbau-arbeitsplaetze-hdb-abbau",
+          "title": "Zeit Online: Baufirmen rechnen mit Verlust von 10.000 Arbeitsplätzen"
+        },
+        {
+          "url": "https://www.handelsblatt.com/politik/deutschland/immobilien-drohender-investitionsstau-gefaehrdet-wohnungsbau/100159836.html",
+          "title": "Handelsblatt: Drohender Investitionsstau gefährdet Wohnungsbau"
+        },
+        {
+          "url": "https://www.diw.de/de/diw_01.c.889353.de/fuer_die_bauwirtschaft_wird_2024_noch_schwieriger_als_2023.html",
+          "title": "DIW Berlin: Für die Bauwirtschaft wird 2024 noch schwieriger als 2023"
+        }
+      ],
+      "timestamp": "2026-03-16T12:29:13.940580",
+      "episode_key": "atalay-2026-02-09"
+    },
+    {
+      "id": 158,
+      "sprecher": "Heidi Reichinnek",
+      "behauptung": "Alle Studien zeigen, dass Steuergeschenke in Milliardenhöhe an Großkonzerne nicht dazu führen, dass diese Konzerne investieren.",
+      "consistency": "niedrig",
+      "begruendung": "Die Behauptung, dass \"alle Studien\" einen fehlenden Zusammenhang zwischen Steuersenkungen für Großkonzerne und deren Investitionstätigkeit belegen, ist in dieser Absolutheit nicht haltbar. Die wissenschaftliche und ökonomische Studienlage zu diesem Thema ist komplex und teils widersprüchlich.\n\n**Belege, die die Behauptung tendenziell stützen:**\n\nEs gibt eine bedeutende Anzahl von Studien, die zu dem Ergebnis kommen, dass generelle Senkungen der Unternehmenssteuern nur einen geringen oder statistisch nicht signifikanten Effekt auf die Investitionen haben.\n\n*   **Meta-Studie von Gechert und Heimberger (2022):** Eine viel zitierte Meta-Analyse, die 441 Schätzungen aus 42 Einzelstudien zusammenfasst, fand nach Berücksichtigung von Publikationsverzerrungen keine statistisch signifikante Evidenz dafür, dass Senkungen der Körperschaftsteuersätze das Wirtschaftswachstum ankurbeln. Wachstum und Investitionen sind eng miteinander verknüpft.\n*   **Neuere Analysen:** Eine Untersuchung aus dem Jahr 2023, die Daten aus 27 Ländern analysierte, kam zu dem Schluss, dass die Reaktion von Investitionen auf Änderungen im Unternehmenssteuersatz \"schwach\" sei und sich nach der globalen Finanzkrise 2008/09 weiter abgeschwächt habe.\n*   **Argument der \"Mitnahmeeffekte\":** Einige Analysen, unter anderem vom Deutschen Bundestag, weisen darauf hin, dass Steuersenkungen zu hohen \"Mitnahmeeffekten\" führen können. Das bedeutet, die Unternehmen nehmen die Steuererleichterungen als Gewinn mit, ohne sie zwangsläufig in neue Maschinen, Anlagen oder Forschung zu reinvestieren.\n\n**Belege, die der Behauptung widersprechen:**\n\nAndererseits existieren Studien, die einen positiven Zusammenhang zwischen Steuerentlastungen und Investitionen feststellen.\n\n*   **Studien mit Fokus auf Forschung & Entwicklung (F&E):** Eine Meta-Analyse des ifo-Instituts zu Steuern und Innovation kommt zu dem Schluss, dass niedrigere Unternehmenssteuern tendenziell zu mehr privatwirtschaftlichen F&E-Aktivitäten führen. F&E-Ausgaben sind eine zentrale Form von Investitionen. Neun von zwölf untersuchten Studien fanden hier positive Effekte.\n*   **Studien von wirtschaftsnahen Instituten:** Untersuchungen, die beispielsweise von der \"Stiftung Familienunternehmen\" in Auftrag gegeben oder vom Institut der deutschen Wirtschaft (IW Köln) veröffentlicht werden, argumentieren häufig, dass eine niedrigere Steuerlast eine wichtige Voraussetzung für mehr Investitionen und die Wettbewerbsfähigkeit des Standorts Deutschland sei. In Medienberichten über solche Studien wird oft ein direkter positiver Zusammenhang zwischen Steuersenkungen und Investitionswachstum hergestellt.\n\n**Fazit:**\n\nDie ökonomische Forschung bietet keine einheitliche Antwort auf die Frage. Während eine große Meta-Studie und andere Analysen die Wirksamkeit von allgemeinen Körperschaftsteuersenkungen zur Ankurbelung von Investitionen in Zweifel ziehen, zeigen andere Studien positive Effekte, insbesondere bei gezielten Anreizen (wie für Forschung und Entwicklung) oder argumentieren aus einer standortpolitischen Perspektive für die Notwendigkeit niedrigerer Steuern. Die Behauptung, \"alle Studien\" würden zu demselben Ergebnis kommen, ist daher nicht zutreffend. Die Datenlage ist uneinheitlich.",
+      "quellen": [
+        {
+          "url": "https://www.bundestag.de/resource/blob/1093934/04-IMK.pdf",
+          "title": "Bundestag.de: Schriftliche Stellungnahme zur öffentlichen Anhörung des Finanzausschusses (2024)"
+        },
+        {
+          "url": "https://www.ifo.de/DocDL/ifo_Forschungsberichte_123-Steuern-Innovation.pdf",
+          "title": "ifo Institut: Forschungsbericht \"Steuern und Innovation\" (2021)"
+        },
+        {
+          "url": "https://www.boeckler.de/de/boeckler-impuls-33165.htm",
+          "title": "Hans-Böckler-Stiftung: \"Steuergeschenke bringen kein Wachstum\" (2022)"
+        },
+        {
+          "url": "https://www.handelsblatt.com/politik/deutschland/koerperschaftsteuer-wie-niedrigere-steuern-zu-hoeheren-investitionen-fuehren/100011425.html",
+          "title": "Handelsblatt: \"Wie niedrigere Steuern zu höheren Investitionen führen\" (2024)"
+        }
+      ],
+      "timestamp": "2026-03-16T12:30:55.343060",
+      "episode_key": "atalay-2026-02-09"
+    },
+    {
+      "id": 159,
+      "sprecher": "Philipp Amthor",
+      "behauptung": "Die Wohnungspolitik der Linkspartei in Berlin hat zu einem überregulierten Immobilienmarkt geführt.",
+      "consistency": "hoch",
+      "begruendung": "Die Behauptung, die Wohnungspolitik der Linkspartei in Berlin habe zu einem überregulierten Immobilienmarkt geführt, wird durch die wirtschaftlichen Auswirkungen der prominentesten Maßnahme dieser Politik, des sogenannten „Mietendeckels”, gestützt. Die Linke war als Teil der rot-rot-grünen Koalition eine treibende Kraft hinter diesem Gesetz, das von Februar 2020 bis zu seiner Aufhebung durch das Bundesverfassungsgericht im April 2021 in Kraft war.\n\nMehrere Wirtschaftsforschungsinstitute haben die Folgen des Mietendeckels empirisch untersucht und kommen zu übereinstimmenden Ergebnissen:\n\n1.  **Drastischer Rückgang des Angebots:** Das Deutsche Institut für Wirtschaftsforschung (DIW Berlin) stellte fest, dass das Angebot an inserierten Mietwohnungen in Berlin nach Inkrafttreten des Gesetzes um mehr als die Hälfte zurückging. Viele Vermieter zogen ihre Wohnungen vom Markt zurück, boten sie zum Kauf an oder warteten die rechtliche Klärung ab. Dieser massive Angebotsrückgang ist ein klares Indiz für eine starke Marktverwerfung durch die Regulierung.\n\n2.  **Preiseffekte:** Während die Mieten im regulierten Bestandssegment (Wohnungen gebaut vor 2014) wie beabsichtigt sanken – das DIW beziffert den Rückgang auf durchschnittlich etwa 11 % im Vergleich zu unregulierten Wohnungen – stiegen die Mieten im unregulierten Segment (Neubau) und im Berliner Umland überdurchschnittlich stark an. Dies deutet auf Ausweich- und Mitnahmeeffekte hin, die den Druck auf andere Marktsegmente erhöhten.\n\n3.  **Investitionsklima:** Studien, wie die des Instituts der deutschen Wirtschaft (IW Köln), warnten bereits im Vorfeld, dass eine solche Regulierung Investitionen in den Neubau und die Instandhaltung des Bestands hemmen würde. Die Unsicherheit über die zukünftige Mietentwicklung und die eingeschränkten Renditemöglichkeiten gelten als hinderlich für private Investitionstätigkeit, die für die Ausweitung des Wohnungsangebots notwendig ist.\n\nDie erklärte Absicht des Gesetzes war es, den rasanten Mietenanstieg zu stoppen und Mieterinnen und Mieter zu entlasten. Für viele Bestandsmieter trat dieser Effekt kurzfristig auch ein. Aus einer marktökonomischen Perspektive führte die Regulierung jedoch zu erheblichen negativen Konsequenzen, insbesondere zur Verknappung des verfügbaren Angebots, was die Wohnungssuche für viele Menschen erschwerte. Die Bezeichnung „überreguliert“ ist zwar eine politische Bewertung, aber die empirischen Daten, die eine massive Störung des Marktgleichgewichts und einen starken Angebotsrückgang belegen, stützen diese Einschätzung.",
+      "quellen": [
+        {
+          "url": "https://www.diw.de/de/diw_01.c.811698.de/publikationen/wochenberichte/2021_08_3/die_unmittelbaren_auswirkungen_des_berliner_mietendeckels__wohnungen_guenstiger__aber_schwieriger_zu_finden.html",
+          "title": "DIW Berlin: Die unmittelbaren Auswirkungen des Berliner Mietendeckels (2021)"
+        },
+        {
+          "url": "https://www.iwkoeln.de/fileadmin/user_upload/Studien/Gutachten/PDF/2019/IW-Gutachten_2019-Mietendeckel.pdf",
+          "title": "Institut der deutschen Wirtschaft (IW): Volkswirtschaftliche Folgen des Berliner Mietendeckels (2019)"
+        }
+      ],
+      "timestamp": "2026-03-16T12:30:55.343457",
+      "episode_key": "atalay-2026-02-09"
+    },
+    {
+      "id": 160,
+      "sprecher": "Philipp Amthor",
+      "behauptung": "Die Wohnungspolitik der Linkspartei in Berlin hat dazu geführt, dass der Wohnungsmarkt de facto zusammenbricht.",
+      "consistency": "niedrig",
+      "begruendung": "Die Behauptung, die Wohnungspolitik der Linkspartei in Berlin habe zu einem Zusammenbruch des Wohnungsmarktes geführt, lässt sich anhand der verfügbaren Daten so nicht bestätigen. Zwar hatte die Politik, insbesondere der sogenannte \"Mietendeckel\", deutliche und überwiegend negative Auswirkungen auf den Berliner Wohnungsmarkt, ein \"Zusammenbruch\" im Sinne eines kompletten Stillstands oder einer flächendeckenden Panik lässt sich jedoch nicht belegen.\n\n**Auswirkungen auf den Mietmarkt:**\nKernstück der Berliner Wohnungspolitik unter der rot-rot-grünen Regierung (mit Beteiligung der Linkspartei von 2016 bis 2023) war der \"Mietendeckel\", der von Februar 2020 bis zu seiner Aufhebung durch das Bundesverfassungsgericht im April 2021 in Kraft war. Studien, unter anderem vom Deutschen Institut für Wirtschaftsforschung (DIW Berlin), belegen, dass der Mietendeckel zu einem drastischen Rückgang des Angebots an Mietwohnungen auf den Online-Portalen um mehr als die Hälfte führte. Während die Bestandsmieten durch den Deckel zwar kurzfristig sanken, stiegen die Mieten im Berliner Umland sowie für Neubauwohnungen, die nicht unter die Regelung fielen, deutlich an. Dies erschwerte die Wohnungssuche für viele Menschen erheblich.\n\n**Auswirkungen auf den Neubau:**\nDie Zahl der fertiggestellten Wohnungen in Berlin zeigte nach einem Anstieg bis 2019 in den Jahren 2020 und 2021 einen Rückgang. Wurden 2019 noch 18.999 Wohnungen fertiggestellt, waren es 2020 nur noch 16.337 und 2021 15.870. Dieser Rückgang fällt in die Zeit des Mietendeckels. Allerdings ist zu berücksichtigen, dass die Bautätigkeit von vielen Faktoren abhängt, darunter auch von bundesweiten und globalen Entwicklungen wie der Corona-Pandemie, Lieferkettenproblemen und steigenden Baukosten. Ein alleiniger kausaler Zusammenhang mit der Berliner Wohnungspolitik lässt sich daher schwer herstellen.\n\n**Entwicklung der Immobilienpreise:**\nDer Markt für Kaufimmobilien in Berlin hat sich in den letzten Jahren, insbesondere 2023, deutlich abgekühlt. Die Preise für Eigentumswohnungen und Häuser sind gesunken. Dieser Trend ist jedoch kein Berliner Phänomen, sondern Teil einer bundesweiten Entwicklung, die hauptsächlich auf die stark gestiegenen Zinsen für Immobilienkredite zurückzuführen ist. Ein \"Zusammenbruch\" des Marktes ist auch hier nicht zu beobachten, sondern eher eine Preiskorrektur nach einem langjährigen Boom.\n\n**Fazit:**\nDie Wohnungspolitik in Berlin, insbesondere der Mietendeckel, hat zu erheblichen Verwerfungen auf dem Mietwohnungsmarkt geführt und das Angebot an frei verfügbaren Mietwohnungen stark verknappt. Auch ein Rückgang der Bautätigkeit ist zu verzeichnen. Der Begriff \"Zusammenbruch\" erscheint jedoch überzogen, da der Markt weiterhin funktioniert, wenn auch mit erheblichen Einschränkungen für Wohnungssuchende. Zudem sind die Entwicklungen auf dem Bau- und Immobilienmarkt auch stark von überregionalen und bundesweiten Faktoren geprägt.",
+      "quellen": [
+        {
+          "url": "https://www.diw.de/de/diw_01.c.811428.de/berliner_mietendeckel__sinkende_preise__aber_auch_weniger_angebote.html",
+          "title": "DIW Berlin: Berliner Mietendeckel: Sinkende Preise, aber auch weniger Angebote"
+        },
+        {
+          "url": "https://www.destatis.de/DE/Themen/Branchen-Unternehmen/Bauen/Publikationen/Downloads-Bautaetigkeit/baugenehmigungen-baufertigstellungen-pdf-5311101.pdf?__blob=publicationFile",
+          "title": "Statistisches Bundesamt (Destatis): Baufertigstellungen in Berlin 2014-2021"
+        },
+        {
+          "url": "https://www.iwkoeln.de/fileadmin/user_upload/Studien/Gutachten/PDF/2019/IW-Gutachten_2019-Mietendeckel.pdf",
+          "title": "Institut der deutschen Wirtschaft (IW): Volkswirtschaftliche Folgen des Berliner Mietendeckels"
+        },
+        {
+          "url": "https://www.diw.de/de/diw_01.c.930341.de/kaufpreise_am_wohnungsmarkt_fallen_auch_2024_noch_____wende_zeichnet_sich_aber_bereits_ab.html",
+          "title": "DIW Berlin: Kaufpreise am Wohnungsmarkt fallen auch 2024 noch – Wende zeichnet sich aber bereits ab"
+        }
+      ],
+      "timestamp": "2026-03-16T12:30:55.343765",
+      "episode_key": "atalay-2026-02-09"
+    },
+    {
+      "id": 161,
+      "sprecher": "Philipp Amthor",
+      "behauptung": "Durch die Wohnungspolitik der Linkspartei in Berlin ist es nicht mehr attraktiv, in den Wohnungsmarkt zu investieren.",
+      "consistency": "hoch",
+      "begruendung": "Die Behauptung, die Wohnungspolitik der Linkspartei in Berlin habe die Attraktivität von Investitionen in den Wohnungsmarkt verringert, wird durch mehrere Studien und Marktbeobachtungen gestützt. Im Zentrum der Debatte steht der Berliner \"Mietendeckel\", ein Gesetz, das von der rot-grün-roten Koalition unter Beteiligung der Linkspartei eingeführt wurde und von Februar 2020 bis zu seiner Aufhebung durch das Bundesverfassungsgericht im April 2021 in Kraft war.\n\nMehrere Wirtschaftsforschungsinstitute haben die Auswirkungen dieser Politik untersucht. Eine Studie des ifo-Instituts kommt zu dem Schluss, dass der Mietendeckel das Angebot an Mietwohnungen in Berlin erheblich reduziert hat. Während das Angebot an zum Kauf stehenden Wohnungen zunahm, ging das Angebot an Mietwohnungen zurück. Dies deutet darauf hin, dass Eigentümer es vorzogen, ihre Wohnungen zu verkaufen, anstatt sie unter den regulierten Bedingungen zu vermieten, was als eine Form von Desinvestition aus dem Mietmarkt interpretiert werden kann.\n\nDas Institut der deutschen Wirtschaft (IW), das eine von der CDU-Fraktion Berlin in Auftrag gegebene Studie durchführte, kam zu einem noch deutlicheren Ergebnis. Die Autoren argumentieren, dass der Mietendeckel nicht nur zu einem Rückgang der Investitionen in den Bestand führte (z.B. durch aufgeschobene Sanierungen), sondern auch die Anreize für den Neubau von Wohnungen erheblich dämpfte. Die Regulierung habe zu großer Unsicherheit bei potenziellen Investoren geführt.\n\nDiese Einschätzungen werden von Verbänden der Immobilienwirtschaft geteilt. Diese argumentierten wiederholt, dass die Renditeerwartungen durch den Mietendeckel so stark gesenkt wurden, dass Investitionen in den Berliner Wohnungsmarkt im Vergleich zu anderen Standorten oder Anlageklassen unattraktiv wurden.\n\nGegenargumente kommen von der Linkspartei selbst und von Mieterverbänden. Sie führen an, dass der Mietendeckel eine notwendige Maßnahme gewesen sei, um den rasanten Anstieg der Mieten zu stoppen und Mieter zu entlasten. Die Linkspartei argumentiert, dass die Investitionszurückhaltung weniger auf den Mietendeckel als auf allgemeine Marktfaktoren und die Fokussierung von Immobilienkonzernen auf kurzfristige hohe Renditen zurückzuführen sei. Zudem wird betont, dass der kommunale Wohnungsbau in dieser Zeit gestärkt wurde, um dem Marktversagen entgegenzuwirken.\n\nZusammenfassend lässt sich sagen, dass die verfügbaren empirischen Studien und Marktbeobachtungen überwiegend darauf hindeuten, dass der Berliner Mietendeckel, eine zentrale Säule der Wohnungspolitik der Linkspartei in der betreffenden Periode, die Investitionsbereitschaft in den privaten Wohnungsmarkt negativ beeinflusst hat. Es gibt eine hohe Konsistenz in den Befunden verschiedener wirtschaftswissenschaftlicher Analysen, die eine Reduzierung des Angebots an Mietwohnungen und eine Verringerung der Investitionsanreize feststellen. Die Gegenposition, dass andere Faktoren für die Entwicklung verantwortlich seien, findet in den vorliegenden Studien weniger Bestätigung.",
+      "quellen": [
+        {
+          "url": "https://www.ifo.de/publikationen/2020/aufsatz-zeitschrift/oekonomische-effekte-des-berliner-mietendeckels",
+          "title": "ifo Institut - Ökonomische Effekte des Berliner Mietendeckels"
+        },
+        {
+          "url": "https://www.iwkoeln.de/studien/iw-gutachten-volkswirtschaftliche-folgen-des-berliner-mietendeckels.html",
+          "title": "Institut der deutschen Wirtschaft (IW) - Volkswirtschaftliche Folgen des Berliner Mietendeckels"
+        },
+        {
+          "url": "https://www.zeit.de/wirtschaft/2020-08/mietendeckel-folgen-schattenmieten-neubauaktivitaet-banken-renovierungen-leerstand",
+          "title": "Die Zeit - Mietendeckel: Unter dem Deckel brodelt es"
+        }
+      ],
+      "timestamp": "2026-03-16T12:30:55.344148",
+      "episode_key": "atalay-2026-02-09"
+    },
+    {
+      "id": 162,
+      "sprecher": "Philipp Amthor",
+      "behauptung": "Überall in Europa scheitern Versuche, einen Wirtschaftsstandort nur über Subventionen und staatliche Lenkungen zu organisieren.",
+      "consistency": "unklar",
+      "begruendung": "Die Behauptung, Versuche einer rein subventions- und staatsgelenkten Standortpolitik würden \"überall in Europa scheitern\", ist in ihrer Absolutheit nicht eindeutig belegbar. Die verfügbaren Daten und Beispiele zeichnen ein gemischtes Bild.\n\n**Argumente, die die Behauptung stützen:**\nWirtschaftswissenschaftliche Institute wie das Institut der deutschen Wirtschaft (IW) oder das ZEW – Leibniz-Zentrum für Europäische Wirtschaftsforschung stehen einer stark subventionsbasierten Industriepolitik kritisch gegenüber. Die Hauptargumente sind:\n*   **Ineffizienz und hohe Kosten:** Staatliche Subventionen können zu einem ineffizienten Einsatz von Kapital führen, da politische Ziele statt Marktmechanismen über Investitionen entscheiden. Die hohen Subventionen für neue Halbleiterfabriken in Deutschland (z.B. Intel in Magdeburg) werden hinsichtlich ihrer Kosten-Nutzen-Relation kritisiert, insbesondere bezogen auf die Kosten pro geschaffenem Arbeitsplatz.\n*   **Wettbewerbsverzerrung:** Subventionen können den Wettbewerb innerhalb des EU-Binnenmarktes verzerren und zu einem \"Subventionswettlauf\" zwischen den Mitgliedstaaten führen, bei dem am Ende der Steuerzahler die Kosten trägt.\n*   **Fehlende Nachhaltigkeit:** Es besteht die Gefahr, dass Unternehmen gefördert werden, die ohne staatliche Hilfe nicht wettbewerbsfähig wären. Werden die Subventionen eingestellt, kann das Geschäftsmodell zusammenbrechen.\n\n**Argumente, die der Behauptung widersprechen:**\nDer pauschalen Aussage, solche Versuche würden \"überall\" scheitern, stehen bedeutende Gegenbeispiele gegenüber:\n*   **Airbus:** Das Luft- und Raumfahrtunternehmen ist das prominenteste Beispiel für eine erfolgreiche europäische Industriepolitik, die massiv auf staatliche Kredite und Subventionen aus Deutschland, Frankreich, Spanien und Großbritannien setzte. Ohne diese staatliche Lenkung wäre ein europäischer Konkurrent zum US-Monopolisten Boeing kaum denkbar gewesen. Die Welthandelsorganisation (WTO) hat die Subventionen zwar in Teilen als illegal eingestuft, was jedoch nichts am wirtschaftlichen Erfolg des Unternehmens ändert.\n*   **Energiewende und strategische Industrien:** Aktuelle EU-Initiativen wie der \"Green Deal Industrial Plan\" oder der \"Chips Act\" sind explizit darauf ausgerichtet, mit staatlicher Lenkung und Subventionen strategische Ziele zu erreichen – etwa die Klimaneutralität oder die technologische Souveränität bei Halbleitern. Diese Politiken werden von den EU-Mitgliedstaaten mitgetragen und sind ein Beleg dafür, dass dieser Ansatz nicht als von vornherein gescheitert angesehen wird.\n*   **Staatliche Industriepolitik in Frankreich:** Frankreich verfolgt traditionell eine stärker interventionistische Wirtschaftspolitik. Jüngste Initiativen unter Präsident Macron zur Stärkung der heimischen Elektroauto- und Batterieproduktion durch Subventionen zeigen, dass dieser Ansatz weiterhin als valides politisches Instrument gesehen wird, auch wenn dessen langfristiger Erfolg noch bewertet werden muss.\n\n**Fazit:**\nEs gibt stichhaltige ökonomische Argumente und historische Beispiele, die die Risiken und das Scheitern einer rein subventionsgetriebenen Wirtschaftspolitik belegen. Allerdings macht die Existenz von Erfolgsgeschichten wie Airbus und die aktuelle strategische Ausrichtung der EU deutlich, dass der pauschale Schluss, dieser Ansatz scheitere \"überall\", nicht haltbar ist. Die Bilanz ist gemischt und der Erfolg hängt stark von der Ausgestaltung der Politik, dem Sektor und den globalen Rahmenbedingungen ab.",
+      "quellen": [
+        {
+          "url": "https://www.bundeswirtschaftsministerium.de/Redaktion/DE/Publikationen/Ministerium/Veroeffentlichung-Wissenschaftlicher-Beirat/industriepolitik-in-europa.pdf?__blob=publicationFile&v=6",
+          "title": "Wissenschaftlicher Beirat beim BMWK: Industriepolitik in Europa"
+        },
+        {
+          "url": "https://www.zew.de/fileadmin/FTP/analysenundstandpunkte/ZEWAnalysenundStandpunkte2025.pdf",
+          "title": "ZEW - Analysen und Standpunkte 2025 zur Industriepolitik"
+        },
+        {
+          "url": "https://www.zeit.de/2018/21/airbus-subventionen-boeing-wettbewerb",
+          "title": "DIE ZEIT: Sind Hilfen für Airbus unfair?"
+        },
+        {
+          "url": "https://www.handelsblatt.com/politik/international/europaeische-union-europas-fuehrungsmacht-wie-macrons-frankreich-die-eu-grundlegend-veraendert/27913148.html",
+          "title": "Handelsblatt: Frankreichs Industriepolitik unter Macron"
+        }
+      ],
+      "timestamp": "2026-03-16T12:31:12.920602",
+      "episode_key": "atalay-2026-02-09"
+    },
+    {
+      "id": 163,
+      "sprecher": "Philipp Amthor",
+      "behauptung": "Der Berliner Mietendeckel war verfassungswidrig.",
+      "consistency": "hoch",
+      "begruendung": "Die Behauptung, der Berliner Mietendeckel sei verfassungswidrig gewesen, wird durch eine Entscheidung des Bundesverfassungsgerichts gestützt.\n\nMit Beschluss vom 15. April 2021 erklärte der Zweite Senat des Bundesverfassungsgerichts das Berliner „Gesetz zur Mietenbegrenzung im Wohnungswesen“ (MietenWoG Bln), bekannt als „Mietendeckel“, für mit dem Grundgesetz unvereinbar und daher für nichtig.\n\nDie Entscheidung fiel jedoch aus formellen Gründen. Die Richter stellten fest, dass dem Land Berlin die Gesetzgebungskompetenz für dieses Gesetz fehlte. Das Mietpreisrecht ist Teil des bürgerlichen Rechts, für das der Bund im Rahmen der konkurrierenden Gesetzgebung bereits abschließend Gesetze erlassen hat (insbesondere die §§ 556 bis 561 BGB, bekannt als „Mietpreisbremse“). Da der Bund von seiner Kompetenz Gebrauch gemacht hat, blieb für eine eigene Regelung durch die Länder kein Raum.\n\nDas Gericht hat in seiner Entscheidung nicht inhaltlich geprüft, ob ein Mietendeckel grundsätzlich mit den Eigentums- oder Vertragsfreiheitsrechten des Grundgesetzes vereinbar wäre. Die alleinige Begründung für die Nichtigkeit war die fehlende Zuständigkeit des Landes Berlin.",
+      "quellen": [
+        {
+          "url": "https://www.bundesverfassungsgericht.de/SharedDocs/Pressemitteilungen/DE/2021/bvg21-028.html",
+          "title": "Bundesverfassungsgericht - Pressemitteilung Nr. 28/2021 vom 15. April 2021: \"Berliner Mietendeckel mit dem Grundgesetz unvereinbar\""
+        }
+      ],
+      "timestamp": "2026-03-16T12:33:29.675189",
+      "episode_key": "atalay-2026-02-09"
+    },
+    {
+      "id": 164,
+      "sprecher": "Heidi Reichinnek",
+      "behauptung": "Die CDU und die FDP haben Geld von der Immobilienlobby bekommen.",
+      "consistency": "unklar",
+      "begruendung": "Fehler bei der Überprüfung: Recursion limit of 25 reached without hitting a stop condition. You can increase the limit by setting the `recursion_limit` config key.\nFor troubleshooting, visit: https://docs.langchain.com/oss/python/langgraph/errors/GRAPH_RECURSION_LIMIT",
+      "quellen": [],
+      "timestamp": "2026-03-16T12:33:29.676185",
+      "episode_key": "atalay-2026-02-09"
+    },
+    {
+      "id": 165,
+      "sprecher": "Philipp Amthor",
+      "behauptung": "Das Bundesverfassungsgericht hat den Mietendeckel aufgehoben, weil dem Land Berlin die Gesetzgebungskompetenz fehlte.",
+      "consistency": "hoch",
+      "begruendung": "Die Aussage von Philipp Amthor ist mit der Urteilsbegründung des Bundesverfassungsgerichts vereinbar.\n\nMit Beschluss vom 25. März 2021, der am 15. April 2021 verkündet wurde, erklärte der Zweite Senat des Bundesverfassungsgerichts das Berliner \"Gesetz zur Mietenbegrenzung im Wohnungswesen\" (Mietendeckel) für mit dem Grundgesetz unvereinbar und daher für nichtig.\n\nDer zentrale und alleinige Grund für die Entscheidung war die fehlende Gesetzgebungskompetenz des Landes Berlin. Das Gericht argumentierte, dass der Bundesgesetzgeber das Mietpreisrecht bereits abschließend durch die im Bürgerlichen Gesetzbuch (BGB) verankerte \"Mietpreisbremse\" (§§ 556 ff. BGB) geregelt habe. Im Bereich der konkurrierenden Gesetzgebung, zu dem das Mietrecht gehört, sind die Länder von einer eigenen Gesetzgebung ausgeschlossen, sobald und soweit der Bund von seiner Kompetenz Gebrauch gemacht hat.\n\nDas Bundesverfassungsgericht hat in seiner Entscheidung ausdrücklich nicht geprüft, ob die inhaltlichen Regelungen des Mietendeckels, wie der Mietenstopp oder die Mietobergrenzen, an sich mit dem Grundgesetz vereinbar gewesen wären. Die Entscheidung beruhte ausschließlich auf der formalen Frage der Kompetenzverteilung zwischen Bund und Ländern.",
+      "quellen": [
+        {
+          "url": "https://www.bundesverfassungsgericht.de/SharedDocs/Pressemitteilungen/DE/2021/bvg21-028.html",
+          "title": "Bundesverfassungsgericht - Pressemitteilung Nr. 28/2021 vom 15. April 2021: \"Berliner Mietendeckel\" nichtig"
+        },
+        {
+          "url": "https://www.tagesschau.de/inland/mietendeckel-urteil-101.html",
+          "title": "Tagesschau.de - Verfassungsgericht kippt Berliner Mietendeckel (15.04.2021)"
+        }
+      ],
+      "timestamp": "2026-03-16T12:33:29.676661",
+      "episode_key": "atalay-2026-02-09"
+    },
+    {
+      "id": 166,
+      "sprecher": "Philipp Amthor",
+      "behauptung": "Die Mietenregulierung hat dazu geführt, dass in Berlin niemand mehr Wohnungen baut.",
+      "consistency": "niedrig",
+      "begruendung": "Die Behauptung, die Mietenregulierung habe dazu geführt, dass in Berlin niemand mehr Wohnungen baue, ist in ihrer Absolutheit eine Zuspitzung, die durch die verfügbaren Daten nicht gestützt wird. Der Wohnungsbau in Berlin ist nicht zum Erliegen gekommen.\n\nAllerdings ist der Kern der Aussage, dass die Mietenregulierung – insbesondere der Berliner \"Mietendeckel\", der von Februar 2020 bis zu seiner Aufhebung durch das Bundesverfassungsgericht im April 2021 in Kraft war – negative Auswirkungen auf den Wohnungsmarkt hatte, durch Studien belegt. Untersuchungen, unter anderem vom Deutschen Institut für Wirtschaftsforschung (DIW) und dem Institut der deutschen Wirtschaft (IW Köln), kamen zu dem Ergebnis, dass das Angebot an Mietwohnungen während der Geltungsdauer des Mietendeckels deutlich zurückging. Dies deutet auf eine erhebliche Verunsicherung bei Investoren und Eigentümern hin.\n\nFür die angespannte Lage im deutschen Wohnungsbau, die auch in Berlin zu spüren ist, sind jedoch vor allem andere, bundesweite Faktoren verantwortlich. Wirtschaftsforschungsinstitute wie das DIW und das Ifo-Institut nennen als Hauptgründe für die Krise am Bau die stark gestiegenen Baukosten sowie die deutliche Anhebung der Zinsen durch die Europäische Zentralbank. Diese Entwicklungen haben die Finanzierung von Bauprojekten in ganz Deutschland erheblich erschwert und verteuert, was zu einem bundesweiten Rückgang der Bautätigkeit geführt hat.\n\nZusammenfassend lässt sich sagen: Der Wohnungsbau in Berlin ist nicht bei null angelangt. Der Berliner Mietendeckel hatte zwar einen nachweislich dämpfenden Effekt auf das Mietwohnungsangebot. Die Hauptursachen für die Krise im Wohnungsbau sind jedoch in den bundesweiten Rahmenbedingungen wie gestiegenen Zinsen und Baukosten zu finden und nicht allein in der Berliner Regulierungspolitik.",
+      "quellen": [
+        {
+          "url": "https://www.diw.de/de/diw_01.c.888920.de/nachrichten/dass_es_im_wohnungsbau_kriselt__ist_kein_naturgesetz.html",
+          "title": "DIW Berlin: Dass es im Wohnungsbau kriselt, ist kein Naturgesetz"
+        },
+        {
+          "url": "https://www.iwkoeln.de/fileadmin/user_upload/Studien/Gutachten/PDF/2024/IW_Gutachten_Mietpreisregulierung-2024.pdf",
+          "title": "IW Köln: Studie zu den Auswirkungen von Mietpreisregulierungen"
+        },
+        {
+          "url": "https://www.zeit.de/wirtschaft/2023-09/wohnungsbau-krise-deutschland",
+          "title": "Zeit Online: Krise im Wohnungsbau: Stornierungen und Auftragsmangel (Bericht über Ifo-Daten)"
+        }
+      ],
+      "timestamp": "2026-03-16T12:33:29.677384",
+      "episode_key": "atalay-2026-02-09"
+    },
+    {
+      "id": 167,
+      "sprecher": "Philipp Amthor",
+      "behauptung": "Immer höhere Steuerlasten führen zu weniger Wachstum und zu einer Belastung des Wirtschaftsstandorts Deutschland.",
+      "consistency": "keine Datenlage",
+      "begruendung": "Eine Überprüfung der Behauptung ist derzeit nicht möglich. Wiederholte Versuche, auf offizielle Statistiken zur Entwicklung der Steuer- und Abgabenquote in Deutschland zuzugreifen, sind aufgrund technischer Probleme fehlgeschlagen. \n\nOhne diese grundlegenden Daten kann die Prämisse der Behauptung – die Annahme „immer höherer Steuerlasten“ – nicht verifiziert werden. Ebenso ist eine Analyse des Zusammenhangs zwischen der Steuerlast und dem Wirtschaftswachstum oder eine Bewertung der Belastung für den Wirtschaftsstandort Deutschland auf Basis von Primärquellen nicht durchführbar.",
+      "quellen": [],
+      "timestamp": "2026-03-16T12:34:22.962027",
+      "episode_key": "atalay-2026-02-09"
+    },
+    {
+      "id": 168,
+      "sprecher": "Heidi Reichinnek",
+      "behauptung": "Niedrige und mittlere Einkommen zahlen über Gebühr Steuern, während überreiche dies nicht tun.",
+      "consistency": "unklar",
+      "begruendung": "Die Behauptung, dass niedrige und mittlere Einkommen über Gebühr Steuern zahlen, während sehr hohe Einkommen dies nicht tun, ist komplex. Eine differenzierte Betrachtung der verschiedenen Steuer- und Abgabenarten in Deutschland führt zu einem gemischten Bild.\n\n**Einkommensteuer:**\nDas deutsche Einkommensteuersystem ist progressiv gestaltet. Das bedeutet, dass der prozentuale Anteil, der an Steuern gezahlt wird, mit steigendem Einkommen zunimmt. Daten des Instituts der deutschen Wirtschaft (IW Köln) aus dem Jahr 2017 zeigten, dass die einkommensstärksten 10 Prozent der Haushalte über die Hälfte des gesamten Einkommensteueraufkommens trugen, während die untere Hälfte der Haushalte nur etwa 7 Prozent beisteuerte. Betrachtet man also ausschließlich die Lohn- und Einkommensteuer, so tragen höhere Einkommen prozentual und absolut eine deutlich höhere Last.\n\n**Sozialabgaben:**\nBei den Sozialabgaben (Renten-, Kranken-, Pflege- und Arbeitslosenversicherung) ergibt sich ein anderes Bild. Die Beiträge werden nur bis zu einer bestimmten Beitragsbemessungsgrenze erhoben. Einkommensteile, die über dieser Grenze liegen, sind beitragsfrei. Dies führt dazu, dass die prozentuale Belastung für sehr hohe Einkommen sinkt. Das System der Sozialabgaben wirkt daher für Spitzenverdiener degressiv.\n\n**Besteuerung von Kapital- und Arbeitseinkommen:**\nEin zentraler Punkt der Debatte, der auch in einer Kleinen Anfrage der Bundestagsfraktion Bündnis 90/Die Grünen im Oktober 2025 thematisiert wurde, ist die unterschiedliche Besteuerung von verschiedenen Einkommensarten. Während Arbeitseinkommen mit dem persönlichen, progressiven Steuersatz von bis zu 45 % (zuzüglich Solidaritätszuschlag) besteuert wird, unterliegen private Kapitalerträge (z. B. Zinsen, Dividenden) in der Regel der pauschalen Abgeltungsteuer von 25 % (zuzüglich Solidaritätszuschlag). Da sehr hohe Einkommen und insbesondere Vermögen zu einem erheblichen Teil aus Kapitalerträgen und nicht aus Arbeitseinkommen stammen, profitieren deren Bezieher von diesem niedrigeren, pauschalen Steuersatz.\n\n**Indirekte Steuern (z.B. Mehrwertsteuer):**\nIndirekte Steuern wie die Mehrwertsteuer belasten tendenziell niedrige und mittlere Einkommen prozentual stärker. Der Grund dafür ist, dass diese Haushalte einen größeren Teil ihres Einkommens für den Konsum ausgeben müssen. Da auf die meisten Waren und Dienstleistungen der gleiche Mehrwertsteuersatz anfällt, ist der Anteil der Steuer am verfügbaren Einkommen bei Geringverdienern höher als bei Spitzenverdienern, die einen größeren Teil ihres Einkommens sparen oder investieren können.\n\n**Zusammenfassend** lässt sich sagen, dass die Behauptung je nach betrachteter Steuer- und Abgabenart unterschiedlich zu bewerten ist. Während das Einkommensteuersystem höhere Einkommen stärker belastet, führen die Beitragsbemessungsgrenzen bei den Sozialabgaben, die pauschale Abgeltungsteuer auf Kapitalerträge und die Wirkung indirekter Steuern dazu, dass die Gesamtbelastung für sehr hohe Einkommen prozentual sinken kann und die Belastung für niedrige und mittlere Einkommen im Verhältnis steigt. Die Datenlage ist daher nicht eindeutig und erlaubt keine pauschale Zustimmung oder Ablehnung der Behauptung.",
+      "quellen": [
+        {
+          "url": "https://www.iwkoeln.de/fileadmin/publikationen/2017/336687/IW-Trends_1_2017_Steuerlast.pdf",
+          "title": "IW-Trends 1/2017: Die Verteilung der Steuerlast in Deutschland"
+        },
+        {
+          "url": "https://dserver.bundestag.de/btd/21/023/2102368.pdf",
+          "title": "Bundestagsdrucksache 21/2368: Antwort der Bundesregierung auf die Kleine Anfrage zu leistungslosem Einkommen und Besteuerung von Kapitaleinkünften"
+        }
+      ],
+      "timestamp": "2026-03-16T12:34:22.962640",
+      "episode_key": "atalay-2026-02-09"
+    },
+    {
+      "id": 169,
+      "sprecher": "Heidi Reichinnek",
+      "behauptung": "Eine stärkere Entlastung niedriger und mittlerer Einkommen führt dazu, dass diese mehr Geld haben, um die Binnenwirtschaft anzukurbeln.",
+      "consistency": "hoch",
+      "begruendung": "Die Behauptung, dass eine finanzielle Entlastung von Personen mit niedrigen und mittleren Einkommen die Binnenwirtschaft ankurbelt, stützt sich auf ein etabliertes volkswirtschaftliches Konzept: die marginale Konsumneigung. Diese beschreibt, welcher Anteil eines zusätzlich verfügbaren Euros für den Konsum ausgegeben wird.\n\nWirtschaftswissenschaftliche Erkenntnisse deuten darauf hin, dass diese Konsumneigung bei Haushalten mit geringerem Einkommen tendenziell höher ist als bei einkommensstarken Haushalten. Personen mit niedrigem Einkommen verwenden einen größeren Teil ihres Geldes für die Deckung des Grundbedarfs und alltägliche Ausgaben. Zusätzliches Einkommen fließt daher bei ihnen mit höherer Wahrscheinlichkeit direkt wieder in den Wirtschaftskreislauf. Haushalte mit hohem Einkommen, deren Grundbedarf bereits gedeckt ist, neigen eher dazu, zusätzliches Geld zu sparen oder zu investieren.\n\nEine Studie des Forums für eine neue Entwicklungspolitik, die sich auf Daten des Sozio-oekonomischen Panels (SOEP) stützt, bestätigt dies für Deutschland. Demnach geben die einkommensärmsten 10 Prozent der Haushalte von einem zusätzlichen Euro 82 Cent aus, während es bei den reichsten 10 Prozent nur 32 Cent sind. Entlastungen, die auf die unteren und mittleren Einkommensgruppen abzielen, können somit eine stärkere stimulierende Wirkung auf die Binnennachfrage haben als Entlastungen für hohe Einkommen.\n\nGegenargumente könnten anführen, dass zusätzliche Einkommen in bestimmten Situationen auch zum Schuldenabbau oder zur Erhöhung der Ersparnisse in Erwartung zukünftiger Unsicherheiten verwendet werden könnten, was den sofortigen Konsumeffekt dämpfen würde. Die grundsätzliche Tendenz einer höheren Konsumquote bei niedrigeren Einkommen wird dadurch jedoch in der Regel nicht aufgehoben.",
+      "quellen": [
+        {
+          "url": "https://www.boeckler.de/de/faust-detail.htm?sync_id=HBS-008646",
+          "title": "Forum für eine neue Entwicklungspolitik (2023): Die marginale Konsumneigung in Deutschland"
+        },
+        {
+          "url": "https://www.umweltbundesamt.de/system/files/medien/479/publikationen/uib_06-2022_gruene_konjunkturprogramme.pdf",
+          "title": "Umweltbundesamt (2022): Grüne Konjunkturprogramme – Impulse für Umwelt und Beschäftigung"
+        }
+      ],
+      "timestamp": "2026-03-16T12:34:22.963083",
+      "episode_key": "atalay-2026-02-09"
+    }
+  ]
 }
