@@ -25,26 +25,34 @@ if grep -A 20 "\"${EPISODE_KEY}\"" config.py | grep -q "publish=True"; then
   exit 1
 fi
 
-# Add publish=True to the episode
+# Set publish=True in the episode block
 python3 -c "
 import re
 
 with open('config.py') as f:
     content = f.read()
 
-pattern = r'(\"${EPISODE_KEY}\":\s*Episode\(.*?)(\s*\),)'
+# Find the episode block
+pattern = r'(\"${EPISODE_KEY}\":\s*Episode\()(.*?)(\s*\),)'
 match = re.search(pattern, content, re.DOTALL)
 if not match:
     print('Error: Could not find episode block')
     exit(1)
 
-before = match.group(1)
-closing = match.group(2)
-if before.rstrip().endswith(','):
-    new = before + '\n        publish=True,'
-else:
-    new = before + ',\n        publish=True,'
-content = content[:match.start()] + new + closing + content[match.end():]
+prefix = match.group(1)
+body = match.group(2)
+suffix = match.group(3)
+
+# Replace existing publish=False or append publish=True
+if 'publish=False' in body:
+    body = body.replace('publish=False', 'publish=True')
+elif 'publish=True' not in body:
+    if body.rstrip().endswith(','):
+        body += '\n        publish=True,'
+    else:
+        body += ',\n        publish=True,'
+
+content = content[:match.start()] + prefix + body + suffix + content[match.end():]
 
 with open('config.py', 'w') as f:
     f.write(content)
