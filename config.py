@@ -141,6 +141,22 @@ EPISODES: dict[str, Episode] = {
         ],
     ),
 
+    "lanz-2025-02-06": Episode(
+        key="lanz-2025-02-06",
+        show="lanz",
+        date="6. Februar 2025",
+        guests=[
+            "Markus Lanz (Moderator)",
+            "Gregor Gysi (Die Linke)",
+            "Tino Chrupalla (AfD)",
+            "Antje Höning (Journalistin)",
+            "Nikolaus Blome (Journalist)",
+            "Elmar Theveßen (ZDF-Korrespondent)",
+        ],
+        context="Gysi (Linke) und Chrupalla (AfD) diskutieren Entlastungen für arme Menschen und Migrationspolitik. Kurz vor der Bundestagswahl am 23. Februar 2025.",
+        publish=False,
+    ),
+
     "lanz-2026-02-06": Episode(
         key="lanz-2026-02-06",
         show="lanz",
@@ -165,7 +181,7 @@ EPISODES: dict[str, Episode] = {
             "Philipp Amthor (CDU)",
         ],
         context="Thema: Wachstum vs. Umverteilung, Social-Media-Regeln und Umgang mit der AfD.",
-        publish=False,
+        publish=True,
     ),
 
     "unter-den-linden-2026-02-23": Episode(
