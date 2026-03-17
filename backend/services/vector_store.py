@@ -6,6 +6,7 @@ and loaded at fact-check time as a search_document tool for the LangChain agent.
 """
 
 import logging
+from functools import lru_cache
 from pathlib import Path
 
 from langchain_community.vectorstores import FAISS
@@ -16,7 +17,8 @@ from backend.utils import load_lang_config
 
 logger = logging.getLogger(__name__)
 
-INDEX_DIR = Path("backend/data/vector_stores")
+# Anchored to this file's location so it works regardless of CWD
+INDEX_DIR = Path(__file__).parent.parent / "data" / "vector_stores"
 
 
 def _get_embeddings():
@@ -39,7 +41,7 @@ def build_index(episode_key: str, pdf_paths: list[str]) -> None:
     Build and save a FAISS vector store from local PDF files.
 
     Chunks each PDF into ~1000-character passages, embeds with Google's
-    text-embedding-004 model, and saves to backend/data/vector_stores/<episode_key>/.
+    gemini-embedding-001 model, and saves to backend/data/vector_stores/<episode_key>/.
 
     Args:
         episode_key: Episode identifier (used as directory name)
@@ -57,16 +59,15 @@ def build_index(episode_key: str, pdf_paths: list[str]) -> None:
             logger.warning(f"PDF not found, skipping: {pdf_path}")
             continue
         logger.info(f"Reading PDF: {pdf_path}")
-        doc = fitz.open(pdf_path)
-        page_count = len(doc)
-        for page_num, page in enumerate(doc):
-            page_text = page.get_text()
-            page_chunks = splitter.create_documents(
-                [page_text],
-                metadatas=[{"source": pdf_path, "page": page_num + 1}]
-            )
-            docs.extend(page_chunks)
-        doc.close()
+        with fitz.open(pdf_path) as doc:
+            page_count = len(doc)
+            for page_num, page in enumerate(doc):
+                page_text = page.get_text()
+                page_chunks = splitter.create_documents(
+                    [page_text],
+                    metadatas=[{"source": pdf_path, "page": page_num + 1}]
+                )
+                docs.extend(page_chunks)
         logger.info(f"  → {page_count} pages")
 
     if not docs:
@@ -81,9 +82,12 @@ def build_index(episode_key: str, pdf_paths: list[str]) -> None:
     logger.info(f"FAISS index saved: {save_path} ({len(docs)} chunks total)")
 
 
+@lru_cache(maxsize=None)
 def load_vector_store(episode_key: str):
     """
     Load a previously built FAISS vector store for an episode.
+
+    Cached per episode_key so the index is only read from disk once per process.
 
     Returns:
         FAISS vector store, or None if no index exists.
@@ -92,6 +96,9 @@ def load_vector_store(episode_key: str):
         return None
     embeddings = _get_embeddings()
     path = INDEX_DIR / episode_key
+    # Validate path is inside INDEX_DIR before deserializing
+    # allow_dangerous_deserialization is required by LangChain to load the pickled docstore
+    assert path.resolve().is_relative_to(INDEX_DIR.resolve()), f"Unsafe index path: {path}"
     return FAISS.load_local(str(path), embeddings, allow_dangerous_deserialization=True)
 
 
@@ -112,6 +119,9 @@ def create_search_tool(episode_key: str, pdf_paths: list[str] | None = None):
 
     Returns a custom tool that formats results with source and page number so
     the agent can cite them. Returns None if no index exists.
+
+    Filenames are embedded in the tool description as (file1.pdf, file2.pdf)
+    so that _inject_document_section can extract them for the agent prompt.
     """
     vs = load_vector_store(episode_key)
     if vs is None:
@@ -120,9 +130,15 @@ def create_search_tool(episode_key: str, pdf_paths: list[str] | None = None):
     lang_config = load_lang_config().get("tools", {})
     no_results_msg = lang_config.get("search_document_no_results", "No relevant sections found in the reference documents.")
 
+    if pdf_paths:
+        names = ", ".join(Path(p).name for p in pdf_paths)
+        description = f"Search local reference documents ({names})."
+    else:
+        description = "Search local reference documents."
+
     retriever = vs.as_retriever(search_kwargs={"k": 5})
 
-    @tool(name_or_callable="search_document", description="Search local reference documents.")
+    @tool(name_or_callable="search_document", description=description)
     def search_document(query: str) -> str:
         """Search local reference documents and return results with page citations."""
         docs = retriever.invoke(query)

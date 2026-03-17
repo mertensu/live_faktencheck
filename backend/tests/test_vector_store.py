@@ -24,24 +24,28 @@ class TestIndexExists:
 class TestBuildIndex:
     def test_build_index_saves_files(self, tmp_path):
         """build_index creates index.faiss and index.pkl in the episode dir."""
+        fake_pdf = tmp_path / "fake.pdf"
+        fake_pdf.touch()
+
         mock_vs = MagicMock()
         mock_embeddings = MagicMock()
 
         with patch("backend.services.vector_store.INDEX_DIR", tmp_path), \
              patch("backend.services.vector_store._get_embeddings", return_value=mock_embeddings), \
              patch("backend.services.vector_store.FAISS") as mock_faiss_cls, \
-             patch("pathlib.Path.exists", return_value=True), \
              patch("fitz.open") as mock_fitz_open:
 
             mock_page = MagicMock()
             mock_page.get_text.return_value = "Test content"
             mock_doc = MagicMock()
             mock_doc.__iter__ = MagicMock(return_value=iter([mock_page]))
+            mock_doc.__enter__ = MagicMock(return_value=mock_doc)
+            mock_doc.__exit__ = MagicMock(return_value=False)
             mock_fitz_open.return_value = mock_doc
             mock_faiss_cls.from_documents.return_value = mock_vs
 
             from backend.services.vector_store import build_index
-            build_index("test-ep", ["fake.pdf"])
+            build_index("test-ep", [str(fake_pdf)])
 
             mock_vs.save_local.assert_called_once()
             save_path = mock_vs.save_local.call_args[0][0]

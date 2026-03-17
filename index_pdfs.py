@@ -46,7 +46,11 @@ def main():
     for p in episode.reference_pdfs:
         print(f"  - {p}")
 
-    build_index(episode_key, episode.reference_pdfs)
+    try:
+        build_index(episode_key, episode.reference_pdfs)
+    except ValueError as e:
+        print(f"Error: {e}")
+        sys.exit(1)
     print(f"Done! Index saved to backend/data/vector_stores/{episode_key}/")
 
 

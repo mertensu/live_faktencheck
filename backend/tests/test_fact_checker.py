@@ -75,7 +75,9 @@ class TestFactCheckerCheckClaim:
 
     async def test_check_claim_passes_extra_tools_to_agent(self, mock_create_agent, mock_fact_check_response):
         """extra_tools are included in the agent's tool list."""
-        mock_extra_tool = MagicMock(name="search_document")
+        mock_extra_tool = MagicMock()
+        mock_extra_tool.name = "search_document"
+        mock_extra_tool.description = "Search local reference documents (test.pdf)."
 
         with patch.dict("os.environ", {
             "GEMINI_API_KEY": "test-key",
