@@ -72,6 +72,12 @@ backend/data/cost_history.json
 # SQLite database
 backend/data/factcheck.db
 
+# FAISS vector store indices (generated locally)
+backend/data/vector_stores/
+
+# Local PDF reference documents (large files, not committed)
+pdfs/
+
 # Claude Code session memory
 memory.md
 handover/
