@@ -73,6 +73,24 @@ class TestFactCheckerCheckClaim:
             assert "Fehler" in result["evidence"]
             assert result["sources"] == []
 
+    async def test_check_claim_passes_extra_tools_to_agent(self, mock_create_agent, mock_fact_check_response):
+        """extra_tools are included in the agent's tool list."""
+        mock_extra_tool = MagicMock(name="search_document")
+
+        with patch.dict("os.environ", {
+            "GEMINI_API_KEY": "test-key",
+            "TAVILY_API_KEY": "test-key",
+        }):
+            checker = FactChecker()
+            await checker.check_claim_async(
+                speaker="Speaker",
+                claim="Claim",
+                extra_tools=[mock_extra_tool],
+            )
+
+        call_kwargs = mock_create_agent.call_args[1]
+        assert mock_extra_tool in call_kwargs["tools"]
+
     async def test_check_claim_uses_configured_model(self, mock_create_agent, mock_fact_check_response):
         """check_claim_async uses model from environment."""
         with patch.dict("os.environ", {

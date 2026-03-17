@@ -118,7 +118,7 @@ class FactChecker:
         parts.append(f"<claim>\n{claim}\n</claim>")
         return "\n\n".join(parts)
 
-    async def check_claim_async(self, speaker: str, claim: str, context: str = None, show_background: str | None = None) -> Dict[str, Any]:
+    async def check_claim_async(self, speaker: str, claim: str, context: str = None, show_background: str | None = None, extra_tools: list = None) -> Dict[str, Any]:
         """
         Fact-check a single claim using LangGraph ReAct agent with Tavily search (async).
 
@@ -137,9 +137,9 @@ class FactChecker:
         system_prompt = self.prompt_template.replace("{current_date}", current_date)
         user_message = self._build_user_message(speaker, claim, context, show_background=show_background)
 
-        return await self._check_claim_async(speaker, claim, system_prompt, user_message)
+        return await self._check_claim_async(speaker, claim, system_prompt, user_message, extra_tools=extra_tools or [])
 
-    def check_claim(self, speaker: str, claim: str, context: str = None, show_background: str | None = None) -> Dict[str, Any]:
+    def check_claim(self, speaker: str, claim: str, context: str = None, show_background: str | None = None, extra_tools: list = None) -> Dict[str, Any]:
         """
         Fact-check a single claim (sync wrapper).
 
@@ -155,9 +155,9 @@ class FactChecker:
         Note:
             Use check_claim_async() in async contexts to avoid event loop conflicts.
         """
-        return asyncio.run(self.check_claim_async(speaker, claim, context=context, show_background=show_background))
+        return asyncio.run(self.check_claim_async(speaker, claim, context=context, show_background=show_background, extra_tools=extra_tools))
 
-    async def _check_claim_async(self, speaker: str, claim: str, system_prompt: str, user_message: str) -> Dict[str, Any]:
+    async def _check_claim_async(self, speaker: str, claim: str, system_prompt: str, user_message: str, extra_tools: list = None) -> Dict[str, Any]:
         """Async implementation of claim checking."""
         # Log first claim check to a file for prompt inspection
         if not FactChecker._first_claim_logged:
@@ -176,9 +176,10 @@ class FactChecker:
                 logger.exception("Failed to dump first fact check prompt")
 
         try:
+            tools = [self.search_tool] + (extra_tools or [])
             agent = create_agent(
                 model=self.llm,
-                tools=[self.search_tool],
+                tools=tools,
                 system_prompt=system_prompt,
                 response_format=FactCheckResponse,
             )
@@ -243,7 +244,7 @@ class FactChecker:
                 "sources": []
             }
 
-    async def check_claims_async(self, claims: List[Dict[str, str]], context: str = None, show_background: str | None = None) -> List[Dict[str, Any]]:
+    async def check_claims_async(self, claims: List[Dict[str, str]], context: str = None, show_background: str | None = None, extra_tools: list = None) -> List[Dict[str, Any]]:
         """
         Fact-check multiple claims (sequential or parallel based on config, async).
 
@@ -264,11 +265,11 @@ class FactChecker:
         )
 
         if self.parallel_enabled:
-            return await self._check_claims_parallel_async(claims, context=context, show_background=show_background)
+            return await self._check_claims_parallel_async(claims, context=context, show_background=show_background, extra_tools=extra_tools)
         else:
-            return await self._check_claims_sequential_async(claims, context=context, show_background=show_background)
+            return await self._check_claims_sequential_async(claims, context=context, show_background=show_background, extra_tools=extra_tools)
 
-    def check_claims(self, claims: List[Dict[str, str]], context: str = None, show_background: str | None = None) -> List[Dict[str, Any]]:
+    def check_claims(self, claims: List[Dict[str, str]], context: str = None, show_background: str | None = None, extra_tools: list = None) -> List[Dict[str, Any]]:
         """
         Fact-check multiple claims (sync wrapper).
 
@@ -283,9 +284,9 @@ class FactChecker:
         Note:
             Use check_claims_async() in async contexts to avoid event loop conflicts.
         """
-        return asyncio.run(self.check_claims_async(claims, context=context, show_background=show_background))
+        return asyncio.run(self.check_claims_async(claims, context=context, show_background=show_background, extra_tools=extra_tools))
 
-    async def _check_claims_sequential_async(self, claims: List[Dict[str, str]], context: str = None, show_background: str | None = None) -> List[Dict[str, Any]]:
+    async def _check_claims_sequential_async(self, claims: List[Dict[str, str]], context: str = None, show_background: str | None = None, extra_tools: list = None) -> List[Dict[str, Any]]:
         """Process claims one by one (async)."""
         current_date = datetime.now().strftime("%B %Y")
         system_prompt = self.prompt_template.replace("{current_date}", current_date)
@@ -295,11 +296,11 @@ class FactChecker:
             speaker = claim_data.get("name", "Unknown")
             claim = claim_data.get("claim", "")
             user_message = self._build_user_message(speaker, claim, context, show_background=show_background)
-            result = await self._check_claim_async(speaker, claim, system_prompt, user_message)
+            result = await self._check_claim_async(speaker, claim, system_prompt, user_message, extra_tools=extra_tools)
             results.append(result)
         return results
 
-    async def _check_claims_parallel_async(self, claims: List[Dict[str, str]], context: str = None, show_background: str | None = None) -> List[Dict[str, Any]]:
+    async def _check_claims_parallel_async(self, claims: List[Dict[str, str]], context: str = None, show_background: str | None = None, extra_tools: list = None) -> List[Dict[str, Any]]:
         """Async implementation of parallel claim checking."""
         semaphore = asyncio.Semaphore(self.max_workers)
 
@@ -313,7 +314,7 @@ class FactChecker:
                 claim = claim_data.get("claim", "")
                 logger.info(f"Processing claim {index + 1}/{len(claims)}: {claim[:50]}...")
                 user_message = self._build_user_message(speaker, claim, context, show_background=show_background)
-                result = await self._check_claim_async(speaker, claim, system_prompt, user_message)
+                result = await self._check_claim_async(speaker, claim, system_prompt, user_message, extra_tools=extra_tools)
                 logger.info(f"Completed claim {index + 1}/{len(claims)}: {result.get('consistency', 'unknown')}")
                 return result
 
