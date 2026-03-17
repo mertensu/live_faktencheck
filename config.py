@@ -91,10 +91,7 @@ EPISODES: dict[str, Episode] = {
             "Matthias Deiß (Moderator)",
             "Katherina Reiche (Bundeswirtschaftsministerin, CDU)",
         ],
-        reference_links=[
-            "https://www.zdfheute.de/wirtschaft/heizungsgesetz-schwarz-rote-koalition-mieter-eigentuemer-waermeplanung-100.html",
-            "https://www.verivox.de/gas/nachrichten/biogastarife-verteuern-heizkosten-um-rund-25-prozent-1121484/",
-        ],
+        context="CDU, CSU und SPD haben sich auf eine Reform des 'Heizungsgesetzes' geeinigt. Das neue Gebäudemodernisierungsgesetz soll das umstrittene Gebäudeenergiegesetz der Ampel-Koalition ersetzen",
     ),
 
     "maischberger-2025-09-19": Episode(

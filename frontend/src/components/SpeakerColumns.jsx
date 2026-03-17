@@ -1,6 +1,20 @@
+import { useState, useEffect } from 'react'
 import { ClaimCard } from './ClaimCard'
 
 export function SpeakerColumns({ speakers, groupedBySpeaker, onSelect }) {
+  const [isMobile, setIsMobile] = useState(() => window.matchMedia('(max-width: 767px)').matches)
+  const [collapsed, setCollapsed] = useState({})
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)')
+    const handler = (e) => setIsMobile(e.matches)
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
+  }, [])
+
+  const toggle = (speaker) =>
+    setCollapsed(prev => ({ ...prev, [speaker]: !prev[speaker] }))
+
   return (
     <div className="speakers-container">
       {speakers.map((speaker) => {
@@ -10,9 +24,13 @@ export function SpeakerColumns({ speakers, groupedBySpeaker, onSelect }) {
         const niedrig = claims.filter(c => c.consistency?.toLowerCase() === 'niedrig').length
         const scorable = hoch + niedrig
         const score = scorable > 0 ? Math.round(hoch / scorable * 100) : null
+        const isCollapsed = isMobile && !!collapsed[speaker]
         return (
           <div key={speaker} className="speaker-column">
-            <div className="speaker-header">
+            <div
+              className={`speaker-header${isMobile ? ' speaker-header--toggle' : ''}`}
+              onClick={isMobile ? () => toggle(speaker) : undefined}
+            >
               <div className="speaker-header-top">
                 <h2>{speaker}</h2>
                 {score !== null && (() => {
@@ -35,17 +53,26 @@ export function SpeakerColumns({ speakers, groupedBySpeaker, onSelect }) {
                   )
                 })()}
               </div>
-              <span className="claim-count">{count} Behauptung{count !== 1 ? 'en' : ''}</span>
+              <div className="speaker-header-bottom">
+                <span className="claim-count">{count} Behauptung{count !== 1 ? 'en' : ''}</span>
+                {isMobile && (
+                  <span className={`speaker-toggle-chevron${isCollapsed ? ' speaker-toggle-chevron--collapsed' : ''}`}>
+                    ▾
+                  </span>
+                )}
+              </div>
             </div>
-            <div className="speaker-claims">
-              {claims.map((claim) => (
-                <ClaimCard
-                  key={claim.id}
-                  claim={claim}
-                  onSelect={onSelect}
-                />
-              ))}
-            </div>
+            {!isCollapsed && (
+              <div className="speaker-claims">
+                {claims.map((claim) => (
+                  <ClaimCard
+                    key={claim.id}
+                    claim={claim}
+                    onSelect={onSelect}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         )
       })}
