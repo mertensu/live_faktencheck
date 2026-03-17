@@ -67,6 +67,10 @@ async def lifespan(app: FastAPI):
     logger.info("FastAPI server shutting down...")
     if state.queue_worker_task:
         state.queue_worker_task.cancel()
+        try:
+            await state.queue_worker_task
+        except asyncio.CancelledError:
+            pass
     await db.close()
     state.db = None
 

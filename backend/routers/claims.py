@@ -331,5 +331,11 @@ async def claim_queue_worker(max_concurrency: int = 5):
     while True:
         item = await state.claim_queue.get()
         claims, episode_key, context, placeholder_ids, show_background = item
-        asyncio.create_task(run_batch(claims, episode_key, context, placeholder_ids, show_background))
-        state.claim_queue.task_done()
+
+        async def _batch_and_done(c, ek, ctx, pids, sb):
+            try:
+                await run_batch(c, ek, ctx, pids, sb)
+            finally:
+                state.claim_queue.task_done()
+
+        asyncio.create_task(_batch_and_done(claims, episode_key, context, placeholder_ids, show_background))
