@@ -6,19 +6,35 @@ Real-time fact-checking system for German TV talk shows. Captures audio, extract
 
 ```
   Live Audio Stream
-  ┌──────────┬──────────┬──────────┬──────────┐
-  │  Block 1 │  Block 2 │  Block 3 │  Block 4 │  ──▶
-  └──────────┴──────────┴──────────┴──────────┘
-                    │ per block
-                    ▼
-┌──────────────┐  ┌─────────────────┐  ┌──────────────────┐  ┌──────────────────────┐  ┌──────────────────┐
-│Transcription │─▶│Claim Extraction │─▶│Human-in-the-Loop │─▶│    Fact-Checking     │─▶│    Display       │
-│ (AssemblyAI) │  │    (LLM)        │  │ approve / discard│  │  ┌────────────────┐  │  │ verdict +        │
-└──────────────┘  └─────────────────┘  └──────────────────┘  │  │Reason → Search │  │  │ explanation +    │
-                                                              │  │  → Evaluate    │  │  │ sources          │
-                                                              │  └──────↺─────────┘  │  └──────────────────┘
-                                                              │  (LLM + Web Search)  │
-                                                              └──────────────────────┘
+        │ (fixed-length blocks)
+        ▼
+┌───────────────────┐
+│   Transcription   │  AssemblyAI (speaker detection)
+└────────┬──────────┘
+         │
+         ▼
+┌───────────────────┐
+│ Claim Extraction  │  Gemini LLM
+└────────┬──────────┘
+         │
+         ▼
+┌───────────────────┐
+│  Human Review     │  Admin UI (approve / discard)
+└────────┬──────────┘
+         │
+         ▼
+┌───────────────────┐
+│  Fact-Checking    │  LangChain ReAct agent
+│  ┌─────────────┐  │  (Gemini + Tavily search)
+│  │Reason→Search│  │
+│  │  →Evaluate  │  │
+│  └──────↺──────┘  │
+└────────┬──────────┘
+         │
+         ▼
+┌───────────────────┐
+│     Display       │  verdict + explanation + sources
+└───────────────────┘
 ```
 
 1. **Audio Capture**: Listener captures audio via BlackHole virtual audio device
@@ -70,7 +86,7 @@ cp .env.example .env
 
 Run a live session where results appear in real-time on the public domain.
 
-**Before the show** — add the episode to `config.py` with `publish=True` and push to GitHub (Cloudflare deploys automatically):
+**Before the show** — add the episode to `config.py`, then publish it (sets `publish=True`, updates `shows.json`, commits and pushes so Cloudflare deploys automatically):
 
 ```python
 # In config.py — add a new Episode to the EPISODES dict
@@ -84,7 +100,7 @@ EPISODES = {
             "Guest A (Partei)",
             "Guest B (Partei)",
         ],
-        publish=True,   # appears on live-faktencheck.de
+        # no publish=True yet — use publish_episode.sh below
     ),
     # ... existing episodes
 }
@@ -92,6 +108,7 @@ EPISODES = {
 
 ```bash
 git add config.py && git commit -m "add maischberger-2026-03-01" && git push
+./publish_episode.sh maischberger-2026-03-01   # sets publish=True, updates shows.json, commits & pushes
 ```
 
 **During the show** — start backend + Cloudflare Tunnel, then the audio listener:
@@ -134,14 +151,6 @@ uv run python listener.py atalay-2026-02-09
 - Review extracted claims at **http://localhost:3000** (Admin UI)
 - Approve claims → fact-checking runs automatically
 - Results visible locally only — nothing appears on the public domain
-
-To simulate a claim without audio, POST directly to the backend:
-
-```bash
-curl -X POST http://localhost:5000/api/text-block \
-  -H "Content-Type: application/json" \
-  -d '{"text": "Deutschland hat 84 Millionen Einwohner.", "episode_key": "atalay-2026-02-09"}'
-```
 
 Stop with `./stop_production.sh` (same stop script works for both modes).
 
@@ -226,6 +235,7 @@ Episode(
 │   └── lang_de.toml           # LLM field descriptions (German)
 ├── listener.py                # Audio capture with fixed-interval sending
 ├── export_episode.py          # Export episode from DB as JSON or Markdown
+├── publish_episode.sh         # Publish an episode: set publish=True, update shows.json, push
 ├── config.py                  # Episode configuration (EPISODES dict)
 ├── start_dev.sh               # Development startup (backend + frontend, no tunnel)
 ├── start_production.sh        # Production startup script

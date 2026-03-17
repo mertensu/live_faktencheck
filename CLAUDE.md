@@ -72,6 +72,7 @@ cd frontend && bun run dev           # Start frontend dev server only (port 3000
 ./start_production.sh <episode-key>  # Start tunnel, backend, frontend
 uv run python listener.py <episode>  # Start audio listener (separate terminal)
 ./stop_production.sh                 # Stop all services
+./publish_episode.sh <episode-key>   # Set publish=True, update shows.json, commit & push
 
 # Build
 cd frontend && bun run build         # Build frontend for deployment
