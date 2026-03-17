@@ -86,7 +86,9 @@ cp .env.example .env
 
 Run a live session where results appear in real-time on the public domain.
 
-**Before the show** — add the episode to `config.py`, then publish it (sets `publish=True`, updates `shows.json`, commits and pushes so Cloudflare deploys automatically):
+**Before the show:**
+
+**Step 1 — you do:** Add the episode to `config.py` (without `publish=True`):
 
 ```python
 # In config.py — add a new Episode to the EPISODES dict
@@ -100,15 +102,15 @@ EPISODES = {
             "Guest A (Partei)",
             "Guest B (Partei)",
         ],
-        # no publish=True yet — use publish_episode.sh below
     ),
     # ... existing episodes
 }
 ```
 
+**Step 2 — the script does the rest:** sets `publish=True`, creates the empty episode JSON, updates `shows.json`, commits and pushes (Cloudflare deploys automatically):
+
 ```bash
-git add config.py && git commit -m "add maischberger-2026-03-01" && git push
-./publish_episode.sh maischberger-2026-03-01   # sets publish=True, updates shows.json, commits & pushes
+./publish_episode.sh maischberger-2026-03-01
 ```
 
 **During the show** — start backend + Cloudflare Tunnel, then the audio listener:
