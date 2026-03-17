@@ -17,8 +17,11 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
+import asyncio
+
 from backend.routers import audio, claims, fact_checks, config, pipeline
 from backend.routers.audio import AUDIO_TMP_DIR
+from backend.routers.claims import claim_queue_worker
 from backend.database import Database
 from backend import state
 
@@ -54,10 +57,16 @@ async def lifespan(app: FastAPI):
     await db.connect()
     state.db = db
 
+    # Startup: start claim queue worker
+    state.queue_worker_task = asyncio.create_task(claim_queue_worker())
+    logger.info("Claim queue worker started")
+
     yield
 
-    # Shutdown: close database
+    # Shutdown: cancel queue worker and close database
     logger.info("FastAPI server shutting down...")
+    if state.queue_worker_task:
+        state.queue_worker_task.cancel()
     await db.close()
     state.db = None
 

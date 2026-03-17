@@ -199,7 +199,6 @@ async def dismiss_pending_block(block_id: str):
 @router.post('/approve-claims', status_code=202, response_model=ProcessingResponse)
 async def approve_claims(
     request: ClaimApprovalRequest,
-    background_tasks: BackgroundTasks
 ):
     """
     Approve selected claims and start fact-checking.
@@ -249,8 +248,8 @@ async def approve_claims(
         pid = await db.add_fact_check(placeholder)
         placeholder_ids.append(pid)
 
-    # Start fact-checking in background, passing placeholder IDs for in-place update
-    background_tasks.add_task(process_fact_checks_async, request.claims, episode_key, context, placeholder_ids, show_background)
+    # Enqueue for processing (queue worker respects max_concurrency)
+    await state.claim_queue.put((request.claims, episode_key, context, placeholder_ids, show_background))
 
     return ProcessingResponse(
         status="processing",
@@ -313,3 +312,24 @@ async def process_fact_checks_async(claims: list, episode_key: str, context: str
             db = state.get_db()
             for pid in placeholder_ids:
                 await _mark_placeholder_error(db, pid)
+
+
+async def claim_queue_worker(max_concurrency: int = 5):
+    """
+    Queue worker: processes claim batches from state.claim_queue.
+
+    Runs max_concurrency batches concurrently. Further batches wait in queue
+    instead of firing immediately, preventing API overload on large approvals.
+    """
+    semaphore = asyncio.Semaphore(max_concurrency)
+    logger.info(f"Claim queue worker started (max_concurrency={max_concurrency})")
+
+    async def run_batch(claims, episode_key, context, placeholder_ids, show_background):
+        async with semaphore:
+            await process_fact_checks_async(claims, episode_key, context, placeholder_ids, show_background)
+
+    while True:
+        item = await state.claim_queue.get()
+        claims, episode_key, context, placeholder_ids, show_background = item
+        asyncio.create_task(run_batch(claims, episode_key, context, placeholder_ids, show_background))
+        state.claim_queue.task_done()

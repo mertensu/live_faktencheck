@@ -54,14 +54,22 @@ class FactChecker:
 
         # Get model from environment
         self.model_name = os.getenv("GEMINI_MODEL_FACT_CHECKER", DEFAULT_MODEL)
+        self.fallback_model_name = os.getenv("GEMINI_MODEL_FACT_CHECKER_FALLBACK", "gemini-3-flash-preview")
 
-        # Initialize LangChain components
-        self.llm = ChatGoogleGenerativeAI(
+        # Initialize LangChain components with fallback model for 503/overload errors
+        primary_llm = ChatGoogleGenerativeAI(
             model=self.model_name,
             google_api_key=google_api_key,
             temperature=0,
-            max_retries=2,
+            max_retries=5,
         )
+        fallback_llm = ChatGoogleGenerativeAI(
+            model=self.fallback_model_name,
+            google_api_key=google_api_key,
+            temperature=0,
+            max_retries=3,
+        )
+        self.llm = primary_llm.with_fallbacks([fallback_llm])
 
         # Initialize search tool (Mock or Tavily)
         # Mock search is ONLY enabled when MOCK_SEARCH=true AND running in test environment
@@ -94,7 +102,7 @@ class FactChecker:
 
         # Parallel processing settings
         self.parallel_enabled = os.getenv("FACT_CHECK_PARALLEL", "false").lower() == "true"
-        self.max_workers = int(os.getenv("FACT_CHECK_MAX_WORKERS", "3"))
+        self.max_workers = int(os.getenv("FACT_CHECK_MAX_WORKERS", "5"))
 
         # Recursion limit (avoid infinity loops and high costs)
         # Default to 25 for production; tests should set FACT_CHECK_RECURSION_LIMIT=10 or lower
@@ -102,6 +110,7 @@ class FactChecker:
 
         logger.info(
             f"FactChecker initialized with model: {self.model_name}, "
+            f"fallback: {self.fallback_model_name}, "
             f"search_depth: {self.search_depth}, max_results: {self.max_results}, "
             f"parallel: {self.parallel_enabled}, max_workers: {self.max_workers}, "
             f"recursion_limit: {self.recursion_limit}"

@@ -24,6 +24,12 @@ db: Database | None = None
 # status values: "processing" | "slow" | "timeout" | "error" | "done"
 pipeline_events: dict[str, dict] = {}
 
+# Claim processing queue (batches enqueued by approve_claims, processed by queue_worker)
+claim_queue: asyncio.Queue = asyncio.Queue()
+
+# Reference to the running queue worker task (set during lifespan startup)
+queue_worker_task: asyncio.Task | None = None
+
 
 def get_db() -> Database:
     """Return the active database instance. Raises if not initialized."""
