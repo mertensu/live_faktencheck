@@ -58,7 +58,8 @@ async def lifespan(app: FastAPI):
     state.db = db
 
     # Startup: start claim queue worker
-    state.queue_worker_task = asyncio.create_task(claim_queue_worker())
+    max_concurrency = int(os.getenv("FACT_CHECK_MAX_CONCURRENCY", "2"))
+    state.queue_worker_task = asyncio.create_task(claim_queue_worker(max_concurrency))
     logger.info("Claim queue worker started")
 
     yield

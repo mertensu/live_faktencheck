@@ -314,7 +314,7 @@ async def process_fact_checks_async(claims: list, episode_key: str, context: str
                 await _mark_placeholder_error(db, pid)
 
 
-async def claim_queue_worker(max_concurrency: int = 5):
+async def claim_queue_worker(max_concurrency: int = 2):
     """
     Queue worker: processes claim batches from state.claim_queue.
 
