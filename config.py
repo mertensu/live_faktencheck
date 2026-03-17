@@ -11,6 +11,7 @@ Felder pro Episode:
   guests          - Gäste im Format "Name (Rolle/Partei)", Moderator zuerst
   context         - Optionaler Themen-Hintergrund für LLM
   reference_links - Optionale Referenz-URLs (Gesetzentwürfe, Pressemitteilungen etc.)
+  reference_pdfs  - Optional local PDF file paths to index for RAG search
   publish         - True = in Produktion sichtbar (Standard: False)
   type            - "show" oder "youtube" (Standard: "show")
 """
@@ -47,6 +48,7 @@ class Episode:
     guests: list[str]
     context: str = ""
     reference_links: list[str] = field(default_factory=list)
+    reference_pdfs: list[str] = field(default_factory=list)
     type: str = "show"
     publish: bool = False
 
