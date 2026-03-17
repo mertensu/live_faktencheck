@@ -90,6 +90,12 @@ uv run python export_episode.py --json <episode-key>
 # 4. Approve from staging → fact-checker overwrites the existing DB record (not a new entry)
 # 5. Re-export: uv run python export_episode.py --json <episode-key>
 # 6. Commit + push
+
+# Index local PDFs for RAG (run before show if episode has reference_pdfs)
+# Store PDFs in a local pdfs/ dir (gitignored). Configure in config.py:
+#   reference_pdfs=["pdfs/wahlprogramm-afd-2025.pdf"]
+uv run python index_pdfs.py <episode-key>
+uv run python index_pdfs.py <episode-key> --force   # rebuild existing index
 ```
 
 ## Architecture Overview
