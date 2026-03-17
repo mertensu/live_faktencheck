@@ -23,6 +23,7 @@ import backend.state as state
 from config import EPISODES
 from backend.services.registry import get_claim_extractor, get_fact_checker
 from backend.services.reference_fetcher import fetch_show_background
+from backend.services.vector_store import create_search_tool
 
 logger = logging.getLogger(__name__)
 
@@ -131,7 +132,12 @@ async def process_text_pipeline_async(text: str, headline: str, source_id: str, 
                 }
                 pid = await db.add_fact_check(placeholder)
                 placeholder_ids.append(pid)
-            await process_fact_checks_async(selected, pending_block["episode_key"], headline, placeholder_ids)
+            ep_key = pending_block["episode_key"]
+            ep_cfg = EPISODES.get(ep_key)
+            text_reference_links = ep_cfg.reference_links if ep_cfg else []
+            text_show_bg = await fetch_show_background(text_reference_links)
+            text_doc_tool = create_search_tool(ep_key) if ep_key else None
+            await process_fact_checks_async(selected, ep_key, headline, placeholder_ids, text_show_bg, text_doc_tool)
 
         logger.info(f"[{block_id}] Pipeline complete. {len(claims)} claims added to pending.")
 
@@ -232,6 +238,11 @@ async def approve_claims(
     reference_links = ep.reference_links if ep else []
     show_background = await fetch_show_background(reference_links)
 
+    # Load local document search tool if a FAISS index exists for this episode
+    document_tool = create_search_tool(episode_key) if episode_key else None
+    if document_tool:
+        logger.info(f"Loaded document search tool for episode {episode_key}")
+
     # Insert placeholder fact-checks immediately so users see them while research runs
     now = datetime.now().isoformat()
     placeholder_ids = []
@@ -250,7 +261,7 @@ async def approve_claims(
         placeholder_ids.append(pid)
 
     # Start fact-checking in background, passing placeholder IDs for in-place update
-    background_tasks.add_task(process_fact_checks_async, request.claims, episode_key, context, placeholder_ids, show_background)
+    background_tasks.add_task(process_fact_checks_async, request.claims, episode_key, context, placeholder_ids, show_background, document_tool)
 
     return ProcessingResponse(
         status="processing",
@@ -271,7 +282,7 @@ async def _mark_placeholder_error(db, pid: int, message: str = "Fehler bei der R
         })
 
 
-async def process_fact_checks_async(claims: list, episode_key: str, context: str = None, placeholder_ids: list = None, show_background: str = None):
+async def process_fact_checks_async(claims: list, episode_key: str, context: str = None, placeholder_ids: list = None, show_background: str = None, document_tool=None):
     """
     Background task: fact-check claims using FactChecker service.
     Updates placeholder rows (inserted by approve_claims) in place.
@@ -280,12 +291,13 @@ async def process_fact_checks_async(claims: list, episode_key: str, context: str
         logger.info(f"Starting fact-check for {len(claims)} claims...")
 
         fact_checker = get_fact_checker()
+        extra_tools = [document_tool] if document_tool else []
 
         # Use async method if available, otherwise wrap sync call
         if hasattr(fact_checker, 'check_claims_async'):
-            results = await fact_checker.check_claims_async(claims, context=context, show_background=show_background)
+            results = await fact_checker.check_claims_async(claims, context=context, show_background=show_background, extra_tools=extra_tools)
         else:
-            results = await asyncio.to_thread(fact_checker.check_claims, claims, context=context, show_background=show_background)
+            results = await asyncio.to_thread(fact_checker.check_claims, claims, context=context, show_background=show_background, extra_tools=extra_tools)
 
         # Store results: update placeholders in place, or insert new rows
         db = state.get_db()
