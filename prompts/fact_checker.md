@@ -33,6 +33,8 @@ The claim may reference a specific period in time. Verify using data from that p
 4. **Validation:** Cross-reference data using at least two independent official sources where possible.
 </search_strategy>
 
+{document_search_section}
+
 <challenge_requirement>
 Before finalizing your assessment, actively search for counter-evidence:
 1. What empirical data or studies contradict this claim?

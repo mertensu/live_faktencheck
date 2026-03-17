@@ -89,8 +89,9 @@ class FactChecker:
                 include_domains=TRUSTED_DOMAINS,
             )
 
-        # Load prompt template
+        # Load prompt templates
         self.prompt_template = load_prompt("fact_checker.md")
+        self.document_section_template = load_prompt("fact_checker_documents.md")
 
         # Parallel processing settings
         self.parallel_enabled = os.getenv("FACT_CHECK_PARALLEL", "false").lower() == "true"
@@ -106,6 +107,19 @@ class FactChecker:
             f"parallel: {self.parallel_enabled}, max_workers: {self.max_workers}, "
             f"recursion_limit: {self.recursion_limit}"
         )
+
+    def _inject_document_section(self, system_prompt: str, extra_tools: list) -> str:
+        """Inject document search section into system prompt if document tools are present."""
+        doc_tools = [t for t in extra_tools if getattr(t, "name", "") == "search_document"]
+        if not doc_tools:
+            return system_prompt.replace("{document_search_section}", "")
+
+        # Build document list from tool descriptions (filenames are embedded there)
+        document_list = "\n".join(f"- {t.description.split('(')[1].split(')')[0]}"
+                                  if "(" in t.description else f"- {t.name}"
+                                  for t in doc_tools)
+        section = self.document_section_template.replace("{document_list}", document_list)
+        return system_prompt.replace("{document_search_section}", section)
 
     def _build_user_message(self, speaker: str, claim: str, context: str = None, show_background: str | None = None) -> str:
         """Build the user message for a single claim fact-check."""
@@ -135,6 +149,7 @@ class FactChecker:
 
         current_date = datetime.now().strftime("%B %Y")
         system_prompt = self.prompt_template.replace("{current_date}", current_date)
+        system_prompt = self._inject_document_section(system_prompt, extra_tools or [])
         user_message = self._build_user_message(speaker, claim, context, show_background=show_background)
 
         return await self._check_claim_async(speaker, claim, system_prompt, user_message, extra_tools=extra_tools or [])
@@ -290,6 +305,7 @@ class FactChecker:
         """Process claims one by one (async)."""
         current_date = datetime.now().strftime("%B %Y")
         system_prompt = self.prompt_template.replace("{current_date}", current_date)
+        system_prompt = self._inject_document_section(system_prompt, extra_tools or [])
         results = []
         for i, claim_data in enumerate(claims):
             logger.info(f"Processing claim {i + 1}/{len(claims)}")
@@ -306,6 +322,7 @@ class FactChecker:
 
         current_date = datetime.now().strftime("%B %Y")
         system_prompt = self.prompt_template.replace("{current_date}", current_date)
+        system_prompt = self._inject_document_section(system_prompt, extra_tools or [])
 
         async def check_with_limit(claim_data: Dict[str, str], index: int) -> Dict[str, Any]:
             """Check a single claim with concurrency limiting."""

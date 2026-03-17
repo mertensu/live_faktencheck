@@ -136,7 +136,7 @@ async def process_text_pipeline_async(text: str, headline: str, source_id: str, 
             ep_cfg = EPISODES.get(ep_key)
             text_reference_links = ep_cfg.reference_links if ep_cfg else []
             text_show_bg = await fetch_show_background(text_reference_links)
-            text_doc_tool = create_search_tool(ep_key) if ep_key else None
+            text_doc_tool = create_search_tool(ep_key, ep_cfg.reference_pdfs if ep_cfg else None) if ep_key else None
             await process_fact_checks_async(selected, ep_key, headline, placeholder_ids, text_show_bg, text_doc_tool)
 
         logger.info(f"[{block_id}] Pipeline complete. {len(claims)} claims added to pending.")
@@ -239,7 +239,7 @@ async def approve_claims(
     show_background = await fetch_show_background(reference_links)
 
     # Load local document search tool if a FAISS index exists for this episode
-    document_tool = create_search_tool(episode_key) if episode_key else None
+    document_tool = create_search_tool(episode_key, ep.reference_pdfs if ep else None) if episode_key else None
     if document_tool:
         logger.info(f"Loaded document search tool for episode {episode_key}")
 

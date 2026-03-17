@@ -57,21 +57,18 @@ class TestCreateSearchTool:
             assert tool is None
 
     def test_create_search_tool_returns_tool_when_index_exists(self, tmp_path):
-        """create_search_tool returns a LangChain tool when index exists."""
-        ep_dir = tmp_path / "test-ep"
-        ep_dir.mkdir()
+        """create_search_tool returns a callable LangChain tool when index exists."""
         mock_vs = MagicMock()
         mock_retriever = MagicMock()
+        mock_retriever.invoke.return_value = []
         mock_vs.as_retriever.return_value = mock_retriever
 
         with patch("backend.services.vector_store.INDEX_DIR", tmp_path), \
              patch("backend.services.vector_store.index_exists", return_value=True), \
-             patch("backend.services.vector_store.load_vector_store", return_value=mock_vs), \
-             patch("backend.services.vector_store.create_retriever_tool") as mock_tool_fn:
+             patch("backend.services.vector_store.load_vector_store", return_value=mock_vs):
 
-            mock_tool_fn.return_value = MagicMock(name="search_document")
             from backend.services.vector_store import create_search_tool
-            tool = create_search_tool("test-ep")
+            search_tool = create_search_tool("test-ep")
 
-            assert tool is not None
-            mock_tool_fn.assert_called_once()
+            assert search_tool is not None
+            assert search_tool.name == "search_document"

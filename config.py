@@ -153,6 +153,7 @@ EPISODES: dict[str, Episode] = {
             "Elmar Theveßen (ZDF-Korrespondent)",
         ],
         context="Gysi (Linke) und Chrupalla (AfD) diskutieren Entlastungen für arme Menschen und Migrationspolitik. Kurz vor der Bundestagswahl am 23. Februar 2025.",
+        reference_pdfs=["pdfs/AfD_Bundestagswahlprogramm2025_web.pdf"],
         publish=False,
     ),
 
