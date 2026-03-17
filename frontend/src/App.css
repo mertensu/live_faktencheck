@@ -1819,7 +1819,7 @@
 }
 
 .impressum-modal {
-  background: var(--bg-card, #1a1a2e);
+  background: var(--bg-main);
   border: 1px solid var(--border-light);
   border-radius: 8px;
   padding: 2rem;
