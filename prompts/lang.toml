@@ -1,0 +1,21 @@
+[schema.source]
+url_description = "URL of the source. Omit for local document references."
+title_description = "Short informative description of the source, e.g. 'Federal Statistical Office - Population Data 2024'"
+page_description = "Page number for local document sources, e.g. '42'. Omit for web sources."
+
+[schema.fact_check_response]
+consistency_description = """Empirical consistency of the claim. Choose exactly one of four levels:
+- 'high': Available data supports the claim — even if evidence is mostly supporting but not fully conclusive.
+- 'low': Available data contradicts the claim — even if evidence mostly contradicts but is not fully conclusive.
+- 'unclear': Conflicting studies or evidence without a clear direction; genuinely undeterminable.
+- 'no data': No relevant data or empirical evidence found on this topic."""
+evidence_description = "Detailed and well-structured justification"
+sources_description = "Primary sources with URL and short informative title"
+
+[schema.extracted_claim]
+name_description = "Full name of the speaker (proper noun)."
+claim_description = "The decontextualized claim."
+
+[tools]
+fact_checker_search_description = "Search the web to verify claims."
+search_document_no_results = "No relevant sections found in the reference documents."

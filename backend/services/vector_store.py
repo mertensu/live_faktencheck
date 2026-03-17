@@ -12,6 +12,8 @@ from langchain_community.vectorstores import FAISS
 from langchain_core.documents import Document
 from langchain_core.tools import tool
 
+from backend.utils import load_lang_config
+
 logger = logging.getLogger(__name__)
 
 INDEX_DIR = Path("backend/data/vector_stores")
@@ -115,31 +117,17 @@ def create_search_tool(episode_key: str, pdf_paths: list[str] | None = None):
     if vs is None:
         return None
 
-    if pdf_paths:
-        doc_names = ", ".join(Path(p).name for p in pdf_paths)
-        description = (
-            f"Durchsuche die offiziellen Referenzdokumente dieser Episode ({doc_names}). "
-            f"Nutze dieses Tool ZUERST, bevor du eine allgemeine Websuche via Tavily startest, "
-            f"wenn die Behauptung Bezug auf Parteiprogramme, Gesetzestexte oder andere "
-            f"offizielle Dokumente nehmen könnte. "
-            f"Die Suchergebnisse enthalten Seitenzahlen — zitiere diese in deiner Antwort."
-        )
-    else:
-        description = (
-            f"Durchsuche die offiziellen Referenzdokumente der Episode '{episode_key}' "
-            f"(Wahlprogramme, Gesetzentwürfe, PDFs). "
-            f"Nutze dieses Tool ZUERST, bevor du eine allgemeine Websuche via Tavily startest. "
-            f"Die Suchergebnisse enthalten Seitenzahlen — zitiere diese in deiner Antwort."
-        )
+    lang_config = load_lang_config().get("tools", {})
+    no_results_msg = lang_config.get("search_document_no_results", "No relevant sections found in the reference documents.")
 
     retriever = vs.as_retriever(search_kwargs={"k": 5})
 
-    @tool(name_or_callable="search_document", description=description)
+    @tool(name_or_callable="search_document", description="Search local reference documents.")
     def search_document(query: str) -> str:
         """Search local reference documents and return results with page citations."""
         docs = retriever.invoke(query)
         if not docs:
-            return "Keine relevanten Abschnitte in den Referenzdokumenten gefunden."
+            return no_results_msg
         return _format_docs(docs)
 
     return search_document

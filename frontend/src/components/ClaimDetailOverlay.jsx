@@ -68,16 +68,22 @@ export function ClaimDetailOverlay({ claim, onClose }) {
                   {claim.quellen.map((quelle, idx) => {
                     const url = typeof quelle === 'object' ? quelle.url : quelle
                     const title = typeof quelle === 'object' && quelle.title ? quelle.title : url
+                    const page = typeof quelle === 'object' ? quelle.page : null
+                    const label = page ? `${title}, S. ${page}` : title
                     return (
                       <li key={idx}>
-                        <a
-                          href={url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="source-link"
-                        >
-                          {title}
-                        </a>
+                        {url ? (
+                          <a
+                            href={url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="source-link"
+                          >
+                            {label}
+                          </a>
+                        ) : (
+                          <span className="source-link">{label}</span>
+                        )}
                       </li>
                     )
                   })}

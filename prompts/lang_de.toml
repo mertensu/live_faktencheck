@@ -1,6 +1,7 @@
 [schema.source]
-url_description = "URL zur Quelle"
+url_description = "URL zur Quelle. Weglassen bei lokalen Dokumentreferenzen."
 title_description = "Kurze informative Beschreibung der Quelle, z.B. 'Statistisches Bundesamt - Bevölkerungsdaten 2024'"
+page_description = "Seitenzahl bei lokalen Dokumentquellen, z.B. '42'. Weglassen bei Webquellen."
 
 [schema.fact_check_response]
 consistency_description = """Empirische Konsistenz der Behauptung. Wähle genau eine von vier Stufen:
@@ -14,3 +15,7 @@ sources_description = "Primärquellen mit URL und kurzem informativem Titel"
 [schema.extracted_claim]
 name_description = "Vollständiger Name des Sprechers (Eigenname)."
 claim_description = "Die deutschsprachige dekontextualisierte Behauptung."
+
+[tools]
+fact_checker_search_description = "Durchsuche das Web, um Behauptungen zu überprüfen."
+search_document_no_results = "Keine relevanten Abschnitte in den Referenzdokumenten gefunden."

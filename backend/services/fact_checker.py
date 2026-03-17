@@ -29,8 +29,9 @@ _lang = load_lang_config()
 
 # 1. Define the Data Structure
 class Source(BaseModel):
-    url: str = Field(description=_lang["schema"]["source"]["url_description"])
+    url: str | None = Field(default=None, description=_lang["schema"]["source"]["url_description"])
     title: str = Field(description=_lang["schema"]["source"]["title_description"])
+    page: str | None = Field(default=None, description=_lang["schema"]["source"]["page_description"])
 
 class FactCheckResponse(BaseModel):
     speaker: str
@@ -81,9 +82,13 @@ class FactChecker:
             if not tavily_api_key:
                 raise ValueError("TAVILY_API_KEY environment variable not set (and MOCK_SEARCH is false)")
 
+            lang_config = load_lang_config().get("tools", {})
+            search_description = lang_config.get(
+                "fact_checker_search_description", "Search the web to verify claims."
+            )
             self.search_tool = TavilySearch(
                 name="fact_checker_search",
-                description="Search the web to verify claims.",
+                description=search_description,
                 max_results=self.max_results,
                 search_depth=self.search_depth,
                 include_domains=TRUSTED_DOMAINS,
