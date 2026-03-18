@@ -61,13 +61,13 @@ class FactChecker:
             model=self.model_name,
             google_api_key=google_api_key,
             temperature=0,
-            max_retries=5,
+            max_retries=1,
         )
         fallback_llm = ChatGoogleGenerativeAI(
             model=self.fallback_model_name,
             google_api_key=google_api_key,
             temperature=0,
-            max_retries=3,
+            max_retries=1,
         )
         self.llm = primary_llm.with_fallbacks([fallback_llm])
 
