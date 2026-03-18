@@ -92,6 +92,7 @@ EPISODES: dict[str, Episode] = {
             "Katherina Reiche (Bundeswirtschaftsministerin, CDU)",
         ],
         context="CDU, CSU und SPD haben sich auf eine Reform des 'Heizungsgesetzes' geeinigt. Das neue Gebäudemodernisierungsgesetz soll das umstrittene Gebäudeenergiegesetz der Ampel-Koalition ersetzen",
+        publish=True,
     ),
 
     "maischberger-2025-09-19": Episode(
