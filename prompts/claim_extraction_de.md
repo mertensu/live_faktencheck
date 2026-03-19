@@ -12,7 +12,6 @@ Extrahiere überprüfbare Tatsachenbehauptungen aus dem bereitgestellten deutsch
 Führe für jede Aussage eine Koreferenzauflösung durch, um sie eigenständig zu machen:
 
 1. **Namen:** Ersetze Pronomen (er, sie, wir) durch vollständige Eigennamen.
-2. **Zeit:** Ersetze relative Zeitangaben (aktuell, jetzt, momentan) durch den absoluten Monat und das absolute Jahr aus dem Kontext.
 </Dekontextualisierung>
 
 <Zerlegung>

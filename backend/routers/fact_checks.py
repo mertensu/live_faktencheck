@@ -21,6 +21,7 @@ from backend.models import (
 from backend.utils import to_dict, build_fact_check_dict
 from backend.services.registry import get_fact_checker
 import backend.state as state
+from config import EPISODES
 
 logger = logging.getLogger(__name__)
 
@@ -174,11 +175,12 @@ async def process_new_fact_check_async(name: str, claim: str, episode_key: str):
 
         fact_checker = get_fact_checker()
         claims_to_check = [{"name": name, "claim": claim}]
+        episode_date = EPISODES[episode_key].date if episode_key in EPISODES else None
 
         if hasattr(fact_checker, 'check_claims_async'):
-            results = await fact_checker.check_claims_async(claims_to_check)
+            results = await fact_checker.check_claims_async(claims_to_check, episode_date=episode_date)
         else:
-            results = await asyncio.to_thread(fact_checker.check_claims, claims_to_check)
+            results = await asyncio.to_thread(fact_checker.check_claims, claims_to_check, episode_date=episode_date)
 
         if not results:
             logger.error("No results from fact-checker for new claim")
@@ -202,12 +204,13 @@ async def process_fact_check_update_async(fact_check_id: int, name: str, claim: 
 
         fact_checker = get_fact_checker()
         claims_to_check = [{"name": name, "claim": claim}]
+        episode_date = EPISODES[episode_key].date if episode_key in EPISODES else None
 
         # Use async method if available, otherwise wrap sync call
         if hasattr(fact_checker, 'check_claims_async'):
-            results = await fact_checker.check_claims_async(claims_to_check)
+            results = await fact_checker.check_claims_async(claims_to_check, episode_date=episode_date)
         else:
-            results = await asyncio.to_thread(fact_checker.check_claims, claims_to_check)
+            results = await asyncio.to_thread(fact_checker.check_claims, claims_to_check, episode_date=episode_date)
 
         if not results:
             logger.error(f"No results from fact-checker for ID {fact_check_id}")

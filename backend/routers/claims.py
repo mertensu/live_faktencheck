@@ -279,12 +279,13 @@ async def process_fact_checks_async(claims: list, episode_key: str, context: str
         logger.info(f"Starting fact-check for {len(claims)} claims...")
 
         fact_checker = get_fact_checker()
+        episode_date = EPISODES[episode_key].date if episode_key in EPISODES else None
 
         # Use async method if available, otherwise wrap sync call
         if hasattr(fact_checker, 'check_claims_async'):
-            results = await fact_checker.check_claims_async(claims, context=context, show_background=show_background)
+            results = await fact_checker.check_claims_async(claims, context=context, show_background=show_background, episode_date=episode_date)
         else:
-            results = await asyncio.to_thread(fact_checker.check_claims, claims, context=context, show_background=show_background)
+            results = await asyncio.to_thread(fact_checker.check_claims, claims, context=context, show_background=show_background, episode_date=episode_date)
 
         # Store results: update placeholders in place, or insert new rows
         db = state.get_db()

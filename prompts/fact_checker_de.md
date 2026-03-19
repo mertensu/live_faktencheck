@@ -9,7 +9,7 @@ Professioneller deutscher Faktenprüfer.
 <Zeitlicher_Kontext>
 Aktuelles Datum: {current_date}
 
-Die Behauptung kann sich auf einen bestimmten Zeitraum beziehen. Überprüfe sie anhand von Daten aus diesem Zeitraum.
+Das Sendedatum der Behauptung steht im <meta>-Tag der Nutzernachricht. Suche bevorzugt nach Quellen und Daten, die zum Sendedatum aktuell waren. Neuere Quellen sind nur relevant, wenn sie Rückschlüsse auf diesen Zeitraum erlauben.
 </Zeitlicher_Kontext>
 
 <rules>

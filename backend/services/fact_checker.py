@@ -116,18 +116,28 @@ class FactChecker:
             f"recursion_limit: {self.recursion_limit}"
         )
 
-    def _build_user_message(self, speaker: str, claim: str, context: str = None, show_background: str | None = None) -> str:
+    @staticmethod
+    def _format_episode_date(date: str) -> str:
+        """Extract month and year from episode date string, e.g. '1. März 2026' → 'März 2026'."""
+        parts = date.split()
+        if parts and parts[0].endswith('.'):
+            return ' '.join(parts[1:])
+        return date
+
+    def _build_user_message(self, speaker: str, claim: str, context: str = None, show_background: str | None = None, episode_date: str | None = None) -> str:
         """Build the user message for a single claim fact-check."""
         parts = []
         if show_background:
             parts.append(f"<show_background>\n{show_background}\n</show_background>")
         if context:
             parts.append(f"<context>\n{context}\n</context>")
+        if episode_date:
+            parts.append(f"<meta>Sendedatum: {self._format_episode_date(episode_date)}</meta>")
         parts.append(f"<speaker>\n{speaker}\n</speaker>")
         parts.append(f"<claim>\n{claim}\n</claim>")
         return "\n\n".join(parts)
 
-    async def check_claim_async(self, speaker: str, claim: str, context: str = None, show_background: str | None = None) -> Dict[str, Any]:
+    async def check_claim_async(self, speaker: str, claim: str, context: str = None, show_background: str | None = None, episode_date: str | None = None) -> Dict[str, Any]:
         """
         Fact-check a single claim using LangGraph ReAct agent with Tavily search (async).
 
@@ -136,6 +146,7 @@ class FactChecker:
             claim: The claim text to verify
             context: Optional context information (show info, date, source)
             show_background: Pre-fetched background material for the episode
+            episode_date: Air date of the episode (e.g. "1. März 2026"), used as Sendedatum
 
         Returns:
             Dictionary with speaker, original_claim, consistency, evidence, sources
@@ -144,11 +155,11 @@ class FactChecker:
 
         current_date = datetime.now().strftime("%B %Y")
         system_prompt = self.prompt_template.replace("{current_date}", current_date)
-        user_message = self._build_user_message(speaker, claim, context, show_background=show_background)
+        user_message = self._build_user_message(speaker, claim, context, show_background=show_background, episode_date=episode_date)
 
         return await self._check_claim_async(speaker, claim, system_prompt, user_message)
 
-    def check_claim(self, speaker: str, claim: str, context: str = None, show_background: str | None = None) -> Dict[str, Any]:
+    def check_claim(self, speaker: str, claim: str, context: str = None, show_background: str | None = None, episode_date: str | None = None) -> Dict[str, Any]:
         """
         Fact-check a single claim (sync wrapper).
 
@@ -157,6 +168,7 @@ class FactChecker:
             claim: The claim text to verify
             context: Optional context information
             show_background: Pre-fetched background material for the episode
+            episode_date: Air date of the episode (e.g. "1. März 2026"), used as Sendedatum
 
         Returns:
             Dictionary with speaker, original_claim, consistency, evidence, sources
@@ -164,7 +176,7 @@ class FactChecker:
         Note:
             Use check_claim_async() in async contexts to avoid event loop conflicts.
         """
-        return asyncio.run(self.check_claim_async(speaker, claim, context=context, show_background=show_background))
+        return asyncio.run(self.check_claim_async(speaker, claim, context=context, show_background=show_background, episode_date=episode_date))
 
     async def _check_claim_async(self, speaker: str, claim: str, system_prompt: str, user_message: str) -> Dict[str, Any]:
         """Async implementation of claim checking."""
@@ -252,7 +264,7 @@ class FactChecker:
                 "sources": []
             }
 
-    async def check_claims_async(self, claims: List[Dict[str, str]], context: str = None, show_background: str | None = None) -> List[Dict[str, Any]]:
+    async def check_claims_async(self, claims: List[Dict[str, str]], context: str = None, show_background: str | None = None, episode_date: str | None = None) -> List[Dict[str, Any]]:
         """
         Fact-check multiple claims (sequential or parallel based on config, async).
 
@@ -260,6 +272,7 @@ class FactChecker:
             claims: List of claim dictionaries with 'name' and 'claim' keys
             context: Optional context information for all claims
             show_background: Pre-fetched background material for the episode
+            episode_date: Air date of the episode (e.g. "1. März 2026"), used as Sendedatum
 
         Returns:
             List of fact-check result dictionaries
@@ -273,11 +286,11 @@ class FactChecker:
         )
 
         if self.parallel_enabled:
-            return await self._check_claims_parallel_async(claims, context=context, show_background=show_background)
+            return await self._check_claims_parallel_async(claims, context=context, show_background=show_background, episode_date=episode_date)
         else:
-            return await self._check_claims_sequential_async(claims, context=context, show_background=show_background)
+            return await self._check_claims_sequential_async(claims, context=context, show_background=show_background, episode_date=episode_date)
 
-    def check_claims(self, claims: List[Dict[str, str]], context: str = None, show_background: str | None = None) -> List[Dict[str, Any]]:
+    def check_claims(self, claims: List[Dict[str, str]], context: str = None, show_background: str | None = None, episode_date: str | None = None) -> List[Dict[str, Any]]:
         """
         Fact-check multiple claims (sync wrapper).
 
@@ -285,6 +298,7 @@ class FactChecker:
             claims: List of claim dictionaries with 'name' and 'claim' keys
             context: Optional context information
             show_background: Pre-fetched background material for the episode
+            episode_date: Air date of the episode (e.g. "1. März 2026"), used as Sendedatum
 
         Returns:
             List of fact-check result dictionaries
@@ -292,9 +306,9 @@ class FactChecker:
         Note:
             Use check_claims_async() in async contexts to avoid event loop conflicts.
         """
-        return asyncio.run(self.check_claims_async(claims, context=context, show_background=show_background))
+        return asyncio.run(self.check_claims_async(claims, context=context, show_background=show_background, episode_date=episode_date))
 
-    async def _check_claims_sequential_async(self, claims: List[Dict[str, str]], context: str = None, show_background: str | None = None) -> List[Dict[str, Any]]:
+    async def _check_claims_sequential_async(self, claims: List[Dict[str, str]], context: str = None, show_background: str | None = None, episode_date: str | None = None) -> List[Dict[str, Any]]:
         """Process claims one by one (async)."""
         current_date = datetime.now().strftime("%B %Y")
         system_prompt = self.prompt_template.replace("{current_date}", current_date)
@@ -303,12 +317,12 @@ class FactChecker:
             logger.info(f"Processing claim {i + 1}/{len(claims)}")
             speaker = claim_data.get("name", "Unknown")
             claim = claim_data.get("claim", "")
-            user_message = self._build_user_message(speaker, claim, context, show_background=show_background)
+            user_message = self._build_user_message(speaker, claim, context, show_background=show_background, episode_date=episode_date)
             result = await self._check_claim_async(speaker, claim, system_prompt, user_message)
             results.append(result)
         return results
 
-    async def _check_claims_parallel_async(self, claims: List[Dict[str, str]], context: str = None, show_background: str | None = None) -> List[Dict[str, Any]]:
+    async def _check_claims_parallel_async(self, claims: List[Dict[str, str]], context: str = None, show_background: str | None = None, episode_date: str | None = None) -> List[Dict[str, Any]]:
         """Async implementation of parallel claim checking."""
         semaphore = asyncio.Semaphore(self.max_workers)
 
@@ -321,7 +335,7 @@ class FactChecker:
                 speaker = claim_data.get("name", "Unknown")
                 claim = claim_data.get("claim", "")
                 logger.info(f"Processing claim {index + 1}/{len(claims)}: {claim[:50]}...")
-                user_message = self._build_user_message(speaker, claim, context, show_background=show_background)
+                user_message = self._build_user_message(speaker, claim, context, show_background=show_background, episode_date=episode_date)
                 result = await self._check_claim_async(speaker, claim, system_prompt, user_message)
                 logger.info(f"Completed claim {index + 1}/{len(claims)}: {result.get('consistency', 'unknown')}")
                 return result
