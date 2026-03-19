@@ -50,8 +50,8 @@ class FactCheckResponse(BaseModel):
 
 class ClaimInput(BaseModel):
     """Behauptung zur Faktenprüfung."""
-    context: str = Field(description="Sendungskontext: Teilnehmer, Datum und thematischer Hintergrund der Sendung")
-    sprecher: str = Field(description="Name des Sprechers, der die Behauptung aufgestellt hat")
+    context: str = Field(description="Thematischer Hintergrund der Sendung")
+    sprecher: str = Field(description="Name des Sprechers")
     sendedatum: str = Field(description="Monat und Jahr der Sendung, z.B. 'März 2026'")
     behauptung: str = Field(description="Die zu überprüfende Behauptung")
 

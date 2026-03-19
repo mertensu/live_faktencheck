@@ -24,9 +24,9 @@ class TestClaimExtractorExtract:
         Speaker A: Deutschland hat über 80 Millionen Einwohner.
         Speaker B: Die Wirtschaft wächst um 2 Prozent.
         """
-        info = "Talkshow guests: Speaker A (Politician), Speaker B (Economist)"
+        guests = ["Speaker A (Politician)", "Speaker B (Economist)"]
 
-        result = await mock_claim_extractor.extract_async(transcript, info)
+        result = await mock_claim_extractor.extract_async(transcript, guests)
 
         assert isinstance(result, list)
         assert len(result) == 2
@@ -41,14 +41,15 @@ class TestClaimExtractorExtract:
             extractor.speaker_labels_prompt_template = None
 
             transcript = "Test transcript content"
-            info = "Context information"
+            guests = ["Speaker A (Politiker)"]
+            context = "Context information"
 
-            await extractor.extract_async(transcript, info)
+            await extractor.extract_async(transcript, guests, context=context)
 
             # Verify generate_content was called
             mock_genai_client.aio.models.generate_content.assert_called_once()
 
-            # Check the content includes transcript and info
+            # Check the content includes transcript and context
             call_args = mock_genai_client.aio.models.generate_content.call_args
             contents = call_args.kwargs.get("contents", call_args[1].get("contents", ""))
             assert "Test transcript content" in contents
@@ -74,14 +75,14 @@ class TestClaimExtractorExtract:
             extractor = ClaimExtractor()
 
             with pytest.raises(Exception) as exc_info:
-                await extractor.extract_async("transcript", "info")
+                await extractor.extract_async("transcript", [])
 
             assert "API rate limit exceeded" in str(exc_info.value)
 
     async def test_extract_empty_transcript(self, mock_claim_extractor):
         """extract_async handles empty transcript."""
         # The mock will still return claims, but this tests the call works
-        result = await mock_claim_extractor.extract_async("", "")
+        result = await mock_claim_extractor.extract_async("", [])
 
         assert isinstance(result, list)
 
@@ -95,7 +96,7 @@ class TestClaimExtractorSync:
             extractor = ClaimExtractor()
             extractor.speaker_labels_prompt_template = None
 
-            result = extractor.extract("transcript", "info")
+            result = extractor.extract("transcript", [])
 
             assert isinstance(result, list)
             assert len(result) == 2
@@ -146,9 +147,10 @@ class TestSpeakerLabelResolution:
 
             extractor._extract_async = capture_extract
 
-            await extractor.extract_async("Original transcript", "some info")
+            guests = ["Anna Müller (Moderatorin)", "Karl Schmidt (CDU)"]
+            await extractor.extract_async("Original transcript", guests)
 
-            extractor._resolve_speaker_labels_async.assert_called_once_with("Original transcript", "some info")
+            extractor._resolve_speaker_labels_async.assert_called_once_with("Original transcript", guests)
             assert resolved in captured["user_message"]
 
     async def test_resolve_speaker_labels_uses_structured_output(self, mock_genai_client):
@@ -171,7 +173,7 @@ class TestSpeakerLabelResolution:
             extractor.speaker_labels_prompt_template = "fake speaker labels prompt"
 
             transcript = "Sprecher A: Die Wirtschaft wächst."
-            result_transcript = await extractor._resolve_speaker_labels_async(transcript, "context info")
+            result_transcript = await extractor._resolve_speaker_labels_async(transcript, ["Anna Müller (Moderatorin)"])
 
         assert "Anna Müller" in result_transcript
         assert "Sprecher A" not in result_transcript
@@ -188,6 +190,6 @@ class TestSpeakerLabelResolution:
             extractor.speaker_labels_prompt_template = None
             extractor._resolve_speaker_labels_async = AsyncMock()
 
-            await extractor.extract_async("raw transcript", "info")
+            await extractor.extract_async("raw transcript", [])
 
             extractor._resolve_speaker_labels_async.assert_not_called()

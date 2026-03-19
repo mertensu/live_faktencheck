@@ -8,8 +8,8 @@ Du identifizierst im folgenden Transkript generische Sprecherbezeichnungen (z. B
 - Wenn eine Bezeichnung nicht sicher zugeordnet werden kann, lass sie weg.
 </Regeln>
 
-<Eingabe>
+<user_input>
 Der Benutzer übergibt die Eingabe als JSON-Objekt mit folgendem Schema:
 
 {input_schema}
-</Eingabe>
+</user_input>

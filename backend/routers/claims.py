@@ -83,7 +83,7 @@ async def process_text_pipeline_async(text: str, headline: str, source_id: str, 
         logger.info(f"[{block_id}] Extracting claims from article...")
         claim_extractor = get_claim_extractor()
 
-        claims = await claim_extractor.extract_async(text, headline)
+        claims = await claim_extractor.extract_async(text, guests=[], date=publication_date or "", context=headline)
         logger.info(f"[{block_id}] Extracted {len(claims)} claims")
 
         if not claims:
@@ -204,20 +204,16 @@ async def approve_claims(
     episode_key = request.episode_key or state.current_episode_key
     logger.info(f"Approving {len(request.claims)} claims from block {request.block_id}")
 
-    # Try to find context from the pending block, fall back to config
+    # Use thematic context from episode config, or headline from text blocks
     db = state.get_db()
     context = None
-    if request.block_id:
+    ep = EPISODES.get(episode_key)
+    if ep:
+        context = ep.context
+    elif request.block_id:
         block = await db.get_pending_block_by_id(request.block_id)
         if block:
-            context = block.get("info") or block.get("headline")
-
-    # Fall back to config info if no context found in pending block
-    if not context:
-        ep = EPISODES.get(episode_key)
-        if ep:
-            context = ep.info
-            logger.info(f"Using context from config for episode {episode_key}")
+            context = block.get("headline", "")
 
     # Insert placeholder fact-checks immediately so users see them while research runs
     now = datetime.now().isoformat()

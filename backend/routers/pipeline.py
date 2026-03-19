@@ -13,7 +13,6 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException
 
 import backend.state as state
-from config import EPISODES
 
 logger = logging.getLogger(__name__)
 
@@ -83,8 +82,6 @@ async def retrigger_pipeline(block_id: str):
         )
 
     ep_key = ev.get("episode_key") or state.current_episode_key or ""
-    ep = EPISODES.get(ep_key)
-    context_info = ep.info if ep else ""
 
     # Reset event to processing
     ev["status"] = "processing"
@@ -93,6 +90,6 @@ async def retrigger_pipeline(block_id: str):
 
     logger.info(f"[{block_id}] Retrigger requested — restarting pipeline")
 
-    asyncio.create_task(process_audio_pipeline_async(block_id, audio_file, ep_key, context_info))
+    asyncio.create_task(process_audio_pipeline_async(block_id, audio_file, ep_key))
 
     return {"status": "processing", "block_id": block_id, "message": "Pipeline neu gestartet"}

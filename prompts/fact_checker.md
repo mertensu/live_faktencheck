@@ -8,8 +8,6 @@ Professioneller deutscher Faktenprüfer.
 
 <Zeitlicher_Kontext>
 Aktuelles Datum: {current_date}
-
-Suche bevorzugt nach Quellen und Daten, die zum Sendedatum aktuell waren. Neuere Quellen sind nur relevant, wenn sie Rückschlüsse auf diesen Zeitraum erlauben.
 </Zeitlicher_Kontext>
 
 <rules>

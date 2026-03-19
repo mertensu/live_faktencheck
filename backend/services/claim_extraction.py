@@ -43,12 +43,14 @@ class ResolvedTranscript(BaseModel):
 
 class SpeakerLabelsInput(BaseModel):
     """Input for speaker label resolution."""
-    context: str = Field(description="Teilnehmer und Datum der Sendung")
+    guests: list[str] = Field(description="Teilnehmer der Sendung, z. B. ['Caren Miosga (Moderatorin)', 'Heidi Reichinnek (Linke)']")
     transcript: str = Field(description="Transkript mit generischen Sprecherbezeichnungen")
 
 class ClaimExtractionInput(BaseModel):
     """Input for claim extraction from a transcript."""
-    context: str = Field(description="Teilnehmer und Datum der Sendung")
+    date: str = Field(description="Sendedatum, z. B. 'Oktober 2025'")
+    guests: list[str] = Field(description="Teilnehmer der Sendung")
+    context: str = Field(default="", description="Thematischer Hintergrund der Sendung")
     transcript: str = Field(description="Transkript zur Analyse")
     previous_block_ending: str | None = Field(default=None, description="Letzte Zeilen des vorherigen Transkriptblocks zur Gewährleistung der Kontinuität")
 
@@ -84,9 +86,9 @@ class ClaimExtractor:
 
         logger.info(f"ClaimExtractor initialized with model: {self.model_name}")
 
-    async def _resolve_speaker_labels_async(self, transcript: str, info: str) -> str:
+    async def _resolve_speaker_labels_async(self, transcript: str, guests: list[str]) -> str:
         """Step 1: Identify speaker label→name mappings and apply them to the transcript."""
-        user_message = SpeakerLabelsInput(context=info, transcript=transcript).model_dump_json(indent=2)
+        user_message = SpeakerLabelsInput(guests=guests, transcript=transcript).model_dump_json(indent=2)
         response = await self.client.aio.models.generate_content(
             model=self.model_name,
             contents=user_message,
@@ -100,13 +102,15 @@ class ClaimExtractor:
             transcript = transcript.replace(m.label, m.name)
         return transcript
 
-    async def extract_async(self, transcript: str, info: str, previous_context: str | None = None) -> List[ExtractedClaim]:
+    async def extract_async(self, transcript: str, guests: list[str], date: str = "", context: str = "", previous_context: str | None = None) -> List[ExtractedClaim]:
         """
         Extract verifiable claims from a transcript (async).
 
         Args:
             transcript: Formatted transcript with speaker labels
-            info: Context information about the show/guests
+            guests: List of guests in 'Name (Rolle)' format
+            date: Air date of the episode, e.g. 'Oktober 2025'
+            context: Thematic background of the episode (optional)
             previous_context: Last few lines from the previous block's transcript, for continuity
 
         Returns:
@@ -115,26 +119,30 @@ class ClaimExtractor:
         logger.info(f"Extracting claims from transcript ({len(transcript)} chars)")
 
         if self.speaker_labels_prompt_template:
-            transcript = await self._resolve_speaker_labels_async(transcript, info)
+            transcript = await self._resolve_speaker_labels_async(transcript, guests)
             logger.info(f"Speaker labels resolved ({len(transcript)} chars)")
 
         system_prompt = self.prompt_template
 
         user_message = ClaimExtractionInput(
-            context=info,
+            date=date,
+            guests=guests,
+            context=context,
             transcript=transcript,
             previous_block_ending=previous_context,
         ).model_dump_json(indent=2)
 
         return await self._extract_async(system_prompt, user_message)
 
-    def extract(self, transcript: str, info: str, previous_context: str | None = None) -> List[ExtractedClaim]:
+    def extract(self, transcript: str, guests: list[str], date: str = "", context: str = "", previous_context: str | None = None) -> List[ExtractedClaim]:
         """
         Extract verifiable claims from a transcript (sync wrapper).
 
         Args:
             transcript: Formatted transcript with speaker labels
-            info: Context information about the show/guests
+            guests: List of guests in 'Name (Rolle)' format
+            date: Air date of the episode, e.g. 'Oktober 2025'
+            context: Thematic background of the episode (optional)
             previous_context: Last few lines from the previous block's transcript, for continuity
 
         Returns:
@@ -143,7 +151,7 @@ class ClaimExtractor:
         Note:
             Use extract_async() in async contexts to avoid event loop conflicts.
         """
-        return asyncio.run(self.extract_async(transcript, info, previous_context=previous_context))
+        return asyncio.run(self.extract_async(transcript, guests, date=date, context=context, previous_context=previous_context))
 
     async def _extract_async(self, system_prompt: str, user_message: str) -> List[ExtractedClaim]:
         """Async implementation of claim extraction."""
