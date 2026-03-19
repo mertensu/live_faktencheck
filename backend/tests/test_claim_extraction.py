@@ -8,9 +8,11 @@ Tests:
 """
 
 import pytest
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
-from backend.services.claim_extraction import ClaimExtractor, ExtractedClaim
+from backend.services.claim_extraction import (
+    ClaimExtractor, ExtractedClaim, ResolvedTranscript, SpeakerLabelMapping,
+)
 
 
 class TestClaimExtractorExtract:
@@ -188,3 +190,71 @@ class TestClaimExtractorInit:
         with patch.dict("os.environ", {"GEMINI_API_KEY": "test-key"}, clear=True):
             extractor = ClaimExtractor()
             assert extractor.model_name == "gemini-2.5-flash"
+
+
+class TestSpeakerLabelResolution:
+    """Tests for speaker label resolution (step 1 of claim extraction)."""
+
+    async def test_resolve_speaker_labels_called_before_extraction(self, mock_genai_client, mock_gemini_response):
+        """_resolve_speaker_labels_async is called before _extract_async and its output is forwarded."""
+        with patch.dict("os.environ", {"GEMINI_API_KEY": "test-key"}):
+            extractor = ClaimExtractor()
+            extractor.speaker_labels_prompt_template = "fake speaker labels prompt"
+
+            resolved = "Resolved transcript content"
+            extractor._resolve_speaker_labels_async = AsyncMock(return_value=resolved)
+
+            captured = {}
+            original_extract = extractor._extract_async
+
+            async def capture_extract(system_prompt, user_message):
+                captured["user_message"] = user_message
+                return await original_extract(system_prompt, user_message)
+
+            extractor._extract_async = capture_extract
+
+            await extractor.extract_async("Original transcript", "some info")
+
+            extractor._resolve_speaker_labels_async.assert_called_once_with("Original transcript", "some info")
+            assert resolved in captured["user_message"]
+
+    async def test_resolve_speaker_labels_uses_structured_output(self, mock_genai_client):
+        """_resolve_speaker_labels_async calls Gemini with ResolvedTranscript schema and applies mappings."""
+        # Set up two sequential responses: ResolvedTranscript then ClaimList
+        from backend.services.claim_extraction import ClaimList
+
+        resolution_response = MagicMock()
+        resolution_response.parsed = ResolvedTranscript(mappings=[
+            SpeakerLabelMapping(label="Sprecher A", name="Anna Müller"),
+        ])
+        extraction_response = MagicMock()
+        extraction_response.parsed = ClaimList(claims=[])
+        mock_genai_client.aio.models.generate_content = AsyncMock(
+            side_effect=[resolution_response, extraction_response]
+        )
+
+        with patch.dict("os.environ", {"GEMINI_API_KEY": "test-key"}):
+            extractor = ClaimExtractor()
+            extractor.speaker_labels_prompt_template = "fake speaker labels prompt"
+
+            transcript = "Sprecher A: Die Wirtschaft wächst."
+            result_transcript = await extractor._resolve_speaker_labels_async(transcript, "context info")
+
+        assert "Anna Müller" in result_transcript
+        assert "Sprecher A" not in result_transcript
+
+        resolution_call = mock_genai_client.aio.models.generate_content.call_args_list[0]
+        config = resolution_call.kwargs.get("config", {})
+        assert config.get("response_mime_type") == "application/json"
+        assert config.get("response_schema") is ResolvedTranscript
+
+    async def test_resolve_skipped_if_prompt_not_loaded(self, mock_genai_client, mock_gemini_response):
+        """Speaker label resolution is skipped when speaker_labels_prompt_template is None."""
+        with patch.dict("os.environ", {"GEMINI_API_KEY": "test-key"}):
+            extractor = ClaimExtractor()
+            extractor.speaker_labels_prompt_template = None
+            extractor._resolve_speaker_labels_async = AsyncMock()
+
+            await extractor.extract_async("raw transcript", "info")
+
+            extractor._resolve_speaker_labels_async.assert_not_called()

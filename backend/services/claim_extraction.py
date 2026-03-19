@@ -31,6 +31,15 @@ class ClaimList(BaseModel):
     """List of extracted factual claims."""
     claims: List[ExtractedClaim]
 
+class SpeakerLabelMapping(BaseModel):
+    """Mapping from a generic speaker label to a real name."""
+    label: str = Field(description='Generische Sprecherbezeichnung, z. B. "Sprecher A"')
+    name: str = Field(description='Echter Name der Person, z. B. "Julia Berger"')
+
+class ResolvedTranscript(BaseModel):
+    """Speaker label mappings extracted from a transcript."""
+    mappings: List[SpeakerLabelMapping]
+
 
 class ClaimExtractor:
     """Service for extracting verifiable claims from transcripts using Gemini."""
@@ -52,8 +61,28 @@ class ClaimExtractor:
         self.prompt_template = load_prompt("claim_extraction.md")
         self.article_prompt_template = load_prompt("claim_extraction_article.md")
         self.selection_prompt_template = load_prompt("claim_selection.md")
+        try:
+            self.speaker_labels_prompt_template = load_prompt("speaker_labels.md")
+        except FileNotFoundError:
+            self.speaker_labels_prompt_template = None
 
         logger.info(f"ClaimExtractor initialized with model: {self.model_name}")
+
+    async def _resolve_speaker_labels_async(self, transcript: str, info: str) -> str:
+        """Step 1: Identify speaker label→name mappings and apply them to the transcript."""
+        user_message = f"<context>\n{info}\n</context>\n\n<transcript>\n{transcript}\n</transcript>"
+        response = await self.client.aio.models.generate_content(
+            model=self.model_name,
+            contents=user_message,
+            config={
+                'system_instruction': self.speaker_labels_prompt_template,
+                'response_mime_type': 'application/json',
+                'response_schema': ResolvedTranscript,
+            },
+        )
+        for m in response.parsed.mappings:
+            transcript = transcript.replace(m.label, m.name)
+        return transcript
 
     async def extract_async(self, transcript: str, info: str, previous_context: str | None = None, show_background: str | None = None) -> List[ExtractedClaim]:
         """
@@ -69,6 +98,10 @@ class ClaimExtractor:
             List of ExtractedClaim objects
         """
         logger.info(f"Extracting claims from transcript ({len(transcript)} chars)")
+
+        if self.speaker_labels_prompt_template:
+            transcript = await self._resolve_speaker_labels_async(transcript, info)
+            logger.info(f"Speaker labels resolved ({len(transcript)} chars)")
 
         system_prompt = self.prompt_template
 
