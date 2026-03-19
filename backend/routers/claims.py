@@ -214,6 +214,8 @@ async def approve_claims(
         block = await db.get_pending_block_by_id(request.block_id)
         if block:
             context = block.get("headline", "")
+            if not episode_key:
+                episode_key = block.get("episode_key")
 
     # Insert placeholder fact-checks immediately so users see them while research runs
     now = datetime.now().isoformat()
