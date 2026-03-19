@@ -9,7 +9,7 @@ Du identifizierst im folgenden Transkript generische Sprecherbezeichnungen (z. B
 </Regeln>
 
 <Eingabe>
-Der Benutzer gibt Folgendes an:
-1. Einen <context>-Abschnitt mit den Teilnehmern und dem Datum der Sendung.
-2. Einen <transcript>-Abschnitt mit dem zu analysierenden Transkript.
+Der Benutzer übergibt die Eingabe als JSON-Objekt mit folgendem Schema:
+
+{input_schema}
 </Eingabe>

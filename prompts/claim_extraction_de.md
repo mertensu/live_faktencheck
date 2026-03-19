@@ -32,11 +32,10 @@ Wenn ein Sprecher mehrere Fakten nennt, die nicht kausal verknüpft sind, trenne
 </Regeln>
 
 <user_input>
-Der Benutzer gibt Folgendes an:
-1. Optional einen Abschnitt <show_background> der über den Hintergrund der Diskussion informiert.
-2. Einen Abschnitt <context> mit Teilnehmern und Datum.
-3. Einen Abschnitt <transcript> zur Analyse.
-4. Optional einen Abschnitt <previous_block_ending> mit den letzten Zeilen aus dem vorherigen Transkriptblock zur Gewährleistung der Kontinuität. Verwende diesen Abschnitt nur, um Verweise am Anfang des aktuellen Transkripts aufzulösen – extrahiere keine Aussagen daraus.
+Der Benutzer übergibt die Eingabe als JSON-Objekt mit folgendem Schema:
 
-Wenn ein Abschnitt `<show_background>` vorhanden ist, verwende ihn ausschließlich als Informationsquelle zum Verständnis des thematischen Kontexts.
+{input_schema}
+
+Wenn `show_background` vorhanden ist, verwende es ausschließlich als Informationsquelle zum Verständnis des thematischen Kontexts.
+Wenn `previous_block_ending` vorhanden ist, verwende es nur, um Verweise am Anfang des aktuellen Transkripts aufzulösen – extrahiere keine Aussagen daraus.
 </user_input>

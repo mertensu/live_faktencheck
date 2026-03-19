@@ -5,6 +5,7 @@ Extracts verifiable factual claims from German transcripts.
 """
 
 import os
+import json
 import asyncio
 import logging
 from typing import List
@@ -40,6 +41,18 @@ class ResolvedTranscript(BaseModel):
     """Speaker label mappings extracted from a transcript."""
     mappings: List[SpeakerLabelMapping]
 
+class SpeakerLabelsInput(BaseModel):
+    """Input for speaker label resolution."""
+    context: str = Field(description="Teilnehmer und Datum der Sendung")
+    transcript: str = Field(description="Transkript mit generischen Sprecherbezeichnungen")
+
+class ClaimExtractionInput(BaseModel):
+    """Input for claim extraction from a transcript."""
+    context: str = Field(description="Teilnehmer und Datum der Sendung")
+    transcript: str = Field(description="Transkript zur Analyse")
+    previous_block_ending: str | None = Field(default=None, description="Letzte Zeilen des vorherigen Transkriptblocks zur Gewährleistung der Kontinuität")
+    show_background: str | None = Field(default=None, description="Hintergrundinformationen zur Sendung (z.B. Gesetzentwürfe, Berichte)")
+
 
 class ClaimExtractor:
     """Service for extracting verifiable claims from transcripts using Gemini."""
@@ -57,12 +70,17 @@ class ClaimExtractor:
         # Get model from environment (allows easy experimentation)
         self.model_name = os.getenv("GEMINI_MODEL_CLAIM_EXTRACTION", DEFAULT_MODEL)
 
-        # Load prompt templates
-        self.prompt_template = load_prompt("claim_extraction.md")
+        # Load prompt templates and bake in input schemas
+        prompt = load_prompt("claim_extraction.md")
+        input_schema = json.dumps(ClaimExtractionInput.model_json_schema(), indent=2, ensure_ascii=False)
+        self.prompt_template = prompt.replace("{input_schema}", input_schema)
+
         self.article_prompt_template = load_prompt("claim_extraction_article.md")
         self.selection_prompt_template = load_prompt("claim_selection.md")
         try:
-            self.speaker_labels_prompt_template = load_prompt("speaker_labels.md")
+            speaker_labels_prompt = load_prompt("speaker_labels.md")
+            sl_schema = json.dumps(SpeakerLabelsInput.model_json_schema(), indent=2, ensure_ascii=False)
+            self.speaker_labels_prompt_template = speaker_labels_prompt.replace("{input_schema}", sl_schema)
         except FileNotFoundError:
             self.speaker_labels_prompt_template = None
 
@@ -70,7 +88,7 @@ class ClaimExtractor:
 
     async def _resolve_speaker_labels_async(self, transcript: str, info: str) -> str:
         """Step 1: Identify speaker label→name mappings and apply them to the transcript."""
-        user_message = f"<context>\n{info}\n</context>\n\n<transcript>\n{transcript}\n</transcript>"
+        user_message = SpeakerLabelsInput(context=info, transcript=transcript).model_dump_json(indent=2)
         response = await self.client.aio.models.generate_content(
             model=self.model_name,
             contents=user_message,
@@ -105,28 +123,12 @@ class ClaimExtractor:
 
         system_prompt = self.prompt_template
 
-        parts = []
-        if previous_context:
-            parts.append(f"""<previous_block_ending>
-{previous_context}
-</previous_block_ending>
-""")
-
-        if show_background:
-            parts.append(f"""<show_background>
-{show_background}
-</show_background>
-""")
-
-        parts.append(f"""<context>
-Participants and date: {info}
-</context>
-
-<transcript>
-{transcript}
-</transcript>""")
-
-        user_message = "\n".join(parts)
+        user_message = ClaimExtractionInput(
+            context=info,
+            transcript=transcript,
+            previous_block_ending=previous_context,
+            show_background=show_background,
+        ).model_dump_json(indent=2)
 
         return await self._extract_async(system_prompt, user_message)
 
