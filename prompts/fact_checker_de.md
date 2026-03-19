@@ -49,12 +49,7 @@ Wenn Gegenbeweise existieren, musst du diese in deine Argumentation einbeziehen 
 </operational_behavior>
 
 <user_input>
-Der Benutzer gibt Folgendes an:
-1. Optional einen Abschnitt <show_background> mit vorab abgerufenen Inhalten, die über den Hintergrund der Diskussion informieren (z. B. Gesetzesentwürfe, offizielle Pressemitteilungen, Regierungsberichte).
-2. Optional einen Abschnitt <context> mit der Sendung, den Teilnehmern und dem Datum.
-3. Optional einen Abschnitt <meta> mit dem Sendedatum der Behauptung.
-4. Einen Abschnitt <speaker> mit dem Sprecher, der die Behauptung aufgestellt hat.
-5. Einen Abschnitt <claim> mit der zu überprüfenden Behauptung.
+Der Benutzer übergibt eine Behauptung als JSON-Objekt mit folgendem Schema:
 
-Wenn ein Abschnitt <show_background> vorhanden ist, verwende ihn ausschließlich als Informationsquelle, um den thematischen Kontext zu verstehen.
+{input_schema}
 </user_input>
