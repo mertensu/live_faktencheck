@@ -51,7 +51,6 @@ class ClaimExtractionInput(BaseModel):
     context: str = Field(description="Teilnehmer und Datum der Sendung")
     transcript: str = Field(description="Transkript zur Analyse")
     previous_block_ending: str | None = Field(default=None, description="Letzte Zeilen des vorherigen Transkriptblocks zur Gewährleistung der Kontinuität")
-    show_background: str | None = Field(default=None, description="Hintergrundinformationen zur Sendung (z.B. Gesetzentwürfe, Berichte)")
 
 
 class ClaimExtractor:
@@ -102,7 +101,7 @@ class ClaimExtractor:
             transcript = transcript.replace(m.label, m.name)
         return transcript
 
-    async def extract_async(self, transcript: str, info: str, previous_context: str | None = None, show_background: str | None = None) -> List[ExtractedClaim]:
+    async def extract_async(self, transcript: str, info: str, previous_context: str | None = None) -> List[ExtractedClaim]:
         """
         Extract verifiable claims from a transcript (async).
 
@@ -110,7 +109,6 @@ class ClaimExtractor:
             transcript: Formatted transcript with speaker labels
             info: Context information about the show/guests
             previous_context: Last few lines from the previous block's transcript, for continuity
-            show_background: Pre-fetched background material for the episode (e.g. legislative drafts, reports)
 
         Returns:
             List of ExtractedClaim objects
@@ -127,12 +125,11 @@ class ClaimExtractor:
             context=info,
             transcript=transcript,
             previous_block_ending=previous_context,
-            show_background=show_background,
         ).model_dump_json(indent=2)
 
         return await self._extract_async(system_prompt, user_message)
 
-    def extract(self, transcript: str, info: str, previous_context: str | None = None, show_background: str | None = None) -> List[ExtractedClaim]:
+    def extract(self, transcript: str, info: str, previous_context: str | None = None) -> List[ExtractedClaim]:
         """
         Extract verifiable claims from a transcript (sync wrapper).
 
@@ -140,7 +137,6 @@ class ClaimExtractor:
             transcript: Formatted transcript with speaker labels
             info: Context information about the show/guests
             previous_context: Last few lines from the previous block's transcript, for continuity
-            show_background: Pre-fetched background material for the episode
 
         Returns:
             List of ExtractedClaim objects
@@ -148,7 +144,7 @@ class ClaimExtractor:
         Note:
             Use extract_async() in async contexts to avoid event loop conflicts.
         """
-        return asyncio.run(self.extract_async(transcript, info, previous_context=previous_context, show_background=show_background))
+        return asyncio.run(self.extract_async(transcript, info, previous_context=previous_context))
 
     async def _extract_async(self, system_prompt: str, user_message: str) -> List[ExtractedClaim]:
         """Async implementation of claim extraction."""

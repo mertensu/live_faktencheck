@@ -17,7 +17,6 @@ from backend.state import processing_lock
 from backend.utils import to_dict, truncate
 from config import EPISODES
 from backend.services.registry import get_transcription_service, get_claim_extractor
-from backend.services.reference_fetcher import fetch_show_background
 from backend.routers.claims import process_fact_checks_async
 import backend.state as state
 
@@ -88,9 +87,7 @@ async def receive_audio_block(
     }
 
     # Start background processing (pass path, not bytes, to avoid holding memory in handler)
-    reference_links = ep.reference_links if ep else []
-    show_background = await fetch_show_background(reference_links)
-    background_tasks.add_task(process_audio_pipeline_async, block_id, audio_path, ep_key, context_info, show_background)
+    background_tasks.add_task(process_audio_pipeline_async, block_id, audio_path, ep_key, context_info)
 
     return ProcessingResponse(
         status="processing",
@@ -100,7 +97,7 @@ async def receive_audio_block(
     )
 
 
-async def process_audio_pipeline_async(block_id: str, audio_path: str, episode_key: str, info: str, show_background: str = None):
+async def process_audio_pipeline_async(block_id: str, audio_path: str, episode_key: str, info: str):
     """
     Background pipeline: audio -> transcription -> claim extraction -> pending claims
     """
@@ -147,9 +144,9 @@ async def process_audio_pipeline_async(block_id: str, audio_path: str, episode_k
         claim_extractor = get_claim_extractor()
         # Use async method if available, otherwise wrap sync call
         if hasattr(claim_extractor, 'extract_async'):
-            claims = await claim_extractor.extract_async(transcript, info, previous_context=previous_context, show_background=show_background)
+            claims = await claim_extractor.extract_async(transcript, info, previous_context=previous_context)
         else:
-            claims = await asyncio.to_thread(claim_extractor.extract, transcript, info, previous_context=previous_context, show_background=show_background)
+            claims = await asyncio.to_thread(claim_extractor.extract, transcript, info, previous_context=previous_context)
         logger.info(f"[{block_id}] Extracted {len(claims)} claims")
 
         if not claims:
@@ -193,7 +190,7 @@ async def process_audio_pipeline_async(block_id: str, audio_path: str, episode_k
                 pid = await db.add_fact_check(placeholder)
                 placeholder_ids.append(pid)
                 
-            await process_fact_checks_async(selected, episode_key, info, placeholder_ids=placeholder_ids, show_background=show_background)
+            await process_fact_checks_async(selected, episode_key, info, placeholder_ids=placeholder_ids)
 
         logger.info(f"[{block_id}] Pipeline complete. {len(claims)} claims added to pending.")
         _set_event_status(block_id, "done", f"{len(claims)} Claims extrahiert")

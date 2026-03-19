@@ -36,6 +36,5 @@ Der Benutzer übergibt die Eingabe als JSON-Objekt mit folgendem Schema:
 
 {input_schema}
 
-Wenn `show_background` vorhanden ist, verwende es ausschließlich als Informationsquelle zum Verständnis des thematischen Kontexts.
 Wenn `previous_block_ending` vorhanden ist, verwende es nur, um Verweise am Anfang des aktuellen Transkripts aufzulösen – extrahiere keine Aussagen daraus.
 </user_input>

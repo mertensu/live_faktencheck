@@ -22,7 +22,6 @@ import backend.state as state
 
 from config import EPISODES
 from backend.services.registry import get_claim_extractor, get_fact_checker
-from backend.services.reference_fetcher import fetch_show_background
 
 logger = logging.getLogger(__name__)
 
@@ -226,11 +225,6 @@ async def approve_claims(
             context = ep.info
             logger.info(f"Using context from config for episode {episode_key}")
 
-    # Load reference links and pre-fetch as show background
-    ep = EPISODES.get(episode_key)
-    reference_links = ep.reference_links if ep else []
-    show_background = await fetch_show_background(reference_links)
-
     # Insert placeholder fact-checks immediately so users see them while research runs
     now = datetime.now().isoformat()
     placeholder_ids = []
@@ -249,7 +243,7 @@ async def approve_claims(
         placeholder_ids.append(pid)
 
     # Enqueue for processing (queue worker respects max_concurrency)
-    await state.claim_queue.put((request.claims, episode_key, context, placeholder_ids, show_background))
+    await state.claim_queue.put((request.claims, episode_key, context, placeholder_ids))
 
     return ProcessingResponse(
         status="processing",
@@ -270,7 +264,7 @@ async def _mark_placeholder_error(db, pid: int, message: str = "Fehler bei der R
         })
 
 
-async def process_fact_checks_async(claims: list, episode_key: str, context: str = None, placeholder_ids: list = None, show_background: str = None):
+async def process_fact_checks_async(claims: list, episode_key: str, context: str = None, placeholder_ids: list = None):
     """
     Background task: fact-check claims using FactChecker service.
     Updates placeholder rows (inserted by approve_claims) in place.
@@ -325,18 +319,18 @@ async def claim_queue_worker(max_concurrency: int = 2):
     semaphore = asyncio.Semaphore(max_concurrency)
     logger.info(f"Claim queue worker started (max_concurrency={max_concurrency})")
 
-    async def run_batch(claims, episode_key, context, placeholder_ids, show_background):
+    async def run_batch(claims, episode_key, context, placeholder_ids):
         async with semaphore:
-            await process_fact_checks_async(claims, episode_key, context, placeholder_ids, show_background)
+            await process_fact_checks_async(claims, episode_key, context, placeholder_ids)
 
     while True:
         item = await state.claim_queue.get()
-        claims, episode_key, context, placeholder_ids, show_background = item
+        claims, episode_key, context, placeholder_ids = item
 
-        async def _batch_and_done(c, ek, ctx, pids, sb):
+        async def _batch_and_done(c, ek, ctx, pids):
             try:
-                await run_batch(c, ek, ctx, pids, sb)
+                await run_batch(c, ek, ctx, pids)
             finally:
                 state.claim_queue.task_done()
 
-        asyncio.create_task(_batch_and_done(claims, episode_key, context, placeholder_ids, show_background))
+        asyncio.create_task(_batch_and_done(claims, episode_key, context, placeholder_ids))
