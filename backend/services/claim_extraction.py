@@ -59,6 +59,7 @@ class ClaimExtractor:
     """Service for extracting verifiable claims from transcripts using Gemini."""
 
     _first_extraction_logged = False
+    _first_speaker_labels_logged = False
 
     def __init__(self):
         # New SDK supports both GEMINI_API_KEY and GOOGLE_API_KEY
@@ -89,6 +90,20 @@ class ClaimExtractor:
     async def _resolve_speaker_labels_async(self, transcript: str, guests: list[str]) -> str:
         """Step 1: Identify speaker label→name mappings and apply them to the transcript."""
         user_message = SpeakerLabelsInput(guests=guests, transcript=transcript).model_dump_json(indent=2)
+        if not ClaimExtractor._first_speaker_labels_logged and "PYTEST_CURRENT_TEST" not in os.environ:
+            try:
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                log_path = os.path.join("logs", "prompt_dumps", f"{timestamp}_speaker_labels.txt")
+                os.makedirs(os.path.dirname(log_path), exist_ok=True)
+                with open(log_path, "w", encoding="utf-8") as f:
+                    f.write("=== SYSTEM PROMPT ===\n")
+                    f.write(self.speaker_labels_prompt_template)
+                    f.write("\n\n=== USER MESSAGE ===\n")
+                    f.write(user_message)
+                ClaimExtractor._first_speaker_labels_logged = True
+                logger.info(f"First speaker labels prompt dumped to {log_path}")
+            except Exception:
+                logger.exception("Failed to dump first speaker labels prompt")
         response = await self.client.aio.models.generate_content(
             model=self.model_name,
             contents=user_message,
@@ -156,7 +171,7 @@ class ClaimExtractor:
     async def _extract_async(self, system_prompt: str, user_message: str) -> List[ExtractedClaim]:
         """Async implementation of claim extraction."""
         # Log first extraction to a file for prompt inspection
-        if not ClaimExtractor._first_extraction_logged:
+        if not ClaimExtractor._first_extraction_logged and "PYTEST_CURRENT_TEST" not in os.environ:
             try:
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                 log_path = os.path.join("logs", "prompt_dumps", f"{timestamp}_claim_extraction.txt")

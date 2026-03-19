@@ -192,7 +192,7 @@ class FactChecker:
     async def _check_claim_async(self, speaker: str, claim: str, system_prompt: str, user_message: str) -> Dict[str, Any]:
         """Async implementation of claim checking."""
         # Log first claim check to a file for prompt inspection
-        if not FactChecker._first_claim_logged:
+        if not FactChecker._first_claim_logged and "PYTEST_CURRENT_TEST" not in os.environ:
             try:
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                 log_path = os.path.join("logs", "prompt_dumps", f"{timestamp}_fact_checker.txt")
