@@ -86,65 +86,6 @@ class TestClaimExtractorExtract:
         assert isinstance(result, list)
 
 
-class TestClaimExtractorArticle:
-    """Tests for ClaimExtractor.extract_from_article_async()."""
-
-    async def test_extract_from_article(self, mock_claim_extractor, mock_gemini_response):
-        """extract_from_article_async returns claims from article text."""
-        article_text = """
-        Die Bundesregierung hat beschlossen, dass die Strompreise um 10% sinken werden.
-        Laut dem Wirtschaftsminister wird dies ab nächstem Jahr gelten.
-        """
-        headline = "Strompreise sollen 2024 sinken"
-
-        result = await mock_claim_extractor.extract_from_article_async(article_text, headline)
-
-        assert isinstance(result, list)
-        assert len(result) == 2  # From mock response
-
-    async def test_extract_from_article_with_date(self, mock_genai_client, mock_gemini_response):
-        """extract_from_article_async uses provided publication date."""
-        with patch.dict("os.environ", {"GEMINI_API_KEY": "test-key"}):
-            extractor = ClaimExtractor()
-
-            await extractor.extract_from_article_async(
-                text="Article content",
-                headline="Test Headline",
-                publication_date="Januar 2024"
-            )
-
-            # Verify the prompt was called (date is embedded in system prompt)
-            mock_genai_client.aio.models.generate_content.assert_called_once()
-
-    async def test_extract_from_article_default_date(self, mock_genai_client, mock_gemini_response):
-        """extract_from_article_async defaults to current month/year."""
-        with patch.dict("os.environ", {"GEMINI_API_KEY": "test-key"}):
-            extractor = ClaimExtractor()
-
-            # Call without publication_date
-            await extractor.extract_from_article_async(
-                text="Article content",
-                headline="Test Headline"
-            )
-
-            mock_genai_client.aio.models.generate_content.assert_called_once()
-
-    async def test_extract_from_article_includes_headline(self, mock_genai_client, mock_gemini_response):
-        """extract_from_article_async includes headline in user message."""
-        with patch.dict("os.environ", {"GEMINI_API_KEY": "test-key"}):
-            extractor = ClaimExtractor()
-
-            await extractor.extract_from_article_async(
-                text="Some article text",
-                headline="Important Breaking News"
-            )
-
-            call_args = mock_genai_client.aio.models.generate_content.call_args
-            contents = call_args.kwargs.get("contents", call_args[1].get("contents", ""))
-            assert "Important Breaking News" in contents
-            assert "Some article text" in contents
-
-
 class TestClaimExtractorSync:
     """Tests for sync wrapper methods."""
 
@@ -155,16 +96,6 @@ class TestClaimExtractorSync:
             extractor.speaker_labels_prompt_template = None
 
             result = extractor.extract("transcript", "info")
-
-            assert isinstance(result, list)
-            assert len(result) == 2
-
-    def test_extract_from_article_sync_wrapper(self, mock_genai_client, mock_gemini_response):
-        """extract_from_article() wraps async method for sync usage."""
-        with patch.dict("os.environ", {"GEMINI_API_KEY": "test-key"}):
-            extractor = ClaimExtractor()
-
-            result = extractor.extract_from_article("text", "headline")
 
             assert isinstance(result, list)
             assert len(result) == 2

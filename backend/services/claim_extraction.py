@@ -74,7 +74,6 @@ class ClaimExtractor:
         input_schema = json.dumps(ClaimExtractionInput.model_json_schema(), indent=2, ensure_ascii=False)
         self.prompt_template = prompt.replace("{input_schema}", input_schema)
 
-        self.article_prompt_template = load_prompt("claim_extraction_article.md")
         self.selection_prompt_template = load_prompt("claim_selection.md")
         try:
             speaker_labels_prompt = load_prompt("speaker_labels.md")
@@ -183,31 +182,6 @@ class ClaimExtractor:
             logger.exception("Structured extraction failed")
             raise
 
-    async def extract_from_article_async(self, text: str, headline: str, publication_date: str = None) -> List[ExtractedClaim]:
-        """
-        Extract verifiable claims from an article (async).
-
-        Args:
-            text: Article text content
-            headline: Article headline (used as context)
-            publication_date: Publication date string (defaults to current month/year)
-
-        Returns:
-            List of ExtractedClaim objects
-        """
-        logger.info(f"Extracting claims from article ({len(text)} chars)")
-
-        if not publication_date:
-            publication_date = datetime.now().strftime("%B %Y")
-
-        system_prompt = self.article_prompt_template.replace("{publication_date}", publication_date)
-
-        user_message = f"""Headline: {headline}
-
-Article: {text}"""
-
-        return await self._extract_async(system_prompt, user_message)
-
     async def select_async(self, claims: List[dict], max_claims: int = 3) -> List[dict]:
         """
         Select the top N most fact-checkable claims from a list (autopilot mode).
@@ -237,19 +211,3 @@ Article: {text}"""
             logger.exception("Claim selection failed, falling back to all claims (capped)")
             return claims[:max_claims]
 
-    def extract_from_article(self, text: str, headline: str, publication_date: str = None) -> List[ExtractedClaim]:
-        """
-        Extract verifiable claims from an article (sync wrapper).
-
-        Args:
-            text: Article text content
-            headline: Article headline (used as context)
-            publication_date: Publication date string (defaults to current month/year)
-
-        Returns:
-            List of ExtractedClaim objects
-
-        Note:
-            Use extract_from_article_async() in async contexts to avoid event loop conflicts.
-        """
-        return asyncio.run(self.extract_from_article_async(text, headline, publication_date))

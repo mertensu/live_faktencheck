@@ -79,17 +79,11 @@ async def process_text_pipeline_async(text: str, headline: str, source_id: str, 
     try:
         logger.info(f"[{block_id}] Starting text processing pipeline...")
 
-        # Claim extraction (using article-specific prompt)
+        # Claim extraction
         logger.info(f"[{block_id}] Extracting claims from article...")
         claim_extractor = get_claim_extractor()
 
-        # Use async method if available, otherwise wrap sync call
-        if hasattr(claim_extractor, 'extract_from_article_async'):
-            claims = await claim_extractor.extract_from_article_async(text, headline, publication_date)
-        else:
-            claims = await asyncio.to_thread(
-                claim_extractor.extract_from_article, text, headline, publication_date
-            )
+        claims = await claim_extractor.extract_async(text, headline)
         logger.info(f"[{block_id}] Extracted {len(claims)} claims")
 
         if not claims:
