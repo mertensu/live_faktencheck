@@ -122,7 +122,8 @@ backend/
     claim_extraction.py # Gemini-based claim extraction
     fact_checker.py   # LangChain ReAct agent with Tavily search
     trusted_domains.py # Trusted domains dict (categories)
-  utils.py            # load_lang_config() for lang_de.toml (lru_cache)
+  lang.py             # German strings for LLM field descriptions (change here to adapt language)
+  utils.py            # load_prompt() and shared utility functions
 ```
 
 ### Frontend Structure (`frontend/src/`)
@@ -157,7 +158,7 @@ frontend/src/
 - **Backend**: FastAPI routers with shared state module, lazy-loaded AI services
 - **Frontend**: React hooks for data fetching, component-based architecture
 - **API**: Async background tasks for processing pipelines
-- **Config**: Episode/show configuration in `config.py` (typed `Episode` dataclass + `EPISODES` dict), prompts in `prompts/`, LLM field descriptions in `prompts/lang_de.toml`
+- **Config**: Episode/show configuration in `config.py` (typed `Episode` dataclass + `EPISODES` dict), prompts in `prompts/`, LLM field descriptions in `backend/lang.py`
 
 ## Environment Variables
 
@@ -172,4 +173,3 @@ Optional:
 - `FACT_CHECK_RECURSION_LIMIT` - Max agent iterations (default: 25, use 5-10 for tests)
 - `VITE_BACKEND_URL` - Frontend backend URL for production
 - `VITE_N8N_WEBHOOK_URL` - N8N webhook (optional)
-- `LANG` - Language for `lang_de.toml` lookup (set to `de` in `.env`)

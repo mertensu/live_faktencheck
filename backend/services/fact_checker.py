@@ -17,7 +17,14 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_tavily import TavilySearch
 from langchain.agents import create_agent
 
-from backend.utils import load_prompt, load_lang_config, to_dict
+from backend.utils import load_prompt, to_dict
+from backend.lang import (
+    SOURCE_URL_DESCRIPTION,
+    SOURCE_TITLE_DESCRIPTION,
+    CONSISTENCY_DESCRIPTION,
+    EVIDENCE_DESCRIPTION,
+    SOURCES_DESCRIPTION,
+)
 from .cost_tracker import get_cost_tracker
 from .trusted_domains import TRUSTED_DOMAINS
 
@@ -26,21 +33,20 @@ logger = logging.getLogger(__name__)
 # Default model if not specified in environment
 DEFAULT_MODEL = "gemini-2.5-pro"
 
-_lang = load_lang_config()
 
 # 1. Define the Data Structure
 class Source(BaseModel):
-    url: str = Field(description=_lang["schema"]["source"]["url_description"])
-    title: str = Field(description=_lang["schema"]["source"]["title_description"])
+    url: str = Field(description=SOURCE_URL_DESCRIPTION)
+    title: str = Field(description=SOURCE_TITLE_DESCRIPTION)
 
 class FactCheckResponse(BaseModel):
     speaker: str
     original_claim: str
     consistency: Literal["hoch", "niedrig", "unklar", "keine Datenlage"] = Field(
-        description=_lang["schema"]["fact_check_response"]["consistency_description"]
+        description=CONSISTENCY_DESCRIPTION
     )
-    evidence: str = Field(description=_lang["schema"]["fact_check_response"]["evidence_description"])
-    sources: List[Source] = Field(description=_lang["schema"]["fact_check_response"]["sources_description"])
+    evidence: str = Field(description=EVIDENCE_DESCRIPTION)
+    sources: List[Source] = Field(description=SOURCES_DESCRIPTION)
 
 class ClaimInput(BaseModel):
     """Behauptung zur Faktenprüfung."""

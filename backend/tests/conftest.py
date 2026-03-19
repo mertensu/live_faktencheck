@@ -88,6 +88,7 @@ def mock_claim_extractor(mock_genai_client):
     with patch.dict("os.environ", {"GEMINI_API_KEY": "test-api-key"}):
         from backend.services.claim_extraction import ClaimExtractor
         extractor = ClaimExtractor()
+        extractor.speaker_labels_prompt_template = None  # disable for non-speaker-label tests
         yield extractor
 
 

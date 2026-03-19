@@ -38,6 +38,7 @@ class TestClaimExtractorExtract:
         """extract_async passes transcript and info to Gemini."""
         with patch.dict("os.environ", {"GEMINI_API_KEY": "test-key"}):
             extractor = ClaimExtractor()
+            extractor.speaker_labels_prompt_template = None
 
             transcript = "Test transcript content"
             info = "Context information"
@@ -151,6 +152,7 @@ class TestClaimExtractorSync:
         """extract() wraps extract_async() for sync usage."""
         with patch.dict("os.environ", {"GEMINI_API_KEY": "test-key"}):
             extractor = ClaimExtractor()
+            extractor.speaker_labels_prompt_template = None
 
             result = extractor.extract("transcript", "info")
 
