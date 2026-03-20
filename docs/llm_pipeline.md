@@ -1,6 +1,6 @@
-# LLM Pipeline — Three Calls, Three Schemas
+# LLM Pipeline — Four Calls, Four Schemas
 
-The AI core of the system consists of three sequential LLM calls, each with a dedicated prompt and input schema. They are strictly separated because they solve fundamentally different problems and require different models, output formats, and failure modes.
+The AI core of the system consists of four sequential LLM calls, each with a dedicated prompt and input schema. They are strictly separated because they solve fundamentally different problems and require different models, output formats, and failure modes.
 
 ```
 Transcript (raw, with "Sprecher A / B")
@@ -16,7 +16,10 @@ Transcript (raw, with "Sprecher A / B")
         │  approved claims
         ▼
 [3] Fact-Checking (ReAct agent)   ← gemini-2.5-pro, tool-calling loop
-        │  fact-check results
+        │  fact-check result
+        ▼
+[4] Self-Critique                 ← gemini-2.5-flash, structured JSON output
+        │  confidence flag + note
         ▼
    Frontend Display
 ```
@@ -36,9 +39,13 @@ SpeakerLabelsInput
 └── transcript: str        # raw transcript with "Sprecher A:", "Sprecher B:" labels
 ```
 
-AssemblyAI's speaker diarization assigns generic labels (`Sprecher A`, `Sprecher B`) rather than real names. This call resolves them to actual person names by matching conversational cues (direct address, topic alignment, stylistic patterns) against the known guest list.
+AssemblyAI's speaker diarization assigns generic labels (`Sprecher A`, `Sprecher B`) rather than real names. This call resolves them to actual person names using two signals:
+1. **Conversation flow** — direct address, topic alignment, stylistic patterns
+2. **Guest information** — party membership, political positions, known stances
 
-The output is applied as a simple string replacement on the transcript before it is passed to claim extraction. Only high-confidence mappings are returned; uncertain labels are left as-is.
+The `guests` list provides structured, unambiguous signal for both. Only high-confidence mappings are returned; uncertain labels are left as-is.
+
+The output is applied as a simple string replacement on the transcript before it is passed to claim extraction. The resolved transcript tail is also stored in state so that `previous_block_ending` in subsequent blocks already contains real names rather than generic labels.
 
 **Why a separate call?** Speaker resolution and claim extraction are independent reasoning tasks. Mixing them into one prompt would increase complexity and prompt length with no benefit. If resolution fails or the show has named speakers from the start (some formats already include names), this step is simply skipped.
 
@@ -66,7 +73,7 @@ The prompt also handles compound claims: if a speaker makes multiple independent
 
 **Why a separate call?** Claim extraction must be fast — it happens in real time while the show is airing, before any human has reviewed anything. Using a lighter, cheaper model here keeps latency low. The fact-checking step (Call 3) is far more expensive; claim extraction acts as a filter that reduces the number of claims that reach it.
 
-**`previous_block_ending`** solves a continuity problem: audio is processed in fixed-length blocks, so a claim may span a block boundary. Passing the last few lines of the previous block lets the model resolve references that start mid-sentence at the top of the current block.
+**`previous_block_ending`** solves a continuity problem: audio is processed in fixed-length blocks, so a claim may span a block boundary. Passing the last few lines of the previous block lets the model resolve references that start mid-sentence at the top of the current block. Since speaker label resolution now runs first, `previous_block_ending` contains real names rather than generic labels.
 
 ---
 
@@ -99,18 +106,46 @@ The agent is instructed to:
 
 ---
 
+## Call 4 — Self-Critique
+
+**Prompt:** `prompts/self_critique.md`
+**Schema:** `SelfCritiqueInput`
+**Model:** gemini-2.5-flash (fast, cheap)
+**Output:** Structured `SelfCritiqueResponse` — confidence level + short explanation
+**Enabled by:** `SELF_CRITIQUE_ENABLED=true` (default on)
+
+```
+SelfCritiqueInput
+├── behauptung:  str                              # the verified claim
+├── urteil:      "hoch"|"niedrig"|"unklar"|...   # the verdict from Call 3
+└── begruendung: str                              # the reasoning from Call 3
+```
+
+After the ReAct agent produces a verdict, the self-critique step evaluates how robust that verdict is. It does not re-check the facts — it reviews the *reasoning* and asks: would a different framing of the same claim have produced a different result?
+
+Output:
+- `confidence: "high"` — verdict is well-supported; a re-run would likely agree
+- `confidence: "low"` — verdict is uncertain or phrasing-sensitive; flags the result with `double_check = True` and a `critique_note` explaining the concern
+
+This flag is surfaced in the frontend to signal claims that warrant extra scrutiny. The motivation: the same underlying claim phrased differently can produce different verdicts from the fact-checker. Self-critique is a cheap way to detect these fragile cases without running the expensive ReAct agent multiple times.
+
+**Why a separate call from fact-checking?** The ReAct agent produces its reasoning inline as part of the tool-calling loop. Evaluating that reasoning is a structurally different task — a single structured call on the completed output, not part of the search loop.
+
+---
+
 ## Schema Design Principles
 
 Each schema contains exactly what that LLM call needs — no more.
 
-| Field | Speaker Labels | Claim Extraction | Fact-Checking |
-|---|---|---|---|
-| `guests` (list) | ✓ (to match labels) | ✓ (for attribution) | — (speaker already resolved) |
-| `date` | — | ✓ (temporal refs) | via `sendedatum` |
-| `context` (thematic) | — | ✓ (optional) | ✓ |
-| `transcript` | ✓ | ✓ | — |
-| `previous_block_ending` | — | ✓ | — |
-| `sprecher` | — | — | ✓ |
-| `behauptung` | — | — | ✓ |
+| Field | Speaker Labels | Claim Extraction | Fact-Checking | Self-Critique |
+|---|---|---|---|---|
+| `guests` (list) | ✓ (names + party/positions) | ✓ (for attribution) | — | — |
+| `date` | — | ✓ (temporal refs) | via `sendedatum` | — |
+| `context` (thematic) | — | ✓ (optional) | ✓ | — |
+| `transcript` | ✓ | ✓ | — | — |
+| `previous_block_ending` | — | ✓ | — | — |
+| `sprecher` | — | — | ✓ | — |
+| `behauptung` | — | — | ✓ | ✓ |
+| `urteil` + `begruendung` | — | — | — | ✓ (output of Call 3) |
 
 `guests` is a `list[str]` in `"Name (Rolle)"` format rather than a free-text blob. This gives the LLM structured, unambiguous signal while keeping the config simple. The thematic `context` (`Episode.context`) is kept separate from the guest list so the model can distinguish who is speaking from what the show is about.
