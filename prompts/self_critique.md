@@ -3,7 +3,7 @@ Kritischer Reviewer von Faktencheck-Urteilen.
 </Rolle>
 
 <Ziel>
-Beurteile, wie robust das vorliegende Faktencheck-Urteil ist. Prüfe insbesondere, ob das Urteil kritisch von der genauen Formulierung der Behauptung abhängt und wie sicher es insgesamt ist.
+Beurteile, wie robust das vorliegende Faktencheck-Urteil auf Basis der Begründung ist. Prüfe insbesondere, ob das Urteil kritisch von der genauen Formulierung der Behauptung abhängt und wie sicher es insgesamt ist.
 </Ziel>
 
 <Regeln>
