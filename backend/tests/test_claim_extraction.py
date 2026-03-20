@@ -193,3 +193,65 @@ class TestSpeakerLabelResolution:
             await extractor.extract_async("raw transcript", [])
 
             extractor._resolve_speaker_labels_async.assert_not_called()
+
+
+class TestClaimExtractorSplitMethods:
+    """Tests for the split resolve/extract methods."""
+
+    async def test_resolve_labels_async_returns_resolved(self, mock_genai_client):
+        """resolve_labels_async applies mappings from LLM to the transcript."""
+        resolution_response = MagicMock()
+        resolution_response.parsed = ResolvedTranscript(mappings=[
+            SpeakerLabelMapping(label="Sprecher A", name="Anna Müller"),
+        ])
+        from backend.services.claim_extraction import ClaimList
+        mock_genai_client.aio.models.generate_content = AsyncMock(return_value=resolution_response)
+
+        with patch.dict("os.environ", {"GEMINI_API_KEY": "test-key"}):
+            extractor = ClaimExtractor()
+            extractor.speaker_labels_prompt_template = "fake prompt"
+
+            result = await extractor.resolve_labels_async("Sprecher A: Hallo.", ["Anna Müller"])
+
+        assert "Anna Müller" in result
+        assert "Sprecher A" not in result
+
+    async def test_resolve_labels_async_passthrough_when_no_prompt(self, mock_genai_client):
+        """resolve_labels_async returns transcript unchanged when no speaker labels prompt."""
+        with patch.dict("os.environ", {"GEMINI_API_KEY": "test-key"}):
+            extractor = ClaimExtractor()
+            extractor.speaker_labels_prompt_template = None
+
+            result = await extractor.resolve_labels_async("Sprecher A: Hallo.", ["Anna Müller"])
+
+        assert result == "Sprecher A: Hallo."
+
+    async def test_extract_claims_async_skips_resolution(self, mock_genai_client, mock_gemini_response):
+        """extract_claims_async does NOT call speaker label resolution."""
+        with patch.dict("os.environ", {"GEMINI_API_KEY": "test-key"}):
+            extractor = ClaimExtractor()
+            extractor.speaker_labels_prompt_template = "fake prompt"
+            extractor._resolve_speaker_labels_async = AsyncMock()
+
+            await extractor.extract_claims_async("Anna Müller: Die Wirtschaft wächst.", ["Anna Müller"])
+
+            extractor._resolve_speaker_labels_async.assert_not_called()
+
+    async def test_extract_claims_async_passes_previous_block_ending(self, mock_genai_client, mock_gemini_response):
+        """extract_claims_async includes previous_block_ending in user message."""
+        with patch.dict("os.environ", {"GEMINI_API_KEY": "test-key"}):
+            extractor = ClaimExtractor()
+            extractor.speaker_labels_prompt_template = None
+
+            captured = {}
+            original = extractor._extract_async
+            async def capture(system_prompt, user_message):
+                captured["user_message"] = user_message
+                return await original(system_prompt, user_message)
+            extractor._extract_async = capture
+
+            await extractor.extract_claims_async(
+                "transcript", [], previous_context="Anna Müller: letzter Satz."
+            )
+
+        assert "Anna Müller: letzter Satz." in captured["user_message"]

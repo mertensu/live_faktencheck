@@ -117,6 +117,28 @@ class ClaimExtractor:
             transcript = transcript.replace(m.label, m.name)
         return transcript
 
+    async def resolve_labels_async(self, transcript: str, guests: list[str]) -> str:
+        """Resolve generic speaker labels to real names. Returns transcript unchanged if no prompt loaded."""
+        if self.speaker_labels_prompt_template:
+            return await self._resolve_speaker_labels_async(transcript, guests)
+        return transcript
+
+    async def extract_claims_async(self, resolved_transcript: str, guests: list[str], date: str = "", context: str = "", previous_context: str | None = None) -> List[ExtractedClaim]:
+        """Extract claims from an already-resolved transcript. Skips speaker label resolution.
+
+        This is the preferred entry point for the audio pipeline (called after resolve_labels_async).
+        Use extract_async() only when you want both steps in one call (e.g. text-block pipeline).
+        """
+        logger.info(f"Extracting claims from resolved transcript ({len(resolved_transcript)} chars)")
+        user_message = ClaimExtractionInput(
+            date=date,
+            guests=guests,
+            context=context,
+            transcript=resolved_transcript,
+            previous_block_ending=previous_context,
+        ).model_dump_json(indent=2)
+        return await self._extract_async(self.prompt_template, user_message)
+
     async def extract_async(self, transcript: str, guests: list[str], date: str = "", context: str = "", previous_context: str | None = None) -> List[ExtractedClaim]:
         """
         Extract verifiable claims from a transcript (async).
