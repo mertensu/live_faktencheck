@@ -133,21 +133,35 @@ async def process_audio_pipeline_async(block_id: str, audio_path: str, episode_k
         slow_task.cancel()
         logger.info(f"[{block_id}] Transcription complete: {len(transcript)} chars")
 
-        # Grab previous transcript tail for cross-block context, then update it
+        # Grab previous transcript tail for cross-block context.
+        # NOTE: two separate lock acquisitions are intentional — label resolution
+        # runs outside the lock (it's a slow LLM call). In the rare case of truly
+        # concurrent blocks, the last writer wins by resolution speed, not arrival
+        # order. In practice, live audio arrives sequentially so this is acceptable.
         async with processing_lock:
             previous_context = state.last_transcript_tail
-            # Store the last 3 speaker lines from this transcript for the next block
-            transcript_lines = [line for line in transcript.strip().splitlines() if line.strip()]
-            state.last_transcript_tail = "\n".join(transcript_lines[-3:]) if transcript_lines else None
 
-        # Step 2: Claim extraction (async)
+        # Step 2: Claim extraction (async) — split into resolve + extract
         logger.info(f"[{block_id}] Step 2: Extracting claims...")
+        # NOTE: resolve_labels_async and extract_claims_async are required on all
+        # ClaimExtractor implementations. The old hasattr/extract_async fallback is
+        # removed; any custom extractor must implement these two methods.
         claim_extractor = get_claim_extractor()
-        # Use async method if available, otherwise wrap sync call
-        if hasattr(claim_extractor, 'extract_async'):
-            claims = await claim_extractor.extract_async(transcript, ep_guests, date=ep_date, context=ep_context, previous_context=previous_context)
-        else:
-            claims = await asyncio.to_thread(claim_extractor.extract, transcript, ep_guests, date=ep_date, context=ep_context, previous_context=previous_context)
+
+        # Step 2a: Resolve speaker labels
+        resolved_transcript = await claim_extractor.resolve_labels_async(transcript, ep_guests)
+        logger.info(f"[{block_id}] Speaker labels resolved ({len(resolved_transcript)} chars)")
+
+        # Store resolved tail in state for the next block (uses real names, not generic labels)
+        async with processing_lock:
+            resolved_lines = [line for line in resolved_transcript.strip().splitlines() if line.strip()]
+            state.last_transcript_tail = "\n".join(resolved_lines[-3:]) if resolved_lines else None
+
+        # Step 2b: Extract claims from resolved transcript
+        claims = await claim_extractor.extract_claims_async(
+            resolved_transcript, ep_guests,
+            date=ep_date, context=ep_context, previous_context=previous_context
+        )
         logger.info(f"[{block_id}] Extracted {len(claims)} claims")
 
         if not claims:
