@@ -44,6 +44,8 @@ Real-time fact-checking system for German TV talk shows. Captures audio, extract
 5. **Fact-Checking**: LangChain agent with Gemini + Tavily verifies claims against trusted German sources
 6. **Display**: Results shown on Cloudflare Pages (public) and local admin UI
 
+For details on the LLM pipeline (models, schemas, prompts): [`docs/llm_pipeline.md`](docs/llm_pipeline.md)
+
 ## Requirements
 
 - Python 3.11+
@@ -84,93 +86,24 @@ cp .env.example .env
 
 ### Live Fact-Check (on air)
 
-Run a live session where results appear in real-time on the public domain.
-
-**Before the show:**
-
-**Step 1 — you do:** Add the episode to `config.py` (without `publish=True`):
-
-```python
-# In config.py — add a new Episode to the EPISODES dict
-EPISODES = {
-    "maischberger-2026-03-01": Episode(
-        key="maischberger-2026-03-01",
-        show="maischberger",
-        date="1. März 2026",
-        guests=[
-            "Sandra Maischberger (Moderatorin)",
-            "Guest A (Partei)",
-            "Guest B (Partei)",
-        ],
-    ),
-    # ... existing episodes
-}
-```
-
-**Step 2 — the script does the rest:** sets `publish=True`, creates the empty episode JSON, updates `shows.json`, commits and pushes (Cloudflare deploys automatically):
-
 ```bash
-./publish_episode.sh maischberger-2026-03-01
+./publish_episode.sh <episode-key>   # before the show
+./start_production.sh <episode-key>  # during the show
+./stop_production.sh --permanent     # after the show
 ```
 
-**During the show** — start backend + Cloudflare Tunnel, then the audio listener:
-
-```bash
-# Terminal 1: start backend, tunnel, local admin UI
-./start_production.sh maischberger-2026-03-01
-
-# Terminal 2: start audio capture
-uv run python listener.py maischberger-2026-03-01
-```
-
-- Route your audio through BlackHole into the listener
-- Review extracted claims at **http://localhost:3000** (Admin UI, local only)
-- Approve claims → fact-checking runs automatically
-- Results appear live at **https://live-faktencheck.de/maischberger-2026-03-01**
-
-**After the show** — export results as static files so the page stays online without a running backend:
-
-```bash
-./stop_production.sh --permanent
-```
-
-This exports the SQLite data to `frontend/public/data/<episode>.json`, commits, pushes, and waits for Cloudflare to build before shutting down the tunnel. No downtime.
+→ Full details: [docs/live-workflow.md](docs/live-workflow.md)
 
 ---
 
 ### Development / Testing
 
-Test the full pipeline locally — same tools as production, but without the Cloudflare tunnel. Nothing goes live.
-
 ```bash
-# Terminal 1: start backend + admin UI (no tunnel)
-./start_dev.sh atalay-2026-02-09   # inherits Atalay's speakers and config
-
-# Terminal 2: start audio capture
-uv run python listener.py atalay-2026-02-09
+./start_dev.sh <episode-key>
+uv run python listener.py <episode-key>
 ```
 
-- Review extracted claims at **http://localhost:3000** (Admin UI)
-- Approve claims → fact-checking runs automatically
-- Results visible locally only — nothing appears on the public domain
-
-Stop with `./stop_production.sh` (same stop script works for both modes).
-
----
-
-### Export an Archived Episode
-
-Re-export or update an already-finished episode (e.g. after correcting a claim):
-
-```bash
-# Export as static JSON for deployment
-uv run python export_episode.py <episode-key> --json
-
-# Export as Markdown (e.g. for publication)
-uv run python export_episode.py <episode-key> --order "Sprecher1,Sprecher2"
-```
-
-After `--json`, commit and push `frontend/public/data/<episode>.json` to redeploy.
+→ Full details: [docs/development-workflow.md](docs/development-workflow.md)
 
 ## Database & Static JSON Deployment
 
@@ -310,6 +243,10 @@ The fact-checker uses a LangChain ReAct agent that iteratively searches for evid
 | `GEMINI_MODEL_FACT_CHECKER` | Model for fact-checking (default: gemini-2.5-pro) | No |
 | `FACT_CHECK_RECURSION_LIMIT` | Max agent iterations (default: 25, use lower for tests) | No |
 | `VITE_BACKEND_URL` | Backend URL for production frontend | No |
+
+## Adapting to Another Language
+
+To run the system in a language other than German, see [`docs/localization.md`](docs/localization.md).
 
 ## License
 
