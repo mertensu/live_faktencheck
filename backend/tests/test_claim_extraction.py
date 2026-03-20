@@ -204,7 +204,6 @@ class TestClaimExtractorSplitMethods:
         resolution_response.parsed = ResolvedTranscript(mappings=[
             SpeakerLabelMapping(label="Sprecher A", name="Anna Müller"),
         ])
-        from backend.services.claim_extraction import ClaimList
         mock_genai_client.aio.models.generate_content = AsyncMock(return_value=resolution_response)
 
         with patch.dict("os.environ", {"GEMINI_API_KEY": "test-key"}):

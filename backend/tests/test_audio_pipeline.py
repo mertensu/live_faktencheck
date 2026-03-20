@@ -1,5 +1,4 @@
 """Tests for the audio processing pipeline (state management)."""
-import os
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
