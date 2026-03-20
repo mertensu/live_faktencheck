@@ -19,8 +19,15 @@ if ! grep -q "\"${EPISODE_KEY}\"" config.py; then
   exit 1
 fi
 
-# Check if already published
-if grep -A 20 "\"${EPISODE_KEY}\"" config.py | grep -q "publish=True"; then
+# Check if already published (use Python to avoid false positives from adjacent episodes)
+if python3 -c "
+import re, sys
+with open('config.py') as f:
+    content = f.read()
+pattern = r'\"${EPISODE_KEY}\":\s*Episode\(.*?\),'
+match = re.search(pattern, content, re.DOTALL)
+sys.exit(0 if match and 'publish=True' in match.group(0) else 1)
+"; then
   echo "Error: ${EPISODE_KEY} is already published"
   exit 1
 fi
