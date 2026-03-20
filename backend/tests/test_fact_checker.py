@@ -8,16 +8,16 @@ Tests:
 """
 
 import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
-from backend.services.fact_checker import FactChecker, FactCheckResponse, Source
+from backend.services.fact_checker import FactChecker, FactCheckResponse, Source, SelfCritiqueResponse
 
 
 class TestFactCheckerCheckClaim:
     """Tests for FactChecker.check_claim_async()."""
 
     async def test_check_claim_returns_structured_response(self, mock_fact_checker, mock_fact_check_response):
-        """check_claim_async returns properly structured response."""
+        """check_claim_async returns properly structured response including double_check fields."""
         result = await mock_fact_checker.check_claim_async(
             speaker="Angela Merkel",
             claim="Deutschland hat 80 Millionen Einwohner."
@@ -30,6 +30,8 @@ class TestFactCheckerCheckClaim:
         assert "verifizierte" in result["evidence"].lower() or "quellen" in result["evidence"].lower()
         assert isinstance(result["sources"], list)
         assert len(result["sources"]) == 2
+        assert result["double_check"] is False
+        assert result["critique_note"] == ""
 
     async def test_check_claim_with_context(self, mock_fact_checker, mock_create_agent):
         """check_claim_async passes context to agent."""
@@ -285,3 +287,59 @@ class TestFactCheckResponse:
                 evidence="Evidence",
                 sources=[],
             )
+
+
+class TestSelfCritique:
+    """Tests for the self-critique step."""
+
+    async def test_flagged_verdict_sets_double_check(self, mock_create_agent, mock_fact_check_response):
+        """double_check=True when critique returns low confidence."""
+        flagged = SelfCritiqueResponse(
+            confidence="low",
+            reason="Der Begriff 'Energiepreise' ist weit gefasst.",
+        )
+        with patch.dict("os.environ", {"GEMINI_API_KEY": "test-key", "TAVILY_API_KEY": "test-key"}):
+            checker = FactChecker()
+            checker._critique_async = AsyncMock(return_value=flagged)
+
+            result = await checker.check_claim_async("Speaker", "Eine Behauptung.")
+
+        assert result["double_check"] is True
+        assert result["critique_note"] == "Der Begriff 'Energiepreise' ist weit gefasst."
+
+    async def test_high_confidence_does_not_flag(self, mock_create_agent, mock_fact_check_response):
+        """double_check=False when confidence is high."""
+        not_flagged = SelfCritiqueResponse(confidence="high", reason="")
+        with patch.dict("os.environ", {"GEMINI_API_KEY": "test-key", "TAVILY_API_KEY": "test-key"}):
+            checker = FactChecker()
+            checker._critique_async = AsyncMock(return_value=not_flagged)
+
+            result = await checker.check_claim_async("Speaker", "Eine Behauptung.")
+
+        assert result["double_check"] is False
+        assert result["critique_note"] == ""
+
+    async def test_critique_disabled_skips_call(self, mock_create_agent, mock_fact_check_response):
+        """_critique_async returns defaults immediately when self_critique_enabled=False."""
+        with patch.dict("os.environ", {
+            "GEMINI_API_KEY": "test-key",
+            "TAVILY_API_KEY": "test-key",
+            "SELF_CRITIQUE_ENABLED": "false",
+        }):
+            checker = FactChecker()
+            critique = await checker._critique_async("claim", "hoch", "evidence")
+
+        assert critique.confidence == "high"
+        assert critique.reason == ""
+
+    async def test_critique_note_always_populated(self, mock_create_agent, mock_fact_check_response):
+        """critique_note is always set from the model's reason, even when double_check is False."""
+        with patch.dict("os.environ", {"GEMINI_API_KEY": "test-key", "TAVILY_API_KEY": "test-key"}):
+            checker = FactChecker()
+            not_flagged = SelfCritiqueResponse(confidence="high", reason="Gut belegt.")
+            checker._critique_async = AsyncMock(return_value=not_flagged)
+
+            result = await checker.check_claim_async("Speaker", "Eine Behauptung.")
+
+        assert result["double_check"] is False
+        assert result["critique_note"] == "Gut belegt."

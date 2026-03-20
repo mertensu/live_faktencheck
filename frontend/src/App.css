@@ -2084,3 +2084,36 @@
     font-size: 1.15rem;
   }
 }
+/* Double-check flag */
+.claim-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+.double-check-flag {
+  font-size: 0.85rem;
+  color: #d97706;
+  line-height: 1;
+}
+
+.critique-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  border-radius: var(--radius-md);
+  padding: 0.65rem 0.9rem;
+  margin-bottom: 1.25rem;
+  font-size: 0.85rem;
+  color: #92400e;
+  line-height: 1.45;
+}
+
+.critique-note-icon {
+  flex-shrink: 0;
+  font-size: 0.9rem;
+  color: #d97706;
+}

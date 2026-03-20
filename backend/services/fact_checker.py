@@ -12,6 +12,7 @@ from typing import List, Dict, Any, Literal
 from datetime import datetime
 
 from pydantic import BaseModel, Field
+from google import genai
 
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_tavily import TavilySearch
@@ -24,6 +25,8 @@ from backend.lang import (
     CONSISTENCY_DESCRIPTION,
     EVIDENCE_DESCRIPTION,
     SOURCES_DESCRIPTION,
+    CRITIQUE_CONFIDENCE_DESCRIPTION,
+    CRITIQUE_REASON_DESCRIPTION,
 )
 from .cost_tracker import get_cost_tracker
 from .trusted_domains import TRUSTED_DOMAINS
@@ -47,6 +50,17 @@ class FactCheckResponse(BaseModel):
     )
     evidence: str = Field(description=EVIDENCE_DESCRIPTION)
     sources: List[Source] = Field(description=SOURCES_DESCRIPTION)
+
+class SelfCritiqueInput(BaseModel):
+    """Eingabe für die Selbstkritik eines Faktencheck-Urteils."""
+    behauptung: str = Field(description="Die überprüfte Behauptung")
+    urteil: Literal["hoch", "niedrig", "unklar", "keine Datenlage"] = Field(description=CONSISTENCY_DESCRIPTION)
+    begruendung: str = Field(description="Die Begründung des Faktencheckers")
+
+class SelfCritiqueResponse(BaseModel):
+    confidence: Literal["high", "low"] = Field(description=CRITIQUE_CONFIDENCE_DESCRIPTION)
+    reason: str = Field(default="", description=CRITIQUE_REASON_DESCRIPTION)
+
 
 class ClaimInput(BaseModel):
     """Behauptung zur Faktenprüfung."""
@@ -116,6 +130,18 @@ class FactChecker:
         prompt = load_prompt("fact_checker.md")
         input_schema = json.dumps(ClaimInput.model_json_schema(), indent=2, ensure_ascii=False)
         self.prompt_template = prompt.replace("{input_schema}", input_schema)
+
+        # Self-critique settings
+        self.critique_model_name = os.getenv("GEMINI_MODEL_SELF_CRITIQUE", "gemini-2.5-flash")
+        self.self_critique_enabled = os.getenv("SELF_CRITIQUE_ENABLED", "true").lower() != "false"
+        try:
+            critique_prompt_raw = load_prompt("self_critique.md")
+            critique_schema = json.dumps(SelfCritiqueInput.model_json_schema(), indent=2, ensure_ascii=False)
+            self.critique_prompt = critique_prompt_raw.replace("{input_schema}", critique_schema)
+        except FileNotFoundError:
+            self.critique_prompt = None
+            self.self_critique_enabled = False
+        self.critique_client = genai.Client(api_key=google_api_key) if self.self_critique_enabled else None
 
         # Parallel processing settings
         self.parallel_enabled = os.getenv("FACT_CHECK_PARALLEL", "false").lower() == "true"
@@ -263,6 +289,14 @@ class FactChecker:
             cost_tracker.log_session_totals()
 
             logger.info(f"Claim checked: consistency = {parsed.get('consistency', 'unknown')}")
+
+            # Self-critique step
+            critique = await self._critique_async(
+                claim, parsed.get("consistency", ""), parsed.get("evidence", "")
+            )
+            parsed["double_check"] = critique.confidence == "low"
+            parsed["critique_note"] = critique.reason
+
             return parsed
 
         except Exception as e:
@@ -274,6 +308,29 @@ class FactChecker:
                 "evidence": f"Fehler bei der Überprüfung: {str(e)}",
                 "sources": []
             }
+
+    async def _critique_async(self, claim: str, consistency: str, evidence: str) -> SelfCritiqueResponse:
+        """Self-critique a verdict for wording sensitivity and confidence."""
+        if not self.self_critique_enabled or not self.critique_prompt or not self.critique_client:
+            return SelfCritiqueResponse(confidence="high", reason="")
+
+        user_message = SelfCritiqueInput(
+            behauptung=claim, urteil=consistency, begruendung=evidence
+        ).model_dump_json(indent=2)
+        try:
+            response = await self.critique_client.aio.models.generate_content(
+                model=self.critique_model_name,
+                contents=user_message,
+                config={
+                    "system_instruction": self.critique_prompt,
+                    "response_mime_type": "application/json",
+                    "response_schema": SelfCritiqueResponse,
+                },
+            )
+            return response.parsed
+        except Exception:
+            logger.exception("Self-critique failed, using defaults")
+            return SelfCritiqueResponse(confidence="high")
 
     async def check_claims_async(self, claims: List[Dict[str, str]], context: str = None, episode_date: str | None = None) -> List[Dict[str, Any]]:
         """

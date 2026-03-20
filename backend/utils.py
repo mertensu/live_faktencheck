@@ -33,6 +33,8 @@ def build_fact_check_dict(
         "timestamp": datetime.now().isoformat(),
         "episode_key": episode_key,
         "status": "",
+        "double_check": result_dict.get("double_check", False),
+        "critique_note": result_dict.get("critique_note", ""),
     }
 
 

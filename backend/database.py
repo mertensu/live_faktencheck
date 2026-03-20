@@ -57,7 +57,9 @@ class Database:
                 quellen TEXT NOT NULL DEFAULT '[]',
                 timestamp TEXT NOT NULL,
                 episode_key TEXT,
-                status TEXT NOT NULL DEFAULT ''
+                status TEXT NOT NULL DEFAULT '',
+                double_check INTEGER NOT NULL DEFAULT 0,
+                critique_note TEXT NOT NULL DEFAULT ''
             );
 
             CREATE INDEX IF NOT EXISTS idx_fact_checks_speaker_claim
@@ -79,14 +81,17 @@ class Database:
         """)
         await self.db.commit()
 
-        # Migration: add status column to existing fact_checks tables
-        try:
-            await self.db.execute(
-                "ALTER TABLE fact_checks ADD COLUMN status TEXT NOT NULL DEFAULT ''"
-            )
-            await self.db.commit()
-        except Exception:
-            pass  # Column already exists
+        # Migrations: add columns to existing fact_checks tables
+        for migration in [
+            "ALTER TABLE fact_checks ADD COLUMN status TEXT NOT NULL DEFAULT ''",
+            "ALTER TABLE fact_checks ADD COLUMN double_check INTEGER NOT NULL DEFAULT 0",
+            "ALTER TABLE fact_checks ADD COLUMN critique_note TEXT NOT NULL DEFAULT ''",
+        ]:
+            try:
+                await self.db.execute(migration)
+                await self.db.commit()
+            except Exception:
+                pass  # Column already exists
 
     # =========================================================================
     # Fact-Checks CRUD
@@ -103,14 +108,17 @@ class Database:
             data["timestamp"],
             data.get("episode_key"),
             data.get("status", ""),
+            int(bool(data.get("double_check", False))),
+            data.get("critique_note", ""),
         )
 
     async def add_fact_check(self, fact_check: dict) -> int:
         """Insert a fact-check and return its auto-generated ID."""
         cursor = await self.db.execute(
             """INSERT INTO fact_checks
-               (sprecher, behauptung, consistency, begruendung, quellen, timestamp, episode_key, status)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+               (sprecher, behauptung, consistency, begruendung, quellen, timestamp, episode_key, status,
+                double_check, critique_note)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             self._fact_check_params(fact_check),
         )
         await self.db.commit()
@@ -141,7 +149,8 @@ class Database:
         cursor = await self.db.execute(
             """UPDATE fact_checks
                SET sprecher = ?, behauptung = ?, consistency = ?,
-                   begruendung = ?, quellen = ?, timestamp = ?, episode_key = ?, status = ?
+                   begruendung = ?, quellen = ?, timestamp = ?, episode_key = ?, status = ?,
+                   double_check = ?, critique_note = ?
                WHERE id = ?""",
             (*self._fact_check_params(data), fact_check_id),
         )
@@ -177,6 +186,8 @@ class Database:
             "timestamp": row["timestamp"],
             "episode_key": row["episode_key"],
             "status": row["status"],
+            "double_check": bool(row["double_check"]),
+            "critique_note": row["critique_note"],
         }
 
     # =========================================================================

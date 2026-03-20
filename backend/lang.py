@@ -18,3 +18,13 @@ CONSISTENCY_DESCRIPTION = """Empirische Konsistenz der Behauptung. Wähle genau 
 - 'keine Datenlage': Keine relevanten Daten oder empirischen Belege zu diesem Thema gefunden."""
 EVIDENCE_DESCRIPTION = "Detaillierte und gut strukturierte deutschsprachige Begründung"
 SOURCES_DESCRIPTION = "Primärquellen mit URL und kurzem informativem Titel"
+
+# --- Self-critique response schema ---
+CRITIQUE_CONFIDENCE_DESCRIPTION = (
+    "'high' = Urteil ist klar und gut belegt; eine erneute Recherche würde dasselbe Ergebnis liefern. "
+    "'low' = Urteil ist mit Unsicherheit behaftet; die Begründung ist nicht vollständig schlüssig "
+    "bzw. lässt Spielraum für alternative Interpretationen."
+)
+CRITIQUE_REASON_DESCRIPTION = (
+    "Kurze und prägnante deutschsprachige Erklärung, warum das Urteil (nicht) robust ist. Immer ausfüllen."
+)

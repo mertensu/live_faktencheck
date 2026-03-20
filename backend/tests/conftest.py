@@ -11,7 +11,7 @@ from backend.app import app
 from backend import state
 from backend.database import Database
 from backend.services.claim_extraction import ExtractedClaim, ClaimList
-from backend.services.fact_checker import FactCheckResponse, Source
+from backend.services.fact_checker import FactCheckResponse, Source, SelfCritiqueResponse
 from backend.services.cost_tracker import CostTracker
 from backend.services.registry import reset_services
 
@@ -132,7 +132,18 @@ def mock_create_agent(mock_fact_check_response):
 
 
 @pytest.fixture
-def mock_fact_checker(mock_create_agent):
+def mock_critique_async():
+    """Mock _critique_async to return a non-flagged default (no network calls)."""
+    default = SelfCritiqueResponse(confidence="high")
+    with patch(
+        "backend.services.fact_checker.FactChecker._critique_async",
+        new=AsyncMock(return_value=default),
+    ) as mock:
+        yield mock
+
+
+@pytest.fixture
+def mock_fact_checker(mock_create_agent, mock_critique_async):
     """Fixture that provides a FactChecker with mocked LangChain agent."""
     with patch.dict("os.environ", {
         "GEMINI_API_KEY": "test-api-key",

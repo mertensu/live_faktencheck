@@ -179,7 +179,12 @@ export function ClaimCard({ claim, onSelect }) {
     >
       <div className="claim-header">
         <div className="claim-text">{stripDateAnnotation(claim.behauptung)}</div>
-        <span className="expand-button" aria-hidden="true">▶</span>
+        <div className="claim-header-actions">
+          {claim.double_check && (
+            <span className="double-check-flag" aria-label="Bewertung unter Vorbehalt" title="Bewertung unter Vorbehalt">⚠</span>
+          )}
+          <span className="expand-button" aria-hidden="true">▶</span>
+        </div>
       </div>
     </div>
   )

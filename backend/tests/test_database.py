@@ -68,6 +68,50 @@ async def test_add_and_get_fact_check(db):
     assert result["consistency"] == "falsch"
     assert result["quellen"] == [{"url": "https://example.com", "title": "Quelle"}]
     assert result["episode_key"] == "test-episode"
+    assert result["double_check"] is False
+    assert result["critique_note"] == ""
+
+
+async def test_add_fact_check_with_double_check(db):
+    """double_check and critique_note are stored and retrieved correctly."""
+    fc = {
+        "sprecher": "Speaker",
+        "behauptung": "Eine wortlautabhängige Behauptung",
+        "consistency": "unklar",
+        "begruendung": "Begründung",
+        "quellen": [],
+        "timestamp": datetime.now().isoformat(),
+        "double_check": True,
+        "critique_note": "Urteil hängt stark von der Formulierung ab.",
+    }
+    new_id = await db.add_fact_check(fc)
+    result = await db.get_fact_check_by_id(new_id)
+
+    assert result["double_check"] is True
+    assert result["critique_note"] == "Urteil hängt stark von der Formulierung ab."
+
+
+async def test_update_fact_check_double_check(db):
+    """Updating a fact-check persists changes to double_check and critique_note."""
+    fc = {
+        "sprecher": "Speaker",
+        "behauptung": "Behauptung",
+        "consistency": "hoch",
+        "begruendung": "",
+        "quellen": [],
+        "timestamp": datetime.now().isoformat(),
+        "double_check": False,
+        "critique_note": "",
+    }
+    new_id = await db.add_fact_check(fc)
+
+    fc["double_check"] = True
+    fc["critique_note"] = "Neuer Vorbehalt"
+    await db.update_fact_check(new_id, fc)
+
+    result = await db.get_fact_check_by_id(new_id)
+    assert result["double_check"] is True
+    assert result["critique_note"] == "Neuer Vorbehalt"
 
 
 async def test_get_fact_check_not_found(db):

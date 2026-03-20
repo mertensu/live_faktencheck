@@ -51,6 +51,13 @@ export function ClaimDetailOverlay({ claim, onClose }) {
             </div>
           )}
 
+          {claim.double_check && (
+            <div className="critique-note">
+              <span className="critique-note-icon">⚠</span>
+              <span>Bewertung unter Vorbehalt{claim.critique_note ? ` — ${claim.critique_note}` : ''}</span>
+            </div>
+          )}
+
           <div className={`claim-detail-card ${consistencyClass}`}>
             <h3 className="claim-detail-section-title">Begründung</h3>
             {claim.begruendung ? (
