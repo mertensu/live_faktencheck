@@ -1,0 +1,99 @@
+import { useEffect, useState } from 'react'
+import { getConsistencyColor, getConsistencyClass, formatBegruendung, stripDateAnnotation } from './ClaimCard'
+
+export function ClaimDetailOverlay({ claim, onClose }) {
+  const [isClosing, setIsClosing] = useState(false)
+
+  const startClose = () => setIsClosing(true)
+
+  useEffect(() => {
+    document.body.style.overflow = 'hidden'
+    const handleKey = (e) => { if (e.key === 'Escape') setIsClosing(true) }
+    window.addEventListener('keydown', handleKey)
+    return () => {
+      document.body.style.overflow = ''
+      window.removeEventListener('keydown', handleKey)
+    }
+  }, [])
+
+  const consistencyClass = getConsistencyClass(claim.consistency)
+
+  return (
+    <div
+      className={`claim-detail-backdrop${isClosing ? ' claim-detail-backdrop--closing' : ''}`}
+      onClick={startClose}
+    >
+      <div
+        className={`claim-detail-panel${isClosing ? ' claim-detail-panel--closing' : ''}`}
+        onClick={(e) => e.stopPropagation()}
+        onAnimationEnd={isClosing ? onClose : undefined}
+      >
+        <button className="claim-detail-close" onClick={startClose} aria-label="Schließen">
+          ← Zurück
+        </button>
+
+        <div className="claim-detail-body">
+          {claim.sprecher && (
+            <div className="claim-detail-speaker">{claim.sprecher}</div>
+          )}
+
+          <h2 className="claim-detail-heading">{stripDateAnnotation(claim.behauptung)}</h2>
+
+          {claim.consistency && (
+            <div className="claim-detail-verdict-row">
+              <span className="claim-detail-verdict-label">Vertrauenslevel</span>
+              <div
+                className="verdict-badge"
+                style={{ backgroundColor: getConsistencyColor(claim.consistency) }}
+              >
+                {claim.consistency.toLowerCase() === 'keine datenlage' ? 'keine Bewertung' : claim.consistency}
+              </div>
+            </div>
+          )}
+
+          {claim.double_check && (
+            <div className="critique-note">
+              <span className="critique-note-icon">⚠</span>
+              <span>Bewertung unter Vorbehalt{claim.critique_note ? ` — ${claim.critique_note}` : ''}</span>
+            </div>
+          )}
+
+          <div className={`claim-detail-card ${consistencyClass}`}>
+            <h3 className="claim-detail-section-title">Begründung</h3>
+            {claim.begruendung ? (
+              <div className="begruendung-container">
+                {formatBegruendung(claim.begruendung)}
+              </div>
+            ) : (
+              <p className="begruendung-text no-begruendung">Keine Begründung verfügbar</p>
+            )}
+
+            {claim.quellen && claim.quellen.length > 0 && (
+              <>
+                <h3 className="claim-detail-section-title">Quellen</h3>
+                <ul className="sources-list">
+                  {claim.quellen.map((quelle, idx) => {
+                    const url = typeof quelle === 'object' ? quelle.url : quelle
+                    const title = typeof quelle === 'object' && quelle.title ? quelle.title : url
+                    return (
+                      <li key={idx}>
+                        <a
+                          href={url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="source-link"
+                        >
+                          {title}
+                        </a>
+                      </li>
+                    )
+                  })}
+                </ul>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}

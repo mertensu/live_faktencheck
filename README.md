@@ -1,160 +1,253 @@
-# Live Fakten-Check
+# Live Faktencheck
 
-Ein Live-Dashboard für Fakten-Checks mit React Frontend und Flask Backend.
+Real-time fact-checking system for German TV talk shows. Captures audio, extracts claims, and verifies them against authoritative sources.
 
-## 🚀 Features
-
-- 📊 Live-Updates von N8N Webhook
-- 👥 Sprecher nebeneinander dargestellt
-- 💬 Behauptungen unter den jeweiligen Sprechern
-- 🔽 Expand-Toggle für Urteil, Begründung und Quellen
-- ⚙️ Admin-Modus für Claim-Überprüfung
-- 🎨 Modernes, responsives Design
-- 📱 Mehrere Sendungen (Test, Maischberger, etc.)
-
-## 📁 Projektstruktur
+## How It Works
 
 ```
-fact_check/
-├── backend/           # Flask Backend
-│   ├── app.py        # Haupt-Backend
-│   └── run.sh        # Start-Script
-├── frontend/          # React Frontend
-│   ├── src/
-│   │   ├── App.jsx   # Hauptkomponente mit Routing
-│   │   └── ...
-│   └── ...
-├── listener.py        # Audio-Aufnahme mit VAD
+  Live Audio Stream
+        │ (fixed-length blocks)
+        ▼
+┌───────────────────┐
+│   Transcription   │  AssemblyAI (speaker detection)
+└────────┬──────────┘
+         │
+         ▼
+┌───────────────────┐
+│ Claim Extraction  │  Gemini LLM
+└────────┬──────────┘
+         │
+         ▼
+┌───────────────────┐
+│  Human Review     │  Admin UI (approve / discard)
+└────────┬──────────┘
+         │
+         ▼
+┌───────────────────┐
+│  Fact-Checking    │  LangChain ReAct agent
+│  ┌─────────────┐  │  (Gemini + Tavily search)
+│  │Reason→Search│  │
+│  │  →Evaluate  │  │
+│  └──────↺──────┘  │
+└────────┬──────────┘
+         │
+         ▼
+┌───────────────────┐
+│     Display       │  verdict + explanation + sources
+└───────────────────┘
+```
+
+1. **Audio Capture**: Listener captures audio via BlackHole virtual audio device
+2. **Transcription**: AssemblyAI transcribes with speaker detection
+3. **Claim Extraction**: Gemini extracts verifiable factual claims
+4. **Human Review**: Admin UI allows editing and approval of claims
+5. **Fact-Checking**: LangChain agent with Gemini + Tavily verifies claims against trusted German sources
+6. **Display**: Results shown on Cloudflare Pages (public) and local admin UI
+
+For details on the LLM pipeline (models, schemas, prompts): [`docs/llm_pipeline.md`](docs/llm_pipeline.md)
+
+## Requirements
+
+- Python 3.11+
+- Node.js 20+
+- [uv](https://github.com/astral-sh/uv) (Python package manager)
+- [cloudflared](https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/install-and-setup/installation/) (Cloudflare Tunnel)
+- [BlackHole](https://existential.audio/blackhole/) (virtual audio device for macOS)
+
+## API Keys Required
+
+Create a `.env` file (see `.env.example`):
+
+```bash
+ASSEMBLYAI_API_KEY=your_key    # Transcription
+GEMINI_API_KEY=your_key        # Claim extraction & fact-checking
+TAVILY_API_KEY=your_key        # Web search for fact-checking
+LANG=de                        # Language for LLM prompts
+```
+
+## Installation
+
+```bash
+# Clone the repo
+git clone https://github.com/mertensu/live_faktencheck.git
+cd live_faktencheck
+
+# Install Python dependencies
+uv sync
+
+# Install frontend dependencies
+cd frontend && bun install && cd ..
+
+# Copy env template and add your API keys
+cp .env.example .env
+```
+
+## Workflows
+
+### Live Fact-Check (on air)
+
+```bash
+./publish_episode.sh <episode-key>   # before the show
+./start_production.sh <episode-key>  # during the show
+./stop_production.sh --permanent     # after the show
+```
+
+→ Full details: [docs/live-workflow.md](docs/live-workflow.md)
+
+---
+
+### Development / Testing
+
+```bash
+./start_dev.sh <episode-key>
+uv run python listener.py <episode-key>
+```
+
+→ Full details: [docs/development-workflow.md](docs/development-workflow.md)
+
+## Database & Static JSON Deployment
+
+### SQLite Database
+
+All fact-checks are stored in `backend/data/factcheck.db` (SQLite). This is the single source of truth during a live session. The database is **not** committed to git.
+
+### Static JSON for Cloudflare Pages
+
+Since there is no always-on backend server, finished episodes are served as static JSON files from `frontend/public/data/`. These files **are** committed to git and deployed via Cloudflare Pages.
+
+```
+frontend/public/data/
+├── shows.json              # Index of all episodes (auto-updated)
+├── atalay-2026-02-09.json  # Per-episode fact-checks
+├── lanz-2026-02-06.json
 └── ...
 ```
 
-## 🛠️ Setup
-
-### Backend
+**When to export**: Run `export_episode.py --json` after any live session, or any time you edit a fact-check in the DB and want the change reflected on the public site.
 
 ```bash
-uv sync
-uv run python backend/app.py
+uv run python export_episode.py <episode-key> --json
+# → writes frontend/public/data/<episode-key>.json
+# → rewrites frontend/public/data/shows.json (published episodes only)
 ```
 
-Das Backend läuft dann auf `http://localhost:5000`
+Running `export_episode.py --json` is what makes fact-checks permanent: it moves them from local SQLite into static JSON files that get committed to git and deployed to Cloudflare. The per-episode file (e.g. `maischberger-2025-09-19.json`) holds the actual fact-checks; `shows.json` is just the index that makes the episode appear in the list on the production domain.
 
-### Frontend
+`shows.json` only includes episodes with `publish=True` — unpublished episodes are never written to it and won't appear on the production domain.
 
-```bash
-cd frontend
-npm install
-npm run dev
+### The `publish` Flag
+
+The `publish` flag in `config.py` controls which episodes are visible on the public domain (`live-faktencheck.de`). Episodes without `publish=True` only show up in local development:
+
+```python
+Episode(
+    key="maischberger-2026-03-01",
+    publish=True,   # included in shows.json → visible on live-faktencheck.de
+    # publish=False  (default) → dev only, never written to shows.json
+)
 ```
 
-Das Frontend läuft dann auf `http://localhost:3000`
+## Project Structure
 
-## 🌐 GitHub Pages Deployment
+```
+├── backend/
+│   ├── app.py                 # FastAPI server
+│   ├── data/
+│   │   └── factcheck.db       # SQLite database (not in git)
+│   └── services/
+│       ├── transcription.py   # AssemblyAI integration
+│       ├── claim_extraction.py # Gemini claim extraction
+│       ├── fact_checker.py    # LangChain agent with Gemini + Tavily
+│       └── trusted_domains.py # Trusted source domains (categorized)
+├── frontend/
+│   ├── src/App.jsx            # React frontend
+│   └── public/data/           # Static JSON exports (served by Cloudflare)
+│       ├── shows.json         # Episode index
+│       └── <episode-key>.json # Per-episode fact-checks
+├── prompts/
+│   ├── claim_extraction.md    # Prompt for extracting claims
+│   ├── fact_checker.md        # Prompt for fact-checking
+│   └── lang_de.toml           # LLM field descriptions (German)
+├── listener.py                # Audio capture with fixed-interval sending
+├── export_episode.py          # Export episode from DB as JSON or Markdown
+├── publish_episode.sh         # Publish an episode: set publish=True, update shows.json, push
+├── config.py                  # Episode configuration (EPISODES dict)
+├── start_dev.sh               # Development startup (backend + frontend, no tunnel)
+├── start_production.sh        # Production startup script
+└── stop_production.sh         # Stop all services (--permanent to export & deploy)
+```
 
-Das Frontend ist für GitHub Pages konfiguriert:
+## Configuration
 
-- **Base Path**: `/live_faktencheck/`
-- **Routes**: `/test`, `/maischberger`
-- **Automatisches Deployment**: Via GitHub Actions
+Episodes are configured in `config.py` using the `Episode` dataclass. The `publish` flag controls visibility on the public domain:
 
-### Setup GitHub Pages
+```python
+from config import Episode, EPISODES
 
-1. Repository auf GitHub erstellen
-2. Code pushen
-3. Settings → Pages → Source: GitHub Actions
-4. Nach Push auf `main` wird automatisch deployed
-
-## 📡 N8N Webhook Konfiguration
-
-### Phase 1: Vorab-Liste von Claims
-
-**URL:** `http://localhost:5000/api/fact-checks` (POST)
-
-**Format:**
-```json
-{
-  "block_id": "audio_block_...",
-  "timestamp": "...",
-  "claims_count": 10,
-  "claims": [
-    {
-      "name": "Sandra Maischberger",
-      "claim": "Die Behauptung..."
-    }
-  ]
+EPISODES = {
+    "maischberger-2025-09-19": Episode(
+        key="maischberger-2025-09-19",
+        show="maischberger",
+        date="19. September 2025",
+        guests=[
+            "Sandra Maischberger (Moderatorin)",
+            "Gitta Connemann (CDU)",
+            "Katharina Dröge (B90/Grüne)",
+        ],
+        publish=True,   # show on live-faktencheck.de
+    )
 }
 ```
 
-### Phase 2: Verifizierte Claims zurück
+Available fields:
+- `show` — key into `SHOWS` dict (e.g. `"maischberger"`, `"lanz"`)
+- `date` — broadcast date string (e.g. `"19. September 2025"`)
+- `guests` — list of `"Name (Role/Partei)"` strings; moderator first
+- `context` — optional background context passed to the LLM
+- `reference_links` — optional list of reference URLs (legislation, press releases)
+- `publish` — `True` = visible on production domain (default: `False`)
+- `type` — `"show"` or `"youtube"` (default: `"show"`)
 
-**URL:** `http://localhost:5000/api/fact-checks` (POST)
+## Trusted Sources
 
-**Format:**
-```json
-{
-  "verified_claims": [
-    {
-      "claim_data": [
-        {
-          "output": {
-            "speaker": "Gitta Connemann",
-            "original_claim": "...",
-            "verdict": "Richtig",
-            "evidence": "...",
-            "sources": ["..."]
-          }
-        }
-      ]
-    }
-  ]
-}
+Fact-checking searches are restricted to authoritative German sources, organized by category (government, research, media, EU, etc.). See `backend/services/trusted_domains.py` for the full categorized list, or visit `/trusted-domains` on the running frontend.
+
+## How Fact-Checking Works
+
+The fact-checker uses a LangChain ReAct agent that iteratively searches for evidence:
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                  LangChain Agent Loop                   │
+├─────────────────────────────────────────────────────────┤
+│  1. LLM receives claim + conversation history           │
+│  2. LLM decides: search for more evidence OR respond    │
+│  3. If search: Execute Tavily → append results → repeat │
+│  4. If respond: Return consistency rating + evidence + sources │
+└─────────────────────────────────────────────────────────┘
 ```
 
-### Phase 3: Ausgewählte Claims senden
+- **Tavily Search**: Searches the web, filtered to trusted domains only
+- **Recursion limit**: Default 25 super-steps to prevent infinite loops (configurable via `FACT_CHECK_RECURSION_LIMIT`)
+- **Robust handling**: LangChain guarantees a final response (no silent failures)
 
-**URL:** `http://localhost:5678/webhook/verified-claims` (POST)
+## Environment Variables
 
-**Format:**
-```json
-{
-  "block_id": "...",
-  "claims": [
-    {
-      "name": "Gitta Connemann",
-      "claim": "..."
-    }
-  ],
-  "timestamp": "..."
-}
-```
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `ASSEMBLYAI_API_KEY` | AssemblyAI API key for transcription | Yes |
+| `GEMINI_API_KEY` | Google Gemini API key | Yes |
+| `TAVILY_API_KEY` | Tavily API key for web search | Yes |
+| `LANG` | Language for LLM prompts (set to `de`) | Yes |
+| `GEMINI_MODEL_CLAIM_EXTRACTION` | Model for claim extraction (default: gemini-2.5-flash) | No |
+| `GEMINI_MODEL_FACT_CHECKER` | Model for fact-checking (default: gemini-2.5-pro) | No |
+| `FACT_CHECK_RECURSION_LIMIT` | Max agent iterations (default: 25, use lower for tests) | No |
+| `VITE_BACKEND_URL` | Backend URL for production frontend | No |
 
-## 🎯 Verwendung
+## Adapting to Another Language
 
-### Lokal
+To run the system in a language other than German, see [`docs/localization.md`](docs/localization.md).
 
-1. Backend starten: `uv run python backend/app.py`
-2. Frontend starten: `cd frontend && npm run dev`
-3. Öffne `http://localhost:3000`
-4. Wähle eine Sendung (Test, Maischberger)
+## License
 
-### Admin-Modus
-
-1. Im Frontend auf "⚙️ Admin-Modus" klicken
-2. Pending Claims werden automatisch geladen
-3. Claims per Checkbox auswählen
-4. "📤 X Claims senden" klicken
-
-## 📝 Sprecher anpassen
-
-Die Sprecher können in `frontend/src/App.jsx` im Array `SPEAKERS` angepasst werden.
-
-## 🔧 Entwicklung
-
-- **Backend**: Flask mit CORS
-- **Frontend**: React + Vite + React Router
-- **Audio**: PyAudio + Silero VAD
-- **Deployment**: GitHub Pages (Frontend) + Lokal/Cloud (Backend)
-
-## 📄 Lizenz
-
-[Deine Lizenz hier]
+MIT

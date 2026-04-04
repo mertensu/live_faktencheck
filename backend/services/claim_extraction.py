@@ -1,0 +1,258 @@
+"""
+Claim Extraction Service using Google Gemini
+
+Extracts verifiable factual claims from German transcripts.
+"""
+
+import os
+import json
+import asyncio
+import logging
+from typing import List
+from datetime import datetime
+
+from google import genai
+from pydantic import BaseModel, Field
+
+from backend.utils import load_prompt
+from backend.lang import CLAIM_NAME_DESCRIPTION, CLAIM_TEXT_DESCRIPTION
+
+logger = logging.getLogger(__name__)
+
+# Default model if not specified in environment
+DEFAULT_MODEL = "gemini-2.5-flash"
+
+
+class ExtractedClaim(BaseModel):
+    """A standalone, decontextualized factual claim."""
+    name: str = Field(description=CLAIM_NAME_DESCRIPTION)
+    claim: str = Field(description=CLAIM_TEXT_DESCRIPTION)
+
+class ClaimList(BaseModel):
+    """List of extracted factual claims."""
+    claims: List[ExtractedClaim]
+
+class SpeakerLabelMapping(BaseModel):
+    """Mapping from a generic speaker label to a real name."""
+    label: str = Field(description='Generische Sprecherbezeichnung, z. B. "Sprecher A"')
+    name: str = Field(description='Echter Name der Person, z. B. "Julia Berger"')
+
+class ResolvedTranscript(BaseModel):
+    """Speaker label mappings extracted from a transcript."""
+    mappings: List[SpeakerLabelMapping]
+
+class SpeakerLabelsInput(BaseModel):
+    """Input for speaker label resolution."""
+    guests: list[str] = Field(description="Teilnehmer der Sendung, z. B. ['Caren Miosga (Moderatorin)', 'Heidi Reichinnek (Linke)']")
+    transcript: str = Field(description="Transkript mit generischen Sprecherbezeichnungen")
+
+class ClaimExtractionInput(BaseModel):
+    """Input for claim extraction from a transcript."""
+    date: str = Field(description="Sendedatum, z. B. 'Oktober 2025'")
+    guests: list[str] = Field(description="Teilnehmer der Sendung")
+    context: str = Field(default="", description="Thematischer Hintergrund der Sendung")
+    transcript: str = Field(description="Transkript zur Analyse")
+    previous_block_ending: str | None = Field(default=None, description="Letzte Zeilen des vorherigen Transkriptblocks zur Gewährleistung der Kontinuität")
+
+
+class ClaimExtractor:
+    """Service for extracting verifiable claims from transcripts using Gemini."""
+
+    _first_extraction_logged = False
+    _first_speaker_labels_logged = False
+
+    def __init__(self):
+        # New SDK supports both GEMINI_API_KEY and GOOGLE_API_KEY
+        api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+        if not api_key:
+            raise ValueError("GEMINI_API_KEY or GOOGLE_API_KEY environment variable not set")
+
+        self.client = genai.Client(api_key=api_key)
+
+        # Get model from environment (allows easy experimentation)
+        self.model_name = os.getenv("GEMINI_MODEL_CLAIM_EXTRACTION", DEFAULT_MODEL)
+
+        # Load prompt templates and bake in input schemas
+        prompt = load_prompt("claim_extraction.md")
+        input_schema = json.dumps(ClaimExtractionInput.model_json_schema(), indent=2, ensure_ascii=False)
+        self.prompt_template = prompt.replace("{input_schema}", input_schema)
+
+        self.selection_prompt_template = load_prompt("claim_selection.md")
+        try:
+            speaker_labels_prompt = load_prompt("speaker_labels.md")
+            sl_schema = json.dumps(SpeakerLabelsInput.model_json_schema(), indent=2, ensure_ascii=False)
+            self.speaker_labels_prompt_template = speaker_labels_prompt.replace("{input_schema}", sl_schema)
+        except FileNotFoundError:
+            self.speaker_labels_prompt_template = None
+
+        logger.info(f"ClaimExtractor initialized with model: {self.model_name}")
+
+    async def _resolve_speaker_labels_async(self, transcript: str, guests: list[str]) -> str:
+        """Step 1: Identify speaker label→name mappings and apply them to the transcript."""
+        user_message = SpeakerLabelsInput(guests=guests, transcript=transcript).model_dump_json(indent=2)
+        if not ClaimExtractor._first_speaker_labels_logged and "PYTEST_CURRENT_TEST" not in os.environ:
+            try:
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                log_path = os.path.join("logs", "prompt_dumps", f"{timestamp}_speaker_labels.txt")
+                os.makedirs(os.path.dirname(log_path), exist_ok=True)
+                with open(log_path, "w", encoding="utf-8") as f:
+                    f.write("=== SYSTEM PROMPT ===\n")
+                    f.write(self.speaker_labels_prompt_template)
+                    f.write("\n\n=== USER MESSAGE ===\n")
+                    f.write(user_message)
+                ClaimExtractor._first_speaker_labels_logged = True
+                logger.info(f"First speaker labels prompt dumped to {log_path}")
+            except Exception:
+                logger.exception("Failed to dump first speaker labels prompt")
+        response = await self.client.aio.models.generate_content(
+            model=self.model_name,
+            contents=user_message,
+            config={
+                'system_instruction': self.speaker_labels_prompt_template,
+                'response_mime_type': 'application/json',
+                'response_schema': ResolvedTranscript,
+            },
+        )
+        for m in response.parsed.mappings:
+            transcript = transcript.replace(m.label, m.name)
+        return transcript
+
+    async def resolve_labels_async(self, transcript: str, guests: list[str]) -> str:
+        """Resolve generic speaker labels to real names. Returns transcript unchanged if no prompt loaded."""
+        if self.speaker_labels_prompt_template:
+            return await self._resolve_speaker_labels_async(transcript, guests)
+        return transcript
+
+    async def extract_claims_async(self, resolved_transcript: str, guests: list[str], date: str = "", context: str = "", previous_context: str | None = None) -> List[ExtractedClaim]:
+        """Extract claims from an already-resolved transcript. Skips speaker label resolution.
+
+        This is the preferred entry point for the audio pipeline (called after resolve_labels_async).
+        Use extract_async() only when you want both steps in one call (e.g. text-block pipeline).
+        """
+        logger.info(f"Extracting claims from resolved transcript ({len(resolved_transcript)} chars)")
+        user_message = ClaimExtractionInput(
+            date=date,
+            guests=guests,
+            context=context,
+            transcript=resolved_transcript,
+            previous_block_ending=previous_context,
+        ).model_dump_json(indent=2)
+        return await self._extract_async(self.prompt_template, user_message)
+
+    async def extract_async(self, transcript: str, guests: list[str], date: str = "", context: str = "", previous_context: str | None = None) -> List[ExtractedClaim]:
+        """
+        Extract verifiable claims from a transcript (async).
+
+        Args:
+            transcript: Formatted transcript with speaker labels
+            guests: List of guests in 'Name (Rolle)' format
+            date: Air date of the episode, e.g. 'Oktober 2025'
+            context: Thematic background of the episode (optional)
+            previous_context: Last few lines from the previous block's transcript, for continuity
+
+        Returns:
+            List of ExtractedClaim objects
+        """
+        logger.info(f"Extracting claims from transcript ({len(transcript)} chars)")
+
+        if self.speaker_labels_prompt_template:
+            transcript = await self._resolve_speaker_labels_async(transcript, guests)
+            logger.info(f"Speaker labels resolved ({len(transcript)} chars)")
+
+        system_prompt = self.prompt_template
+
+        user_message = ClaimExtractionInput(
+            date=date,
+            guests=guests,
+            context=context,
+            transcript=transcript,
+            previous_block_ending=previous_context,
+        ).model_dump_json(indent=2)
+
+        return await self._extract_async(system_prompt, user_message)
+
+    def extract(self, transcript: str, guests: list[str], date: str = "", context: str = "", previous_context: str | None = None) -> List[ExtractedClaim]:
+        """
+        Extract verifiable claims from a transcript (sync wrapper).
+
+        Args:
+            transcript: Formatted transcript with speaker labels
+            guests: List of guests in 'Name (Rolle)' format
+            date: Air date of the episode, e.g. 'Oktober 2025'
+            context: Thematic background of the episode (optional)
+            previous_context: Last few lines from the previous block's transcript, for continuity
+
+        Returns:
+            List of ExtractedClaim objects
+
+        Note:
+            Use extract_async() in async contexts to avoid event loop conflicts.
+        """
+        return asyncio.run(self.extract_async(transcript, guests, date=date, context=context, previous_context=previous_context))
+
+    async def _extract_async(self, system_prompt: str, user_message: str) -> List[ExtractedClaim]:
+        """Async implementation of claim extraction."""
+        # Log first extraction to a file for prompt inspection
+        if not ClaimExtractor._first_extraction_logged and "PYTEST_CURRENT_TEST" not in os.environ:
+            try:
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                log_path = os.path.join("logs", "prompt_dumps", f"{timestamp}_claim_extraction.txt")
+                os.makedirs(os.path.dirname(log_path), exist_ok=True)
+                with open(log_path, "w", encoding="utf-8") as f:
+                    f.write("=== SYSTEM PROMPT ===\n")
+                    f.write(system_prompt)
+                    f.write("\n\n=== USER MESSAGE ===\n")
+                    f.write(user_message)
+                ClaimExtractor._first_extraction_logged = True
+                logger.info(f"First claim extraction prompt dumped to {log_path}")
+            except Exception:
+                logger.exception("Failed to dump first claim extraction prompt")
+
+        try:
+            response = await self.client.aio.models.generate_content(
+                model=self.model_name,
+                contents=user_message,
+                config={
+                    'system_instruction': system_prompt,
+                    'response_mime_type': 'application/json',
+                    'response_schema': ClaimList,
+                }
+            )
+
+            claims = response.parsed.claims
+            logger.info(f"Extraction complete: {len(claims)} claims found")
+            return claims
+
+        except Exception:
+            logger.exception("Structured extraction failed")
+            raise
+
+    async def select_async(self, claims: List[dict], max_claims: int = 3) -> List[dict]:
+        """
+        Select the top N most fact-checkable claims from a list (autopilot mode).
+
+        Args:
+            claims: List of claim dicts with 'name' and 'claim' keys
+            max_claims: Maximum number of claims to return
+
+        Returns:
+            Filtered list of claim dicts, at most max_claims entries
+        """
+        logger.info(f"Autopilot: selecting up to {max_claims} relevant claims from {len(claims)}...")
+
+        claims_text = "\n".join(
+            f"{i+1}. [{c.get('name', '?')}]: {c.get('claim', '')}"
+            for i, c in enumerate(claims)
+        )
+        system_prompt = self.selection_prompt_template.replace("{max_claims}", str(max_claims))
+        user_message = f"Behauptungen:\n{claims_text}"
+
+        try:
+            extracted = await self._extract_async(system_prompt, user_message)
+            selected = [{"name": c.name, "claim": c.claim} for c in extracted]
+            logger.info(f"Autopilot: selected {len(selected)} claims")
+            return selected[:max_claims]
+        except Exception:
+            logger.exception("Claim selection failed, falling back to all claims (capped)")
+            return claims[:max_claims]
+

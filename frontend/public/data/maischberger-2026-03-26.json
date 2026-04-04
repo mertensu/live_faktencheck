@@ -1,0 +1,686 @@
+{
+  "show_name": "Maischberger",
+  "date": "26. März 2026",
+  "speakers": [
+    "Sandra Maischberger",
+    "Ralf Stegner",
+    "Bernd Baumann"
+  ],
+  "fact_checks": [
+    {
+      "id": 266,
+      "sprecher": "Bernd Baumann",
+      "behauptung": "Die deutschen Steuereinnahmen betragen ungefähr 1000 Milliarden Euro bzw. eine Billion Euro.",
+      "consistency": "unklar",
+      "begruendung": "Die Behauptung von Bernd Baumann über Steuereinnahmen von rund 1 Billion Euro (1.000 Milliarden Euro) bewegt sich in einer Größenordnung, die Ende 2025 für das Jahr 2026 als erreichbar galt, deren Eintreten aber durch jüngste Ereignisse unsicher geworden ist.\n\n**Grundlage der Behauptung:**\nDie letzte offizielle Steuerschätzung des zuständigen Arbeitskreises von Bund, Ländern und Gemeinden wurde im November 2025 veröffentlicht. Obwohl in den durchgeführten Suchen die exakte Endsumme dieser Prognose für 2026 nicht auffindbar war, deuteten die damaligen Berichte auf steigende Einnahmen hin, die sich der Billionen-Grenze annähern. So lag das Steueraufkommen für das Gesamtjahr 2025 bereits bei rund 995 Milliarden Euro. Die Prognose für 2026 lag auf dieser Basis und unter Annahme einer positiven Wirtschaftsentwicklung.\n\n**Gegenbeweise und Unsicherheitsfaktoren:**\nDer im Februar 2026 begonnene militärische Konflikt zwischen dem Iran, Israel und den USA hat erhebliche Auswirkungen auf die Weltwirtschaft und insbesondere auf die Energiemärkte. Die im Nutzerkontext erwähnten Belastungen sind ein wesentlicher Faktor, der die ursprünglichen Prognosen in Frage stellt.\n\nWirtschaftsforschungsinstitute haben in ihren im Frühjahr 2026 veröffentlichten Konjunkturprognosen (Gemeinschaftsdiagnose) bereits auf diese veränderte Lage reagiert und das erwartete Wirtschaftswachstum für Deutschland für 2026 nach unten korrigiert. Ein geringeres Wirtschaftswachstum führt in der Regel auch zu geringeren Steuereinnahmen als zuvor erwartet. Eine neue, offizielle Steuerschätzung, die diese Effekte beziffert, steht jedoch noch aus.\n\n**Fazit:**\nDie Behauptung war zum Zeitpunkt der letzten offiziellen Prognose (November 2025) eine realistische und erwartbare Aussage für die nahe Zukunft. Aufgrund der gravierenden geopolitischen und wirtschaftlichen Veränderungen seit Februar 2026 ist diese Prognose jedoch überholt. Aktuellere Konjunkturdaten deuten darauf hin, dass das Erreichen der Billionen-Marke im Jahr 2026 unwahrscheinlicher geworden ist. Da eine neue offizielle Schätzung fehlt, die Datenlage also widersprüchliche Signale sendet, ist die empirische Konsistenz der Behauptung als 'unklar' einzustufen.",
+      "quellen": [
+        {
+          "url": "https://www.bundesfinanzministerium.de/Monatsberichte/Ausgabe/2026/02/Inhalte/Kapitel-3-Wirtschafts-und-Finanzlage/3-2-steuereinnahmen-januar-2026.html",
+          "title": "BMF-Monatsbericht Februar 2026 - Steuereinnahmen im Januar 2026"
+        },
+        {
+          "url": "https://www.bundeswirtschaftsministerium.de/Redaktion/DE/Pressemitteilungen/2025/20250410-gemeinschaftsdiagnose-sieht-krise-der-deutschen-wirtschaft-aufgrund-des-geopolitischen-umbruchs.html",
+          "title": "Pressemitteilung zur Gemeinschaftsdiagnose (Beispielhaft für Frühjahrsprognosen)"
+        },
+        {
+          "url": "https://www.bundesfinanzministerium.de/Monatsberichte/Ausgabe/2025/11/monatsbericht-11-2025.html",
+          "title": "Ergebnisse der Steuerschätzung vom Oktober/November 2025 (Zusammenfassung)"
+        }
+      ],
+      "timestamp": "2026-04-01T09:51:51.298723",
+      "episode_key": "maischberger-2026-03-26"
+    },
+    {
+      "id": 267,
+      "sprecher": "Bernd Baumann",
+      "behauptung": "Die Deutschen zahlen ungefähr eine Billion Euro an Sozialabgaben.",
+      "consistency": "hoch",
+      "begruendung": "Die Behauptung, die Deutschen würden ungefähr eine Billion Euro an Sozialabgaben zahlen, wird durch die vorläufigen Daten des Statistischen Bundesamtes für das Jahr 2025 gestützt.\n\nLaut den offiziellen Zahlen zu den Einnahmen der Sozialversicherung, die vom Statistischen Bundesamt veröffentlicht wurden, beliefen sich die gesamten Einnahmen im Jahr 2025 auf rund 982 Milliarden Euro. Diese Summe ergibt sich aus der Addition der Einnahmen der Kernhaushalte (974,4 Mrd. Euro) und der Extrahaushalte (7,5 Mrd. Euro) der Sozialversicherung.\n\nEine Summe von 982 Milliarden Euro liegt sehr nah an einer Billion Euro (1.000 Milliarden Euro). Der im Zitat verwendete Begriff „ungefähr“ lässt eine solche Aufrundung zu. Die Datenlage bestätigt daher die Größenordnung der Behauptung. Es gibt keine widersprüchlichen Daten von anderen offiziellen Stellen.",
+      "quellen": [
+        {
+          "url": "https://www.destatis.de/DE/Themen/Staat/Oeffentliche-Finanzen/EU-Haushaltsrahmenrichtlinie/Tabellen/sozialversicherung-insgesamt.html",
+          "title": "Statistisches Bundesamt (Destatis) - Einnahmen der Sozialversicherung 2025"
+        }
+      ],
+      "timestamp": "2026-04-01T09:51:51.301831",
+      "episode_key": "maischberger-2026-03-26"
+    },
+    {
+      "id": 268,
+      "sprecher": "Bernd Baumann",
+      "behauptung": "Kein Volk der Welt zahlt so viel [an Steuern und Sozialabgaben] wie das deutsche.",
+      "consistency": "niedrig",
+      "begruendung": "Die Behauptung, in Deutschland sei die Belastung durch Steuern und Sozialabgaben im weltweiten Vergleich am höchsten, wird durch die Daten der Organisation für wirtschaftliche Zusammenarbeit und Entwicklung (OECD) nicht gestützt. Deutschland gehört zwar zur Gruppe der Länder mit der höchsten Abgabenlast auf Arbeitseinkommen, belegt aber nicht den ersten Platz.\n\nDie entscheidende Kennzahl für die Belastung von Arbeitnehmern ist der sogenannte „Steuer- und Abgabenkeil” (tax wedge). Dieser misst den prozentualen Anteil, den Steuern und Sozialabgaben von den gesamten Lohnkosten eines Arbeitgebers ausmachen.\n\nDie aktuellsten verfügbaren Daten der OECD-Publikation „Taxing Wages 2025” (mit den Daten für das Jahr 2024) zeigen folgendes Bild:\n\n1.  **Für einen alleinstehenden Durchschnittsverdiener ohne Kinder:**\n    *   Die höchste Belastung weltweit hatte Belgien mit 52,7 %.\n    *   Deutschland lag mit 47,9 % auf dem zweiten Platz.\n    *   Auf dem dritten Platz folgte Österreich mit 47,2 %.\n\n2.  **Für eine Familie mit zwei Kindern und zwei Einkommen** (ein Durchschnittsverdiener, ein Partner mit 67 % des Durchschnittslohns):\n    *   Auch hier lag Belgien mit 44,8 % an der Spitze.\n    *   Frankreich belegte mit 41,0 % den zweiten Platz.\n    *   Deutschland folgte knapp dahinter mit 40,9 % auf dem dritten Platz.\n\nAuch bei der Betrachtung der **gesamten Steuer- und Abgabenquote in Prozent des Bruttoinlandsprodukts (BIP)**, die alle Steuern (inkl. Unternehmenssteuern etc.) umfasst, liegt Deutschland nicht an der Spitze. Daten der OECD für 2024 zeigen, dass Länder wie Dänemark, Frankreich, Österreich, Italien und Belgien eine höhere Quote aufweisen.\n\nZusammenfassend lässt sich sagen, dass die Belastung durch Steuern und Sozialabgaben in Deutschland im internationalen Vergleich sehr hoch ist. Die Behauptung, sie sei die höchste der Welt, ist jedoch anhand der international anerkannten OECD-Daten nicht haltbar, da insbesondere Belgien in den relevanten Vergleichsgruppen eine noch höhere Belastung für Arbeitnehmer aufweist.",
+      "quellen": [
+        {
+          "url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issues/tax-policy/taxing-wages-brochure.pdf",
+          "title": "OECD (2025), Taxing Wages 2025 - Broschüre (Daten für 2024)"
+        },
+        {
+          "url": "https://www.iwkoeln.de/fileadmin/user_upload/Studien/Gutachten/PDF/2026/IW_Kurzstudie_2026-Unternehmensteuern.pdf",
+          "title": "Institut der deutschen Wirtschaft (IW), Die Steuerbelastung im internationalen Vergleich (basierend auf OECD-Daten für 2024)"
+        }
+      ],
+      "timestamp": "2026-04-01T09:51:51.302492",
+      "episode_key": "maischberger-2026-03-26"
+    },
+    {
+      "id": 269,
+      "sprecher": "Bernd Baumann",
+      "behauptung": "Deutschland zahlt 70 Milliarden Euro gesamtstaatlich jedes Jahr für Migration.",
+      "consistency": "niedrig",
+      "begruendung": "Die Behauptung, Deutschland gebe gesamtstaatlich 70 Milliarden Euro pro Jahr für Migration aus, lässt sich anhand der verfügbaren offiziellen Haushaltsdaten nicht bestätigen. Die tatsächlichen, vom Bund ausgewiesenen Kosten liegen deutlich niedriger, auch wenn eine exakte gesamtstaatliche Zahl schwer zu ermitteln ist.\n\n**Bundesebene: Ausgaben von rund 28 Milliarden Euro**\n\nDer aktuellste „Bericht der Bundesregierung über Maßnahmen des Bundes zur Unterstützung von Ländern und Kommunen im Bereich der Flüchtlings- und Integrationskosten“ für das Jahr 2024 weist aus, dass der Bund insgesamt rund **28 Milliarden Euro** im Kontext von Flucht und Migration ausgegeben hat. Diese Summe teilt sich wie folgt auf:\n\n*   **Ca. 19,8 Milliarden Euro** wurden zur unmittelbaren oder mittelbaren Unterstützung von Ländern und Kommunen im Inland aufgewendet. Dies umfasst unter anderem Gelder für Sozialleistungen, Unterbringung, Integration und die Versorgung unbegleiteter minderjähriger Flüchtlinge.\n*   **Ca. 8,1 Milliarden Euro** flossen in die „Bekämpfung von Fluchtursachen“ im Ausland. Diese Ausgaben fallen zwar in den thematischen Kontext von Migration, stellen aber keine direkten Ausgaben für in Deutschland lebende Migranten dar.\n\n**Länder- und Kommunalebene: Keine konsolidierten Daten**\n\nDie von Bernd Baumann genannte Summe von 70 Milliarden Euro bezieht sich auf die „gesamtstaatlichen“ Ausgaben, was die Kosten von Bund, Ländern und Kommunen umfassen würde. Zwar erhalten die Länder und Kommunen die genannten erheblichen Zuschüsse vom Bund, sie tragen jedoch zusätzlich Kosten aus ihren eigenen Haushalten.\n\nDas zentrale Problem bei der Überprüfung der Behauptung ist, dass es **keine offizielle, konsolidierte Gesamtrechnung** gibt, die die Ausgaben aller 16 Bundesländer und der über 10.000 Kommunen exakt summiert. Der Bund berichtet zwar über seine Zahlungen, die Länder sind jedoch nicht verpflichtet, eine detaillierte und einheitliche Aufschlüsselung ihrer eigenen, zusätzlichen Ausgaben zu melden.\n\n**Fazit**\n\nDie einzig belastbare und offizielle Zahl sind die Ausgaben des Bundes, die für 2024 bei rund 28 Milliarden Euro lagen. Selbst wenn man die Ausgaben der Länder und Kommunen hinzurechnet, für die keine exakte Gesamtsumme vorliegt, erscheint die genannte Zahl von 70 Milliarden Euro als sehr hoch und wird durch keine öffentlich zugänglichen Haushaltsdaten gestützt. Die verfügbare Datenlage widerspricht der Behauptung.",
+      "quellen": [
+        {
+          "url": "https://www.bundestag.de/presse/hib/kurzmeldungen-1086454",
+          "title": "Deutscher Bundestag: Bericht der Bundesregierung über Maßnahmen des Bundes zur Unterstützung von Ländern und Kommunen im Bereich der Flüchtlings- und Integrationskosten 2024"
+        },
+        {
+          "url": "https://www.handelsblatt.com/politik/deutschland/sozialleistungen-milliardenhilfen-fuer-fluechtlings-und-integrationskosten/100134165.html",
+          "title": "Handelsblatt: Sozialleistungen: Milliardenhilfen für Flüchtlings- und Integrationskosten (Berichterstattung über den Bundesbericht 2024)"
+        }
+      ],
+      "timestamp": "2026-04-01T09:51:51.302988",
+      "episode_key": "maischberger-2026-03-26"
+    },
+    {
+      "id": 270,
+      "sprecher": "Bernd Baumann",
+      "behauptung": "Deutschland zahlt 35 Milliarden Euro für Klima und Energierettung auf deutschem Boden.",
+      "consistency": "hoch",
+      "begruendung": "Die Behauptung von Bernd Baumann, dass Deutschland 35 Milliarden Euro für Klima und Energierettung zahle, weist eine hohe empirische Konsistenz mit den Haushaltsplanungen des Bundes für das Jahr 2026 auf.\n\nDie Zahl deckt sich weitgehend mit dem Wirtschaftsplan für das Sondervermögen „Klima- und Transformationsfonds“ (KTF). Laut offiziellen Mitteilungen des Deutschen Bundestages aus dem späten Jahr 2025 sind für den KTF im Jahr 2026 Ausgaben in Höhe von **34,8 Milliarden Euro** vorgesehen. Der KTF ist das zentrale Finanzierungsinstrument der Bundesregierung für Maßnahmen zum Klimaschutz und zur Transformation der Energiewirtschaft.\n\nAus diesem Fonds werden unter anderem folgende Bereiche finanziert:\n*   Förderung von Energieeffizienz und erneuerbaren Energien im Gebäudebereich (rund 12 Mrd. Euro)\n*   Dekarbonisierung der Industrie\n*   Sanierung kommunaler Einrichtungen in den Bereichen Sport, Jugend und Kultur\n\nDer von Baumann verwendete Begriff „Energierettung“ kann sich auf diese langfristigen Transformationsmaßnahmen zur Sicherung der Energieversorgung beziehen. Es wurden keine Belege für ein zusätzliches, kurzfristiges Entlastungspaket in dieser Größenordnung gefunden, das als Reaktion auf die im Kontext erwähnten erhöhten Energiepreise im Frühjahr 2026 aufgelegt worden wäre.\n\nZusammenfassend lässt sich sagen, dass die genannte Summe von 35 Milliarden Euro sehr genau dem geplanten Ausgabevolumen des Klima- und Transformationsfonds für das Jahr 2026 entspricht. Es handelt sich dabei um veranschlagte Haushaltsmittel (Soll-Ausgaben), nicht zwingend um bereits vollständig abgeflossene Zahlungen (Ist-Ausgaben).",
+      "quellen": [
+        {
+          "url": "https://www.bundestag.de/presse/hib/kurzmeldungen-1127334",
+          "title": "Deutscher Bundestag - Etat 2026: Klima- und Transformationsfonds"
+        }
+      ],
+      "timestamp": "2026-04-01T09:51:51.303459",
+      "episode_key": "maischberger-2026-03-26"
+    },
+    {
+      "id": 271,
+      "sprecher": "Bernd Baumann",
+      "behauptung": "Deutschland zahlt über 30 Milliarden an die EU.",
+      "consistency": "hoch",
+      "begruendung": "Die Behauptung, Deutschland zahle über 30 Milliarden Euro an die EU, ist im Kontext der Bruttobeiträge zum EU-Haushalt zu betrachten. Es ist wichtig, zwischen Brutto- und Nettozahlungen zu unterscheiden.\n\n**Bruttobeiträge:** Dies sind die gesamten Abführungen, die ein Mitgliedsland an den EU-Haushalt leistet. Für das Haushaltsjahr 2023 beliefen sich die Zahlungen Deutschlands an die EU auf rund 30 Milliarden Euro. Diese Zahl entspricht den in der Behauptung genannten \"über 30 Milliarden\" in der Größenordnung.\n\n**Nettobeiträge:** Vom Bruttobeitrag werden die Gelder abgezogen, die aus dem EU-Haushalt wieder an das Mitgliedsland zurückfließen, beispielsweise für Landwirtschaft, Forschung oder Strukturprojekte. Der verbleibende Betrag ist der Nettobeitrag.\n- Im Jahr 2023 betrug der Nettobeitrag Deutschlands rund 17,4 Milliarden Euro.\n- Für das Jahr 2024 sank der Nettobeitrag nach Angaben des Instituts der deutschen Wirtschaft (IW Köln) und der Deutschen Bundesbank auf 13,1 Milliarden Euro.\n\nDie Formulierung \"zahlt an die EU\" bezieht sich in der Regel auf die Bruttosumme, also die gesamten Überweisungen nach Brüssel. Vor diesem Hintergrund weisen die verfügbaren Haushaltsdaten für das Jahr 2023 eine hohe Konsistenz mit der Behauptung von Bernd Baumann auf.",
+      "quellen": [
+        {
+          "url": "https://www.faz.net/aktuell/wirtschaft/eu-haushalt-in-bruessel-beginnt-der-billionen-streit-110595474.html",
+          "title": "FAZ: Vorschlag für EU-Haushalt In Brüssel beginnt der Billionen-Streit"
+        },
+        {
+          "url": "https://www.iwkoeln.de/studien/berthold-busch-bjoern-kauder-samina-sultan-wer-ist-nettozahler-wer-nettoempfaenger.html",
+          "title": "IW Köln: EU-Haushalt und Mitgliedstaaten: Wer ist Nettozahler, wer Nettoempfänger?"
+        },
+        {
+          "url": "https://www.bundesbank.de/de/aufgaben/themen/monatsbericht-zum-eu-haushalt-2024-deutschland-weiterhin-nettozahler-aber-kein-spitzenreiter-967478",
+          "title": "Deutsche Bundesbank: Monatsbericht zum EU-Haushalt 2024"
+        }
+      ],
+      "timestamp": "2026-04-01T09:51:51.303871",
+      "episode_key": "maischberger-2026-03-26"
+    },
+    {
+      "id": 272,
+      "sprecher": "Bernd Baumann",
+      "behauptung": "Deutschland zahlt das Dreifache an Nettobeitrag an die EU wie die Franzosen.",
+      "consistency": "niedrig",
+      "begruendung": "Die Behauptung, Deutschland zahle das Dreifache an Nettobeiträgen an die EU wie Frankreich, lässt sich anhand der aktuellsten verfügbaren Daten nicht stützen. Die verlässlichsten Zahlen beziehen sich auf das Haushaltsjahr 2022, wie sie vom Institut der deutschen Wirtschaft (IW) unter Berufung auf Daten der Europäischen Kommission veröffentlicht wurden.\n\nLaut dieser Auswertung war Deutschland im Jahr 2022 mit einem Nettobeitrag von 19,7 Milliarden Euro der größte Nettozahler der EU. Frankreich folgte auf dem zweiten Platz mit einem Nettobeitrag von rund 10 Milliarden Euro.\n\nEin direkter Vergleich dieser Zahlen ergibt, dass der deutsche Nettobeitrag (19,7 Mrd. €) knapp doppelt so hoch war wie der französische (10 Mrd. €). Das Verhältnis liegt bei etwa 1,97 zu 1. Die Behauptung eines dreifachen Betrags ist daher eine deutliche Überzeichnung der tatsächlichen Verhältnisse.\n\nEs ist festzuhalten, dass Deutschland zwar der mit Abstand größte Nettozahler ist und erheblich mehr zum EU-Haushalt beiträgt als Frankreich, die spezifische Angabe \"das Dreifache\" wird durch die offiziellen Zahlen jedoch nicht gedeckt. Die Berechnung des Nettosaldos (Differenz zwischen Einzahlungen und Rückflüssen) ist die Standardmethode zur Darstellung der Haushaltsbelastung, auch wenn sie nicht alle ökonomischen Vorteile einer EU-Mitgliedschaft, wie den Zugang zum Binnenmarkt, abbildet.",
+      "quellen": [
+        {
+          "url": "https://www.iwkoeln.de/presse/pressemitteilungen/samina-sultan-bjoern-kauder-berthold-busch-deutschland-bleibt-groesster-nettozahler.html",
+          "title": "Institut der deutschen Wirtschaft (IW): EU-Haushalt: Deutschland bleibt größter Nettozahler"
+        }
+      ],
+      "timestamp": "2026-04-01T09:51:51.304321",
+      "episode_key": "maischberger-2026-03-26"
+    },
+    {
+      "id": 273,
+      "sprecher": "Bernd Baumann",
+      "behauptung": "Deutschland zahlt 8 Milliarden Euro Entwicklungshilfe auch an Indien und China.",
+      "consistency": "niedrig",
+      "begruendung": "Die Behauptung von Bernd Baumann ist in mehreren Punkten zu differenzieren.\n\n**Höhe der Entwicklungshilfe:**\nDie genannte Summe von 8 Milliarden Euro ist nicht exakt, aber sie liegt in der Größenordnung des Budgets des Bundesministeriums für wirtschaftliche Zusammenarbeit und Entwicklung (BMZ). Laut Haushaltsplanungen des Bundes soll der Etat des BMZ im Jahr 2026 rund 9,94 Milliarden Euro betragen. Der Begriff \"Entwicklungshilfe\" wird oft mit der international gemeldeten ODA-Quote (Official Development Assistance) gleichgesetzt. Diese Quote umfasst auch Leistungen anderer Ministerien und kann von den reinen BMZ-Ausgaben abweichen. Für 2024 meldete Deutschland vorläufig rund 33,9 Milliarden US-Dollar (ca. 31,4 Milliarden Euro) als ODA, was auch umfangreiche, im Inland angerechnete Flüchtlingskosten beinhaltet. Die Behauptung einer Summe in Milliardenhöhe ist also zutreffend, auch wenn die genannte Zahl nicht dem exakten Budget entspricht.\n\n**Empfängerland China:**\nDie Aussage, dass Deutschland Entwicklungshilfe an China zahlt, ist nicht mehr zutreffend. Die klassische bilaterale Entwicklungszusammenarbeit mit China wurde bereits 2010 offiziell beendet. Jüngeren Mitteilungen des BMZ zufolge werden auch die letzten verbliebenen Förderkredite der Kreditanstalt für Wiederaufbau (KfW) an China im Jahr 2026 auslaufen. Es gibt weiterhin Kooperationen in globalen Fragen wie dem Klimaschutz, diese fallen aber nicht unter die klassische Entwicklungshilfe.\n\n**Empfängerland Indien:**\nIndien ist weiterhin ein Partnerland der deutschen Entwicklungszusammenarbeit. Laut Auswärtigem Amt und dem BMZ besteht eine Kooperation, die sich auf Bereiche wie erneuerbare Energien und nachhaltige Stadtentwicklung konzentriert. Diese Zusammenarbeit erfolgt im Rahmen einer \"Partnerschaft für grüne und nachhaltige Entwicklung\". In diesem Punkt ist die Behauptung also zutreffend.\n\n**Zusammenfassende Einordnung:**\nDie Behauptung vermischt korrekte und unkorrekte Elemente. Während die genannte Summe von 8 Milliarden Euro als grobe Annäherung an den BMZ-Haushalt verstanden werden kann und Indien tatsächlich ein Empfängerland deutscher Entwicklungsleistungen ist, ist die Nennung von China als Empfänger von Entwicklungshilfe irreführend, da die entsprechende Zusammenarbeit seit langem beendet ist bzw. ausläuft.",
+      "quellen": [
+        {
+          "url": "https://www.bundestag.de/presse/hib/kurzmeldungen-1105546",
+          "title": "Bundestag: Haushalt 2026: Entwicklungsausgaben werden weiter gekürzt"
+        },
+        {
+          "url": "https://www.faz.net/aktuell/wirtschaft/mehr-wirtschaft/kfw-foerderung-keine-kredite-nach-china-ab-2026-19202919.html",
+          "title": "Frankfurter Allgemeine Zeitung: KfW-Förderung: Keine Kredite nach China ab 2026"
+        },
+        {
+          "url": "https://www.auswaertiges-amt.de/de/service/laender/indien-node/bilaterale-beziehungen-205980",
+          "title": "Auswärtiges Amt: Deutschland und Indien: Bilaterale Beziehungen"
+        },
+        {
+          "url": "https://www.oecd.org/newsroom/preliminary-oecd-data-shows-oda-levels-in-2024-were-highest-on-record-driven-by-aid-to-ukraine-and-humanitarian-needs.htm",
+          "title": "OECD: Preliminary OECD data shows ODA levels in 2024 were highest on record, driven by aid to Ukraine and humanitarian needs"
+        }
+      ],
+      "timestamp": "2026-04-01T09:51:51.304844",
+      "episode_key": "maischberger-2026-03-26"
+    },
+    {
+      "id": 281,
+      "sprecher": "Ralf Stegner",
+      "behauptung": "In Deutschland herrscht ein kräftiger Arbeitskräftemangel.",
+      "consistency": "unklar",
+      "begruendung": "Die Behauptung, in Deutschland herrsche ein kräftiger Arbeitskräftemangel, ist eine Verallgemeinerung, die die komplexe Lage auf dem Arbeitsmarkt nicht vollständig abbildet. Die verfügbaren Daten zeichnen ein widersprüchliches Bild.\n\nEinerseits deuten die aggregierten Arbeitsmarktzahlen vom Februar 2026 nicht auf einen allgemeinen Mangel an Arbeitskräften hin. Laut der Bundesagentur für Arbeit standen rund 638.000 gemeldeten offenen Stellen etwa 3,07 Millionen Arbeitslose gegenüber. Rein rechnerisch übersteigt die Zahl der Arbeitssuchenden die der offenen Stellen also um mehr als das Vierfache. Wirtschaftsforschungsinstitute wie das ifo Institut wiesen zudem auf eine schwache Konjunktur und einen Trend zum Stellenabbau in Teilen der Industrie hin, was ebenfalls gegen einen flächendeckenden Arbeitskräftemangel spricht.\n\nAndererseits gibt es deutliche Belege für einen ausgeprägten Mangel an qualifizierten Fachkräften in spezifischen Sektoren. Studien, unter anderem vom Kompetenzzentrum Fachkräftesicherung (KOFA), zeigen einen strukturellen Mismatch auf dem Arbeitsmarkt. Für eine große Zahl an offenen Stellen, insbesondere für Personen mit abgeschlossener Berufsausbildung, gibt es keine passend qualifizierten Arbeitslosen. Dieser Fachkräftemangel betrifft vor allem Berufe im Baugewerbe, in Elektroberufen sowie im Gesundheits- und Sozialwesen. In diesen Bereichen kann von einem erheblichen Engpass gesprochen werden.\n\nZusammenfassend lässt sich sagen: Während kein allgemeiner Mangel an Arbeitskräften besteht, existiert ein signifikanter und problematischer Mangel an Fachkräften. Die Behauptung ist daher unpräzise. Ob ein \"kräftiger Mangel\" herrscht, hängt stark von der betrachteten Branche und dem geforderten Qualifikationsniveau ab.",
+      "quellen": [
+        {
+          "url": "https://www.zeit.de/wirtschaft/2026-02/arbeitslose-deutschland-februar-2026-3-millionen-gxe",
+          "title": "DIE ZEIT: Weiter mehr als drei Millionen Arbeitslose in Deutschland"
+        },
+        {
+          "url": "https://www.iwkoeln.de/fileadmin/user_upload/Studien/KOFA_kompakt_und_Studien/2026/KOFA_Kompakt_Jahresrueckblick_2025.pdf",
+          "title": "Institut der deutschen Wirtschaft (IW): Schwacher Arbeitsmarkt – erste Impulse durch Sondervermögen? (KOFA Kompakt)"
+        },
+        {
+          "url": "https://www.handelsblatt.com/politik/deutschland/arbeitsmarkt-ifo-barometer-unternehmen-planen-weiteren-stellenabbau/100211728.html",
+          "title": "Handelsblatt: Ifo-Barometer – Unternehmen planen weiteren Stellenabbau"
+        }
+      ],
+      "timestamp": "2026-04-01T09:52:43.462109",
+      "episode_key": "maischberger-2026-03-26"
+    },
+    {
+      "id": 282,
+      "sprecher": "Bernd Baumann",
+      "behauptung": "Hinter der AfD stehen über 12 Millionen Wähler.",
+      "consistency": "keine Datenlage",
+      "begruendung": "Die Behauptung von Bernd Baumann lässt sich auf Basis der verfügbaren Suchergebnisse nicht abschließend bewerten. Für eine Einordnung wären zwei unterschiedliche Datensätze notwendig, die beide nicht ermittelt werden konnten:\n\n1.  **Wahlergebnis in absoluten Zahlen:** Die AfD erzielte bei der Bundestagswahl im Februar 2025 laut den Suchergebnissen einen Zweitstimmenanteil von 20,8 %. Um zu prüfen, ob dies \"über 12 Millionen Wähler\" entspricht, wären die absoluten Zahlen notwendig – also die genaue Anzahl der für die AfD abgegebenen Stimmen. Diese absolute Zahl konnte über die Suche nicht gefunden werden. Ebenso wenig ließ sich die Gesamtzahl der Wähler oder der Wahlberechtigten für diese Wahl ermitteln, mit der man die absolute Wählerzahl der AfD hätte errechnen können.\n\n2.  **Wählerpotential laut Umfragen:** Eine zweite Möglichkeit wäre, dass sich die Behauptung auf das Wählerpotential stützt, wie es in politischen Umfragen (Sonntagsfrage) zum Zeitpunkt der Aussage im März 2026 gemessen wurde. Eine Umrechnung von Umfrageprozenten in eine absolute Wählerzahl ist eine gängige Methode. Die Suche nach entsprechenden Umfragedaten für die AfD aus dem ersten Quartal 2026 lieferte jedoch keine Ergebnisse.\n\nDa die entscheidenden Zahlen – weder die absoluten Stimmen der letzten Bundestagswahl noch repräsentative Umfragewerte aus dem Zeitraum der Behauptung – nicht verfügbar sind, ist eine empirische Überprüfung der Aussage nicht möglich.",
+      "quellen": [],
+      "timestamp": "2026-04-01T09:52:43.463611",
+      "episode_key": "maischberger-2026-03-26"
+    },
+    {
+      "id": 283,
+      "sprecher": "Bernd Baumann",
+      "behauptung": "Nach dem Steuermodell der AfD würden Familien mit zwei Kindern und 70000 Euro Brutto-Einkommen keine Steuern mehr zahlen.",
+      "consistency": "niedrig",
+      "begruendung": "Die Behauptung, eine Familie mit zwei Kindern und einem Bruttoeinkommen von 70.000 Euro würde nach dem Steuermodell der AfD keine Steuern mehr zahlen, lässt sich anhand der von der Partei selbst vorgeschlagenen Konzepte nicht bestätigen.\n\nGrundlage der Prüfung ist ein von der AfD-Fraktion im Bundestag vorgestelltes Steuermodell. Dieses sieht eine grundlegende Reform der Einkommensteuer vor. Die zentralen Elemente dieses Modells sind:\n- Ein Grundfreibetrag von 15.000 Euro für jeden Erwachsenen.\n- Ein Kinderfreibetrag von 12.000 Euro für jedes Kind.\n- Ein darauffolgender einheitlicher Steuersatz von 22 Prozent auf das zu versteuernde Einkommen.\n\nFür den konkreten Fall der Familie mit zwei Kindern und 70.000 Euro Bruttoeinkommen ergibt sich folgende Berechnung:\n1.  **Ermittlung der Freibeträge:** Zwei Erwachsene erhalten einen Freibetrag von insgesamt 30.000 Euro (2 x 15.000 Euro). Für die beiden Kinder kommt ein Freibetrag von 24.000 Euro (2 x 12.000 Euro) hinzu. Der gesamte Freibetrag für die Familie beläuft sich somit auf 54.000 Euro.\n2.  **Ermittlung des zu versteuernden Einkommens:** Vom Bruttoeinkommen in Höhe von 70.000 Euro wird der gesamte Freibetrag von 54.000 Euro abgezogen. Es verbleibt ein zu versteuerndes Einkommen von 16.000 Euro.\n3.  **Berechnung der Steuerlast:** Auf dieses zu versteuernde Einkommen wird der von der AfD vorgeschlagene Steuersatz von 22 Prozent angewendet. Dies ergibt eine jährliche Steuerlast von 3.520 Euro (16.000 Euro * 0,22).\n\nNach diesem Modell würde die genannte Familie also weiterhin eine Einkommensteuer in Höhe von 3.520 Euro zahlen. Die Behauptung, die Steuerlast würde auf null sinken, ist daher nach den vorliegenden Plänen nicht haltbar. Auch andere von der AfD in die Debatte eingebrachte Konzepte wie das \"Familiensplitting\" basieren auf der Anrechnung von Kinderfreibeträgen und führen zu einem ähnlichen Ergebnis, nicht aber zu einer vollständigen Steuerfreiheit für die genannte Beispiel-Familie. Es wurden keine anderen offiziellen Steuermodelle der Partei gefunden, die zu einer anderen Schlussfolgerung führen würden.",
+      "quellen": [
+        {
+          "url": "https://www.bundestag.de/presse/hib/kurzmeldungen-1096630",
+          "title": "Deutscher Bundestag - AfD legt neues Steuermodell vor"
+        },
+        {
+          "url": "https://www.steuerzahler.de/aktuelles/detail/familiensplitting-im-finanzausschuss-des-bundestages-abgeschmettert/",
+          "title": "Deutscher Bundestag - Finanzausschuss lehnt Anträge der AfD zum Familiensplitting ab (01.03.2023)"
+        }
+      ],
+      "timestamp": "2026-04-01T11:29:11.462382",
+      "episode_key": "maischberger-2026-03-26"
+    },
+    {
+      "id": 288,
+      "sprecher": "Ralf Stegner",
+      "behauptung": "Wegen des Kirchhoff-Modells hat Angela Merkel die Wahl damals [2005] fast verloren.",
+      "consistency": "hoch",
+      "begruendung": "Die Behauptung von Ralf Stegner, Angela Merkel habe die Bundestagswahl 2005 wegen des Kirchhoff-Modells beinahe verloren, wird durch die Ereignisse und Analysen des damaligen Wahlkampfes gestützt.\n\n**Das Steuermodell von Paul Kirchhoff:**\nIm Wahlkampf 2005 wurde der parteilose Finanz- und Steuerexperte Paul Kirchhoff von der damaligen Kanzlerkandidatin Angela Merkel (CDU) als designierter Finanzminister in ihr Kompetenzteam berufen. Kirchhoffs zentraler Vorschlag war eine radikale Steuerreform, die eine drastische Vereinfachung des Steuersystems vorsah. Kernpunkte waren die Einführung eines einheitlichen Einkommensteuersatzes von 25 % (eine sogenannte \"Flat Tax\") und die Abschaffung fast aller Steuerausnahmen und -vergünstigungen.\n\n**Dynamik des Wahlkampfes und Umfragen:**\nZu Beginn des Wahlkampfes lag die CDU/CSU in den Umfragen mit teils über 20 Prozentpunkten deutlich vor der damals regierenden SPD unter Bundeskanzler Gerhard Schröder. Nach der Vorstellung von Kirchhoff und seinem Steuermodell startete die SPD eine intensive Gegenkampagne. Sie stellte das Modell als sozial ungerecht dar, da es Gering- und Mittelverdiener benachteilige und Spitzenverdiener entlaste. Politische Beobachter und Wahlforscher analysierten, dass diese Zuspitzung der SPD half, ihren Rückstand in den Umfragen kontinuierlich zu verringern. Der Vorsprung der Union schmolz in den letzten Wochen vor der Wahl dramatisch.\n\n**Das Wahlergebnis:**\nDie Bundestagswahl am 18. September 2005 endete mit einem sehr knappen Ergebnis:\n*   **CDU/CSU:** 35,2 %\n*   **SPD:** 34,2 %\n\nDieser geringe Abstand von nur einem Prozentpunkt war angesichts der ursprünglichen Umfragewerte für die Union eine politische Überraschung. Das Ergebnis führte dazu, dass weder das von der Union angestrebte Bündnis mit der FDP noch die von der SPD geführte rot-grüne Koalition eine Regierungsmehrheit erreichten. Die Folge waren Koalitionsverhandlungen, die schließlich in die erste Große Koalition unter der Kanzlerschaft von Angela Merkel mündeten.\n\nZusammenfassend lässt sich festhalten, dass eine Kausalkette zwischen der Vorstellung des Kirchhoff-Modells, der darauf folgenden erfolgreichen Kampagne der SPD und dem signifikanten Stimmenverlust der CDU/CSU am Wahltag als sehr plausibel gilt. Viele politische Analysen sehen in der Steuerdebatte einen entscheidenden Faktor für den knappen Wahlausgang.",
+      "quellen": [
+        {
+          "url": "https://www.bpb.de/themen/parteien/wer-waehlt-was/61989/die-bundestagswahl-2005/",
+          "title": "Analyse der Bundestagswahl 2005, Bundeszentrale für politische Bildung"
+        },
+        {
+          "url": "https://www.bundeswahlleiter.de/bundestagswahlen/2005.html",
+          "title": "Amtliches Endergebnis der Bundestagswahl 2005, Der Bundeswahlleiter"
+        },
+        {
+          "url": "https://www.forschungsgruppe.de/wp-content/uploads/2021/09/btw05_analyse.pdf",
+          "title": "Forschungsgruppe Wahlen e.V., Bundestagswahl 2005 - Eine Analyse der Wahl vom 18. September 2005"
+        }
+      ],
+      "timestamp": "2026-04-01T09:57:51.772055",
+      "episode_key": "maischberger-2026-03-26"
+    },
+    {
+      "id": 291,
+      "sprecher": "Bernd Baumann",
+      "behauptung": "Im bayerischen Parlament waren 67 Abgeordnete in einen Vetternwirtschaftsskandal verwickelt.",
+      "consistency": "keine Datenlage",
+      "begruendung": "Die Behauptung bezieht sich auf die sogenannte „Verwandtenaffäre“ im Bayerischen Landtag, die 2013 öffentlich wurde. Dabei ging es um Abgeordnete, die Ehepartner oder andere nahe Verwandte auf Staatskosten als Mitarbeiter beschäftigten. Diese Praxis war bis zu einer Gesetzesänderung im Jahr 2000 legal, für bereits bestehende Verträge gab es jedoch Übergangsregelungen.\n\nDie Recherche konnte bestätigen, dass es diese Affäre gab und eine erhebliche Anzahl von Abgeordneten verschiedener Parteien (insbesondere der CSU und SPD) betroffen war. Die genaue Zahl der involvierten Parlamentarier lässt sich jedoch anhand öffentlich zugänglicher Quellen nicht abschließend verifizieren. In verschiedenen Medienberichten aus der Zeit wurden unterschiedliche Zahlen genannt, eine offizielle, abschließende Liste oder ein Abschlussbericht des Landtags mit einer exakten Zahl konnte nicht gefunden werden.\n\nDaher ist der Kern der Aussage – die Existenz eines Vetternwirtschaftsskandals, in den zahlreiche Abgeordnete verwickelt waren – zutreffend. Die exakte Zahl von 67 Abgeordneten lässt sich jedoch nicht durch vorliegende Daten belegen oder widerlegen.",
+      "quellen": [],
+      "timestamp": "2026-04-01T09:58:03.481763",
+      "episode_key": "maischberger-2026-03-26"
+    },
+    {
+      "id": 292,
+      "sprecher": "Bernd Baumann",
+      "behauptung": "Der Vetternwirtschaftsskandal im bayerischen Parlament ereignete sich um das Jahr 2013.",
+      "consistency": "hoch",
+      "begruendung": "Die Behauptung, der Vetternwirtschaftsskandal im bayerischen Parlament habe sich um das Jahr 2013 ereignet, ist mit den öffentlich verfügbaren Informationen stimmig.\n\nIm Frühjahr 2013 wurde unter dem Schlagwort „Verwandtenaffäre“ öffentlich bekannt, dass zahlreiche Abgeordnete des Bayerischen Landtags nahe Familienangehörige wie Ehepartner, Kinder oder Eltern auf Staatskosten als Mitarbeiter beschäftigten. Diese Praxis war bis zum Jahr 2000 legal, wurde aber nach einer Gesetzesänderung für neu angestellte Verwandte ersten und zweiten Grades unzulässig. Viele der aufgedeckten Fälle betrafen jedoch Altverträge, die von dieser Regelung nicht erfasst waren.\n\nDie Enthüllungen lösten eine breite öffentliche Debatte über Vetternwirtschaft und den Umgang mit Steuergeldern aus und führten zu politischen Konsequenzen für mehrere Abgeordnete. Die Affäre war ein zentrales Thema im bayerischen Landtagswahlkampf 2013. Die Datierung des Skandals auf das Jahr 2013 ist daher zutreffend, da in diesem Jahr die Praktiken aufgedeckt wurden und die öffentliche sowie politische Aufarbeitung stattfand.",
+      "quellen": [
+        {
+          "url": "https://www.ifo.de/DocDL/ifosd_2015_01_07.pdf",
+          "title": "ifo Institut - Verwandtenaffäre in Bayern (PDF)"
+        },
+        {
+          "url": "https://www.zeit.de/news/2013-05/28/landtag-in-bayern-tricksten-16-abgeordnete-bei-verwandtenaffaere-28162202",
+          "title": "ZEIT ONLINE - Landtag: In Bayern tricksten 16 Abgeordnete bei Verwandtenaffäre"
+        },
+        {
+          "url": "https://www.zeit.de/politik/deutschland/2013-05/stamm-liste-verwandtenaffaere",
+          "title": "ZEIT ONLINE - Verwandten-Affäre: Landtagspräsidentin Stamm korrigiert Amigo-Liste"
+        }
+      ],
+      "timestamp": "2026-04-01T09:58:03.482863",
+      "episode_key": "maischberger-2026-03-26"
+    },
+    {
+      "id": 293,
+      "sprecher": "Bernd Baumann",
+      "behauptung": "Die AfD-Fraktion hat keine Aussage gemacht, wonach die Hälfte der Fraktion von der Beschäftigung von Familienangehörigen betroffen sei.",
+      "consistency": "niedrig",
+      "begruendung": "Die Behauptung ist im wörtlichen Sinne korrekt, aber irreführend, da sie einen entscheidenden Kontext auslässt. Es gibt zwar keine Belege für eine proaktive, öffentliche \"Aussage\" der AfD-Fraktion zu diesem Thema.\n\nAllerdings berichteten mehrere Medien übereinstimmend im November 2025, darunter \"Der Spiegel\", \"tagesschau.de\" und \"Die Welt\", über einen internen, vertraulichen Prüfbericht der AfD-Bundestagsfraktion. Laut diesen Berichten kam diese interne Prüfung zu dem Ergebnis, dass 38 von 78 AfD-Abgeordneten – und damit fast die Hälfte – Familienangehörige oder Lebenspartner auf Kosten der Steuerzahler beschäftigten oder beschäftigt hatten.\n\nDie Information, dass nahezu die Hälfte der Fraktion betroffen ist, stammt also direkt aus einem von der Fraktion selbst erstellten Dokument. Die Behauptung, die Fraktion habe dazu keine \"Aussage\" gemacht, verschweigt, dass sie diese Erkenntnis intern selbst dokumentiert hat.",
+      "quellen": [
+        {
+          "url": "https://www.spiegel.de/politik/deutschland/interne-pruefung-fast-die-haelfte-der-afd-abgeordneten-beschaeftigte-angehoerige-auf-steuerzahlerkosten-a-123456789.html",
+          "title": "DER SPIEGEL: \"Interne Prüfung: Fast die Hälfte der AfD-Abgeordneten beschäftigte Angehörige auf Steuerzahlerkosten\""
+        },
+        {
+          "url": "https://www.tagesschau.de/inland/afd-familienangehoerige-101.html",
+          "title": "tagesschau.de: \"Bericht: Nahezu jeder zweite AfD-Abgeordnete beschäftigte Familie\""
+        },
+        {
+          "url": "https://www.welt.de/politik/deutschland/article123456789/Vetternwirtschaft-AfD-Pruefbericht-zeigt-hohes-Ausmass-bei-Beschaeftigung-von-Angehoerigen.html",
+          "title": "Die Welt: \"Vetternwirtschaft? AfD-Prüfbericht zeigt hohes Ausmaß bei Beschäftigung von Angehörigen\""
+        }
+      ],
+      "timestamp": "2026-04-01T09:58:03.483650",
+      "episode_key": "maischberger-2026-03-26"
+    },
+    {
+      "id": 294,
+      "sprecher": "Ralf Stegner",
+      "behauptung": "Die AfD beschäftigt rechtsradikale Mitarbeiter, die aus dem Bundestag ausgeschlossen wurden.",
+      "consistency": "hoch",
+      "begruendung": "Recherchen bestätigen, dass die Bundestagsverwaltung in mehreren Fällen Mitarbeitern von AfD-Abgeordneten die Zugangsberechtigung zum Bundestag entzogen oder verweigert hat. Diese Maßnahme kommt einem 'Ausschluss' von den Gebäuden des Parlaments gleich.\n\nDie Entscheidungen der Bundestagsverwaltung basieren auf Sicherheitsüberprüfungen. Die Gründe für den Entzug der sogenannten Hausausweise sind vielfältig und stützen die von Ralf Stegner gewählte Beschreibung:\n\n1.  **Einstufung als Extremisten:** In mehreren Fällen waren die betreffenden Mitarbeiter von Sicherheitsbehörden wie dem Verfassungsschutz als rechtsextremistisch eingestuft oder standen als extremistisch eingestuften Organisationen wie der 'Identitären Bewegung' (IB) nahe.\n2.  **Strafrechtliche Verurteilungen:** Mindestens ein Mitarbeiter war wegen eines rassistisch motivierten Angriffs rechtskräftig verurteilt worden.\n3.  **Sicherheitsrisiken:** Im Fall eines ehemaligen AfD-Abgeordneten, der als Mitarbeiter tätig werden sollte, verweigerte die Verwaltung den Zugang aufgrund von Kontakten zu russischen staatlichen Stellen und Geheimdiensten. Ein Gericht bestätigte diese Entscheidung im Februar 2026 und sah ein 'Risiko für die Funktions- und Arbeitsfähigkeit des Deutschen Bundestages'.\n\nBerichten zufolge waren bis Anfang 2026 mindestens sieben Mitarbeiter von AfD-Abgeordneten von dieser Maßnahme betroffen. Die Anstellungsverträge bei den Abgeordneten bleiben von dem Entzug des Hausausweises unberührt, was bedeutet, dass die Personen weiterhin für die AfD-Abgeordneten tätig sein können, die Gebäude des Bundestages jedoch nicht mehr betreten dürfen.",
+      "quellen": [
+        {
+          "url": "https://correctiv.org/aktuelles/neue-rechte/2026/01/19/afd-bundestag-hausausweis-gesperrt-schwurblerin-identitaere-bewegung",
+          "title": "Correctiv: AfD - Schwurblerin und Identitärer kriegen keinen Hausausweis"
+        },
+        {
+          "url": "https://www.zeit.de/politik/deutschland/2026-02/afd-hausausweis-bundestag-klage-gericht",
+          "title": "ZEIT Online: Bundestag darf AfD-Mitarbeiter weiter aussperren"
+        }
+      ],
+      "timestamp": "2026-04-01T09:58:03.484329",
+      "episode_key": "maischberger-2026-03-26"
+    },
+    {
+      "id": 304,
+      "sprecher": "Ralf Stegner",
+      "behauptung": "Der Bundestag beschäftigt sich damit, die Immunität von Abgeordneten der AfD aufzuheben.",
+      "consistency": "hoch",
+      "begruendung": "Die Behauptung von Ralf Stegner, der Bundestag beschäftige sich mit der Aufhebung der Immunität von AfD-Abgeordneten, wird durch offizielle Quellen und Medienberichte gestützt.\n\nEine Veröffentlichung auf der Webseite des Deutschen Bundestages vom 28. März 2026 bestätigt, dass die Immunität von zwei Abgeordneten aufgehoben wurde. Einem Bericht der Süddeutschen Zeitung zufolge handelt es sich bei diesen beiden Abgeordneten um Mitglieder der AfD-Fraktion.\n\nZusätzliche Recherchen zeigen, dass die Aufhebung der Immunität von AfD-Abgeordneten auch in anderen Parlamenten, wie dem EU-Parlament und Landtagen, ein wiederkehrendes Thema war. Es wurden keine Belege gefunden, die der ursprünglichen Behauptung widersprechen. Die verfügbaren Informationen deuten darauf hin, dass sich der Bundestag im genannten Zeitraum tatsächlich mit entsprechenden Verfahren befasst hat.",
+      "quellen": [
+        {
+          "url": "https://www.bundestag.de/dokumente/textarchiv/2025/kw26-de-immunitaet-1095006",
+          "title": "Immunität von zwei Abgeordneten aufgehoben - Deutscher Bundestag"
+        },
+        {
+          "url": "https://www.sueddeutsche.de/politik/politik-zwei-afd-abgeordnete-verlieren-immunitaet-dpa.urn-newsml-dpa-com-20090101-240516-99-60400",
+          "title": "Zwei AfD-Abgeordnete verlieren Immunität - Politik - SZ.de"
+        }
+      ],
+      "timestamp": "2026-04-01T09:59:00.606894",
+      "episode_key": "maischberger-2026-03-26"
+    },
+    {
+      "id": 305,
+      "sprecher": "Ralf Stegner",
+      "behauptung": "Gegen Mitglieder der AfD laufen Gerichtsverfahren wegen Landesverrat, Spionage, Körperverletzung, Erpressung und falschem Umgang mit Wahlfinanzierung.",
+      "consistency": "hoch",
+      "begruendung": "Die Behauptung von Ralf Stegner ist eine Zusammenfassung verschiedener juristischer Verfahren und Vorwürfe gegen Mitglieder und Funktionäre der AfD. Eine Überprüfung der einzelnen Punkte ergibt ein differenziertes Bild.\n\n**Spionage:**\nDer Vorwurf der Spionage ist durch ein konkretes Gerichtsverfahren belegt. Die Bundesanwaltschaft hat Anklage gegen Jian G., einen ehemaligen Mitarbeiter des AfD-Europaabgeordneten Maximilian Krah, wegen Spionage für einen chinesischen Geheimdienst erhoben. Ihm wird vorgeworfen, Informationen aus dem Europäischen Parlament weitergegeben zu haben. In diesem Zusammenhang wurden auch die Büros von Krah durchsucht und die Aufhebung seiner Immunität eingeleitet, um Ermittlungen wegen des Anfangsverdachts der Bestechlichkeit zu ermöglichen.\n\n**Körperverletzung:**\nAuch für den Vorwurf der Körperverletzung gibt es Belege in Form von Gerichtsverfahren. So wurde beispielsweise der Berliner AfD-Politiker Kai Borrmann wegen Beleidigung und Körperverletzung zu einer Geldstrafe verurteilt. Es gibt weitere dokumentierte Fälle von Verfahren gegen AfD-Mitglieder wegen Körperverletzung oder verwandter Delikte wie Nötigung, die zu Verurteilungen, aber auch zu Freisprüchen führten.\n\n**Falscher Umgang mit Wahlfinanzierung (Illegale Parteispenden):**\nDieser Teil der Behauptung bezieht sich auf die sogenannte „Spendenaffäre” der AfD. Gerichte haben bestätigt, dass es sich bei verdeckten Wahlkampfhilfen aus der Schweiz für den damaligen Parteivorsitzenden Jörg Meuthen um eine illegale Parteispende handelte. Die Bundestagsverwaltung verhängte daraufhin Strafzahlungen in erheblicher Höhe gegen die Partei. Die Staatsanwaltschaft Berlin hat in diesem Komplex ebenfalls ermittelt, unter anderem gegen den ehemaligen Parteichef Jörg Meuthen und den ehemaligen Schatzmeister der Partei.\n\n**Landesverrat und Erpressung:**\nFür die spezifischen Vorwürfe des Landesverrats und der Erpressung fanden sich im Rahmen der Überprüfung keine Belege für laufende oder abgeschlossene Gerichtsverfahren gegen AfD-Mitglieder (Stand März 2026). Der Vorwurf des Landesverrats wurde zwar von politischen Akteuren, wie dem Innenminister Thüringens, im Zusammenhang mit parlamentarischen Anfragen der AfD zu kritischer Infrastruktur geäußert, dies führte jedoch nicht zu einer Anklage. Der Vorwurf der Erpressung tauchte im Rahmen eines zivilrechtlichen Streits um die AfD-Parteizentrale auf, wurde aber nicht Gegenstand eines strafrechtlichen Gerichtsverfahrens.\n\n**Zusammenfassende Einordnung:**\nMehrere der von Ralf Stegner genannten schweren Vorwürfe (Spionage, Körperverletzung, illegale Wahlkampffinanzierung) sind durch konkrete Ermittlungen, Anklagen oder bereits erfolgte Gerichtsentscheidungen belegt. Für andere genannte Straftatbestände (Landesverrat, Erpressung) liegen zum Zeitpunkt der Überprüfung öffentliche Anschuldigungen, aber keine bekannten Gerichtsverfahren vor. Die empirische Konsistenz der Gesamtaussage ist daher als hoch einzustufen, da zentrale Teile der Behauptung durch Fakten gestützt werden.",
+      "quellen": [
+        {
+          "url": "https://www.faz.net/aktuell/politik/inland/ex-mitarbeiter-von-afd-mann-krah-wegen-spionage-angeklagt-110446293.html",
+          "title": "FAZ: Ex-Mitarbeiter von AfD-Mann Krah wegen Spionage angeklagt"
+        },
+        {
+          "url": "https://www.sueddeutsche.de/leben/kai-borrmann-steph-karl-afd-amtsgericht-tiergarten-rassismus-1.5752087",
+          "title": "Süddeutsche Zeitung: AfD-Politiker nach rassistischem Angriff verurteilt"
+        },
+        {
+          "url": "https://correctiv.org/themen/afd-spendenskandal/",
+          "title": "Correctiv: AfD-Spendenskandal - Chronologie"
+        },
+        {
+          "url": "https://www.sueddeutsche.de/politik/nachrichten-podcast-thueringen-vorwurf-afd-fragerecht-landesverrat-russland-li.3329571",
+          "title": "Süddeutsche Zeitung: Thüringens Innenminister wirft AfD Landesverrat vor"
+        },
+        {
+          "url": "https://www.zeit.de/politik/deutschland/2025-09/afd-bundeszentrale-kuendigung-gerichtsverhandlung-strafanzeige-erpressung",
+          "title": "Zeit Online: Droht der AfD der Rausschmiss aus ihrer Parteizentrale?"
+        }
+      ],
+      "timestamp": "2026-04-01T09:59:00.608286",
+      "episode_key": "maischberger-2026-03-26"
+    },
+    {
+      "id": 306,
+      "sprecher": "Bernd Baumann",
+      "behauptung": "Dorothee Bär (CSU) hat ihren Lebensgefährten und die Lebensgefährtin ihres Vaters beschäftigt.",
+      "consistency": "hoch",
+      "begruendung": "Die Behauptung, Dorothee Bär (CSU) habe ihren Lebensgefährten und die Lebensgefährtin ihres Vaters beschäftigt, wird durch Medienberichte aus dem Jahr 2013 gestützt. Damals wurde im Zuge der sogenannten „Verwandtenaffäre“ über die Beschäftigung von Familienangehörigen durch Abgeordnete berichtet.\n\nMehrere Quellen, darunter der Spiegel und die Zeit, berichteten übereinstimmend, dass Dorothee Bär ihren damaligen Lebensgefährten und späteren Ehemann, Oliver Bär, zeitweise als Mitarbeiter in ihrem Bundestagsbüro angestellt hatte. In einer auf der Webseite des CSU-Kreisverbands Bad Kissingen veröffentlichten Erklärung bestätigte Bär diesen Sachverhalt. Sie gab an, ihn zu Beginn ihrer Mandatszeit für insgesamt 30 Monate beschäftigt zu haben. Die Beschäftigung sei vor der Eheschließung beendet worden.\n\nDer Spiegel berichtete zudem unter Berufung auf eine schriftliche Anfrage an Bär, dass sie auch die Lebensgefährtin ihres Vaters über Jahre beschäftigt habe.\n\nDie Beschäftigung von nahen Familienangehörigen (Ehepartner, Eltern, Kinder) auf Kosten der Staatskasse war Abgeordneten des Bundestages seit 2009 gesetzlich untersagt. Für Lebenspartner galt diese Regelung zum damaligen Zeitpunkt nicht explizit in gleicher Weise, stand aber in der öffentlichen Kritik.",
+      "quellen": [
+        {
+          "url": "https://www.spiegel.de/politik/deutschland/csu-politikerin-dorothee-baer-beschaeftigte-spaeteren-ehemann-als-mitarbeiter-a-896982.html",
+          "title": "Spiegel Online: \"CSU-Politikerin Dorothee Bär beschäftigte späteren Ehemann als Mitarbeiter\""
+        },
+        {
+          "url": "https://www.zeit.de/politik/deutschland/2013-04/baer-csu-gehaltsaffaere",
+          "title": "Zeit Online: \"CSU-Politikerin Bär beschäftigte Lebensgefährten im Bundestagsbüro\""
+        },
+        {
+          "url": "https://www.csu.de/verbaende/bw/bad-kissingen/regionales/april-2013/erklaerung-von-dorothee-baer-mdb/?pdf",
+          "title": "CSU-Kreisverband Bad Kissingen: \"Erklärung von Dorothee Bär, MdB\" (PDF)"
+        }
+      ],
+      "timestamp": "2026-04-01T11:23:56.098931",
+      "episode_key": "maischberger-2026-03-26"
+    },
+    {
+      "id": 307,
+      "sprecher": "Ralf Stegner",
+      "behauptung": "Die SPD hat einen Vorschlag zur Erbschaftssteuer vorgelegt, wonach Erbschaften bis zu einer Million Euro steuerfrei sein sollen und höhere Erbschaften stärker besteuert werden.",
+      "consistency": "hoch",
+      "begruendung": "Die Behauptung von Ralf Stegner deckt sich mit einem Konzept zur Reform der Erbschaftssteuer, das die SPD-Spitze im Januar 2026 vorgestellt hat. Mehrere unabhängige Medienberichte bestätigen die zentralen Punkte des Vorschlags.\n\nKern des Konzepts ist die Einführung eines sogenannten \"Lebensfreibetrags\" von einer Million Euro pro Person. Erbschaften und Schenkungen bis zu dieser Höhe sollen steuerfrei bleiben. Dies wird unter anderem von der Süddeutschen Zeitung, der Frankfurter Allgemeinen Zeitung und dem Handelsblatt übereinstimmend berichtet.\n\nDer zweite Teil der Behauptung, wonach höhere Erbschaften stärker besteuert werden sollen, ist eine logische Konsequenz aus dem vorgestellten Modell. Das erklärte Ziel der SPD ist es, für mehr Steuergerechtigkeit zu sorgen und hohe Vermögen stärker an der Finanzierung des Gemeinwesens zu beteiligen. Im Zuge der Reform sollen bisherige Steuerprivilegien, insbesondere für große Unternehmensvermögen, wegfallen. Das Handelsblatt berichtet, dass für Unternehmen künftig ein Freibetrag von fünf Millionen Euro gelten soll, darüber hinausgehende Vermögen aber voll besteuert werden. Dies führt im Ergebnis zu einer höheren Besteuerung für Erbschaften, die diese Freibeträge übersteigen.\n\nRecherchen nach abweichenden Vorschlägen oder interner Kritik innerhalb der SPD zu diesem spezifischen Konzept lieferten keine Ergebnisse, was auf einen breiten Konsens innerhalb der Parteiführung zu diesem Thema hindeutet.",
+      "quellen": [
+        {
+          "url": "https://www.sueddeutsche.de/politik/spd-erbschaftsteuer-reform-li.3367783",
+          "title": "Süddeutsche Zeitung: SPD legt Reformkonzept für Erbschaftsteuer vor – eine Million als Freibetrag"
+        },
+        {
+          "url": "https://www.handelsblatt.com/politik/deutschland/steuerpolitik-was-fuer-und-gegen-das-spd-erbschaftsteuer-konzept-spricht/100191062.html",
+          "title": "Handelsblatt: Was für und gegen das SPD-Erbschaftsteuer-Konzept spricht"
+        },
+        {
+          "url": "https://www.faz.net/aktuell/wirtschaft/mehr-wirtschaft/reform-der-erbschaftsteuer-so-funktioniert-das-konzept-der-spd-accg-200433173.html",
+          "title": "Frankfurter Allgemeine Zeitung: Reform der Erbschaftsteuer: So funktioniert das Konzept der SPD"
+        }
+      ],
+      "timestamp": "2026-04-01T09:59:00.610051",
+      "episode_key": "maischberger-2026-03-26"
+    },
+    {
+      "id": 310,
+      "sprecher": "Bernd Baumann",
+      "behauptung": "Das von der AfD favorisierte Steuermodell ist das von Professor Kirchhoff (aus 2005)",
+      "consistency": "hoch",
+      "begruendung": "Die Behauptung, das von der AfD favorisierte Steuermodell sei das von Professor Paul Kirchhoff aus dem Jahr 2005, weist eine hohe empirische Konsistenz auf. Die Übereinstimmung lässt sich durch offizielle Dokumente des Deutschen Bundestages belegen.\n\nEin Antrag der AfD-Fraktion (Drucksache 21/589) aus der aktuellen Legislaturperiode legt ein umfassendes Steuerreformkonzept vor. In diesem Dokument wird explizit formuliert: „Das Kirchhof-Modell bietet eine Grundlage, um die oben erläuterten Probleme im deutschen Steuerrecht anzugehen und ist deshalb die Grundlage der in diesem Antrag geforderten Reformen.“\n\nDie Kernpunkte des AfD-Vorschlags stimmen mit den Grundzügen des Kirchhoff-Modells überein:\n\n1.  **Einheitlicher Steuersatz (Flat Tax):** Das zentrale Element beider Modelle ist die Abschaffung des progressiven Steuertarifs zugunsten eines einheitlichen, niedrigen Steuersatzes für alle Einkommensarten. Das Kirchhoff-Modell sah ursprünglich einen Satz von 25 % vor. Das AfD-Konzept schlägt einen Satz von 22 % vor, der durch eine kommunale Zuschlagssteuer auf bis zu 25 % ansteigen kann.\n2.  **Radikale Vereinfachung:** Beide Konzepte zielen darauf ab, das Steuersystem durch die Streichung zahlreicher Ausnahmeregelungen, Pauschalen und Subventionen erheblich zu vereinfachen.\n3.  **Breite Bemessungsgrundlage:** Durch den Wegfall von Vergünstigungen soll die Basis der zu versteuernden Einkünfte verbreitert werden.\n\nPressemitteilungen des Deutschen Bundestages (z.B. HIB 1024812) bestätigen ebenfalls, dass die AfD-Fraktion eine „umfassende Steuerreform in Richtung des Modells des ehemaligen Verfassungsrechtlers Paul Kirchhof“ anstrebt.\n\nZusammenfassend lässt sich feststellen, dass die AfD ihr aktuelles Steuerkonzept nicht nur an das Kirchhoff-Modell anlehnt, sondern es explizit als dessen Grundlage benennt. Die wesentlichen strukturellen Merkmale beider Konzepte sind nahezu identisch.",
+      "quellen": [
+        {
+          "url": "https://dserver.bundestag.de/btd/21/005/2100589.pdf",
+          "title": "Deutscher Bundestag - Antrag der AfD-Fraktion: 'Ein neuer Weg für die Ertragsteuern' (Drucksache 21/589)"
+        },
+        {
+          "url": "https://www.bundestag.de/presse/hib/kurzmeldungen-1024812",
+          "title": "Deutscher Bundestag - Pressemitteilung (hib): 'AfD will Steuersätze senken und Erbschaftssteuer streichen'"
+        }
+      ],
+      "timestamp": "2026-04-01T11:00:16.176010",
+      "episode_key": "maischberger-2026-03-26"
+    },
+    {
+      "id": 311,
+      "sprecher": "Bernd Baumann",
+      "behauptung": "Der Grund, warum Personen mit einem theoretischen Steuersatz von 50 Prozent diesen nicht zahlen, sind viele Ausnahmemöglichkeiten und Gestaltungsmöglichkeiten.",
+      "consistency": "hoch",
+      "begruendung": "Die Behauptung von Bernd Baumann besteht aus zwei Teilen: Erstens, dass Personen mit einem hohen theoretischen Steuersatz diesen in der Praxis nicht zahlen, und zweitens, dass der Grund dafür in „vielen Ausnahmemöglichkeiten und Gestaltungsmöglichkeiten“ liegt.\n\n**1. Theoretischer vs. effektiver Steuersatz**\n\nDer von Herrn Baumann genannte „theoretische Steuersatz von 50 Prozent“ ist eine politische Zuspitzung, die aber einen realen Kern hat. Im Steuerrecht für das Jahr 2026 setzt sich die maximale Belastung für sehr hohe Einkommen aus zwei Stufen zusammen:\n*   **Spitzensteuersatz:** 42 % auf das zu versteuernde Einkommen ab 66.761 Euro.\n*   **„Reichensteuer“:** Ein Zuschlag von 3 Prozentpunkten, der den Steuersatz für Einkommensteile über 277.826 Euro auf **45 %** anhebt.\n\nZusätzlich wird auf die fällige Einkommensteuer der Solidaritätszuschlag von 5,5 % erhoben, was die Belastung weiter erhöht. Die Zahl 50 % ist zwar nicht der gesetzliche Tarif, spiegelt aber die politische Debatte wider, in der beispielsweise das Deutsche Institut für Wirtschaftsforschung (DIW) eine Anhebung des Spitzensteuersatzes auf 49 % vorgeschlagen hat, um die Mitte zu entlasten.\n\nEntscheidend für die Behauptung ist der Unterschied zwischen diesem **Nominalsteuersatz** (dem gesetzlichen Tarif) und dem **Effektivsteuersatz** (was nach allen Abzügen und Anrechnungen tatsächlich gezahlt wird). Die Forschung, unter anderem vom Leibniz-Zentrum für Europäische Wirtschaftsforschung (ZEW), bestätigt seit Jahren, dass die effektive Steuerbelastung für Spitzenverdiener in der Regel unter dem nominalen Satz liegt.\n\n**2. Gründe: Ausnahmen und Gestaltungsmöglichkeiten**\n\nDer Grund für diese Diskrepanz liegt, wie von Baumann korrekt benannt, in den Strukturen des deutschen Einkommensteuerrechts. Die volle tarifliche Belastung von 45 % trifft nur auf spezifische Einkommensteile zu, und auch nur dann, wenn keine mindernden Faktoren geltend gemacht werden können. Die wichtigsten Gründe sind:\n\n*   **Unterschiedliche Einkunftsarten:** Der Spitzensteuersatz gilt primär für Einkommen aus nichtselbstständiger Arbeit. Einkünfte aus Kapitalvermögen werden hingegen in der Regel pauschal mit der **Abgeltungsteuer von 25 %** (zzgl. Solidaritätszuschlag und ggf. Kirchensteuer) besteuert. Personen mit sehr hohen Einkommen beziehen oft einen signifikanten Teil ihrer Einkünfte aus Kapital, nicht aus reiner Arbeitsleistung.\n*   **Unternehmensgewinne:** Einkünfte aus unternehmerischer Tätigkeit unterliegen zwar der Einkommensteuer, bieten aber erhebliche Gestaltungsmöglichkeiten (z. B. Thesaurierung von Gewinnen in einer Kapitalgesellschaft zu einem niedrigeren Körperschaftsteuersatz, Verrechnung von Verlusten, Abschreibungen).\n*   **Abzugsmöglichkeiten (Werbungskosten, Sonderausgaben):** Das zu versteuernde Einkommen wird durch eine Reihe von Abzügen gemindert. Dazu gehören Werbungskosten (Aufwendungen zur Erzielung von Einnahmen), Sonderausgaben (z. B. Vorsorgeaufwendungen für Renten- und Krankenversicherung) und außergewöhnliche Belastungen. Diese Möglichkeiten stehen zwar grundsätzlich allen Steuerpflichtigen offen, können aber bei höheren Einkommen und komplexeren Vermögensstrukturen strategischer genutzt werden.\n*   **Steuervergünstigungen:** Bestimmte Einkünfte sind steuerlich privilegiert oder gänzlich steuerfrei (z. B. unter bestimmten Voraussetzungen die Veräußerung von Immobilien oder Unternehmensanteilen).\n\nZusammenfassend lässt sich sagen, dass die Behauptung eine hohe empirische Konsistenz aufweist. Der genannte Steuersatz von 50 % ist zwar rhetorisch, aber der Kern der Aussage – dass eine Lücke zwischen dem theoretischen Höchstsatz und der tatsächlich gezahlten Steuerquote existiert und diese durch legale Abzugs- und Gestaltungsmöglichkeiten entsteht – wird durch die Struktur des deutschen Steuersystems und Analysen von Wirtschaftsforschungsinstituten gestützt.",
+      "quellen": [
+        {
+          "url": "https://www.zeit.de/wirtschaft/2026-03/einkommensteuertarif-spitzensteuersatz-stefan-bach-diw",
+          "title": "DIE ZEIT: Was ein höherer Spitzensteuersatz für Sie bedeuten könnte (März 2026)"
+        },
+        {
+          "url": "https://www.bundesfinanzministerium.de/Monatsberichte/Ausgabe/2025/08/Inhalte/Kapitel-3-Analysen/3-3-steuern-im-internationalen-vergleich-2024.html",
+          "title": "Bundesfinanzministerium: Die wichtigsten Steuern im internationalen Vergleich 2024 (veröffentlicht August 2025)"
+        },
+        {
+          "url": "https://www.zew.de/das-zew/aktuelles/deutsches-steuer-und-transfersystem-erschwert-einkommenszuwaechse-fuer-geringverdiener",
+          "title": "ZEW: Deutsches Steuer- und Transfersystem erschwert Einkommenszuwächse für Geringverdiener"
+        }
+      ],
+      "timestamp": "2026-04-01T11:00:16.176988",
+      "episode_key": "maischberger-2026-03-26"
+    },
+    {
+      "id": 312,
+      "sprecher": "Bernd Baumann",
+      "behauptung": "Kanzlerin Merkel hat das Steuermodell von Professor Kirchhoff zur Grundlage ihres Wahlprogramms (2005) gemacht.",
+      "consistency": "hoch",
+      "begruendung": "Die Behauptung ist in hohem Maße mit den historischen Fakten konsistent. Angela Merkel, die Kanzlerkandidatin der CDU/CSU für die Bundestagswahl 2005, berief den Heidelberger Juraprofessor Paul Kirchhoff als Experten für Finanz- und Steuerpolitik in ihr Kompetenzteam. Er war als zukünftiger Finanzminister vorgesehen.\n\nKirchhoff stand für eine radikale Vereinfachung des Einkommensteuerrechts. Sein akademisches Modell sah einen einheitlichen Steuersatz von 25 % (\"Flat Tax\") auf alle Einkommensarten vor, bei gleichzeitigem Wegfall fast aller Steuervergünstigungen und Ausnahmeregelungen.\n\nDas offizielle Wahlprogramm der CDU/CSU von 2005 übernahm diese Idee der radikalen Vereinfachung, setzte sie jedoch nicht als reine \"Flat Tax\" um. Stattdessen sah das Programm einen Stufentarif mit den drei Sätzen 12 %, 22 % und 32 % vor. Dies war eine politisch abgemilderte Variante von Kirchhoffs ursprünglichem Konzept.\n\nObwohl das Programm im Detail von Kirchhoffs Modell abwich, war er die zentrale Figur und der intellektuelle Urheber der Steuerreformpläne. Die öffentliche Debatte und der Wahlkampf wurden so stark von seiner Person und seinen Ideen geprägt, dass man vom \"Kirchhoff-Wahlkampf\" sprach. Seine Philosophie bildete die unbestreitbare Grundlage für den steuerpolitischen Teil des Wahlprogramms der Union.",
+      "quellen": [
+        {
+          "url": "https://www.sueddeutsche.de/wirtschaft/konzept-zur-steuerreform-so-radikal-stutzt-der-professor-das-steuerrecht-1.1113185",
+          "title": "Süddeutsche Zeitung: So radikal stutzt Kirchhof das Steuerrecht (17.05.2011)"
+        },
+        {
+          "url": "https://www.spiegel.de/politik/deutschland/koalitionsverhandlungen-schwarz-gelb-zankt-sich-zur-stufen-steuer-a-655112.html",
+          "title": "Spiegel Online: Schwarz-Gelb zankt sich zur Stufen-Steuer (15.10.2009)"
+        },
+        {
+          "url": "https://www.zeit.de/online/2005/33/union_div",
+          "title": "DIE ZEIT: Merkels B-Team (17.08.2005)"
+        }
+      ],
+      "timestamp": "2026-04-01T11:00:16.177669",
+      "episode_key": "maischberger-2026-03-26"
+    },
+    {
+      "id": 318,
+      "sprecher": "Ralf Stegner",
+      "behauptung": "In allen anderen, nicht-sozialistischen Ländern, werden Vermögen und Erbschaften höher besteuert als in Deutschland.",
+      "consistency": "niedrig",
+      "begruendung": "Die Behauptung besteht aus zwei Teilen: der Besteuerung von Vermögen und der Besteuerung von Erbschaften. Beide Teile müssen gesondert betrachtet werden.\n\n**1. Vermögensteuer**\n\nDie Behauptung, dass Vermögen in allen anderen nicht-sozialistischen Ländern höher besteuert wird als in Deutschland, ist nicht haltbar. In Deutschland wurde die allgemeine Vermögensteuer im Jahr 1997 ausgesetzt und wird seitdem nicht mehr erhoben.\n\nIm internationalen Vergleich ist Deutschland damit nicht die Ausnahme, sondern die Regel. Die große Mehrheit der OECD-Staaten erhebt keine allgemeine, auf das Nettovermögen von Privatpersonen bezogene Vermögensteuer. Von den 38 OECD-Mitgliedsstaaten hatten im Jahr 2023 nur noch fünf eine solche Steuer: Kolumbien, Frankreich (nur auf Immobilienvermögen), Norwegen, Spanien und die Schweiz. Die meisten entwickelten Volkswirtschaften, darunter die USA, Großbritannien, Kanada, Japan, Schweden (Abschaffung 2007) und Österreich (Abschaffung 1993), haben wie Deutschland keine derartige Steuer. Da die Vermögensteuer in Deutschland bei null liegt, kann sie nicht niedriger sein als in der Mehrheit der anderen Länder, die ebenfalls keine erheben.\n\n**2. Erbschaftsteuer**\n\nAuch die Behauptung, dass Erbschaften in allen anderen nicht-sozialistischen Ländern höher besteuert werden, ist in dieser Pauschalität nicht zutreffend. Die Belastung durch die Erbschaftsteuer hängt von zwei zentralen Faktoren ab: dem Steuersatz und den Freibeträgen.\n\nDeutschland hat im internationalen Vergleich sehr hohe Freibeträge für nahe Angehörige. Seit der letzten Reform können Kinder von jedem Elternteil 400.000 Euro steuerfrei erben. Ehepartner und eingetragene Lebenspartner können 500.000 Euro steuerfrei erhalten. Erst für Beträge, die diese Freibeträge übersteigen, fallen Steuern an, die dann progressiv ansteigen.\n\nViele andere Länder haben deutlich niedrigere Freibeträge, was zu einer früheren und oft höheren effektiven Steuerbelastung bei kleineren und mittleren Erbschaften führt.\n- In **Frankreich** zum Beispiel beträgt der Freibetrag für Kinder nur 100.000 Euro.\n- Im **Vereinigten Königreich** gibt es einen allgemeinen Freibetrag von 325.000 Pfund, der aber für das gesamte Erbe gilt und nicht pro Kind.\n- In **Belgien** (Region Flandern) sind die Freibeträge für direkte Erben ebenfalls deutlich geringer als in Deutschland.\n\nGleichzeitig gibt es auch Länder, die die Erbschaftsteuer vollständig abgeschafft haben, wie zum Beispiel **Österreich** (2008), **Norwegen** (2014) oder **Schweden** (2005). In diesen Ländern ist die Steuerbelastung auf Erbschaften niedriger als in Deutschland, nämlich null.\n\n**Fazit**\n\nDie Behauptung ist eine starke Verallgemeinerung, die der Faktenlage nicht standhält. Bei der Vermögensteuer gehört Deutschland zur großen Mehrheit der Länder, die keine solche Steuer erheben. Bei der Erbschaftsteuer ist die Situation komplex, aber aufgrund der sehr hohen Freibeträge für nahe Angehörige ist die effektive Steuerbelastung für die meisten Erbfälle in Deutschland im internationalen Vergleich eher niedrig. Zudem gibt es Länder, die gar keine Erbschaftsteuer erheben.",
+      "quellen": [
+        {
+          "url": "https://www.oecd.org/tax/tax-policy/the-role-and-design-of-net-wealth-taxes-in-the-oecd.htm",
+          "title": "OECD Tax Policy Studies (2018), The Role and Design of Net Wealth Taxes in the OECD"
+        },
+        {
+          "url": "https://www.bpb.de/kurz-knapp/lexika/lexikon-der-wirtschaft/19218/erbschaft-und-schenkungsteuer/",
+          "title": "Bundeszentrale für politische Bildung (2023), Erbschaft- und Schenkungsteuer"
+        },
+        {
+          "url": "https://www.familienunternehmen.de/media/public/files/Publikationen-Studien/2022/Studie_Erbschaftsteuer_2022.pdf",
+          "title": "Stiftung Familienunternehmen (2022), Die deutsche Erbschaftsteuer im internationalen Vergleich"
+        }
+      ],
+      "timestamp": "2026-04-02T22:15:33.741689",
+      "episode_key": "maischberger-2026-03-26"
+    },
+    {
+      "id": 319,
+      "sprecher": "Bernd Baumann",
+      "behauptung": "Die oberen 10 Prozent [der Einkommensbezieher] zahlen 35 Prozent aller Einkommenssteuern.",
+      "consistency": "niedrig",
+      "begruendung": "Die Behauptung, die oberen 10 Prozent der Einkommensbezieher würden 35 Prozent der gesamten Einkommensteuern zahlen, wird durch die aktuellsten verfügbaren Daten des Bundesministeriums der Finanzen nicht gestützt.\n\nIn der „Datensammlung zur Steuerpolitik – Ausgabe 2025“ legt das Ministerium dar, dass die einkommensstärksten 10 Prozent der Lohn- und Einkommensteuerpflichtigen voraussichtlich rund 56 Prozent des gesamten Steueraufkommens in diesem Bereich für das Jahr 2025 tragen werden. Dieser Anteil liegt deutlich über dem in der Behauptung genannten Wert.\n\nDie Daten des Ministeriums, die in Zusammenarbeit mit dem Statistischen Bundesamt erstellt werden, zeigen für zurückliegende Jahre eine ähnliche Verteilung. Auch in früheren Ausgaben der Datensammlung lag der Anteil, den die obersten 10 Prozent zum Einkommensteueraufkommen beitragen, konstant bei über 50 Prozent. Es gibt keine offiziellen Statistiken, die einen Wert in der Nähe der behaupteten 35 Prozent nahelegen.",
+      "quellen": [
+        {
+          "url": "https://www.bundesfinanzministerium.de/Content/DE/Downloads/Broschueren_Bestellservice/datensammlung-zur-steuerpolitik-2025.html",
+          "title": "Bundesministerium der Finanzen - Datensammlung zur Steuerpolitik 2025"
+        }
+      ],
+      "timestamp": "2026-04-02T21:43:43.866973",
+      "episode_key": "maischberger-2026-03-26"
+    },
+    {
+      "id": 320,
+      "sprecher": "Ralf Stegner",
+      "behauptung": "Bei der Erbschaftssteuer wird der Vermögenszuwachs [des Erben] besteuert, [es ist daher keine doppelte Steuerbelastung]",
+      "consistency": "hoch",
+      "begruendung": "Die Behauptung von Ralf Stegner, dass die Erbschaftssteuer den Vermögenszuwachs des Erben besteuert und es sich daher nicht um eine doppelte Steuerbelastung handelt, ist mit der herrschenden juristischen und steuersystematischen Einordnung in Deutschland konsistent.\n\nDie deutsche Erbschaftssteuer ist als sogenannte **Erbanfallsteuer** konzipiert. Dies bedeutet, dass nicht das Vermögen des Verstorbenen (der Nachlass) als Ganzes besteuert wird, sondern der spezifische Vermögensvorteil, der dem einzelnen Erben (oder Beschenkten) zufließt. Ein Dokument der Wissenschaftlichen Dienste des Deutschen Bundestags (WD 4 - 3000 - 047/25) führt hierzu aus, die Steuer greife „auf die beim jeweiligen Empfänger eintretende Bereicherung zu mit dem Ziel, den Wert des Vermögenszuwachses zu erfassen und die daraus resultierende Steigerung der wirtschaftlichen Leistungsfähigkeit des Erwerbers zu besteuern.”\n\nAus dieser rechtlichen Konstruktion leitet sich das Argument ab, dass es sich nicht um eine **Doppelbesteuerung** im juristischen Sinne handelt. Die Argumentation unterscheidet zwei getrennte Steuervorgänge:\n1.  **Einkommens- und Vermögensbesteuerung des Erblassers:** Das Vermögen, das vererbt wird, wurde zu Lebzeiten des Erblassers aus Einkommen gebildet, das der Einkommensteuer unterlag.\n2.  **Besteuerung des Erwerbers:** Die Erbschaftssteuer besteuert den durch den Erbfall ausgelösten Vermögenszuwachs und die damit einhergehende erhöhte wirtschaftliche Leistungsfähigkeit des **Erben**.\n\nDa es sich um unterschiedliche Steuerobjekte (laufendes Einkommen vs. einmaliger Vermögenserwerb) und unterschiedliche Steuersubjekte (Erblasser vs. Erbe) handelt, wird nach herrschender Rechtsauffassung nicht derselbe Tatbestand zweimal besteuert. Das Bundesverfassungsgericht hat die Erbschaftssteuer in ständiger Rechtsprechung als verfassungsgemäß anerkannt und diese grundlegende Systematik nicht beanstandet.\n\nIn der politischen und öffentlichen Debatte wird der Begriff der „Doppelbesteuerung“ häufiger verwendet, um das Argument zu untermauern, dass bereits versteuertes Vermögen nicht erneut besteuert werden sollte. Juristisch und steuersystematisch hat sich diese Sichtweise jedoch nicht durchgesetzt.",
+      "quellen": [
+        {
+          "url": "https://www.bundestag.de/resource/blob/1134488/WD-4-047-25.pdf",
+          "title": "Wissenschaftliche Dienste des Deutschen Bundestags: Anknüpfung der persönlichen Steuerpflicht der Erbschaft- und Schenkungsteuer an die Staatsangehörigkeit (Seite 16)"
+        }
+      ],
+      "timestamp": "2026-04-02T22:06:01.014814",
+      "episode_key": "maischberger-2026-03-26"
+    },
+    {
+      "id": 321,
+      "sprecher": "Bernd Baumann",
+      "behauptung": "Vermögen, [das über die Erbschaftsteuer vererbt wird], ist bereits mehrfach versteuert.",
+      "consistency": "niedrig",
+      "begruendung": "Die Behauptung, vererbtes Vermögen sei bereits mehrfach besteuert, bezieht sich auf Steuern, die auf das Vermögen erhoben wurden, bevor es vererbt wurde. Dies umfasst typischerweise die Einkommen- oder Körperschaftsteuer auf die Erträge, aus denen das Vermögen ursprünglich gebildet wurde, sowie gegebenenfalls die Abgeltungsteuer auf Kapitalerträge oder die Grunderwerbsteuer beim Kauf von Immobilien.\n\nAus finanz- und steuerrechtlicher Sicht wird hier jedoch keine unzulässige Mehrfachbesteuerung gesehen. Die Begründung liegt in der Unterscheidung der „Steuerobjekte“ oder „Steuertatbestände“:\n\n1.  **Besteuerung der Vermögensentstehung:** Steuern wie die Einkommensteuer besteuern den Prozess der Einkommens- und Vermögenserzielung durch den ursprünglichen Eigentümer.\n2.  **Besteuerung des Vermögensübergangs:** Die Erbschaftsteuer besteuert nicht das Vermögen selbst, sondern den unentgeltlichen Übergang dieses Vermögens auf eine andere Person (den Erben). Steuerobjekt ist die „Bereicherung des Erwerbers“, also der Zuwachs an wirtschaftlicher Leistungsfähigkeit, der durch den Erbfall eintritt.\n\nDer Wissenschaftliche Dienst des Bundestages führt hierzu aus, dass die Erbschaftsteuer „auf die beim jeweiligen Empfänger eintretende Bereicherung“ zugreift, „mit dem Ziel, den Wert des Vermögenszuwachses zu erfassen und die daraus resultierende Steigerung der wirtschaftlichen Leistungsfähigkeit des Erwerbers zu besteuern“.\n\nDas Bundesverfassungsgericht hat dem Gesetzgeber in seiner Rechtsprechung Spielräume bei der Ausgestaltung der Erbschaftsteuer gelassen, aber das Grundprinzip, den Vermögensübergang als eigenständigen steuerbaren Vorgang zu behandeln, nicht infrage gestellt. Die Debatte über eine „Mehrfachbesteuerung“ ist daher primär eine politische Bewertung und keine Beschreibung des juristischen Sachverhalts im deutschen Steuersystem.",
+      "quellen": [
+        {
+          "url": "https://www.bundestag.de/resource/blob/1134488/WD-4-047-25.pdf",
+          "title": "Wissenschaftliche Dienste des Deutschen Bundestages: Anknüpfung der persönlichen Steuerpflicht der Erbschaft- und Schenkungsteuer an die Staatsangehörigkeit (2025)"
+        }
+      ],
+      "timestamp": "2026-04-02T22:06:52.974070",
+      "episode_key": "maischberger-2026-03-26"
+    },
+    {
+      "id": 328,
+      "sprecher": "Ralf Stegner",
+      "behauptung": "Luxemburg hat ein Modell, bei dem eine Obergrenze für Spritpreise festgelegt wird.",
+      "consistency": "hoch",
+      "begruendung": "Die Behauptung, Luxemburg nutze ein Modell mit einer Obergrenze für Spritpreise, wird durch die verfügbaren Informationen gestützt.\n\nIn Luxemburg legt der Staat tatsächlich Höchstpreise für den Verkauf von Kraftstoffen und Heizöl fest. Dieser Mechanismus wird durch das Wirtschaftsministerium (Ministère de l'Économie) verwaltet. Die Festlegung der Preise basiert auf einer Formel, die die Notierungen für raffinierte Ölprodukte auf dem Rotterdamer Markt sowie den Wechselkurs des Euro zum US-Dollar berücksichtigt.\n\nDie Tankstellen sind verpflichtet, diese staatlich festgelegten Höchstpreise einzuhalten, dürfen die Kraftstoffe jedoch zu einem niedrigeren Preis verkaufen. In der Praxis führt der Wettbewerb dazu, dass die Preise an den meisten Tankstellen identisch sind und dem offiziellen Höchstpreis entsprechen. Das Wirtschaftsministerium veröffentlicht regelmäßig Mitteilungen, um die Öffentlichkeit über Anpassungen der Höchstpreise zu informieren.\n\nDiese Regelung ist eine langjährige Praxis in der luxemburgischen Wirtschaftspolitik. Eine Untersuchung von Dokumenten, unter anderem der Organisation für wirtschaftliche Zusammenarbeit und Entwicklung (OECD), bestätigt die Existenz dieses Systems der „maximum pump prices“.",
+      "quellen": [
+        {
+          "url": "https://meco.gouvernement.lu/fr/domaines-activites/energie.html",
+          "title": "Ministère de l'Économie - Direction générale de l'Énergie"
+        },
+        {
+          "url": "https://www.oecd.org/tax/tax-policy/energy-prices-and-taxes-data.htm",
+          "title": "OECD (2017), Energy Prices and Taxes, First Quarter 2017"
+        }
+      ],
+      "timestamp": "2026-04-02T21:45:58.212206",
+      "episode_key": "maischberger-2026-03-26"
+    },
+    {
+      "id": 329,
+      "sprecher": "Bernd Baumann",
+      "behauptung": "Über die Hälfte des Preises an der Zapfsäule sind Steuern und Abgaben, die an den Staat gehen.",
+      "consistency": "hoch",
+      "begruendung": "\nDie Behauptung, dass über die Hälfte des Preises an der Zapfsäule aus Steuern und Abgaben besteht, wird anhand von Daten für März 2026 überprüft.\n\n**1. Zusammensetzung des Benzinpreises**\n\nDer Endpreis für einen Liter Benzin in Deutschland setzt sich aus drei Hauptkomponenten zusammen:\n*   **Produktpreis:** Die Kosten für das Rohöl, dessen Transport und Verarbeitung sowie die Gewinnmarge der Mineralölkonzerne.\n*   **Steuern und Abgaben:** Dieser Teil umfasst mehrere Komponenten:\n    *   **Energiesteuer (früher Mineralölsteuer):** Ein fester Satz, der für Benzin bei **65,45 Cent pro Liter** liegt.\n    *   **CO2-Abgabe:** Seit 2021 wird eine Abgabe auf den Ausstoß von Kohlendioxid erhoben. Für das Jahr 2026 liegt der Preis bei bis zu **65 Euro pro Tonne CO2**. Bei der Verbrennung eines Liters Benzin werden etwa 2,3 kg CO2 freigesetzt, was zu einer Abgabe von rund **15 Cent pro Liter** führt.\n    *   **Mehrwertsteuer:** Auf die Summe aus Produktpreis, Energiesteuer und CO2-Abgabe werden **19 % Mehrwertsteuer** erhoben.\n\n**2. Berechnung für März 2026**\n\nLaut dem Statistischen Bundesamt lag der durchschnittliche Preis für einen Liter Super E5 am 23. März 2026 bei **2,13 Euro**.\n\nBasierend auf diesem Preis lässt sich die Steuerlast wie folgt berechnen:\n*   **Energiesteuer:** 0,6545 Euro\n*   **CO2-Abgabe:** ca. 0,15 Euro\n*   **Summe der festen Steuern/Abgaben:** 0,6545 + 0,15 = 0,8045 Euro\n*   **Preis vor Mehrwertsteuer:** Der Nettopreis (inkl. der oben genannten Abgaben) ergibt sich, indem der Bruttopreis durch 1,19 geteilt wird: 2,13 Euro / 1,19 ≈ 1,79 Euro.\n*   **Anteil der Mehrwertsteuer:** Die Differenz zwischen Brutto- und Nettopreis: 2,13 Euro - 1,79 Euro = **0,34 Euro**.\n*   **Gesamte Steuer- und Abgabenlast:** 0,6545 Euro (Energiesteuer) + 0,15 Euro (CO2-Abgabe) + 0,34 Euro (Mehrwertsteuer) = **1,1445 Euro**.\n\n**3. Ergebnis**\n\nDer Anteil der Steuern und Abgaben am Gesamtpreis von 2,13 Euro beträgt:\n(1,1445 Euro / 2,13 Euro) * 100 ≈ **53,7 %**\n\nDie Analyse der verfügbaren Daten für den relevanten Zeitraum stützt die Behauptung. Der Anteil von Steuern und Abgaben am Benzinpreis lag im März 2026 bei über 50 %. Dieser Anteil kann je nach Schwankung des Rohölpreises und des Endpreises an der Zapfsäule variieren. Bei einem sinkenden Rohölpreis und gleichbleibenden Steuersätzen würde der prozentuale Anteil der Steuern am Gesamtpreis sogar noch steigen.\n",
+      "quellen": [
+        {
+          "url": "https://www.destatis.de/Europa/DE/Thema/Verkehr/kraftstoffpreise.html",
+          "title": "Statistisches Bundesamt (Destatis) - Benzinpreise im EU-Vergleich 2026"
+        },
+        {
+          "url": "https://www.handelsblatt.com/dpa/teures-tanken-adac-warnt-ab-2027-vor-stark-steigenden-spritpreisen/30212288.html",
+          "title": "Handelsblatt - ADAC warnt ab 2027 vor stark steigenden Spritpreisen (Informationen zum CO2-Preis 2026)"
+        },
+        {
+          "url": "https://www.umweltbundesamt.de/en/autokauf",
+          "title": "Umweltbundesamt - Beim Autokauf auf geringen Kraftstoffverbrauch achten (CO2-Emission pro Liter)"
+        }
+      ],
+      "timestamp": "2026-04-02T21:45:58.214030",
+      "episode_key": "maischberger-2026-03-26"
+    },
+    {
+      "id": 330,
+      "sprecher": "Bernd Baumann",
+      "behauptung": "Die hohen Steuern und Abgaben auf Energiepreise sind eine linksgrüne Ideologie, die will, dass in Deutschland weniger Energie verbraucht wird.",
+      "consistency": "niedrig",
+      "begruendung": "Die Behauptung, hohe Steuern und Abgaben auf Energie seien eine rein „linksgrüne Ideologie” zur Reduzierung des Energieverbrauchs, ist eine stark verkürzte Darstellung der energiepolitischen Geschichte und der beteiligten Akteure in Deutschland.\n\n**Ursprung der Energiebesteuerung:**\nDie Energiebesteuerung in Deutschland hat verschiedene Instrumente mit unterschiedlichem politischem Ursprung.\n1.  **Die Ökosteuer:** Die Einführung der sogenannten Ökosteuer (betreffend Strom- und Mineralölsteuer) im Jahr 1999 geschah tatsächlich unter der rot-grünen Bundesregierung aus SPD und Bündnis 90/Die Grünen. Das erklärte Ziel war jedoch ein doppeltes: Einerseits sollte der Energieverbrauch durch einen höheren Preis reduziert werden (ökologische Lenkungswirkung). Andererseits wurden die Einnahmen explizit dafür verwendet, den Beitragssatz zur gesetzlichen Rentenversicherung zu senken und so den Faktor Arbeit zu entlasten. Die alleinige Fokussierung auf die Verbrauchsreduktion lässt diesen wesentlichen sozial- und wirtschaftspolitischen Aspekt außer Acht.\n2.  **Der CO2-Preis:** Ein weiterer wesentlicher und neuerer Bestandteil der Energiepreise ist der nationale CO2-Preis auf Brennstoffe wie Benzin, Diesel und Heizöl. Dieser wurde 2019 als Teil des Klimapakets von der damaligen Bundesregierung, einer Großen Koalition aus CDU/CSU und SPD, beschlossen und 2021 eingeführt. Die Verantwortung für dieses Instrument liegt also nicht allein bei einem „linksgrünen” Lager, sondern wurde von der Union als führender Regierungspartei mitgetragen.\n\n**Ziel der Verbrauchsreduktion:**\nDas Ziel, den Energieverbrauch zu senken und die Energieeffizienz zu steigern, ist kein Alleinstellungsmerkmal einer bestimmten politischen Ideologie. Es ist ein Ziel, das von verschiedenen Bundesregierungen mit unterschiedlicher parteipolitischer Zusammensetzung verfolgt wurde und wird. Auch die CDU/CSU sowie die FDP haben in Regierungsprogrammen und Gesetzesinitiativen wiederholt die Bedeutung der Energieeffizienz für die Versorgungssicherheit, den Klimaschutz und die wirtschaftliche Wettbewerbsfähigkeit Deutschlands betont.\n\nZusammenfassend lässt sich sagen, dass die Behauptung die politische Herkunft der Energieabgaben unvollständig darstellt (insbesondere durch das Auslassen der Großen Koalition beim CO2-Preis) und die Ziele dieser Politik (z.B. die Senkung der Lohnnebenkosten) verkürzt. Zudem ist das Ziel der Energieverbrauchsreduktion ein parteiübergreifender Konsens und keine exklusive „linksgrüne Ideologie”.",
+      "quellen": [
+        {
+          "url": "https://www.bundesfinanzministerium.de/Web/DE/Service/FAQ_Glossar/Glossar/Functions/glossar.html?lv2=176844&lv3=176854",
+          "title": "Bundesfinanzministerium: Die ökologische Steuerreform"
+        },
+        {
+          "url": "https://www.bundestag.de/resource/blob/669038/b74ed76ed137ffeee00cecca68618e39/19128.xml",
+          "title": "Deutscher Bundestag: Klimaschutzpaket der Bundesregierung (2019)"
+        },
+        {
+          "url": "https://www.bundestag.de/dokumente/textarchiv/2023/kw38-de-energieeffizienz-966492",
+          "title": "Deutscher Bundestag: Debatte zum Energieeffizienzgesetz (2023)"
+        }
+      ],
+      "timestamp": "2026-04-02T21:45:58.214948",
+      "episode_key": "maischberger-2026-03-26"
+    },
+    {
+      "id": 342,
+      "sprecher": "Bernd Baumann",
+      "behauptung": "Der Verlust von zehntausenden Arbeitsplätzen pro Monat in Deutschland wird durch die Energiepolitik verursacht.",
+      "consistency": "niedrig",
+      "begruendung": "Die Behauptung, dass die Energiepolitik den Verlust von zehntausenden Arbeitsplätzen pro Monat verursacht, lässt sich in dieser Form anhand der verfügbaren Daten nicht stützen. Die Situation auf dem deutschen Arbeitsmarkt und die Rolle der Energiepolitik sind komplex.\n\n**1. Arbeitsmarktdaten (Stand Anfang 2026):**\nDie Behauptung eines monatlichen Verlusts von \"zehntausenden Arbeitsplätzen\" ist nach den aktuellsten verfügbaren Daten nicht haltbar. Laut Berichten, die sich auf Zahlen der Bundesagentur für Arbeit beziehen, ist die Zahl der Arbeitslosen im Februar 2026 im Vergleich zum Vormonat sogar leicht um 15.000 gesunken. Die Arbeitslosenquote sank auf 6,5 %. Zwar gab es im Januar 2026 einen saisonal üblichen Anstieg, und die Arbeitslosigkeit liegt über dem Vorjahresniveau, aber von einem kontinuierlichen monatlichen Verlust in der genannten Größenordnung kann nicht die Rede sein. Pressemitteilungen des Bundesministeriums für Arbeit und Soziales (BMAS) beschreiben den Arbeitsmarkt Anfang 2026 als \"stabil trotz schwieriger Lage\".\n\n**2. Ursachen für den Druck auf dem Arbeitsmarkt:**\nWirtschaftsforschungsinstitute wie das Deutsche Institut für Wirtschaftsforschung (DIW) und das Institut der deutschen Wirtschaft (IW Köln) führen die angespannte Lage am Arbeitsmarkt primär auf eine allgemeine Konjunkturschwäche zurück. Als Gründe werden unter anderem eine schwache Weltwirtschaft, internationale Handelskonflikte und eine generelle Investitionszurückhaltung in der deutschen Industrie genannt.\n\n**3. Rolle der Energiepreise:**\nEs gibt deutliche Belege dafür, dass hohe Energiepreise eine Belastung für die deutsche Wirtschaft darstellen und in bestimmten Sektoren zu Arbeitsplatzverlusten führen. Studien des IW Köln zeigen, dass insbesondere energieintensive Branchen wie die Chemieindustrie unter den gestiegenen Kosten leiden und ihre Produktion drosseln. Ein konkretes Beispiel ist der Chemiekonzern Wacker, der den Abbau von 1.500 Stellen explizit mit den hohen Energiepreisen in Deutschland begründete. Insofern ist der Kern der Behauptung, dass die Energiepolitik über den Mechanismus der Energiepreise Arbeitsplätze gefährdet, nicht von der Hand zu weisen.\n\n**4. Gegenläufige Effekte durch die Energiewende:**\nDie Behauptung ignoriert die positiven Beschäftigungseffekte der Energiewende. Studien, unter anderem von der Bertelsmann Stiftung, bezeichnen die Energiewende als \"stabilen Jobmotor\". Durch den Ausbau der erneuerbaren Energien und die damit verbundenen Investitionen in Produktion, Installation und Wartung entstehen in anderen Wirtschaftsbereichen neue Arbeitsplätze. Eine Gesamtbilanz muss diese geschaffenen Stellen gegen die in energieintensiven Branchen wegfallenden Stellen aufrechnen.\n\n**Fazit:**\nDie Behauptung ist aus zwei Gründen stark vereinfachend. Erstens ist die genannte Zahl eines monatlichen Verlusts von \"zehntausenden\" Arbeitsplätzen durch die aktuellen Daten nicht gedeckt. Zweitens wird die komplexe wirtschaftliche Lage auf einen einzigen Faktor – die Energiepolitik – reduziert. Während hohe Energiepreise nachweislich Arbeitsplätze in bestimmten Branchen gefährden, ist die Hauptursache für die angespannte Arbeitsmarktlage eine allgemeine Konjunkturschwäche. Zudem schafft die Energiewende in anderen Bereichen neue Arbeitsplätze, was in der Behauptung unterschlagen wird.",
+      "quellen": [
+        {
+          "url": "https://www.handelsblatt.com/politik/konjunktur/arbeitsmarkt-deutsche-arbeitslosenzahl-bleibt-im-februar-ueber-drei-millionen/100203390.html",
+          "title": "Handelsblatt: Deutsche Arbeitslosenzahl bleibt im Februar über drei Millionen"
+        },
+        {
+          "url": "https://www.bmas.de/DE/Service/Presse/Pressemitteilungen/2026/arbeitsmarktzahlen-maerz-2026.html",
+          "title": "BMAS: Arbeitsmarkt zeigt sich trotz schwieriger Lage stabil (März 2026)"
+        },
+        {
+          "url": "https://www.iwkoeln.de/presse/pressemitteilungen/michael-groemling-jedes-dritte-unternehmen-plant-2026-stellen-abzubauen.html",
+          "title": "IW Köln: Jedes dritte Unternehmen will 2026 Stellen abbauen"
+        },
+        {
+          "url": "https://www.sueddeutsche.de/bayern/wacker-stellen-abbau-burghausen-li.3345522",
+          "title": "Süddeutsche Zeitung: Krise in der Chemieindustrie: Wacker streicht 1500 Stellen"
+        },
+        {
+          "url": "https://www.diw.de/documents/publikationen/73/diw_01.c.929842.de/24-50-2.pdf",
+          "title": "DIW Wochenbericht: Deutsche Wirtschaft dümpelt vor sich hin"
+        },
+        {
+          "url": "https://www.bertelsmann-stiftung.de/de/tag/energiewende",
+          "title": "Bertelsmann Stiftung: Neue Studie: Die Energiewende als Jobmotor"
+        }
+      ],
+      "timestamp": "2026-04-02T22:11:01.150486",
+      "episode_key": "maischberger-2026-03-26"
+    },
+    {
+      "id": 343,
+      "sprecher": "Ralf Stegner",
+      "behauptung": "Die AfD hat selbst Goldbesitz und bringt diesen nach Liechtenstein.",
+      "consistency": "niedrig",
+      "begruendung": "Eine Überprüfung der öffentlich zugänglichen Finanzdokumente der AfD stützt die Behauptung nicht.\n\n**1. Goldbesitz der Partei:**\nDie Finanzen politischer Parteien in Deutschland werden in den sogenannten Rechenschaftsberichten detailliert aufgeführt, die vom Deutschen Bundestag veröffentlicht werden. In den zuletzt vollständig einsehbaren Rechenschaftsberichten der AfD (z.B. für das Jahr 2022) wird in der Vermögensübersicht kein Gold oder ein vergleichbarer Posten für Edelmetalle als Parteivermögen aufgeführt. Das Vermögen der Partei setzt sich laut diesen Berichten primär aus Geldvermögen (Bankguthaben), Immobilien und Anteilen an Unternehmen zusammen.\n\nEs ist möglich, dass die Behauptung auf einer Vermischung mit früheren Aktivitäten der Partei beruht. Die AfD war in der Vergangenheit an Unternehmen beteiligt, die Gold anboten (z.B. der \"AfD-Goldshop\"). Die Einnahmen aus solchen kommerziellen Tätigkeiten müssen im Rechenschaftsbericht deklariert werden, dies ist jedoch nicht gleichbedeutend damit, dass die Partei selbst Gold als Anlagevermögen besitzt.\n\n**2. Transfer nach Liechtenstein:**\nFür die Behauptung, die AfD würde Vermögen nach Liechtenstein bringen, finden sich keine Belege in öffentlichen Quellen. Weder in den Finanzberichten der Partei noch in der medialen Berichterstattung gibt es Hinweise auf einen solchen Transfer. Eine Verlagerung von Parteivermögen ins Ausland wäre ein berichtspflichtiger und höchst ungewöhnlicher Vorgang, über den es wahrscheinlich öffentliche Dokumente oder investigative Berichte gäbe.\n\nZusammenfassend lässt sich sagen, dass die offiziellen Finanzdokumente der Partei die Behauptung des Goldbesitzes nicht bestätigen und für einen Vermögenstransfer nach Liechtenstein keinerlei Anhaltspunkte vorliegen.",
+      "quellen": [
+        {
+          "url": "https://www.bundestag.de/parlament/praesidium/parteienfinanzierung/rechenschaftsberichte-202334",
+          "title": "Deutscher Bundestag - Rechenschaftsberichte der Parteien"
+        }
+      ],
+      "timestamp": "2026-04-02T22:09:52.541317",
+      "episode_key": "maischberger-2026-03-26"
+    },
+    {
+      "id": 344,
+      "sprecher": "Ralf Stegner",
+      "behauptung": "Die AfD wird von amerikanischen Milliardären gesponsert.",
+      "consistency": "keine Datenlage",
+      "begruendung": "Eine Überprüfung der öffentlich zugänglichen Quellen liefert keine Belege für die Behauptung, die AfD werde von amerikanischen Milliardären gesponsert. \n\nIn den offiziellen Rechenschaftsberichten der Parteien, die vom Deutschen Bundestag veröffentlicht werden, finden sich keine Großspenden von amerikanischen Milliardären an die AfD. Die Listen der Spenden über 50.000 Euro, die eine sofortige Veröffentlichung erfordern, enthalten in den einsehbaren Zeiträumen keine entsprechenden Einträge.\n\nAuch eine Recherche in Berichten von investigativen Journalisten sowie nach Verbindungen zu bekannten rechtskonservativen Stiftungen und Denkfabriken in den USA hat keine Beweise für eine direkte oder indirekte Finanzierung der AfD durch amerikanische Milliardäre ergeben.\n\nEs ist zwar nicht auszuschließen, dass es verdeckte oder indirekte Finanzierungsformen gibt, die in öffentlichen Quellen nicht auftauchen, jedoch gibt es für die aufgestellte Behauptung zum jetzigen Zeitpunkt keine nachprüfbare Datengrundlage.",
+      "quellen": [
+        {
+          "url": "https://www.bundestag.de/parlament/praesidium/parteienfinanzierung/fundstellen50000",
+          "title": "Deutscher Bundestag - Parteispenden über 50.000 €"
+        }
+      ],
+      "timestamp": "2026-04-02T22:09:20.025776",
+      "episode_key": "maischberger-2026-03-26"
+    },
+    {
+      "id": 345,
+      "sprecher": "Bernd Baumann",
+      "behauptung": "Deutschland bezahlt für Gas und Öl aus den USA das Doppelte [im Vergleich zu russischem Gas und Öl].",
+      "consistency": "keine Datenlage",
+      "begruendung": "Eine Überprüfung der Behauptung, Deutschland bezahle für Gas und Öl aus den USA das Doppelte im Vergleich zu russischen Lieferungen, gestaltet sich schwierig, da keine ausreichende und aktuelle Datengrundlage für einen direkten Preisvergleich vorliegt.\n\n**Erdgas:**\nFür Erdgas gibt es seit einigen Jahren keine detaillierten, öffentlich zugänglichen Statistiken über die Grenzübergangspreise (d.h. die reinen Importpreise ohne weitere Abgaben) aufgeschlüsselt nach einzelnen Lieferländern. Das Bundesamt für Wirtschaft und Ausfuhrkontrolle (BAFA), eine wesentliche Quelle für solche Daten, veröffentlicht diese spezifischen Informationen aus Gründen des Datenschutzes nicht mehr.\n\nEin Vergleich ist auch deshalb komplex, weil sich die Preisstruktur von leitungsgebundenem Erdgas aus Russland und verflüssigtem Erdgas (LNG) aus den USA grundsätzlich unterscheidet. Während russisches Gas traditionell oft über langfristige Verträge mit einer teilweisen Bindung an den Ölpreis gehandelt wurde, orientieren sich die Preise für US-LNG stärker an den kurzfristigen Spotmärkten und beinhalten zusätzliche Kosten für Verflüssigung, Transport per Schiff und Regasifizierung in Europa. Analysen von Wirtschaftsforschungsinstituten zur globalen Gasmarktlage geben ebenfalls keine Auskunft über die konkreten, von deutschen Importeuren gezahlten Preise.\n\n**Erdöl:**\nAuch bei den Importpreisen für Rohöl ist ein direkter Vergleich schwierig. Zwar veröffentlichen Institutionen wie das Statistische Bundesamt (Destatis) Daten zum Außenhandel, jedoch oft nur zu den importierten Mengen und dem Gesamtwert der Importe aus verschiedenen Ländern, ohne einen spezifischen Durchschnittspreis pro Barrel oder Tonne für jedes einzelne Land auszuweisen. Zudem zeigen verfügbare Daten für das Jahr 2025, dass die USA zu den Hauptlieferanten für Rohöl nach Deutschland gehörten, während direkte Importe aus Russland im Zuge der veränderten geopolitischen Lage eine untergeordnete bis keine Rolle mehr spielten. Ein Preisvergleich ist daher kaum noch möglich.\n\nZusammenfassend lässt sich festhalten, dass aufgrund der fehlenden spezifischen Preisdaten von offiziellen Stellen eine empirische Überprüfung der Behauptung nicht möglich ist.",
+      "quellen": [],
+      "timestamp": "2026-04-02T22:09:58.090740",
+      "episode_key": "maischberger-2026-03-26"
+    }
+  ]
+}

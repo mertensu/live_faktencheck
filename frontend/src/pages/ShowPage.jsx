@@ -1,0 +1,68 @@
+import { useState, useEffect } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
+import { BACKEND_URL, FETCH_HEADERS, safeJsonParse, debug } from '../services/api'
+import { FactCheckPage } from './FactCheckPage'
+
+export function ShowPage({ showKey }) {
+  const { episode: episodeFromUrl } = useParams()
+  const navigate = useNavigate()
+  const [episodes, setEpisodes] = useState([])
+  const [selectedEpisode, setSelectedEpisode] = useState(null)
+  const defaultShowName = showKey.charAt(0).toUpperCase() + showKey.slice(1)
+  const [showName, setShowName] = useState(defaultShowName)
+
+  // Load episodes for this show
+  useEffect(() => {
+    const controller = new AbortController()
+
+    const loadEpisodes = async () => {
+      try {
+        const response = await fetch(`${BACKEND_URL}/api/config/shows/${showKey}/episodes`, {
+          headers: FETCH_HEADERS,
+          signal: controller.signal
+        })
+        if (response.ok) {
+          const data = await safeJsonParse(response, 'Error loading episodes')
+          const episodesList = data.episodes || []
+          setEpisodes(episodesList)
+
+          // Set first episode as default or the one from URL
+          if (episodeFromUrl) {
+            const found = episodesList.find(e => e.key === episodeFromUrl)
+            if (found) {
+              setSelectedEpisode(found.key)
+              setShowName(found.show_name || defaultShowName)
+            } else if (episodesList.length > 0) {
+              setSelectedEpisode(episodesList[0].key)
+              setShowName(episodesList[0].show_name || defaultShowName)
+            }
+          } else if (episodesList.length > 0) {
+            setSelectedEpisode(episodesList[0].key)
+            setShowName(episodesList[0].show_name || defaultShowName)
+            // Navigate to first episode (with React Router, respects basename)
+            navigate(`/${showKey}/${episodesList[0].key}`, { replace: true })
+          }
+        }
+      } catch (error) {
+        if (error.name !== 'AbortError') {
+          debug.error('Error loading episodes:', error)
+        }
+      }
+    }
+    loadEpisodes()
+
+    return () => controller.abort()
+  }, [showKey, episodeFromUrl, navigate])
+
+  if (!selectedEpisode) {
+    return <div>Lade Episoden...</div>
+  }
+
+  return (
+    <FactCheckPage
+      showName={showName}
+      showKey={showKey}
+      episodeKey={selectedEpisode}
+    />
+  )
+}

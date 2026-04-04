@@ -1,0 +1,25 @@
+{
+  "shows": [
+    {
+      "key": "maischberger-2026-03-26",
+      "name": "Maischberger",
+      "date": "26. März 2026",
+      "episode_name": "26. März 2026 - Ralf Stegner & Bernd Baumann",
+      "type": "show"
+    },
+    {
+      "key": "maischberger-2025-09-19",
+      "name": "Maischberger",
+      "date": "19. September 2025",
+      "episode_name": "19. September 2025 - Gitta Connemann & Katharina Dröge",
+      "type": "show"
+    },
+    {
+      "key": "atalay-2026-02-09",
+      "name": "Pinar Atalay",
+      "date": "9. Februar 2026",
+      "episode_name": "9. Februar 2026 - Heidi Reichinnek & Philipp Amthor",
+      "type": "show"
+    }
+  ]
+}
