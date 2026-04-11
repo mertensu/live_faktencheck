@@ -246,7 +246,7 @@ The fact-checker uses a LangChain ReAct agent that iteratively searches for evid
 
 ## Adapting to Another Language
 
-To run the system in a language other than German, see [`docs/localization.md`](docs/localization.md).
+To run the system in a language other than German, see [`docs/language-adaptation.md`](docs/language-adaptation.md).
 
 ## License
 
