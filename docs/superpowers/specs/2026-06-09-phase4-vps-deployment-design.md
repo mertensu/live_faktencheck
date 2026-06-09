@@ -138,8 +138,17 @@ VPS:  cloudflared.service ──► 127.0.0.1:5000 ──► factcheck-backend.s
 - **Static-Mode komplett entfernen:**
   - `isStaticMode` aus `api.js`.
   - `/data/*.json`-Zweige in `useShows.js`, `TrustedDomainsPage.jsx`,
-    `FactCheckPage.jsx` (inkl. lokalem `isStaticMode`-State + abhängige Effekte),
-    `isProduction`-Static-Zweig in `HomePage.jsx`.
+    `FactCheckPage.jsx` (inkl. lokalem `isStaticMode`-State + abhängige Effekte).
+  - Dabei auch die toten `health.current_episode`-Referenzen entfernen
+    (Phase 1 hat das globale `current_episode` abgeschafft) in `useShows.js`
+    und `FactCheckPage.jsx`.
+  - **Nicht** Teil von Phase 4: Der `isProduction`-**Layout**-Zweig in
+    `HomePage.jsx` ist kein Static-Daten-Zweig (beide Zweige nutzen `useShows`,
+    keiner liest `/data/`). Das ist eine Präsentations-/IA-Frage und gehört zu
+    Phase 1b. `HomePage.jsx` braucht in Phase 4 keine Änderung.
+  - `FactCheckPage.jsx`: `isLocalhost`/`showAdminMode`/`?admin=true` bleiben
+    unverändert (lokal berechnet, nicht aus `api.js` importiert) — Admin-Gating
+    ist von der Static-Entfernung nicht betroffen.
 - **Export-/Static-Workflow löschen:**
   - `export_episode.py`
   - `frontend/public/data/*.json` (Legacy-Episode-JSONs, `shows.json`,
