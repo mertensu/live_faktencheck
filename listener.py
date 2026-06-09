@@ -26,45 +26,35 @@ PROGRESS_INTERVAL = 30  # Print progress every 30 seconds
 BLOCK_DURATION = 120  # Send audio block every 120 seconds (default)
 
 
-def get_current_show():
-    """Determine current show from parameter or env var"""
-    # 1. Command line parameter (e.g., python listener.py maischberger-2026-01-28)
+def get_session_id():
+    """Determine session id from parameter or env var"""
+    # 1. Command line parameter (e.g., python listener.py <session-id>)
     if len(sys.argv) > 1 and not sys.argv[1].startswith('--'):
-        show_key = sys.argv[1].lower()
-        print(f"Show from parameter: {show_key}")
-        return show_key
+        session_id = sys.argv[1].lower()
+        print(f"Session ID from parameter: {session_id}")
+        return session_id
 
-    # 2. Environment variable (e.g., SHOW=maischberger-2026-01-28 python listener.py)
+    # 2. SESSION_ID environment variable
+    env_session = os.environ.get('SESSION_ID')
+    if env_session:
+        session_id = env_session.lower()
+        print(f"Session ID from environment (SESSION_ID): {session_id}")
+        return session_id
+
+    # 3. Fallback: SHOW env var for backwards compatibility
     env_show = os.environ.get('SHOW')
     if env_show:
-        show_key = env_show.lower()
-        print(f"Show from environment: {show_key}")
-        return show_key
+        session_id = env_show.lower()
+        print(f"Session ID from environment (SHOW, deprecated): {session_id}")
+        return session_id
 
-    print("Error: no episode key provided. Pass as argument or set SHOW env var.", file=sys.stderr)
+    print("Error: no session id provided. Pass the session id as argument or set SESSION_ID env var.", file=sys.stderr)
     sys.exit(1)
 
 
-def set_backend_episode(backend_url, show):
-    """Set current episode in backend"""
-    try:
-        response = requests.post(
-            f"{backend_url}/api/set-episode",
-            json={"episode_key": show},
-            timeout=5
-        )
-        if response.ok:
-            print(f"Episode set in backend: {show}")
-        else:
-            print(f"Could not set episode in backend: {response.status_code}")
-    except Exception as e:
-        print(f"Could not set episode in backend: {e}")
-        print("   (Backend may not be running)")
-
-
 class AudioRecorder:
-    def __init__(self, show: str, backend_url: str, block_duration: int = BLOCK_DURATION, debug: bool = False):
-        self.show = show
+    def __init__(self, session_id: str, backend_url: str, block_duration: int = BLOCK_DURATION, debug: bool = False):
+        self.session_id = session_id
         self.backend_url = backend_url
         self.audio_endpoint = f"{backend_url}/api/audio-block"
         self.block_duration = block_duration
@@ -104,7 +94,7 @@ class AudioRecorder:
         )
 
         print("Recording started...")
-        print(f"  Show: {self.show}")
+        print(f"  Session ID: {self.session_id}")
         print(f"  Block duration: {self.block_duration}s")
         print(f"  Backend: {self.backend_url}")
 
@@ -153,7 +143,7 @@ class AudioRecorder:
                 'audio': (f'chunk_{sequence_num}.wav', audio_data, 'audio/wav')
             }
             data = {
-                'episode_key': self.show,
+                'session_id': self.session_id,
             }
 
             response = requests.post(
@@ -198,7 +188,7 @@ class AudioRecorder:
         # Debug mode: Save as local WAV file
         if self.debug:
             timestamp = time.strftime("%Y%m%d_%H%M%S")
-            filename = f"{self.show}_block_{seq_num:03d}_{timestamp}.wav"
+            filename = f"{self.session_id}_block_{seq_num:03d}_{timestamp}.wav"
             filepath = self.debug_output_dir / filename
             try:
                 with open(filepath, 'wb') as f:
@@ -368,13 +358,11 @@ def setup_input_listeners(recorder):
 
 
 def main():
-    show = get_current_show()
+    session_id = get_session_id()
     debug = os.environ.get('DEBUG', '').lower() in ('true', '1', 'yes') or '--debug' in sys.argv
     backend_url = os.getenv("BACKEND_URL", "http://localhost:5000")
 
-    set_backend_episode(backend_url, show)
-
-    recorder = AudioRecorder(show, backend_url, debug=debug)
+    recorder = AudioRecorder(session_id, backend_url, debug=debug)
     cleanup = setup_input_listeners(recorder)
 
     recorder.record()
