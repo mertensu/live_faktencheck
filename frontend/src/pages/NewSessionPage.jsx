@@ -26,6 +26,9 @@ export function NewSessionPage() {
         type: 'show',
       }
       const result = await createSession(payload)
+      if (!result?.session_id) {
+        throw new Error('Keine Session-ID erhalten')
+      }
       navigate('/' + result.session_id)
     } catch (err) {
       setError(err.message || 'Fehler beim Erstellen der Session')

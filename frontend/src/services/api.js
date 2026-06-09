@@ -54,12 +54,20 @@ export async function createSession(payload) {
   const res = await fetch(`${BACKEND_URL}/api/sessions`, {
     method: 'POST', headers: FETCH_HEADERS, body: JSON.stringify(payload),
   })
-  return safeJsonParse(res, 'createSession')
+  const data = await safeJsonParse(res, 'createSession')
+  if (!res.ok) {
+    throw new Error(data?.detail || `createSession failed (${res.status})`)
+  }
+  return data
 }
 
 export async function endSession(sessionId) {
   const res = await fetch(`${BACKEND_URL}/api/sessions/${sessionId}/end`, {
     method: 'POST', headers: FETCH_HEADERS,
   })
-  return safeJsonParse(res, 'endSession')
+  const data = await safeJsonParse(res, 'endSession')
+  if (!res.ok) {
+    throw new Error(data?.detail || `endSession failed (${res.status})`)
+  }
+  return data
 }
