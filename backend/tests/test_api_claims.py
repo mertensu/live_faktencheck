@@ -292,7 +292,7 @@ class TestDiscardClaimsEndpoint:
         assert response.status_code == 400
 
     async def test_get_fact_checks_excludes_discarded_by_default(self, client):
-        """DB get_fact_checks omits discarded rows unless asked."""
+        """GET /api/fact-checks omits discarded rows unless asked."""
         db = state.get_db()
         from datetime import datetime
         now = datetime.now().isoformat()
@@ -303,13 +303,14 @@ class TestDiscardClaimsEndpoint:
                                   "begruendung": "", "quellen": [], "timestamp": now,
                                   "session_id": "ep", "status": "discarded"})
 
-        # Verify directly via DB layer (fact_checks router is scoped in Task 10)
-        data = await db.get_fact_checks(session_id="ep")
+        response = await client.get("/api/fact-checks?session_id=ep")
+        assert response.status_code == 200
+        data = response.json()
         assert len(data) == 1
         assert data[0]["behauptung"] == "Normal"
 
     async def test_get_fact_checks_status_filter_returns_only_discarded(self, client):
-        """DB get_fact_checks with status=discarded returns only discarded rows."""
+        """GET /api/fact-checks?status=discarded returns only discarded rows."""
         db = state.get_db()
         from datetime import datetime
         now = datetime.now().isoformat()
@@ -320,8 +321,9 @@ class TestDiscardClaimsEndpoint:
                                   "begruendung": "", "quellen": [], "timestamp": now,
                                   "session_id": "ep", "status": "discarded"})
 
-        # Verify directly via DB layer (fact_checks router is scoped in Task 10)
-        data = await db.get_fact_checks(session_id="ep", status="discarded")
+        response = await client.get("/api/fact-checks?session_id=ep&status=discarded")
+        assert response.status_code == 200
+        data = response.json()
         assert len(data) == 1
         assert data[0]["behauptung"] == "Discarded"
         assert data[0]["status"] == "discarded"

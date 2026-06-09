@@ -3,7 +3,7 @@ Tests for fact-checks API endpoints.
 
 Tests:
 - GET /api/fact-checks
-- GET /api/fact-checks?episode=xxx
+- GET /api/fact-checks?session_id=xxx
 - POST /api/fact-checks
 - PUT /api/fact-checks/{id}
 - GET /api/health
@@ -33,7 +33,7 @@ class TestGetFactChecks:
             "begruendung": "Evidence 1",
             "quellen": [],
             "timestamp": "2024-01-01T10:00:00",
-            "episode_key": "ep1",
+            "session_id": "ep1",
         })
         await db.add_fact_check({
             "sprecher": "Speaker B",
@@ -42,7 +42,7 @@ class TestGetFactChecks:
             "begruendung": "Evidence 2",
             "quellen": [],
             "timestamp": "2024-01-01T11:00:00",
-            "episode_key": "ep2",
+            "session_id": "ep2",
         })
 
         response = await client.get("/api/fact-checks")
@@ -53,28 +53,28 @@ class TestGetFactChecks:
         assert data[0]["sprecher"] == "Speaker A"
         assert data[1]["sprecher"] == "Speaker B"
 
-    async def test_get_fact_checks_with_episode_filter(self, client):
-        """GET /api/fact-checks?episode=xxx filters by episode."""
+    async def test_get_fact_checks_with_session_filter(self, client):
+        """GET /api/fact-checks?session_id=xxx filters by session."""
         db = state.get_db()
-        await db.add_fact_check({"sprecher": "A", "episode_key": "episode-1", "behauptung": "C1", "timestamp": "2024-01-01T10:00:00"})
-        await db.add_fact_check({"sprecher": "B", "episode_key": "episode-2", "behauptung": "C2", "timestamp": "2024-01-01T11:00:00"})
-        await db.add_fact_check({"sprecher": "C", "episode_key": "episode-1", "behauptung": "C3", "timestamp": "2024-01-01T12:00:00"})
+        await db.add_fact_check({"sprecher": "A", "session_id": "session-1", "behauptung": "C1", "timestamp": "2024-01-01T10:00:00"})
+        await db.add_fact_check({"sprecher": "B", "session_id": "session-2", "behauptung": "C2", "timestamp": "2024-01-01T11:00:00"})
+        await db.add_fact_check({"sprecher": "C", "session_id": "session-1", "behauptung": "C3", "timestamp": "2024-01-01T12:00:00"})
 
-        response = await client.get("/api/fact-checks?episode=episode-1")
+        response = await client.get("/api/fact-checks?session_id=session-1")
 
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 2
-        assert all(fc["episode_key"] == "episode-1" for fc in data)
+        assert all(fc["session_id"] == "session-1" for fc in data)
 
-    async def test_get_fact_checks_episode_filter_no_match(self, client):
-        """GET /api/fact-checks?episode=xxx returns empty if no match."""
+    async def test_get_fact_checks_session_filter_no_match(self, client):
+        """GET /api/fact-checks?session_id=xxx returns empty if no match."""
         db = state.get_db()
         await db.add_fact_check({
-            "sprecher": "A", "episode_key": "ep1", "behauptung": "C", "timestamp": "2024-01-01T10:00:00"
+            "sprecher": "A", "session_id": "ep1", "behauptung": "C", "timestamp": "2024-01-01T10:00:00"
         })
 
-        response = await client.get("/api/fact-checks?episode=nonexistent")
+        response = await client.get("/api/fact-checks?session_id=nonexistent")
 
         assert response.status_code == 200
         assert response.json() == []
@@ -91,7 +91,7 @@ class TestPostFactCheck:
             "consistency": "hoch",
             "begruendung": "Laut Statistischem Bundesamt korrekt.",
             "quellen": ["https://destatis.de"],
-            "episode_key": "test-ep",
+            "session_id": "test-ep",
         }
 
         response = await client.post("/api/fact-checks", json=payload)
@@ -117,7 +117,7 @@ class TestPostFactCheck:
             "consistency": "hoch",
             "evidence": "According to official statistics.",
             "sources": ["https://example.com"],
-            "episode": "test-ep",
+            "session_id": "test-ep",
         }
 
         response = await client.post("/api/fact-checks", json=payload)
@@ -181,19 +181,18 @@ class TestPostFactCheck:
         assert fact_checks[1]["id"] == 2
         assert fact_checks[2]["id"] == 3
 
-    async def test_post_fact_check_uses_current_episode(self, client):
-        """POST /api/fact-checks uses current episode if not specified."""
-        state.current_episode_key = "current-ep"
-
+    async def test_post_fact_check_stores_session_id(self, client):
+        """POST /api/fact-checks stores session_id from request."""
         response = await client.post("/api/fact-checks", json={
             "sprecher": "Test",
             "behauptung": "Claim",
+            "session_id": "my-session",
         })
 
         assert response.status_code == 201
         db = state.get_db()
         fact_checks = await db.get_fact_checks()
-        assert fact_checks[0]["episode_key"] == "current-ep"
+        assert fact_checks[0]["session_id"] == "my-session"
 
 
 class TestPutFactCheck:
@@ -222,7 +221,7 @@ class TestPutFactCheck:
             "begruendung": "",
             "quellen": [],
             "timestamp": "2024-01-01T10:00:00",
-            "episode_key": "ep1",
+            "session_id": "ep1",
         })
 
         payload = {
@@ -299,7 +298,7 @@ class TestResendFactCheckEndpoint:
             "begruendung": "",
             "quellen": [],
             "timestamp": "2024-01-01T10:00:00",
-            "episode_key": "ep1",
+            "session_id": "ep1",
         })
 
         response = await client.post("/api/fact-checks/resend", json={
@@ -323,7 +322,7 @@ class TestResendFactCheckEndpoint:
             "begruendung": "",
             "quellen": [],
             "timestamp": "2024-01-01T10:00:00",
-            "episode_key": "ep1",
+            "session_id": "ep1",
         })
 
         response = await client.post("/api/fact-checks/resend", json={
@@ -357,7 +356,7 @@ class TestResendFactCheckEndpoint:
             "begruendung": "",
             "quellen": [],
             "timestamp": "2024-01-01T10:00:00",
-            "episode_key": "ep1",
+            "session_id": "ep1",
         })
 
         response = await client.post("/api/fact-checks/resend", json={
@@ -411,7 +410,7 @@ class TestDeleteFactCheckEndpoint:
             "sprecher": "Speaker A",
             "behauptung": "Some claim",
             "timestamp": "2024-01-01T10:00:00",
-            "episode_key": "ep1",
+            "session_id": "ep1",
         })
 
         response = await client.delete("/api/fact-checks/1")

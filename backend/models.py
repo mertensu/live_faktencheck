@@ -41,9 +41,8 @@ class FactCheckRequest(BaseModel):
     claim: Optional[str] = None
     evidence: Optional[str] = None
     sources: Optional[List[Any]] = None
-    # Episode
-    episode_key: Optional[str] = None
-    episode: Optional[str] = None
+    # Session
+    session_id: Optional[str] = None
 
 
 class PendingClaimsRequest(BaseModel):
@@ -64,7 +63,7 @@ class ClaimUpdateRequest(BaseModel):
     """Request body for PUT /api/fact-checks/{id} endpoint (re-send with overwrite)."""
     name: str
     claim: str
-    episode_key: Optional[str] = None
+    session_id: Optional[str] = None
     fact_check_id: Optional[int] = None
     original_claim: Optional[str] = None
 

@@ -21,7 +21,6 @@ from backend.models import (
 from backend.utils import to_dict, build_fact_check_dict
 from backend.services.registry import get_fact_checker
 import backend.state as state
-from config import EPISODES
 
 logger = logging.getLogger(__name__)
 
@@ -29,10 +28,10 @@ router = APIRouter(prefix="/api", tags=["fact-checks"])
 
 
 @router.get('/fact-checks')
-async def get_fact_checks(episode: Optional[str] = Query(default=None), status: Optional[str] = Query(default=None)):
-    """Return fact-checks, optionally filtered by episode and/or status"""
+async def get_fact_checks(session_id: Optional[str] = Query(default=None), status: Optional[str] = Query(default=None)):
+    """Return fact-checks, optionally filtered by session_id and/or status"""
     db = state.get_db()
-    return await db.get_fact_checks(episode_key=episode, status=status)
+    return await db.get_fact_checks(session_id=session_id, status=status)
 
 
 @router.post('/fact-checks', status_code=201, response_model=FactCheckStoredResponse)
@@ -44,7 +43,7 @@ async def receive_fact_check(request: FactCheckRequest):
     consistency = request.consistency or request.urteil or ""
     begruendung = request.begruendung or request.evidence or ""
     quellen = request.quellen or request.sources or []
-    episode_key = request.episode_key or request.episode or state.current_episode_key
+    session_id = request.session_id
 
     # Handle string sources
     if isinstance(quellen, str):
@@ -61,7 +60,7 @@ async def receive_fact_check(request: FactCheckRequest):
         "begruendung": begruendung,
         "quellen": quellen if isinstance(quellen, list) else [],
         "timestamp": datetime.now().isoformat(),
-        "episode_key": episode_key
+        "session_id": session_id
     }
     fact_check_id = await db.add_fact_check(fact_check)
 
@@ -89,7 +88,7 @@ async def update_fact_check(
     if not existing:
         raise HTTPException(status_code=404, detail=f"Fact-check {fact_check_id} not found")
 
-    episode_key = request.episode_key or existing.get("episode_key") or state.current_episode_key
+    session_id = request.session_id or existing.get("session_id")
 
     logger.info(f"Re-running fact-check for ID {fact_check_id}: {request.name} - {request.claim[:50]}...")
 
@@ -99,7 +98,7 @@ async def update_fact_check(
         fact_check_id,
         request.name,
         request.claim,
-        episode_key
+        session_id
     )
 
     return ProcessingResponse(
@@ -147,7 +146,7 @@ async def resend_fact_check(
         if existing:
             existing_id = existing["id"]
 
-    episode_key = request.episode_key or (existing.get("episode_key") if existing else None) or state.current_episode_key
+    session_id = request.session_id or (existing.get("session_id") if existing else None)
 
     if existing:
         logger.info(f"Re-sending fact-check (matched ID {existing_id}): {request.name} - {request.claim[:50]}...")
@@ -156,7 +155,7 @@ async def resend_fact_check(
             existing_id,
             request.name,
             request.claim,
-            episode_key
+            session_id
         )
         return ProcessingResponse(
             status="processing",
@@ -169,7 +168,7 @@ async def resend_fact_check(
             process_new_fact_check_async,
             request.name,
             request.claim,
-            episode_key
+            session_id
         )
         return ProcessingResponse(
             status="processing",
@@ -177,7 +176,7 @@ async def resend_fact_check(
         )
 
 
-async def process_new_fact_check_async(name: str, claim: str, episode_key: str):
+async def process_new_fact_check_async(name: str, claim: str, session_id: Optional[str]):
     """
     Background task: create a new fact-check.
     """
@@ -186,7 +185,8 @@ async def process_new_fact_check_async(name: str, claim: str, episode_key: str):
 
         fact_checker = get_fact_checker()
         claims_to_check = [{"name": name, "claim": claim}]
-        episode_date = EPISODES[episode_key].date if episode_key in EPISODES else None
+        session = await state.get_db().get_session(session_id) if session_id else None
+        episode_date = session["date"] if session else None
 
         if hasattr(fact_checker, 'check_claims_async'):
             results = await fact_checker.check_claims_async(claims_to_check, episode_date=episode_date)
@@ -198,7 +198,7 @@ async def process_new_fact_check_async(name: str, claim: str, episode_key: str):
             return
 
         db = state.get_db()
-        fact_check = build_fact_check_dict(to_dict(results[0]), episode_key, speaker_fallback=name, claim_fallback=claim)
+        fact_check = build_fact_check_dict(to_dict(results[0]), session_id, speaker_fallback=name, claim_fallback=claim)
         new_id = await db.add_fact_check(fact_check)
         logger.info(f"New fact-check created: ID {new_id} - {fact_check['consistency']}")
 
@@ -206,7 +206,7 @@ async def process_new_fact_check_async(name: str, claim: str, episode_key: str):
         logger.exception("Error creating new fact-check")
 
 
-async def process_fact_check_update_async(fact_check_id: int, name: str, claim: str, episode_key: str):
+async def process_fact_check_update_async(fact_check_id: int, name: str, claim: str, session_id: Optional[str]):
     """
     Background task: re-run fact-check and update existing entry.
     """
@@ -218,7 +218,8 @@ async def process_fact_check_update_async(fact_check_id: int, name: str, claim: 
 
         fact_checker = get_fact_checker()
         claims_to_check = [{"name": name, "claim": claim}]
-        episode_date = EPISODES[episode_key].date if episode_key in EPISODES else None
+        session = await db.get_session(session_id) if session_id else None
+        episode_date = session["date"] if session else None
 
         # Use async method if available, otherwise wrap sync call
         if hasattr(fact_checker, 'check_claims_async'):
@@ -231,7 +232,7 @@ async def process_fact_check_update_async(fact_check_id: int, name: str, claim: 
             return
 
         # Update existing fact-check
-        updated_data = build_fact_check_dict(to_dict(results[0]), episode_key, speaker_fallback=name, claim_fallback=claim)
+        updated_data = build_fact_check_dict(to_dict(results[0]), session_id, speaker_fallback=name, claim_fallback=claim)
         await db.update_fact_check(fact_check_id, updated_data)
         logger.info(f"Fact-check {fact_check_id} updated: {updated_data['consistency']}")
 
