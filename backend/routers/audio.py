@@ -8,14 +8,11 @@ import asyncio
 import logging
 import os
 from datetime import datetime, timezone
-from typing import Optional
-
 from fastapi import APIRouter, BackgroundTasks, UploadFile, File, Form
 
 from backend.models import ProcessingResponse
 from backend.state import processing_lock
 from backend.utils import to_dict, truncate
-from config import EPISODES
 from backend.services.registry import get_transcription_service, get_claim_extractor
 from backend.routers.claims import process_fact_checks_async
 import backend.state as state
@@ -49,23 +46,23 @@ def _set_event_status(block_id: str, status: str, message: str | None = None):
 async def receive_audio_block(
     background_tasks: BackgroundTasks,
     audio: UploadFile = File(...),
-    episode_key: Optional[str] = Form(default=None),
+    session_id: str = Form(...),
 ):
     """
     Receive audio block from listener.py and start processing pipeline.
 
     Expected: multipart form data with:
     - audio: WAV file
-    - episode_key: Episode identifier
+    - session_id: Session identifier (required)
     """
     audio_data = await audio.read()
-    ep_key = episode_key or state.current_episode_key or ''
+    ep_key = session_id
 
     # Generate block_id here so it can be tracked immediately
     now = datetime.now(timezone.utc)
     block_id = f"block_{int(now.timestamp() * 1000)}"
 
-    logger.info(f"Received audio block {block_id}: {len(audio_data)} bytes, episode: {ep_key}")
+    logger.info(f"Received audio block {block_id}: {len(audio_data)} bytes, session: {ep_key}")
 
     # Save audio to temp file for transcription and potential retrigger (dir guaranteed by startup)
     audio_path = _audio_file_path(block_id)
@@ -77,7 +74,7 @@ async def receive_audio_block(
         "block_id": block_id,
         "status": "processing",
         "started_at": now.isoformat(),
-        "episode_key": ep_key,
+        "session_id": ep_key,
         "audio_file": audio_path,
         "message": None,
     }
@@ -88,12 +85,11 @@ async def receive_audio_block(
     return ProcessingResponse(
         status="processing",
         message="Audio received, processing started",
-        episode_key=ep_key,
         block_id=block_id,
     )
 
 
-async def process_audio_pipeline_async(block_id: str, audio_path: str, episode_key: str):
+async def process_audio_pipeline_async(block_id: str, audio_path: str, session_id: str):
     """
     Background pipeline: audio -> transcription -> claim extraction -> pending claims
     """
@@ -106,7 +102,10 @@ async def process_audio_pipeline_async(block_id: str, audio_path: str, episode_k
 
     slow_task = asyncio.create_task(_mark_slow())
 
-    ep = EPISODES.get(episode_key)
+    db = state.get_db()
+    session = await db.get_session(session_id)
+    from config import Episode
+    ep = Episode.from_session_row(session) if session else None
     ep_guests = ep.guests if ep else []
     ep_date = ep.date if ep else ""
     ep_context = ep.context if ep else ""
@@ -171,14 +170,13 @@ async def process_audio_pipeline_async(block_id: str, audio_path: str, episode_k
             return
 
         # Step 3: Store as pending claims
-        db = state.get_db()
         pending_block = {
             "block_id": block_id,
             "timestamp": datetime.now().isoformat(),
             "claims_count": len(claims),
             "claims": [to_dict(c) for c in claims],
             "status": "pending",
-            "episode_key": episode_key,
+            "session_id": session_id,
             "text_preview": truncate(transcript)
         }
         await db.add_pending_block(pending_block)
@@ -186,7 +184,7 @@ async def process_audio_pipeline_async(block_id: str, audio_path: str, episode_k
         if os.getenv("AUTO_APPROVE", "false").lower() == "true":
             logger.info(f"[{block_id}] AUTO_APPROVE enabled, selecting best claims...")
             selected = await claim_extractor.select_async(pending_block["claims"], max_claims=3)
-            
+
             # Insert processing placeholders so viewers see spinners immediately
             now = datetime.now().isoformat()
             placeholder_ids = []
@@ -198,13 +196,13 @@ async def process_audio_pipeline_async(block_id: str, audio_path: str, episode_k
                     "begruendung": "",
                     "quellen": [],
                     "timestamp": now,
-                    "episode_key": episode_key,
+                    "session_id": session_id,
                     "status": "processing",
                 }
                 pid = await db.add_fact_check(placeholder)
                 placeholder_ids.append(pid)
-                
-            await process_fact_checks_async(selected, episode_key, ep_context, placeholder_ids=placeholder_ids)
+
+            await process_fact_checks_async(selected, session_id, ep_context, placeholder_ids=placeholder_ids)
 
         logger.info(f"[{block_id}] Pipeline complete. {len(claims)} claims added to pending.")
         _set_event_status(block_id, "done", f"{len(claims)} Claims extrahiert")

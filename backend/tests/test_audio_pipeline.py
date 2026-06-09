@@ -30,10 +30,18 @@ async def test_last_transcript_tail_stored_with_resolved_names(mock_audio_file):
     state.current_episode_key = "test-episode"
     state.pipeline_events["test-block"] = {"status": "processing"}
 
+    # Seed a session row so the DB lookup finds context
+    await state.get_db().add_session({
+        "session_id": "test-session",
+        "title": "t",
+        "guests": ["Anna Müller (Partei A)", "Karl Schmidt (Partei B)"],
+        "date": "2026",
+        "context": "ctx",
+    })
+
     with patch("backend.routers.audio.get_transcription_service", return_value=mock_transcription), \
-         patch("backend.routers.audio.get_claim_extractor", return_value=mock_extractor), \
-         patch("backend.routers.audio.EPISODES", {"test-episode": MagicMock(guests=[], date="", context="")}):
-        await process_audio_pipeline_async("test-block", mock_audio_file, "test-episode")
+         patch("backend.routers.audio.get_claim_extractor", return_value=mock_extractor):
+        await process_audio_pipeline_async("test-block", mock_audio_file, "test-session")
 
     # Tail must contain resolved names, not generic labels
     assert state.last_transcript_tail is not None
@@ -58,10 +66,18 @@ async def test_previous_block_ending_passed_with_resolved_names(mock_audio_file)
     state.current_episode_key = "test-episode"
     state.pipeline_events["test-block-2"] = {"status": "processing"}
 
+    # Seed a session row so the DB lookup finds context
+    await state.get_db().add_session({
+        "session_id": "test-session-2",
+        "title": "t",
+        "guests": ["Anna Müller (Partei A)", "Karl Schmidt (Partei B)"],
+        "date": "2026",
+        "context": "ctx",
+    })
+
     with patch("backend.routers.audio.get_transcription_service", return_value=mock_transcription), \
-         patch("backend.routers.audio.get_claim_extractor", return_value=mock_extractor), \
-         patch("backend.routers.audio.EPISODES", {"test-episode": MagicMock(guests=[], date="", context="")}):
-        await process_audio_pipeline_async("test-block-2", mock_audio_file, "test-episode")
+         patch("backend.routers.audio.get_claim_extractor", return_value=mock_extractor):
+        await process_audio_pipeline_async("test-block-2", mock_audio_file, "test-session-2")
 
     # extract_claims_async must receive the previous resolved tail
     call_kwargs = mock_extractor.extract_claims_async.call_args.kwargs
