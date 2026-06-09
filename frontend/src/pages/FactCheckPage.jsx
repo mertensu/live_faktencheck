@@ -65,13 +65,8 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
   const [displayTitle, setDisplayTitle] = useState(showName)  // Full show title (updated from config)
   const [backendError, setBackendError] = useState(null)  // Backend connection error
 
-  // Static mode: production build on non-localhost → try /data/<episode>.json first,
-  // fall back to live polling if no static file exists (live session in progress)
-  const [isStaticMode, setIsStaticMode] = useState(isProduction && !isLocalhost)
-
-  // Load episode configuration from backend (skipped in static mode — config comes from JSON)
+  // Load episode configuration from backend
   useEffect(() => {
-    if (isStaticMode) return
     const controller = new AbortController()
 
     const loadEpisodeConfig = async () => {
@@ -107,47 +102,11 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
     loadEpisodeConfig()
 
     return () => controller.abort()
-  }, [showName, showKey, episodeKey, isStaticMode])
-
-  useEffect(() => {
-    if (!isStaticMode || isAdminMode) return
-    const key = episodeKey || showKey || showName?.toLowerCase()
-    if (!key) return
-
-    fetch(`/data/${key}.json`)
-      .then(r => {
-        if (!r.ok) throw new Error(`No static data for ${key}`)
-        return r.json()
-      })
-      .then(async (data) => {
-        // Check if backend is live for this episode — if so, use live polling instead
-        try {
-          const healthRes = await fetch(`${BACKEND_URL}/api/health`)
-          if (healthRes.ok) {
-            const health = await healthRes.json()
-            if (health.current_episode === key) {
-              setIsStaticMode(false)
-              return
-            }
-          }
-        } catch {
-          // Backend not reachable — stay in static mode
-        }
-        setFactChecks(data.fact_checks || [])
-        if (data.speakers?.length > 0) setSpeakers(data.speakers)
-        if (data.show_name && data.date) {
-          setDisplayTitle(`${data.show_name} vom ${data.date}`)
-        } else if (data.show_name) {
-          setDisplayTitle(data.show_name)
-        }
-      })
-      .catch(() => setIsStaticMode(false)) // no static file → fall back to live polling
-  }, [isStaticMode, isAdminMode, episodeKey, showKey, showName])
+  }, [showName, showKey, episodeKey])
 
   // Polling for fact-checks (only in normal mode, only when backend is available)
   useEffect(() => {
     if (isAdminMode) return
-    if (isStaticMode) return
 
     let isMounted = true
     let currentController = null
@@ -214,7 +173,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
       if (currentController) currentController.abort()
       clearInterval(interval)
     }
-  }, [isAdminMode, isStaticMode, episodeKey])
+  }, [isAdminMode, episodeKey])
 
   // Seed sentClaims from DB when entering admin mode (enables resend for past fact-checks)
   useEffect(() => {
