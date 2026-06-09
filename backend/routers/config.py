@@ -39,9 +39,10 @@ async def get_all_shows_endpoint():
                     "date": s.get("date"),
                     "episode_name": Episode.from_session_row(s).episode_name,
                     "type": s.get("type", "show"),
-                    "publish": s.get("visibility") == "public",
+                    "publish": True,
                 }
                 for s in sessions
+                if s.get("visibility") == "public"
             ],
             key=lambda x: x["key"], reverse=True,
         )
