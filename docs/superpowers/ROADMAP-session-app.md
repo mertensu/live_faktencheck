@@ -44,7 +44,7 @@ Ergebnisse privat per Link teilbar.
 | **1b** | Homepage / App-Informationsarchitektur neu denken | ⬜ Offen (eigener Spec) |
 | **2** | Browser-Audio-Capture (ersetzt `listener.py`) | ⬜ Offen |
 | **3** | Zugangscodes + Kosten-/Missbrauchslimits | ⬜ Offen |
-| **4** | VPS-Deployment (Tunnel weg, kein lokaler Start, JSON-Export entfällt) | ⬜ Offen |
+| **4** | VPS-Deployment (kein lokaler Start, JSON-Export entfällt) | 🟡 Backend live auf VPS; Go-Live-Merge offen |
 
 ---
 
@@ -133,10 +133,19 @@ mit `session_id` — exakt das Contract, das `listener.py` heute schon nutzt.
 
 ---
 
-## ⬜ Phase 4 — VPS-Deployment
+## 🟡 Phase 4 — VPS-Deployment (Backend live; Go-Live-Merge offen)
 
-**Ziel:** Backend dauerhaft auf dem Hostinger-VPS — kein lokaler Start, kein
-Cloudflare-Tunnel mehr.
+**Status (2026-06-09):** Part A (Code) + Part B (Betrieb) abgeschlossen auf Branch
+`worktree-session-multitenancy`. Das Backend läuft live auf dem VPS als zwei systemd-Services
+(`factcheck-backend` + `cloudflared`); `https://api.live-faktencheck.de/api/health` liefert
+`status: ok`, `fact_checks: 241`, übersteht Reboots, tägliches DB-Backup-Cron aktiv. CLI-
+verifiziert: `/api/config/shows` (nur public), `/api/trusted-domains`, CORS für `*.pages.dev`.
+**Offen:** Pages-**Preview**-Smoke-Test im Browser (Cloudflare-Dashboard-Schritte) und der
+optionale **Go-Live-Merge** nach `main` (schaltet das Prod-Frontend auf die Live-API um).
+Tunnel bleibt bewusst bestehen (Option A) — der ursprünglich geplante DNS-A-Record entfällt.
+Details: `plans/2026-06-09-phase4-vps-deployment.md`, Handover `handover/2026-06-09_*`.
+
+**Ziel:** Backend dauerhaft auf dem Hostinger-VPS — kein lokaler Start.
 
 **Technische Eckpunkte:**
 - Backend als `systemd`-Service (oder Docker) auf dem VPS; eigene öffentliche IP.
