@@ -19,3 +19,11 @@ async def test_health_reports_active_sessions(client):
     resp = await client.get("/api/health")
     assert resp.status_code == 200
     assert "active_sessions" in resp.json()
+
+
+async def test_session_config_omits_owner_code(client):
+    db = state.get_db()
+    await db.add_session({"session_id": "sec1", "title": "t", "owner_code": "SECRET"})
+    resp = await client.get("/api/config/sec1")
+    assert resp.status_code == 200
+    assert "owner_code" not in resp.json()

@@ -13,7 +13,7 @@ from backend.models import (
     ShowsDetailedResponse,
     EpisodesResponse,
 )
-from config import get_show_name, get_episodes_for_show
+from config import Episode, get_show_name, get_episodes_for_show
 from backend.services.trusted_domains import TRUSTED_DOMAINS_BY_CATEGORY
 import backend.state as state
 
@@ -31,7 +31,6 @@ async def get_all_shows_endpoint():
     try:
         db = state.get_db()
         sessions = await db.list_sessions()
-        from config import Episode, get_show_name
         detailed = sorted(
             [
                 {
@@ -70,9 +69,9 @@ async def get_session_config_endpoint(session_id: str):
     s = await db.get_session(session_id)
     if s is None:
         raise HTTPException(status_code=404, detail=f"Unknown session: {session_id}")
-    from config import Episode
     ep = Episode.from_session_row(s)
-    return {**s, "speakers": ep.speakers, "show_name": get_show_name(s["title"])}
+    payload = {k: v for k, v in s.items() if k != "owner_code"}
+    return {**payload, "speakers": ep.speakers, "show_name": get_show_name(s["title"])}
 
 
 @router.get('/trusted-domains')
