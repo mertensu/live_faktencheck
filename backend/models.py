@@ -53,11 +53,6 @@ class PendingClaimsRequest(BaseModel):
     session_id: Optional[str] = None
 
 
-class SetEpisodeRequest(BaseModel):
-    """Request body for /api/set-episode endpoint."""
-    episode_key: Optional[str] = None
-    episode: Optional[str] = None
-
 
 class ClaimUpdateRequest(BaseModel):
     """Request body for PUT /api/fact-checks/{id} endpoint (re-send with overwrite)."""
@@ -86,7 +81,7 @@ class ProcessingResponse(BaseModel):
     """Response for endpoints that start background processing."""
     status: str
     message: Optional[str] = None
-    episode_key: Optional[str] = None
+    session_id: Optional[str] = None
     claims_count: Optional[int] = None
     source_id: Optional[str] = None
     block_id: Optional[str] = None
@@ -95,7 +90,7 @@ class ProcessingResponse(BaseModel):
 class HealthResponse(BaseModel):
     """Response for /api/health endpoint."""
     status: str
-    current_episode: Optional[str]
+    active_sessions: int
     pending_blocks: int
     fact_checks: int
 

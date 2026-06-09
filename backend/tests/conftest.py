@@ -30,7 +30,6 @@ async def reset_state():
     db = Database(":memory:")
     await db.connect()
     state.db = db
-    state.current_episode_key = None
     state.last_transcript_tail = None
     state.pipeline_events.clear()
     CostTracker.reset_instance()
@@ -39,7 +38,6 @@ async def reset_state():
     # Cleanup after test
     await db.close()
     state.db = None
-    state.current_episode_key = None
     state.last_transcript_tail = None
     state.pipeline_events.clear()
     CostTracker.reset_instance()

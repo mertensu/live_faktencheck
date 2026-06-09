@@ -16,7 +16,6 @@ from backend.models import (
     PendingClaimsRequest,
     TextBlockRequest,
     ClaimUpdateRequest,
-    SetEpisodeRequest,
     ProcessingResponse,
     HealthResponse,
 )
@@ -33,7 +32,7 @@ class TestFactCheckRequest:
             consistency="hoch",
             begruendung="Statistisches Bundesamt bestätigt dies.",
             quellen=["https://destatis.de"],
-            episode_key="maischberger-2024-01-15",
+            session_id="maischberger-2024-01-15",
         )
 
         assert request.sprecher == "Angela Merkel"
@@ -41,7 +40,7 @@ class TestFactCheckRequest:
         assert request.consistency == "hoch"
         assert request.begruendung == "Statistisches Bundesamt bestätigt dies."
         assert request.quellen == ["https://destatis.de"]
-        assert request.episode_key == "maischberger-2024-01-15"
+        assert request.session_id == "maischberger-2024-01-15"
 
     def test_english_fields(self):
         """FactCheckRequest accepts English field names."""
@@ -52,7 +51,7 @@ class TestFactCheckRequest:
             consistency="hoch",
             evidence="Official statistics confirm this.",
             sources=["https://example.com"],
-            episode="test-episode",
+            session_id="test-session",
         )
 
         assert request.speaker == "Joe Biden"
@@ -60,7 +59,7 @@ class TestFactCheckRequest:
         assert request.original_claim == "The economy is growing fast"
         assert request.evidence == "Official statistics confirm this."
         assert request.sources == ["https://example.com"]
-        assert request.episode == "test-episode"
+        assert request.session_id == "test-session"
 
     def test_mixed_german_english_fields(self):
         """FactCheckRequest accepts mixed German/English fields."""
@@ -117,12 +116,12 @@ class TestClaimApprovalRequest:
                 {"name": "Speaker B", "claim": "Claim 2"},
             ],
             block_id="block-123",
-            episode_key="test-episode",
+            session_id="test-session",
         )
 
         assert len(request.claims) == 2
         assert request.block_id == "block-123"
-        assert request.episode_key == "test-episode"
+        assert request.session_id == "test-session"
 
     def test_claims_required(self):
         """ClaimApprovalRequest requires claims field."""
@@ -138,7 +137,7 @@ class TestClaimApprovalRequest:
         )
 
         assert request.block_id is None
-        assert request.episode_key is None
+        assert request.session_id is None
 
     def test_claims_as_list_of_dicts(self):
         """ClaimApprovalRequest claims must be list of dicts."""
@@ -160,7 +159,7 @@ class TestPendingClaimsRequest:
             block_id="test-block",
             timestamp="2024-01-15T10:30:00",
             claims=[{"name": "Speaker", "claim": "Statement"}],
-            episode_key="episode-1",
+            session_id="session-1",
         )
 
         assert request.block_id == "test-block"
@@ -174,7 +173,7 @@ class TestPendingClaimsRequest:
         assert request.block_id is None
         assert request.timestamp is None
         assert request.claims == []
-        assert request.episode_key is None
+        assert request.session_id is None
 
 
 class TestTextBlockRequest:
@@ -184,12 +183,14 @@ class TestTextBlockRequest:
         """TextBlockRequest accepts valid data."""
         request = TextBlockRequest(
             text="Article content here.",
+            session_id="session-abc",
             headline="Breaking News",
             publication_date="2024-01-15",
             source_id="article-123",
         )
 
         assert request.text == "Article content here."
+        assert request.session_id == "session-abc"
         assert request.headline == "Breaking News"
         assert request.publication_date == "2024-01-15"
         assert request.source_id == "article-123"
@@ -203,13 +204,13 @@ class TestTextBlockRequest:
 
     def test_headline_defaults_empty(self):
         """TextBlockRequest headline defaults to empty string."""
-        request = TextBlockRequest(text="Some text")
+        request = TextBlockRequest(text="Some text", session_id="s1")
 
         assert request.headline == ""
 
     def test_optional_fields(self):
         """TextBlockRequest optional fields default to None."""
-        request = TextBlockRequest(text="Text")
+        request = TextBlockRequest(text="Text", session_id="s1")
 
         assert request.publication_date is None
         assert request.source_id is None
@@ -223,12 +224,12 @@ class TestClaimUpdateRequest:
         request = ClaimUpdateRequest(
             name="Updated Speaker",
             claim="Updated claim text",
-            episode_key="ep-1",
+            session_id="session-1",
         )
 
         assert request.name == "Updated Speaker"
         assert request.claim == "Updated claim text"
-        assert request.episode_key == "ep-1"
+        assert request.session_id == "session-1"
 
     def test_name_and_claim_required(self):
         """ClaimUpdateRequest requires name and claim."""
@@ -243,28 +244,6 @@ class TestClaimUpdateRequest:
         assert "name" in str(exc_info.value)
 
 
-class TestSetEpisodeRequest:
-    """Tests for SetEpisodeRequest model."""
-
-    def test_episode_key_field(self):
-        """SetEpisodeRequest accepts episode_key."""
-        request = SetEpisodeRequest(episode_key="maischberger-2024")
-
-        assert request.episode_key == "maischberger-2024"
-
-    def test_episode_alias_field(self):
-        """SetEpisodeRequest accepts episode as alias."""
-        request = SetEpisodeRequest(episode="hartaberfair-2024")
-
-        assert request.episode == "hartaberfair-2024"
-
-    def test_both_optional(self):
-        """SetEpisodeRequest allows empty request."""
-        request = SetEpisodeRequest()
-
-        assert request.episode_key is None
-        assert request.episode is None
-
 
 class TestResponseModels:
     """Tests for response models."""
@@ -274,7 +253,7 @@ class TestResponseModels:
         response = ProcessingResponse(
             status="processing",
             message="Task started",
-            episode_key="ep-1",
+            session_id="session-1",
             claims_count=5,
             source_id="src-1",
             block_id="blk-1",
@@ -294,12 +273,12 @@ class TestResponseModels:
         """HealthResponse accepts all fields."""
         response = HealthResponse(
             status="ok",
-            current_episode="test-ep",
+            active_sessions=2,
             pending_blocks=3,
             fact_checks=10,
         )
 
         assert response.status == "ok"
-        assert response.current_episode == "test-ep"
+        assert response.active_sessions == 2
         assert response.pending_blocks == 3
         assert response.fact_checks == 10

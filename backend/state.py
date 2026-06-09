@@ -10,7 +10,6 @@ import asyncio
 from backend.database import Database
 
 # Runtime state (not persisted)
-current_episode_key: str | None = None
 last_transcript_tail: str | None = None
 
 # Lock for concurrent access
@@ -20,7 +19,7 @@ processing_lock = asyncio.Lock()
 db: Database | None = None
 
 # Pipeline event tracking (in-memory, not persisted)
-# schema per entry: { block_id, status, started_at, episode_key, audio_file, message }
+# schema per entry: { block_id, status, started_at, session_id, audio_file, message }
 # status values: "processing" | "slow" | "timeout" | "error" | "done"
 pipeline_events: dict[str, dict] = {}
 

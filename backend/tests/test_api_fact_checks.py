@@ -268,21 +268,12 @@ class TestHealthEndpoint:
         assert data["pending_blocks"] == 2
         assert data["fact_checks"] == 1
 
-    async def test_health_includes_current_episode(self, client):
-        """GET /api/health includes current episode key."""
-        state.current_episode_key = "active-episode"
-
+    async def test_health_reports_active_sessions(self, client):
+        """GET /api/health reports active_sessions count."""
         response = await client.get("/api/health")
 
         data = response.json()
-        assert data["current_episode"] == "active-episode"
-
-    async def test_health_null_episode_when_not_set(self, client):
-        """GET /api/health returns null episode when not set."""
-        response = await client.get("/api/health")
-
-        data = response.json()
-        assert data["current_episode"] is None
+        assert "active_sessions" in data
 
 
 class TestResendFactCheckEndpoint:
@@ -367,37 +358,6 @@ class TestResendFactCheckEndpoint:
         assert response.status_code == 202
         assert response.json()["status"] == "processing"
 
-
-class TestSetEpisodeEndpoint:
-    """Tests for POST /api/set-episode endpoint."""
-
-    async def test_set_episode_success(self, client):
-        """POST /api/set-episode sets current episode."""
-        response = await client.post("/api/set-episode", json={
-            "episode_key": "new-episode",
-        })
-
-        assert response.status_code == 200
-        data = response.json()
-        assert data["status"] == "success"
-        assert data["episode_key"] == "new-episode"
-        assert state.current_episode_key == "new-episode"
-
-    async def test_set_episode_accepts_episode_field(self, client):
-        """POST /api/set-episode accepts 'episode' field as alias."""
-        response = await client.post("/api/set-episode", json={
-            "episode": "alias-episode",
-        })
-
-        assert response.status_code == 200
-        assert state.current_episode_key == "alias-episode"
-
-    async def test_set_episode_rejects_empty(self, client):
-        """POST /api/set-episode rejects empty episode_key."""
-        response = await client.post("/api/set-episode", json={})
-
-        assert response.status_code == 400
-        assert "episode_key missing" in response.json()["detail"]
 
 
 class TestDeleteFactCheckEndpoint:

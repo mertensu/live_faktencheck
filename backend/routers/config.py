@@ -4,18 +4,16 @@ Configuration endpoints.
 Handles show/episode configuration and health checks.
 """
 
-import dataclasses
 import logging
 
 from fastapi import APIRouter, HTTPException
 
 from backend.models import (
-    SetEpisodeRequest,
     HealthResponse,
     ShowsDetailedResponse,
     EpisodesResponse,
 )
-from config import EPISODES, get_show_name, get_episodes_for_show
+from config import get_show_name, get_episodes_for_show
 from backend.services.trusted_domains import TRUSTED_DOMAINS_BY_CATEGORY
 import backend.state as state
 
@@ -25,28 +23,30 @@ router = APIRouter(prefix="/api", tags=["config"])
 
 
 # NOTE: More specific routes MUST come before the wildcard route
-# Otherwise /api/config/shows would match /api/config/{episode_key}
+# Otherwise /api/config/shows would match /api/config/{session_id}
 
 @router.get('/config/shows', response_model=ShowsDetailedResponse)
 async def get_all_shows_endpoint():
-    """Return all available episodes as individual entries"""
+    """Return all available sessions as individual entries"""
     try:
-        detailed_shows = sorted(
+        db = state.get_db()
+        sessions = await db.list_sessions()
+        from config import Episode, get_show_name
+        detailed = sorted(
             [
                 {
-                    "key": ep.key,
-                    "name": get_show_name(ep.show),
-                    "date": ep.date,
-                    "episode_name": ep.episode_name,
-                    "type": ep.type,
-                    "publish": ep.publish,
+                    "key": s["session_id"],
+                    "name": get_show_name(s["title"]),
+                    "date": s.get("date"),
+                    "episode_name": Episode.from_session_row(s).episode_name,
+                    "type": s.get("type", "show"),
+                    "publish": s.get("visibility") == "public",
                 }
-                for ep in EPISODES.values()
+                for s in sessions
             ],
-            key=lambda x: x["key"],
-            reverse=True,
+            key=lambda x: x["key"], reverse=True,
         )
-        return ShowsDetailedResponse(shows=detailed_shows)
+        return ShowsDetailedResponse(shows=detailed)
     except Exception as e:
         logger.error(f"Error loading shows: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -63,30 +63,16 @@ async def get_episodes_for_show_endpoint(show_key: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get('/config/{episode_key}')
-async def get_episode_config_endpoint(episode_key: str):
-    """Return configuration for an episode"""
-    episode = EPISODES.get(episode_key)
-    if episode is None:
-        raise HTTPException(status_code=404, detail=f"Unknown episode: {episode_key}")
-    return {**dataclasses.asdict(episode), "speakers": episode.speakers, "show_name": get_show_name(episode.show)}
-
-
-@router.post('/set-episode')
-async def set_current_episode(request: SetEpisodeRequest):
-    """Set the current episode (called by listener). Clears old pending claims."""
-    episode_key = request.episode_key or request.episode
-    if episode_key:
-        state.current_episode_key = episode_key
-        # Clear all pending claims from previous sessions
-        db = state.get_db()
-        deleted = await db.clear_pending_blocks()
-        if deleted:
-            logger.info(f"Cleared {deleted} pending claim blocks from previous session")
-        logger.info(f"Current episode set: {episode_key}")
-        return {"status": "success", "episode_key": episode_key, "cleared_pending": deleted}
-    else:
-        raise HTTPException(status_code=400, detail="episode_key missing")
+@router.get('/config/{session_id}')
+async def get_session_config_endpoint(session_id: str):
+    """Return configuration for a session"""
+    db = state.get_db()
+    s = await db.get_session(session_id)
+    if s is None:
+        raise HTTPException(status_code=404, detail=f"Unknown session: {session_id}")
+    from config import Episode
+    ep = Episode.from_session_row(s)
+    return {**s, "speakers": ep.speakers, "show_name": get_show_name(s["title"])}
 
 
 @router.get('/trusted-domains')
@@ -99,9 +85,10 @@ async def get_trusted_domains():
 async def health():
     """Health check endpoint"""
     db = state.get_db()
+    sessions = await db.list_sessions()
     return HealthResponse(
         status="ok",
-        current_episode=state.current_episode_key,
+        active_sessions=len([s for s in sessions if s.get("status") == "active"]),
         pending_blocks=await db.count_pending_blocks(),
         fact_checks=await db.count_fact_checks()
     )

@@ -27,7 +27,6 @@ async def test_last_transcript_tail_stored_with_resolved_names(mock_audio_file):
     mock_extractor.extract_claims_async = AsyncMock(return_value=[])
 
     state.last_transcript_tail = None
-    state.current_episode_key = "test-episode"
     state.pipeline_events["test-block"] = {"status": "processing"}
 
     # Seed a session row so the DB lookup finds context
@@ -63,7 +62,6 @@ async def test_previous_block_ending_passed_with_resolved_names(mock_audio_file)
     mock_extractor.extract_claims_async = AsyncMock(return_value=[])
 
     state.last_transcript_tail = prev_resolved_tail
-    state.current_episode_key = "test-episode"
     state.pipeline_events["test-block-2"] = {"status": "processing"}
 
     # Seed a session row so the DB lookup finds context
