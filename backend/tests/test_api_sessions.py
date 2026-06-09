@@ -1,5 +1,4 @@
 """Tests for the sessions API."""
-import pytest
 
 
 async def test_create_session_returns_id(client):
