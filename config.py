@@ -17,6 +17,7 @@ Felder pro Episode:
 
 import re
 from dataclasses import dataclass, field
+from datetime import datetime as _datetime
 
 # Anzeigename je Show-Schlüssel
 SHOWS = {
@@ -64,6 +65,20 @@ class Episode:
         if self.date:
             return self.date
         return self.key
+
+    @classmethod
+    def from_session_row(cls, row: dict) -> "Episode":
+        """Build an Episode view-model from a sessions-table row dict."""
+        return cls(
+            key=row["session_id"],
+            show=row.get("title", ""),
+            date=row.get("date", ""),
+            guests=row.get("guests", []),
+            context=row.get("context", ""),
+            reference_links=row.get("reference_links", []),
+            type=row.get("type", "show"),
+            publish=row.get("visibility") == "public",
+        )
 
 
 
@@ -220,6 +235,21 @@ EPISODES: dict[str, Episode] = {
 
 
 # --- Module-level helpers ---
+
+def episode_to_session_dict(ep: Episode) -> dict:
+    """Convert a hardcoded Episode into a sessions-table row dict (for seeding)."""
+    return {
+        "session_id": ep.key,
+        "title": ep.show,
+        "date": ep.date,
+        "guests": ep.guests,
+        "context": ep.context,
+        "reference_links": ep.reference_links,
+        "type": ep.type,
+        "status": "ended",
+        "visibility": "public" if ep.publish else "private",
+        "created_at": _datetime.now().isoformat(),
+    }
 
 def get_show_name(show_key: str) -> str:
     """Returns the display name for a show key."""
