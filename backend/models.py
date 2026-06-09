@@ -68,6 +68,16 @@ class ClaimUpdateRequest(BaseModel):
     original_claim: Optional[str] = None
 
 
+class CreateSessionRequest(BaseModel):
+    """Request body for POST /api/sessions."""
+    title: str
+    date: str = ""
+    guests: List[str] = []
+    context: str = ""
+    reference_links: List[str] = []
+    type: str = "show"
+
+
 # =============================================================================
 # Response Models
 # =============================================================================
@@ -112,3 +122,18 @@ class FactCheckStoredResponse(BaseModel):
     """Response for successful fact-check storage."""
     status: str
     id: int
+
+
+class SessionResponse(BaseModel):
+    """A session as returned by the API."""
+    session_id: str
+    title: str
+    date: str = ""
+    guests: List[str] = []
+    context: str = ""
+    reference_links: List[Any] = []
+    type: str = "show"
+    status: str = "active"
+    visibility: str = "private"
+    created_at: Optional[str] = None
+    ended_at: Optional[str] = None
