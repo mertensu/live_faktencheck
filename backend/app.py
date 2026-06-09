@@ -24,6 +24,7 @@ from backend.routers.audio import AUDIO_TMP_DIR
 from backend.routers.claims import claim_queue_worker
 from backend.database import Database
 from backend import state
+from config import EPISODES, episode_to_session_dict
 
 # Load environment variables
 load_dotenv()
@@ -35,6 +36,12 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
+
+async def seed_legacy_episodes(db) -> None:
+    """Seed hardcoded EPISODES into the sessions table (idempotent)."""
+    for ep in EPISODES.values():
+        await db.seed_session_if_absent(episode_to_session_dict(ep))
 
 
 # Lifespan context manager for startup/shutdown
@@ -56,6 +63,8 @@ async def lifespan(app: FastAPI):
         logger.info(f"Using file database: {db.db_path}")
     await db.connect()
     state.db = db
+    await seed_legacy_episodes(db)
+    logger.info("Legacy episodes seeded into sessions table")
 
     # Startup: start claim queue worker
     max_concurrency = int(os.getenv("FACT_CHECK_MAX_CONCURRENCY", "2"))
