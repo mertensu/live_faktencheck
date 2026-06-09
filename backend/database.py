@@ -78,6 +78,21 @@ class Database:
                 text_preview TEXT,
                 info TEXT
             );
+
+            CREATE TABLE IF NOT EXISTS sessions (
+                session_id       TEXT PRIMARY KEY,
+                title            TEXT NOT NULL DEFAULT '',
+                date             TEXT NOT NULL DEFAULT '',
+                guests           TEXT NOT NULL DEFAULT '[]',
+                context          TEXT NOT NULL DEFAULT '',
+                reference_links  TEXT NOT NULL DEFAULT '[]',
+                type             TEXT NOT NULL DEFAULT 'show',
+                status           TEXT NOT NULL DEFAULT 'active',
+                visibility       TEXT NOT NULL DEFAULT 'private',
+                owner_code       TEXT,
+                created_at       TEXT NOT NULL,
+                ended_at         TEXT
+            );
         """)
         await self.db.commit()
 
@@ -205,6 +220,78 @@ class Database:
             "double_check": bool(row["double_check"]),
             "critique_note": row["critique_note"],
         }
+
+    # =========================================================================
+    # Sessions CRUD
+    # =========================================================================
+
+    def _row_to_session(self, row) -> dict:
+        return {
+            "session_id": row["session_id"],
+            "title": row["title"],
+            "date": row["date"],
+            "guests": json.loads(row["guests"]),
+            "context": row["context"],
+            "reference_links": json.loads(row["reference_links"]),
+            "type": row["type"],
+            "status": row["status"],
+            "visibility": row["visibility"],
+            "owner_code": row["owner_code"],
+            "created_at": row["created_at"],
+            "ended_at": row["ended_at"],
+        }
+
+    async def add_session(self, session: dict) -> str:
+        """Insert a session. Returns its session_id."""
+        from datetime import datetime
+        await self.db.execute(
+            """INSERT INTO sessions
+               (session_id, title, date, guests, context, reference_links,
+                type, status, visibility, owner_code, created_at, ended_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                session["session_id"],
+                session.get("title", ""),
+                session.get("date", ""),
+                json.dumps(session.get("guests", []), ensure_ascii=False),
+                session.get("context", ""),
+                json.dumps(session.get("reference_links", []), ensure_ascii=False),
+                session.get("type", "show"),
+                session.get("status", "active"),
+                session.get("visibility", "private"),
+                session.get("owner_code"),
+                session.get("created_at", datetime.now().isoformat()),
+                session.get("ended_at"),
+            ),
+        )
+        await self.db.commit()
+        return session["session_id"]
+
+    async def get_session(self, session_id: str) -> dict | None:
+        cursor = await self.db.execute(
+            "SELECT * FROM sessions WHERE session_id = ?", (session_id,)
+        )
+        row = await cursor.fetchone()
+        return self._row_to_session(row) if row else None
+
+    async def list_sessions(self) -> list[dict]:
+        cursor = await self.db.execute("SELECT * FROM sessions ORDER BY created_at DESC")
+        return [self._row_to_session(r) for r in await cursor.fetchall()]
+
+    async def end_session(self, session_id: str) -> bool:
+        from datetime import datetime
+        cursor = await self.db.execute(
+            "UPDATE sessions SET status = 'ended', ended_at = ? WHERE session_id = ?",
+            (datetime.now().isoformat(), session_id),
+        )
+        await self.db.commit()
+        return cursor.rowcount > 0
+
+    async def seed_session_if_absent(self, session: dict) -> None:
+        """Insert a session only if its session_id does not already exist."""
+        existing = await self.get_session(session["session_id"])
+        if existing is None:
+            await self.add_session(session)
 
     # =========================================================================
     # Pending Claims Blocks CRUD
