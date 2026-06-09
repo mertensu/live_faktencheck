@@ -7,12 +7,6 @@ export const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost
 // N8N Webhook URL for verified claims
 export const N8N_VERIFIED_WEBHOOK = import.meta.env.VITE_N8N_WEBHOOK_URL || "http://localhost:5678/webhook/verified-claims"
 
-// Static mode: production build not running on localhost
-const isLocalhost = window.location.hostname === 'localhost' ||
-  window.location.hostname === '127.0.0.1' ||
-  window.location.hostname.startsWith('192.168.')
-export const isStaticMode = import.meta.env.PROD && !isLocalhost
-
 // Debug logging - only active in development
 export const debug = {
   log: (...args) => { if (import.meta.env.DEV) console.log(...args) },
