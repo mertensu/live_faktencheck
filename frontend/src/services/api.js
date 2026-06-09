@@ -49,3 +49,17 @@ export const safeJsonParse = async (response, errorContext = '') => {
     throw error
   }
 }
+
+export async function createSession(payload) {
+  const res = await fetch(`${BACKEND_URL}/api/sessions`, {
+    method: 'POST', headers: FETCH_HEADERS, body: JSON.stringify(payload),
+  })
+  return safeJsonParse(res, 'createSession')
+}
+
+export async function endSession(sessionId) {
+  const res = await fetch(`${BACKEND_URL}/api/sessions/${sessionId}/end`, {
+    method: 'POST', headers: FETCH_HEADERS,
+  })
+  return safeJsonParse(res, 'endSession')
+}

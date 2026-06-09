@@ -158,7 +158,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
 
       try {
         const url = episodeKey
-          ? `${BACKEND_URL}/api/fact-checks?episode=${episodeKey}`
+          ? `${BACKEND_URL}/api/fact-checks?session_id=${episodeKey}`
           : `${BACKEND_URL}/api/fact-checks`
 
         debug.log(`Loading fact-checks from: ${url}`)
@@ -220,7 +220,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
   useEffect(() => {
     if (!isAdminMode || !showAdminMode) return
     const url = episodeKey
-      ? `${BACKEND_URL}/api/fact-checks?episode=${episodeKey}`
+      ? `${BACKEND_URL}/api/fact-checks?session_id=${episodeKey}`
       : `${BACKEND_URL}/api/fact-checks`
     fetch(url, { headers: FETCH_HEADERS })
       .then(r => r.ok ? r.json() : Promise.reject(r.status))
@@ -251,7 +251,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
   useEffect(() => {
     if (!isAdminMode || !showAdminMode) return
     const url = episodeKey
-      ? `${BACKEND_URL}/api/fact-checks?episode=${episodeKey}&status=discarded`
+      ? `${BACKEND_URL}/api/fact-checks?session_id=${episodeKey}&status=discarded`
       : `${BACKEND_URL}/api/fact-checks?status=discarded`
     fetch(url, { headers: FETCH_HEADERS })
       .then(r => r.ok ? r.json() : Promise.reject(r.status))
@@ -285,7 +285,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
 
       try {
         const pendingUrl = episodeKey
-          ? `${BACKEND_URL}/api/pending-claims?episode=${episodeKey}`
+          ? `${BACKEND_URL}/api/pending-claims?session_id=${episodeKey}`
           : `${BACKEND_URL}/api/pending-claims`
         const response = await fetch(pendingUrl, {
           headers: FETCH_HEADERS,
@@ -456,7 +456,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
         headers: FETCH_HEADERS,
         body: JSON.stringify({
           claims: claims.map(c => ({ name: c.name, claim: c.claim })),
-          episode_key: episodeKey
+          session_id: episodeKey
         })
       })
       if (!resp.ok) return []
@@ -583,6 +583,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
           body: JSON.stringify({
             block_id: `staged_${Date.now()}`,
             claims: claimsToSend,
+            session_id: episodeKey,
             n8n_webhook_url: N8N_VERIFIED_WEBHOOK
           })
         })

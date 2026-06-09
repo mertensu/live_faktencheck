@@ -7,6 +7,7 @@ import { HomePage } from './pages/HomePage'
 import { AboutPage } from './pages/AboutPage'
 import { TrustedDomainsPage } from './pages/TrustedDomainsPage'
 import { FactCheckPage } from './pages/FactCheckPage'
+import { NewSessionPage } from './pages/NewSessionPage'
 
 function EpisodeRoute() {
   const { episodeKey } = useParams()
@@ -24,6 +25,7 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/trusted-domains" element={<TrustedDomainsPage />} />
+          <Route path="/new" element={<NewSessionPage />} />
           <Route path="/:episodeKey" element={<EpisodeRoute />} />
         </Routes>
         <Footer />
