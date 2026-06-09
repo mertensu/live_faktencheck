@@ -34,7 +34,7 @@ import sqlite3, sys
 
 db = sqlite3.connect('$DB_PATH')
 rows = db.execute(
-    'SELECT id, sprecher, behauptung, consistency, status FROM fact_checks WHERE episode_key=? ORDER BY id',
+    'SELECT id, sprecher, behauptung, consistency, status FROM fact_checks WHERE session_id=? ORDER BY id',
     ('$EPISODE_KEY',)
 ).fetchall()
 
@@ -64,9 +64,7 @@ delete_claim() {
 
     if [ "$http_code" = "200" ]; then
         echo -e "${GREEN}✅ Claim $id deleted.${NC}"
-        echo -e "${BLUE}Re-exporting episode JSON...${NC}"
-        uv run python export_episode.py --json "$EPISODE_KEY"
-        echo -e "${GREEN}✅ JSON updated. Don't forget to commit and push.${NC}"
+        echo -e "${BLUE}The live frontend reflects this immediately (no JSON re-export needed).${NC}"
     elif [ "$http_code" = "404" ]; then
         echo -e "${RED}❌ Claim $id not found.${NC}"
         exit 1

@@ -150,7 +150,7 @@ echo -e "   1. Open Admin UI: ${YELLOW}http://localhost:3000${NC}"
 echo -e "   2. Start Listener: ${YELLOW}uv run python listener.py $EPISODE_KEY${NC}"
 echo ""
 echo -e "${BLUE}🛑 Stop:${NC}"
-echo -e "   ${YELLOW}./stop_production.sh${NC}"
+echo -e "   ${YELLOW}Ctrl+C, or kill the backend/frontend processes (ports $BACKEND_PORT/3000)${NC}"
 echo ""
 # Step 4: Start Listener?
 print_header "Step 4: Start Listener"
