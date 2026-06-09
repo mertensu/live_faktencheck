@@ -18,7 +18,7 @@ def truncate(text: str, max_length: int = 200) -> str:
 
 def build_fact_check_dict(
     result_dict: dict,
-    episode_key: str,
+    session_id: str,
     speaker_fallback: str = "",
     claim_fallback: str = "",
 ) -> dict:
@@ -31,7 +31,7 @@ def build_fact_check_dict(
         "begruendung": result_dict.get("evidence", ""),
         "quellen": [to_dict(s) for s in sources] if sources else [],
         "timestamp": datetime.now().isoformat(),
-        "episode_key": episode_key,
+        "session_id": session_id,
         "status": "",
         "double_check": result_dict.get("double_check", False),
         "critique_note": result_dict.get("critique_note", ""),

@@ -18,7 +18,7 @@ class TestBuildFactCheckDict:
                 "evidence": "Laut Statistischem Bundesamt korrekt.",
                 "sources": [{"url": "https://destatis.de", "title": "Destatis"}],
             },
-            episode_key="maischberger-2026-01",
+            session_id="maischberger-2026-01",
         )
 
         assert result["sprecher"] == "Angela Merkel"
@@ -26,13 +26,13 @@ class TestBuildFactCheckDict:
         assert result["consistency"] == "hoch"
         assert result["begruendung"] == "Laut Statistischem Bundesamt korrekt."
         assert result["quellen"] == [{"url": "https://destatis.de", "title": "Destatis"}]
-        assert result["episode_key"] == "maischberger-2026-01"
+        assert result["session_id"] == "maischberger-2026-01"
 
     def test_double_check_defaults_to_false(self):
         """double_check and critique_note default to False / '' when absent."""
         result = build_fact_check_dict(
             {"speaker": "S", "original_claim": "C", "consistency": "unklar", "evidence": "", "sources": []},
-            episode_key="ep",
+            session_id="ep",
         )
 
         assert result["double_check"] is False
@@ -50,7 +50,7 @@ class TestBuildFactCheckDict:
                 "double_check": True,
                 "critique_note": "Sehr wortlautabhängig.",
             },
-            episode_key="ep",
+            session_id="ep",
         )
 
         assert result["double_check"] is True
@@ -60,7 +60,7 @@ class TestBuildFactCheckDict:
         """Uses fallback values when speaker/original_claim are missing."""
         result = build_fact_check_dict(
             {"consistency": "unklar", "evidence": "", "sources": []},
-            episode_key="ep",
+            session_id="ep",
             speaker_fallback="Fallback Speaker",
             claim_fallback="Fallback claim",
         )
