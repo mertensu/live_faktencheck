@@ -10,6 +10,7 @@ import os
 from datetime import datetime, timezone
 from fastapi import APIRouter, BackgroundTasks, UploadFile, File, Form
 
+from config import Episode
 from backend.models import ProcessingResponse
 from backend.state import processing_lock
 from backend.utils import to_dict, truncate
@@ -104,7 +105,6 @@ async def process_audio_pipeline_async(block_id: str, audio_path: str, session_i
 
     db = state.get_db()
     session = await db.get_session(session_id)
-    from config import Episode
     ep = Episode.from_session_row(session) if session else None
     ep_guests = ep.guests if ep else []
     ep_date = ep.date if ep else ""

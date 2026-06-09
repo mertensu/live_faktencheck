@@ -81,7 +81,7 @@ async def retrigger_pipeline(block_id: str):
             detail=f"Audio-Datei für Block '{block_id}' nicht gefunden (Pfad: {audio_file})"
         )
 
-    ep_key = ev.get("episode_key") or state.current_episode_key or ""
+    session_id = ev.get("session_id") or ""
 
     # Reset event to processing
     ev["status"] = "processing"
@@ -90,6 +90,6 @@ async def retrigger_pipeline(block_id: str):
 
     logger.info(f"[{block_id}] Retrigger requested — restarting pipeline")
 
-    asyncio.create_task(process_audio_pipeline_async(block_id, audio_file, ep_key))
+    asyncio.create_task(process_audio_pipeline_async(block_id, audio_file, session_id))
 
     return {"status": "processing", "block_id": block_id, "message": "Pipeline neu gestartet"}
