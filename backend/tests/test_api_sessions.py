@@ -1,0 +1,34 @@
+"""Tests for the sessions API."""
+import pytest
+
+
+async def test_create_session_returns_id(client):
+    resp = await client.post("/api/sessions", json={
+        "title": "Mein Interview",
+        "guests": ["Moderator (Host)", "Gast (Experte)"],
+        "context": "Thema X",
+    })
+    assert resp.status_code == 201
+    body = resp.json()
+    assert body["session_id"]
+    assert body["status"] == "active"
+    assert body["visibility"] == "private"
+
+
+async def test_get_session(client):
+    sid = (await client.post("/api/sessions", json={"title": "T"})).json()["session_id"]
+    resp = await client.get(f"/api/sessions/{sid}")
+    assert resp.status_code == 200
+    assert resp.json()["title"] == "T"
+
+
+async def test_get_missing_session_404(client):
+    resp = await client.get("/api/sessions/does-not-exist")
+    assert resp.status_code == 404
+
+
+async def test_end_session(client):
+    sid = (await client.post("/api/sessions", json={"title": "T"})).json()["session_id"]
+    resp = await client.post(f"/api/sessions/{sid}/end")
+    assert resp.status_code == 200
+    assert (await client.get(f"/api/sessions/{sid}")).json()["status"] == "ended"
