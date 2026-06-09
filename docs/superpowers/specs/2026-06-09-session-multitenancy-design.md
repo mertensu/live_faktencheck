@@ -136,14 +136,17 @@ Heutiger globaler State in `state.py` wird session-fähig:
 |----------------|-----|
 | `current_episode_key: str \| None` | **entfällt** — jeder Request trägt `session_id` |
 | `pipeline_events: dict` (keyed by `block_id`) | bleibt, jeder Eintrag bekommt Feld `session_id`; Status-Endpunkte filtern danach. `block_id` ist bereits global eindeutig. |
-| `claim_queue: asyncio.Queue` (eine) | **eine gemeinsame Queue**; jedes Item trägt `session_id` |
-| `queue_worker_task: Task` (einer) | **kleiner Worker-Pool** (`N`, Default 3, via Env `FACT_CHECK_WORKER_POOL_SIZE` konfigurierbar) |
+| `claim_queue: asyncio.Queue` (eine) | **bleibt** — eine gemeinsame Queue; jedes Item trägt künftig `session_id` statt `episode_key` |
+| `queue_worker_task: Task` (einer, Semaphore-begrenzt) | **bleibt unverändert** |
 
-**Worker-Pool-Begründung:** Eine gemeinsame Queue mit mehreren Workern erlaubt
-parallele Abarbeitung mehrerer Sessions (kein Head-of-Line-Blocking bei einem langsamen
-Fact-Check), deckelt aber die Gesamt-Parallelität — und damit die API-Kosten. Minimal
-invasiv gegenüber dem heutigen Einzel-Worker (ein Item-Schema-Feld + Worker werden in
-einem Pool gestartet).
+**Nebenläufigkeit ist bereits gelöst:** Der bestehende `claim_queue_worker` in
+`backend/routers/claims.py` deckelt die Parallelität schon über einen
+`asyncio.Semaphore(max_concurrency)` (Env `FACT_CHECK_MAX_CONCURRENCY`, Default 2):
+Höchstens N Fact-Check-Chargen rechnen gleichzeitig, weitere warten in der Queue. Das
+entspricht funktional einem Worker-Pool (gedeckelte Parallelität, kein
+Head-of-Line-Blocking, begrenzte API-Kosten). **Es muss kein neues Pool-System gebaut
+werden** — die einzige Änderung ist, dass Queue-Items `session_id` statt `episode_key`
+tragen. Der Semaphore-Mechanismus bleibt wie er ist.
 
 ---
 
