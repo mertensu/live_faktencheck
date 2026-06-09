@@ -438,7 +438,12 @@ git commit -m "Add VPS deployment artifacts + docs; remove export-workflow refer
 
 ---
 
-### Task 9: Merge branch to main
+### Task 9: Push the branch (NO merge to main yet)
+
+> Decision (2026-06-09): we do NOT merge to main during Phase 4. Instead we deploy the
+> backend from the branch and verify the frontend via a Cloudflare Pages **preview**
+> deployment (built from the branch). Merging to main is a separate, optional "Go-Live"
+> step (see the end of this plan) done only when we're satisfied.
 
 - [ ] **Step 1: Full test + build gate**
 
@@ -449,24 +454,27 @@ Expected: tests pass, ruff clean, build succeeds.
 
 ```bash
 git tag pre-vps-cutover
-```
-
-- [ ] **Step 3: Merge to main**
-
-```bash
-git checkout main
-git merge --no-ff worktree-session-multitenancy -m "Phase 4: VPS deployment + live-API frontend"
-git push origin main
 git push origin pre-vps-cutover
 ```
 
-Expected: Cloudflare Pages auto-builds the new frontend from `main`.
+- [ ] **Step 3: Push the branch to origin**
+
+```bash
+git push -u origin worktree-session-multitenancy
+```
+
+Expected: branch pushed. If Cloudflare Pages has preview deployments enabled for
+non-production branches, this triggers a **preview** build (a `*.pages.dev` URL) — this
+does NOT touch production (`live-faktencheck.de` stays on the current main build).
 
 ---
 
 ## PART B — VPS deployment (operational, over SSH)
 
-> Run these after Part A is merged. Follow `docs/deployment.md`; the steps below are the executable sequence with expected output.
+> Production is NOT merged. Deploy the backend to the VPS from the **branch**
+> (`worktree-session-multitenancy`). Follow `docs/deployment.md`; the steps below are the
+> executable sequence with expected output. The production site stays on the old static
+> build until the optional Go-Live merge at the end.
 
 ### Task 10: Provision VPS base
 
@@ -475,10 +483,15 @@ Expected: Cloudflare Pages auto-builds the new frontend from `main`.
 Run: `ssh hostinger 'curl -LsSf https://astral.sh/uv/install.sh | sh && /root/.local/bin/uv --version'`
 Expected: prints a `uv 0.x.y` version.
 
-- [ ] **Step 2: Clone the repo into /opt/fact_check**
+- [ ] **Step 2: Clone the BRANCH into /opt/fact_check**
 
-Run: `ssh hostinger 'git clone https://github.com/mertensu/live_faktencheck.git /opt/fact_check && ls /opt/fact_check/backend/app.py'`
-Expected: lists `app.py` (replace `https://github.com/mertensu/live_faktencheck.git` with the actual origin URL; get it via `git remote get-url origin`).
+> We are not merging to main yet, so clone the working branch (it must already be pushed — Task 9 Step 3).
+
+Run: `ssh hostinger 'git clone --branch worktree-session-multitenancy https://github.com/mertensu/live_faktencheck.git /opt/fact_check && ls /opt/fact_check/backend/app.py'`
+Expected: lists `app.py`.
+
+> Later, at Go-Live (merge to main), switch the VPS checkout to main:
+> `ssh hostinger 'cd /opt/fact_check && git fetch origin && git checkout main && git pull'` then `./deploy/deploy.sh`.
 
 - [ ] **Step 3: Copy secrets + DB from laptop**
 
@@ -552,23 +565,38 @@ Expected: same JSON as Task 11 Step 2 (`status: ok`, fact_checks ≥ 241).
 
 ---
 
-### Task 13: Frontend env + end-to-end smoke test
+### Task 13: Cloudflare Pages PREVIEW + end-to-end smoke test (no merge)
 
-- [ ] **Step 1: Confirm `VITE_BACKEND_URL` in Cloudflare Pages** (manual, user action)
+> We verify the live-API frontend on a Pages **preview** build (from the branch) against
+> the live VPS backend — without touching production. CORS already allows `*.pages.dev`
+> (committed on the branch in `backend/app.py`).
 
-In the Cloudflare Pages project settings, ensure the production env var `VITE_BACKEND_URL=https://api.live-faktencheck.de` is set, then trigger a redeploy if it was just added/changed.
-Expected: Pages build completes.
+- [ ] **Step 1: Set `VITE_BACKEND_URL` for the Pages PREVIEW environment** (manual, user action)
 
-- [ ] **Step 2: Smoke-test the live site (manual)**
+In Cloudflare Pages → project → Settings → Environment variables, ensure the **Preview**
+environment has `VITE_BACKEND_URL=https://api.live-faktencheck.de`. (Pages keeps Production
+and Preview env vars separate.) Also confirm preview deployments are enabled for
+non-production branches. If the branch was pushed (Task 9 Step 3) before the var was set,
+re-trigger the preview build (e.g. Pages dashboard → Retry deployment, or push an empty commit).
+Expected: a preview deployment with a `*.pages.dev` URL.
 
-- Open `https://live-faktencheck.de` → homepage lists the legacy/published episodes (loaded from `/api/config/shows`), no private sessions shown.
+- [ ] **Step 2: Find the preview URL**
+
+In the Pages dashboard, open the latest deployment for branch `worktree-session-multitenancy`
+and copy its URL (a `*.pages.dev` address). Production `live-faktencheck.de` is unaffected.
+
+- [ ] **Step 3: Smoke-test the PREVIEW URL (manual)**
+
+Against the preview `*.pages.dev` URL:
+- Homepage lists the legacy/published episodes (from `/api/config/shows`), no private sessions shown.
 - Open a legacy episode → fact-checks render (served live from the VPS DB, not static JSON).
-- Open `https://live-faktencheck.de/trusted-domains` → list loads from the live API.
+- `/trusted-domains` → list loads from the live API.
 - Create a new session via `/new` → returns a `session_id`, opens the live view.
+- Open browser devtools → no CORS errors calling `https://api.live-faktencheck.de`.
 
-Expected: all four work against the live API.
+Expected: all work against the live VPS backend from the preview origin.
 
-- [ ] **Step 3: Reboot-resilience check**
+- [ ] **Step 4: Reboot-resilience check**
 
 Run: `ssh hostinger 'systemctl reboot'` then wait ~60s and run `curl -fsS https://api.live-faktencheck.de/api/health`
 Expected: API responds after reboot (both services `enable`d → auto-start). 
@@ -586,17 +614,48 @@ Expected: `ssh hostinger 'crontab -l'` shows the backup line.
 
 > Defer this until the VPS deployment has been verified stable. Removing `~/.cloudflared/` makes the laptop unable to run the tunnel (rollback then requires re-auth). Skip during the same session.
 
-- [ ] **Step 3: Update memory + roadmap**
+- [ ] **Step 3: Update memory + roadmap (Part B done; NOT yet Go-Live)**
 
-- Mark Phase 4 ✅ in `docs/superpowers/ROADMAP-session-app.md`.
-- Update `memory.md` Deployment Architecture section: backend now on the VPS (systemd + cloudflared), static-JSON workflow removed.
-- Write a handover `handover/2026-06-09_phase4-vps-deployment.md`.
+- In `docs/superpowers/ROADMAP-session-app.md`, note Phase 4 backend is live on the VPS and verified via Pages preview; Go-Live (merge) still pending. Do NOT mark Phase 4 fully ✅ until the Go-Live merge.
+- Do NOT yet rewrite `memory.md` "Deployment Architecture" (that still describes current production until the merge); add a Recent Changes entry instead.
+- Update the handover with Part B results.
 
 ```bash
 git add docs/superpowers/ROADMAP-session-app.md
-git commit -m "Roadmap: mark Phase 4 (VPS deployment) complete"
-git push
+git commit -m "Roadmap: Phase 4 backend live on VPS (preview-verified); Go-Live merge pending"
+git push origin worktree-session-multitenancy
 ```
+
+---
+
+## Go-Live (LATER, optional) — merge to main
+
+> Only when satisfied with the preview. This is the deliberate production switch: it makes
+> Cloudflare Pages rebuild **production** (`live-faktencheck.de`) onto the live API. The VPS
+> backend must already be up (Part B) — it is.
+
+- [ ] **Step 1: Set `VITE_BACKEND_URL` for the Pages PRODUCTION environment** = `https://api.live-faktencheck.de` (if not already).
+
+- [ ] **Step 2: Merge and push**
+
+```bash
+git checkout main
+git merge --no-ff worktree-session-multitenancy -m "Phase 4: VPS deployment + live-API frontend"
+git push origin main
+```
+Expected: Pages auto-builds production from `main`.
+
+- [ ] **Step 3: Point the VPS at main** (so future `./deploy/deploy.sh` pulls main)
+
+```bash
+ssh hostinger 'cd /opt/fact_check && git fetch origin && git checkout main && git pull'
+```
+
+- [ ] **Step 4: Production smoke test** — repeat Task 13 Step 3 against `https://live-faktencheck.de`.
+
+- [ ] **Step 5: Finalize** — mark Phase 4 ✅ in the roadmap; rewrite `memory.md` "Deployment Architecture" to the VPS model; update the handover.
+
+- [ ] **Rollback (if needed):** revert the merge commit on main (`git revert -m 1 <merge-sha> && git push`) → Pages rebuilds the previous static frontend. The `pre-vps-cutover` tag marks the last pre-merge state.
 
 ---
 
