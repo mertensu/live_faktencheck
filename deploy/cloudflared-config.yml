@@ -1,0 +1,7 @@
+tunnel: faktencheck-api
+credentials-file: /etc/cloudflared/b18ee8aa-2ea2-4632-abe8-2ab716829574.json
+
+ingress:
+  - hostname: api.live-faktencheck.de
+    service: http://localhost:5000
+  - service: http_status:404

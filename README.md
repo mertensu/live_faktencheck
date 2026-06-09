@@ -44,6 +44,8 @@ Real-time fact-checking system for German TV talk shows. Captures audio, extract
 5. **Fact-Checking**: LangChain agent with Gemini + Tavily verifies claims against trusted German sources
 6. **Display**: Results shown on Cloudflare Pages (public) and local admin UI
 
+For VPS deployment details, see [`docs/deployment.md`](docs/deployment.md).
+
 For details on the LLM pipeline (models, schemas, prompts): [`docs/llm_pipeline.md`](docs/llm_pipeline.md)
 
 ## Requirements
@@ -86,13 +88,7 @@ cp .env.example .env
 
 ### Live Fact-Check (on air)
 
-```bash
-./publish_episode.sh <episode-key>   # before the show
-./start_production.sh <episode-key>  # during the show
-./stop_production.sh --permanent     # after the show
-```
-
-→ Full details: [docs/live-workflow.md](docs/live-workflow.md)
+The backend runs permanently on the Hostinger VPS. Start the listener locally and use the live admin UI. See [docs/live-workflow.md](docs/live-workflow.md) and [docs/deployment.md](docs/deployment.md).
 
 ---
 
@@ -105,47 +101,9 @@ uv run python listener.py <episode-key>
 
 → Full details: [docs/development-workflow.md](docs/development-workflow.md)
 
-## Database & Static JSON Deployment
+## Database
 
-### SQLite Database
-
-All fact-checks are stored in `backend/data/factcheck.db` (SQLite). This is the single source of truth during a live session. The database is **not** committed to git.
-
-### Static JSON for Cloudflare Pages
-
-Since there is no always-on backend server, finished episodes are served as static JSON files from `frontend/public/data/`. These files **are** committed to git and deployed via Cloudflare Pages.
-
-```
-frontend/public/data/
-├── shows.json              # Index of all episodes (auto-updated)
-├── atalay-2026-02-09.json  # Per-episode fact-checks
-├── lanz-2026-02-06.json
-└── ...
-```
-
-**When to export**: Run `export_episode.py --json` after any live session, or any time you edit a fact-check in the DB and want the change reflected on the public site.
-
-```bash
-uv run python export_episode.py <episode-key> --json
-# → writes frontend/public/data/<episode-key>.json
-# → rewrites frontend/public/data/shows.json (published episodes only)
-```
-
-Running `export_episode.py --json` is what makes fact-checks permanent: it moves them from local SQLite into static JSON files that get committed to git and deployed to Cloudflare. The per-episode file (e.g. `maischberger-2025-09-19.json`) holds the actual fact-checks; `shows.json` is just the index that makes the episode appear in the list on the production domain.
-
-`shows.json` only includes episodes with `publish=True` — unpublished episodes are never written to it and won't appear on the production domain.
-
-### The `publish` Flag
-
-The `publish` flag in `config.py` controls which episodes are visible on the public domain (`live-faktencheck.de`). Episodes without `publish=True` only show up in local development:
-
-```python
-Episode(
-    key="maischberger-2026-03-01",
-    publish=True,   # included in shows.json → visible on live-faktencheck.de
-    # publish=False  (default) → dev only, never written to shows.json
-)
-```
+All fact-checks are stored in `backend/data/factcheck.db` (SQLite). This is the single source of truth. The database is **not** committed to git; the VPS holds the authoritative copy. See [`docs/deployment.md`](docs/deployment.md) for backup instructions.
 
 ## Project Structure
 
@@ -160,26 +118,23 @@ Episode(
 │       ├── fact_checker.py    # LangChain agent with Gemini + Tavily
 │       └── trusted_domains.py # Trusted source domains (categorized)
 ├── frontend/
-│   ├── src/App.jsx            # React frontend
-│   └── public/data/           # Static JSON exports (served by Cloudflare)
-│       ├── shows.json         # Episode index
-│       └── <episode-key>.json # Per-episode fact-checks
+│   └── src/App.jsx            # React frontend
 ├── prompts/
 │   ├── claim_extraction.md    # Prompt for extracting claims
 │   ├── fact_checker.md        # Prompt for fact-checking
 │   └── lang_de.toml           # LLM field descriptions (German)
+├── deploy/
+│   ├── factcheck-backend.service  # systemd service for the VPS
+│   ├── cloudflared-config.yml     # Cloudflare tunnel config
+│   └── deploy.sh                  # Update the deployed backend on the VPS
 ├── listener.py                # Audio capture with fixed-interval sending
-├── export_episode.py          # Export episode from DB as JSON or Markdown
-├── publish_episode.sh         # Publish an episode: set publish=True, update shows.json, push
 ├── config.py                  # Episode configuration (EPISODES dict)
-├── start_dev.sh               # Development startup (backend + frontend, no tunnel)
-├── start_production.sh        # Production startup script
-└── stop_production.sh         # Stop all services (--permanent to export & deploy)
+└── start_dev.sh               # Development startup (backend + frontend, no tunnel)
 ```
 
 ## Configuration
 
-Episodes are configured in `config.py` using the `Episode` dataclass. The `publish` flag controls visibility on the public domain:
+Episodes are configured in `config.py` using the `Episode` dataclass. The `publish` flag controls visibility on the live API (unpublished episodes are filtered out of the public endpoint):
 
 ```python
 from config import Episode, EPISODES
@@ -194,7 +149,7 @@ EPISODES = {
             "Gitta Connemann (CDU)",
             "Katharina Dröge (B90/Grüne)",
         ],
-        publish=True,   # show on live-faktencheck.de
+        publish=True,   # visible on live-faktencheck.de via the live API
     )
 }
 ```
@@ -205,7 +160,7 @@ Available fields:
 - `guests` — list of `"Name (Role/Partei)"` strings; moderator first
 - `context` — optional background context passed to the LLM
 - `reference_links` — optional list of reference URLs (legislation, press releases)
-- `publish` — `True` = visible on production domain (default: `False`)
+- `publish` — `True` = visible via the live API on production domain (default: `False`)
 - `type` — `"show"` or `"youtube"` (default: `"show"`)
 
 ## Trusted Sources

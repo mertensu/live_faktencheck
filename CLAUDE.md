@@ -56,29 +56,12 @@ cd frontend && bun install           # Frontend dependencies
 ./backend/run.sh                     # Start backend only (port 5000)
 cd frontend && bun run dev           # Start frontend dev server only (port 3000)
 
-# Production
-./start_production.sh <episode-key>  # Start tunnel, backend, frontend (offers to start listener at end)
-./stop_production.sh                 # Stop all services
-./publish_episode.sh <episode-key>   # Set publish=True, update shows.json, commit & push
-
 # Build
 cd frontend && bun run build         # Build frontend for deployment
-
-# Delete a claim (e.g. wrong/unwanted fact-check)
-# 1. Delete from DB by ID
-uv run python -c "import sqlite3; conn = sqlite3.connect('backend/data/factcheck.db'); conn.execute('DELETE FROM fact_checks WHERE id = <ID>'); conn.commit(); conn.close()"
-# 2. Re-export JSON from DB (overwrites the static file cleanly)
-uv run python export_episode.py --json <episode-key>
-# 3. Commit + push
-
-# Re-run (overwrite) existing claims for a published episode
-# 1. Start backend: ./start_dev.sh <episode-key>
-# 2. Open admin mode in browser → "Gesendete Claims" is pre-populated from DB
-# 3. Click "Re-send" on the claim(s) → they appear in Pending Claims
-# 4. Approve from staging → fact-checker overwrites the existing DB record (not a new entry)
-# 5. Re-export: uv run python export_episode.py --json <episode-key>
-# 6. Commit + push
 ```
+
+### Production (VPS)
+The backend runs on the Hostinger VPS as systemd services; the frontend reads the live API. See `docs/deployment.md`. Update the deployed backend with `./deploy/deploy.sh`.
 
 ## Architecture Overview
 

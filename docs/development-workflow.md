@@ -18,4 +18,4 @@ uv run python listener.py atalay-2026-02-09
 - Approve claims → fact-checking runs automatically
 - Results visible locally only — nothing appears on the public domain
 
-Stop with `./stop_production.sh` (same stop script works for both modes).
+Stop with Ctrl-C in each terminal.
