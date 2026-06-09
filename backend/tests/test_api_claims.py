@@ -22,7 +22,7 @@ class TestPendingClaimsEndpoint:
                 {"name": "Speaker B", "claim": "Test claim 2"},
             ],
             "block_id": "test-block-001",
-            "episode_key": "test-episode",
+            "session_id": "test-session",
         }
 
         response = await client.post("/api/pending-claims", json=payload)
@@ -128,12 +128,15 @@ class TestApproveClaimsEndpoint:
 
     async def test_approve_claims_triggers_fact_checking(self, client, mock_all_services):
         """POST /api/approve-claims starts background fact-checking."""
+        db = state.get_db()
+        await db.add_session({"session_id": "test-session", "title": "t", "context": "ctx", "date": "2026"})
+
         payload = {
             "claims": [
                 {"name": "Speaker A", "claim": "Test claim to verify"},
             ],
             "block_id": "test-block",
-            "episode_key": "test-episode",
+            "session_id": "test-session",
         }
 
         response = await client.post("/api/approve-claims", json=payload)
@@ -176,10 +179,8 @@ class TestApproveClaimsEndpoint:
 
         assert response.status_code == 202
 
-    async def test_approve_claims_uses_current_episode(self, client, mock_all_services):
-        """POST /api/approve-claims uses current episode if not specified."""
-        state.current_episode_key = "default-episode"
-
+    async def test_approve_claims_without_session_id(self, client, mock_all_services):
+        """POST /api/approve-claims works without session_id (uses None)."""
         payload = {
             "claims": [{"name": "A", "claim": "B"}],
         }
@@ -194,9 +195,13 @@ class TestTextBlockEndpoint:
 
     async def test_text_block_accepts_valid_request(self, client, mock_all_services):
         """POST /api/text-block accepts text and returns 202."""
+        db = state.get_db()
+        await db.add_session({"session_id": "sess-1", "title": "t", "context": "ctx", "date": "2026"})
+
         payload = {
             "text": "This is the article content with some claims.",
             "headline": "Test Headline",
+            "session_id": "sess-1",
         }
 
         response = await client.post("/api/text-block", json=payload)
@@ -208,10 +213,14 @@ class TestTextBlockEndpoint:
 
     async def test_text_block_uses_provided_source_id(self, client, mock_all_services):
         """POST /api/text-block uses provided source_id."""
+        db = state.get_db()
+        await db.add_session({"session_id": "sess-2", "title": "t", "context": "ctx", "date": "2026"})
+
         payload = {
             "text": "Article content here.",
             "headline": "Headline",
             "source_id": "my-custom-source",
+            "session_id": "sess-2",
         }
 
         response = await client.post("/api/text-block", json=payload)
@@ -224,6 +233,7 @@ class TestTextBlockEndpoint:
         payload = {
             "text": "",
             "headline": "Headline",
+            "session_id": "some-session",
         }
 
         response = await client.post("/api/text-block", json=payload)
@@ -236,6 +246,7 @@ class TestTextBlockEndpoint:
         payload = {
             "text": "   \n\t  ",
             "headline": "Headline",
+            "session_id": "some-session",
         }
 
         response = await client.post("/api/text-block", json=payload)
@@ -248,12 +259,15 @@ class TestDiscardClaimsEndpoint:
 
     async def test_discard_claims_saves_to_db(self, client):
         """POST /api/discard-claims persists claims with status='discarded'."""
+        db = state.get_db()
+        await db.add_session({"session_id": "test-session", "title": "t", "context": "ctx", "date": "2026"})
+
         payload = {
             "claims": [
                 {"name": "Speaker A", "claim": "First claim"},
                 {"name": "Speaker B", "claim": "Second claim"},
             ],
-            "episode_key": "test-episode",
+            "session_id": "test-session",
         }
         response = await client.post("/api/discard-claims", json=payload)
 
@@ -267,8 +281,7 @@ class TestDiscardClaimsEndpoint:
         assert all(isinstance(i, int) for i in data["ids"])
 
         # Verify DB rows have correct status
-        db = state.get_db()
-        rows = await db.get_fact_checks(episode_key="test-episode", status="discarded")
+        rows = await db.get_fact_checks(session_id="test-session", status="discarded")
         assert len(rows) == 2
         assert rows[0]["status"] == "discarded"
         assert rows[0]["behauptung"] == "First claim"
@@ -279,36 +292,36 @@ class TestDiscardClaimsEndpoint:
         assert response.status_code == 400
 
     async def test_get_fact_checks_excludes_discarded_by_default(self, client):
-        """GET /api/fact-checks omits discarded rows unless asked."""
+        """DB get_fact_checks omits discarded rows unless asked."""
         db = state.get_db()
         from datetime import datetime
         now = datetime.now().isoformat()
         await db.add_fact_check({"sprecher": "A", "behauptung": "Normal", "consistency": "true",
                                   "begruendung": "", "quellen": [], "timestamp": now,
-                                  "episode_key": "ep", "status": ""})
+                                  "session_id": "ep", "status": ""})
         await db.add_fact_check({"sprecher": "B", "behauptung": "Discarded", "consistency": "",
                                   "begruendung": "", "quellen": [], "timestamp": now,
-                                  "episode_key": "ep", "status": "discarded"})
+                                  "session_id": "ep", "status": "discarded"})
 
-        response = await client.get("/api/fact-checks?episode=ep")
-        data = response.json()
+        # Verify directly via DB layer (fact_checks router is scoped in Task 10)
+        data = await db.get_fact_checks(session_id="ep")
         assert len(data) == 1
         assert data[0]["behauptung"] == "Normal"
 
     async def test_get_fact_checks_status_filter_returns_only_discarded(self, client):
-        """GET /api/fact-checks?status=discarded returns only discarded rows."""
+        """DB get_fact_checks with status=discarded returns only discarded rows."""
         db = state.get_db()
         from datetime import datetime
         now = datetime.now().isoformat()
         await db.add_fact_check({"sprecher": "A", "behauptung": "Normal", "consistency": "true",
                                   "begruendung": "", "quellen": [], "timestamp": now,
-                                  "episode_key": "ep", "status": ""})
+                                  "session_id": "ep", "status": ""})
         await db.add_fact_check({"sprecher": "B", "behauptung": "Discarded", "consistency": "",
                                   "begruendung": "", "quellen": [], "timestamp": now,
-                                  "episode_key": "ep", "status": "discarded"})
+                                  "session_id": "ep", "status": "discarded"})
 
-        response = await client.get("/api/fact-checks?episode=ep&status=discarded")
-        data = response.json()
+        # Verify directly via DB layer (fact_checks router is scoped in Task 10)
+        data = await db.get_fact_checks(session_id="ep", status="discarded")
         assert len(data) == 1
         assert data[0]["behauptung"] == "Discarded"
         assert data[0]["status"] == "discarded"

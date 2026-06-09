@@ -13,6 +13,7 @@ from typing import List, Optional, Any
 class TextBlockRequest(BaseModel):
     """Request body for /api/text-block endpoint."""
     text: str
+    session_id: str
     headline: str = ""
     publication_date: Optional[str] = None
     source_id: Optional[str] = None
@@ -22,7 +23,7 @@ class ClaimApprovalRequest(BaseModel):
     """Request body for /api/approve-claims endpoint."""
     claims: List[dict]
     block_id: Optional[str] = None
-    episode_key: Optional[str] = None
+    session_id: Optional[str] = None
 
 
 class FactCheckRequest(BaseModel):
@@ -50,7 +51,7 @@ class PendingClaimsRequest(BaseModel):
     block_id: Optional[str] = None
     timestamp: Optional[str] = None
     claims: List[dict] = []
-    episode_key: Optional[str] = None
+    session_id: Optional[str] = None
 
 
 class SetEpisodeRequest(BaseModel):
