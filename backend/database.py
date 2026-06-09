@@ -56,7 +56,7 @@ class Database:
                 begruendung TEXT NOT NULL DEFAULT '',
                 quellen TEXT NOT NULL DEFAULT '[]',
                 timestamp TEXT NOT NULL,
-                episode_key TEXT,
+                session_id TEXT,
                 status TEXT NOT NULL DEFAULT '',
                 double_check INTEGER NOT NULL DEFAULT 0,
                 critique_note TEXT NOT NULL DEFAULT ''
@@ -72,7 +72,7 @@ class Database:
                 claims_count INTEGER NOT NULL DEFAULT 0,
                 claims TEXT NOT NULL DEFAULT '[]',
                 status TEXT NOT NULL DEFAULT 'pending',
-                episode_key TEXT,
+                session_id TEXT,
                 source_id TEXT,
                 headline TEXT,
                 text_preview TEXT,
@@ -108,6 +108,16 @@ class Database:
             except Exception:
                 pass  # Column already exists
 
+        # Migration: rename episode_key -> session_id (SQLite >= 3.25)
+        for table in ("fact_checks", "pending_claims_blocks"):
+            cursor = await self.db.execute(f"PRAGMA table_info({table})")
+            cols = [r[1] for r in await cursor.fetchall()]
+            if "episode_key" in cols and "session_id" not in cols:
+                await self.db.execute(
+                    f"ALTER TABLE {table} RENAME COLUMN episode_key TO session_id"
+                )
+                await self.db.commit()
+
     # =========================================================================
     # Fact-Checks CRUD
     # =========================================================================
@@ -121,7 +131,7 @@ class Database:
             data.get("begruendung", ""),
             json.dumps(data.get("quellen", []), ensure_ascii=False),
             data["timestamp"],
-            data.get("episode_key"),
+            data.get("session_id"),
             data.get("status", ""),
             int(bool(data.get("double_check", False))),
             data.get("critique_note", ""),
@@ -131,7 +141,7 @@ class Database:
         """Insert a fact-check and return its auto-generated ID."""
         cursor = await self.db.execute(
             """INSERT INTO fact_checks
-               (sprecher, behauptung, consistency, begruendung, quellen, timestamp, episode_key, status,
+               (sprecher, behauptung, consistency, begruendung, quellen, timestamp, session_id, status,
                 double_check, critique_note)
                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             self._fact_check_params(fact_check),
@@ -139,14 +149,14 @@ class Database:
         await self.db.commit()
         return cursor.lastrowid
 
-    async def get_fact_checks(self, episode_key: str | None = None, status: str | None = None) -> list[dict]:
-        """Return fact-checks, optionally filtered by episode_key and/or status.
+    async def get_fact_checks(self, session_id: str | None = None, status: str | None = None) -> list[dict]:
+        """Return fact-checks, optionally filtered by session_id and/or status.
         Excludes discarded claims by default (unless status='discarded' is requested)."""
         conditions = []
         params: list = []
-        if episode_key:
-            conditions.append("episode_key = ?")
-            params.append(episode_key)
+        if session_id:
+            conditions.append("session_id = ?")
+            params.append(session_id)
         if status:
             conditions.append("status = ?")
             params.append(status)
@@ -172,7 +182,7 @@ class Database:
         cursor = await self.db.execute(
             """UPDATE fact_checks
                SET sprecher = ?, behauptung = ?, consistency = ?,
-                   begruendung = ?, quellen = ?, timestamp = ?, episode_key = ?, status = ?,
+                   begruendung = ?, quellen = ?, timestamp = ?, session_id = ?, status = ?,
                    double_check = ?, critique_note = ?
                WHERE id = ?""",
             (*self._fact_check_params(data), fact_check_id),
@@ -215,7 +225,7 @@ class Database:
             "begruendung": row["begruendung"],
             "quellen": json.loads(row["quellen"]),
             "timestamp": row["timestamp"],
-            "episode_key": row["episode_key"],
+            "session_id": row["session_id"],
             "status": row["status"],
             "double_check": bool(row["double_check"]),
             "critique_note": row["critique_note"],
@@ -302,7 +312,7 @@ class Database:
         cursor = await self.db.execute(
             """INSERT INTO pending_claims_blocks
                (block_id, timestamp, claims_count, claims, status,
-                episode_key, source_id, headline, text_preview, info)
+                session_id, source_id, headline, text_preview, info)
                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 block["block_id"],
@@ -310,7 +320,7 @@ class Database:
                 block.get("claims_count", len(block.get("claims", []))),
                 json.dumps(block.get("claims", []), ensure_ascii=False),
                 block.get("status", "pending"),
-                block.get("episode_key"),
+                block.get("session_id"),
                 block.get("source_id"),
                 block.get("headline"),
                 block.get("text_preview"),
@@ -320,12 +330,12 @@ class Database:
         await self.db.commit()
         return cursor.lastrowid
 
-    async def get_pending_blocks(self, episode_key: str | None = None) -> list[dict]:
-        """Return pending blocks, newest first. Optionally filter by episode_key."""
-        if episode_key:
+    async def get_pending_blocks(self, session_id: str | None = None) -> list[dict]:
+        """Return pending blocks, newest first. Optionally filter by session_id."""
+        if session_id:
             cursor = await self.db.execute(
-                "SELECT * FROM pending_claims_blocks WHERE episode_key = ? ORDER BY timestamp DESC",
-                (episode_key,),
+                "SELECT * FROM pending_claims_blocks WHERE session_id = ? ORDER BY timestamp DESC",
+                (session_id,),
             )
         else:
             cursor = await self.db.execute(
@@ -357,12 +367,12 @@ class Database:
         await self.db.commit()
         return cursor.rowcount > 0
 
-    async def clear_pending_blocks(self, episode_key: str | None = None) -> int:
-        """Delete all pending blocks, optionally filtered by episode_key. Returns count deleted."""
-        if episode_key:
+    async def clear_pending_blocks(self, session_id: str | None = None) -> int:
+        """Delete all pending blocks, optionally filtered by session_id. Returns count deleted."""
+        if session_id:
             cursor = await self.db.execute(
-                "DELETE FROM pending_claims_blocks WHERE episode_key = ?",
-                (episode_key,),
+                "DELETE FROM pending_claims_blocks WHERE session_id = ?",
+                (session_id,),
             )
         else:
             cursor = await self.db.execute("DELETE FROM pending_claims_blocks")
@@ -383,7 +393,7 @@ class Database:
             "claims_count": row["claims_count"],
             "claims": json.loads(row["claims"]),
             "status": row["status"],
-            "episode_key": row["episode_key"],
+            "session_id": row["session_id"],
             "source_id": row["source_id"],
             "headline": row["headline"],
             "text_preview": row["text_preview"],

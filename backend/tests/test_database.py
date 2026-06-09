@@ -55,7 +55,7 @@ async def test_add_and_get_fact_check(db):
         "begruendung": "Wissenschaftliche Evidenz zeigt das Gegenteil",
         "quellen": [{"url": "https://example.com", "title": "Quelle"}],
         "timestamp": datetime.now().isoformat(),
-        "episode_key": "test-episode",
+        "session_id": "test-episode",
     }
     new_id = await db.add_fact_check(fc)
     assert new_id >= 1
@@ -67,7 +67,7 @@ async def test_add_and_get_fact_check(db):
     assert result["behauptung"] == "Die Erde ist flach"
     assert result["consistency"] == "falsch"
     assert result["quellen"] == [{"url": "https://example.com", "title": "Quelle"}]
-    assert result["episode_key"] == "test-episode"
+    assert result["session_id"] == "test-episode"
     assert result["double_check"] is False
     assert result["critique_note"] == ""
 
@@ -130,7 +130,7 @@ async def test_get_fact_checks_all(db):
             "begruendung": "",
             "quellen": [],
             "timestamp": datetime.now().isoformat(),
-            "episode_key": "ep1" if i < 2 else "ep2",
+            "session_id": "ep1" if i < 2 else "ep2",
         })
 
     all_fcs = await db.get_fact_checks()
@@ -138,7 +138,7 @@ async def test_get_fact_checks_all(db):
 
 
 async def test_get_fact_checks_filtered(db):
-    """Filter fact-checks by episode_key."""
+    """Filter fact-checks by session_id."""
     for i in range(3):
         await db.add_fact_check({
             "sprecher": f"Speaker {i}",
@@ -147,13 +147,13 @@ async def test_get_fact_checks_filtered(db):
             "begruendung": "",
             "quellen": [],
             "timestamp": datetime.now().isoformat(),
-            "episode_key": "ep1" if i < 2 else "ep2",
+            "session_id": "ep1" if i < 2 else "ep2",
         })
 
-    ep1 = await db.get_fact_checks(episode_key="ep1")
+    ep1 = await db.get_fact_checks(session_id="ep1")
     assert len(ep1) == 2
 
-    ep2 = await db.get_fact_checks(episode_key="ep2")
+    ep2 = await db.get_fact_checks(session_id="ep2")
     assert len(ep2) == 1
 
 
@@ -166,7 +166,7 @@ async def test_update_fact_check(db):
         "begruendung": "",
         "quellen": [],
         "timestamp": datetime.now().isoformat(),
-        "episode_key": "ep1",
+        "session_id": "ep1",
     })
 
     updated = await db.update_fact_check(fc_id, {
@@ -176,7 +176,7 @@ async def test_update_fact_check(db):
         "begruendung": "Updated evidence",
         "quellen": [{"url": "https://new.com", "title": "New"}],
         "timestamp": datetime.now().isoformat(),
-        "episode_key": "ep1",
+        "session_id": "ep1",
     })
     assert updated is True
 
@@ -208,7 +208,7 @@ async def test_find_fact_check(db):
         "begruendung": "",
         "quellen": [],
         "timestamp": "2024-01-01T00:00:00",
-        "episode_key": "ep1",
+        "session_id": "ep1",
     })
     await db.add_fact_check({
         "sprecher": "Alice",
@@ -217,7 +217,7 @@ async def test_find_fact_check(db):
         "begruendung": "Updated",
         "quellen": [],
         "timestamp": "2024-01-02T00:00:00",
-        "episode_key": "ep1",
+        "session_id": "ep1",
     })
 
     result = await db.find_fact_check("Alice", "Claim A")
@@ -323,7 +323,7 @@ async def test_add_and_get_pending_block(db):
         "claims_count": 2,
         "claims": [{"name": "A", "claim": "X"}, {"name": "B", "claim": "Y"}],
         "status": "pending",
-        "episode_key": "ep1",
+        "session_id": "ep1",
         "source_id": "article-001",
         "headline": "Test Headline",
         "text_preview": "Preview text...",
@@ -445,7 +445,7 @@ async def test_pending_block_optional_fields(db):
     })
 
     result = await db.get_pending_block_by_id("minimal")
-    assert result["episode_key"] is None
+    assert result["session_id"] is None
     assert result["source_id"] is None
     assert result["headline"] is None
     assert result["text_preview"] is None
