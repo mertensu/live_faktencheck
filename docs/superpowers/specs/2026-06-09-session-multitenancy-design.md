@@ -53,6 +53,40 @@ Verworfene Alternativen:
 
 ---
 
+## 2a. Zweck & Rolle der Datenbank
+
+Die SQLite-DB ist kein Beiwerk, sondern erfüllt vier konkrete Aufgaben, die mit
+Multi-Tenancy **wichtiger** werden, nicht überflüssig:
+
+1. **Persistenz über Neustarts** — Fact-Checks und Pending-Claims überleben Restarts
+   und Deploys. Auf einem gehosteten 24/7-VPS (statt Laptop) ist das zentral.
+2. **Quelle für den JSON-Export** — `export_episode.py --json` zieht aus der DB die
+   statischen JSON-Dateien für Cloudflare Pages. (Entfällt künftig, siehe unten.)
+3. **Überschreiben / Re-Run** — Admin liest „Gesendete Claims" aus der DB; erneutes
+   Freigeben überschreibt den Datensatz statt einen neuen anzulegen (`find_fact_check`).
+4. **Dedup** — verhindert Doppel-Fact-Checks für dieselbe Sprecher+Behauptung-Kombination.
+
+**Mit Phase 1 wächst die DB-Rolle bewusst:**
+- Die **Sessions selbst werden DB-Zeilen** (Kern dieses Specs — Laufzeitdaten gehören
+  nicht in den Quellcode).
+- **Private Link-Sessions müssen persistieren** — eine beendete, nur-per-Link abrufbare
+  Session muss Tage später noch abrufbar sein. In-Memory kann das nicht leisten.
+- **Isolation vieler paralleler Sessions** über `session_id`-Scope ist genau das, wofür
+  eine Tabelle das richtige Werkzeug ist (besser als In-Memory oder JSON-Dateien).
+
+**SQLite vs. Postgres:** SQLite (Single-Writer mit WAL) **reicht für Phase 1 klar aus** —
+Zugangscodes begrenzen die Parallelität auf wenige Sessions, die Schreiblast pro Session
+ist gering, und es spart Ops-Aufwand auf dem VPS. Ein Wechsel auf Postgres lohnt erst bei
+vielen gleichzeitigen Schreibern; in Phase 3/4 neu bewerten.
+
+**Wegfall JSON-Export (Phase 4):** Der statische JSON-Export (Aufgabe 2) existiert nur,
+weil das Backend bisher nicht öffentlich erreichbar war. Sobald das Backend auf dem VPS
+dauerhaft läuft, liest das Frontend die Daten **live über die API** — `export_episode.py`
+und der Re-Export-Workflow entfallen. Das ist nicht Teil von Phase 1, wird aber hier als
+geplante Vereinfachung festgehalten.
+
+---
+
 ## 3. Datenmodell
 
 ### Neue Tabelle `sessions`
@@ -183,4 +217,5 @@ erhalten und abrufbar.
 - Browser-Audio-Capture inkl. Tab-/System-Audio (Phase 2).
 - Zugangscodes + `owner_code`-Befüllung + Rate-/Kosten-Limits (Phase 3).
 - VPS-Deployment, systemd, TLS, Tunnel-Abbau (Phase 4).
+- Wegfall des statischen JSON-Exports — Frontend liest live über die API (Phase 4, siehe §2a).
 - Auto-Expiry / Aufräumen verwaister `active`-Sessions (später).
