@@ -1,7 +1,7 @@
 # Roadmap — Von „Live Faktencheck" zur Multi-User-App
 
-**Stand:** 2026-06-09
-**Branch dieser Arbeit:** `worktree-session-multitenancy` (Phase 1, abgeschlossen)
+**Stand:** 2026-06-10
+**Branch dieser Arbeit:** `worktree-session-multitenancy` (Phasen 1, 3a, R, Q abgeschlossen; nicht gemergt)
 
 Dieses Dokument hält den Gesamtplan und die bereits getroffenen Entscheidungen fest,
 damit die Arbeit später nahtlos fortgesetzt werden kann. Jede Phase bekommt einen
@@ -44,8 +44,8 @@ Ergebnisse privat per Link teilbar.
 | **1b** | Homepage / App-Informationsarchitektur neu denken | ⬜ Offen (eigener Spec) |
 | **2** | Browser-Audio-Capture (ersetzt `listener.py`) | ⬜ Offen |
 | **3a** | **Minimaler Zugangs-Gate (Zugangscodes auf Kosten-Endpunkten)** | ✅ **Live auf VPS** (2026-06-10, `971a7de`; main-Merge offen) |
-| **R** | **Agent-Rewrite: LangChain/LangGraph → PydanticAI + Logfire** | ⬜ Offen (eigener Spec) |
-| **Q** | Quick Check (One-Shot-Zitat → Fact-Check, ohne Audio) | ⬜ Offen (eigener Spec) |
+| **R** | **Agent-Rewrite: LangChain/LangGraph → PydanticAI + Logfire** | ✅ **Abgeschlossen** (2026-06-10, Branch; main-Merge = Go-Live offen) |
+| **Q** | Quick Check (One-Shot-Zitat → Fact-Check, ohne Audio) | ✅ **Abgeschlossen** (2026-06-10, Branch; main-Merge = Go-Live offen) |
 | **3b** | Live-Limits (10-Min-Session-Auto-Stop, ggf. Circuit Breaker) | ⬜ Offen |
 | **4** | VPS-Deployment (kein lokaler Start, JSON-Export entfällt) | 🟡 Backend live auf VPS; Go-Live-Merge offen |
 
@@ -157,51 +157,74 @@ Per-Code-Kontingente, Admin-UI (Codes via DB/SQL verwaltet). Siehe Spec §Scope.
 
 ---
 
-## ⬜ Phase R — Agent-Rewrite: LangChain → PydanticAI + Logfire (eigener Spec)
+## ✅ Phase R — Agent-Rewrite: LangChain → PydanticAI + Logfire (ABGESCHLOSSEN)
 
-**Ziel:** Den Fact-Check-Agenten weg vom LangChain/LangGraph-Universum auf **PydanticAI**
-(Agent/Tools/Structured Output) + **Logfire** (Observability) umstellen.
+**Spec:** `docs/superpowers/specs/2026-06-10-pydanticai-agent-rewrite-design.md`
+**Plan:** `docs/superpowers/plans/2026-06-10-pydanticai-agent-rewrite.md`
+**Status:** Implementiert + verifiziert auf Branch `worktree-session-multitenancy` (2026-06-10,
+11 Commits `3ebaad1`→`93aab77`). **NICHT nach main gemergt** — Merge = Go-Live (Phase 4).
 
-**Heutiger LangChain-Footprint (zu migrieren):**
-- `backend/services/fact_checker.py` — Kern: LangGraph-ReAct-Agent (`create_agent`),
-  `ChatGoogleGenerativeAI` (primär + Fallback via `with_fallbacks`), `TavilySearch` +
-  `FallbackSearchTool` (Retry ohne Datumsfilter), Self-Critique-Schritt, Recursion-Trace-Dump.
-- `backend/services/studio_graph.py` — LangGraph-Studio-Graph (Dev-Visualisierung).
-- Deps: `langchain`, `langchain-google-genai`, `langchain-tavily`, `langgraph` (+ `langgraph-cli`).
-- **Nicht betroffen:** `claim_extraction.py` nutzt bereits `google-genai` direkt (kein LangChain);
-  Output-Modelle (`FactCheckResponse`, `Source`, `SelfCritiqueResponse`, `ClaimInput`) sind schon
-  reines Pydantic → von PydanticAI direkt nutzbar.
+**Was gebaut wurde:**
+- Deps `langchain*`/`langgraph` → **pydantic-ai 1.74.0 + logfire 4.36.0**.
+- Neue Module: `backend/services/llm_base.py` (`build_model(primary, fallback=None)` →
+  GoogleModel/`FallbackModel`, `MODEL_SETTINGS=GoogleModelSettings(temperature=0)`),
+  `search.py` (`tavily_search`-Tool über `tavily-python` direkt, Datumsfilter-Fallback erhalten),
+  `observability.py` (`configure_logfire()`, `send_to_logfire="if-token-present"` → no-op ohne Token).
+- `claim_extraction.py` neu auf PydanticAI (3 Agents: `speaker_resolver`, `claim_extractor`,
+  `selection_agent` mit `deps_type` für `{max_claims}`); public API eingefroren.
+- `fact_checker.py` neu: PydanticAI-Agent mit `tavily_search`-Tool + `UsageLimits(request_limit=
+  FACT_CHECK_RECURSION_LIMIT)` (Loop/Retry) + separater `critique_agent`; public API eingefroren.
+- Logfire in `app.py`-Lifespan verdrahtet. **Gelöscht:** `cost_tracker.py`, `studio_graph.py`,
+  `mock_search.py`, `test_cost_tracker.py` (CostTracker-Rolle → Logfire-Spans/PydanticAI-`usage()`).
+- Tests auf `TestModel`/`FunctionModel` umgestellt, `models.ALLOW_MODEL_REQUESTS=False` als Safety-Net.
+- Self-Critique: als **eigener zweiter Agent** umgesetzt (annotiert nur, gated nie).
+- `studio_graph.py` + `langgraph-cli` ersatzlos raus (Logfire übernimmt Tracing).
 
-**Offene Designfragen (fürs Brainstorming):**
-- Modell/Provider: PydanticAI-Gemini-Provider; **`FallbackModel`** für Primär→Fallback statt
-  `with_fallbacks`. Welche Gemini-Modelle (heute `gemini-2.5-pro`)?
-- Tavily als PydanticAI-Tool über `tavily-python` direkt (drop `langchain-tavily`); die
-  `FallbackSearchTool`-Retry-Logik (leeres Ergebnis → ohne Datumsfilter) erhalten.
-- **Logfire vs. `CostTracker`:** ersetzt/ergänzt Logfire den bestehenden `cost_tracker.py`?
-  (Token-Usage kommt über PydanticAI-`usage()`/Logfire-Spans.) Logfire-Token = neue env/Account.
-- Self-Critique: eigener zweiter PydanticAI-Agent oder integriert?
-- `studio_graph.py` + `langgraph-cli` ersatzlos raus (Logfire übernimmt Tracing)?
-- Tests: `test_fact_checker.py` + conftest-Mocks (FactCheckResponse etc.) neu schreiben
-  (PydanticAI-`TestModel`/`FunctionModel` statt LangChain-Mocks).
+**Verifikation:** 188 Unit-Tests grün, ruff clean, Router unberührt. Integration-Gate mit echten
+Keys: text-pipeline + single-claim passed (typed output, echte Tavily-Calls), audio skipped (kein
+Fixture). Prod-Spot-Check (Claim #93, maischberger-2025-09-19, `gemini-2.5-pro`): neuer Verdict
+`hoch` = Prod-Verdict, Quellen nur trusted domains. Logfire live verifiziert (Trace mit
+`tavily_search`-Spans + FallbackModel-Chain + critique-Agent) gegen `mertensu/fact-check`;
+`LOGFIRE_TOKEN` lokal in `.env` + auf VPS-`.env` vorgestaged (inert bis Phase-R-Deploy).
 
-**Abhängigkeiten/Reihenfolge:** unabhängig von 2/3b; **sinnvoll VOR Phase Q**, weil Quick Check
-denselben `fact_checker`-Service wiederverwendet — sonst würde Q erst auf LangChain gebaut und
-dann mitmigriert. Risiko: Kern-Logik des Backends; nach Rewrite gründlich gegen Live-Verhalten
-verifizieren (Integration-Tests mit echten Keys).
+**Erkenntnisse:** Reviews fanden einen latenten Speaker-Label-`.replace`-Ordering-Bug (gefixt) +
+einen aussagelosen Retry-Test (gehärtet). Modell `gemini-2.0-flash-lite` ist **retired (404)** —
+Integration-Tests nutzen jetzt `gemini-2.5-flash`. Handover: `handover/2026-06-10_phase-r-pydanticai-rewrite.md`.
 
 ---
 
-## ⬜ Phase Q — Quick Check (eigener Spec)
+## ✅ Phase Q — Quick Check (ABGESCHLOSSEN)
+
+**Spec:** `docs/superpowers/specs/2026-06-10-quick-check-design.md`
+**Plan:** `docs/superpowers/plans/2026-06-10-quick-check.md`
+**Status:** Implementiert + verifiziert auf Branch `worktree-session-multitenancy` (2026-06-10,
+7 Commits `46c0b03`→`26561b9`). **NICHT nach main gemergt** — Merge = Go-Live (Phase 4).
 
 **Ziel:** Niedrigschwelliger Einstieg: Nutzer fügt ein **Text-Zitat** ein → direkt durch
 den `fact_checker` (Gemini + Tavily), ohne Audio/Transkription/Claim-Extraction.
 
-**Eckpunkte (noch zu entwerfen):** eigener Endpunkt (reuse `fact_checker`-Service),
-code-gegatet wie 3a, **Kontingent: 3 Quick-Checks pro Code (lifetime, gezählt via
-`owner_code`)**. Ergebnis-Darstellung über bestehendes `ClaimCard`. Unabhängig von Phase 2
-→ schnellster Weg zu einem nutzbaren Produkt.
+**Was gebaut wurde:**
+- Quota auf der `codes`-Tabelle: neue Spalten `quick_checks_used` / `quick_check_limit`
+  (CREATE TABLE + idempotente ALTER-Migration für bestehende Prod-Tabellen),
+  `add_code(..., quick_check_limit=3)`, `increment_quick_checks(code)`.
+- `ACCESS_CODES`-Syntax erweitert: `name:code:limit` (absent → Default 3, `unlimited` → None/kein
+  Cap, `<n>` → Custom-Cap); `parse_access_codes` liefert jetzt 3-Tupel, `seed_codes_from_env` reicht
+  das Limit durch.
+- **Synchroner** `POST /api/quick-check` (gegatet via `require_code`): prüft Kontingent VOR dem
+  bezahlten Fact-Checker-Call (429 „Kontingent aufgebraucht"), reuse `check_claim_async` +
+  `build_fact_check_dict`, persistiert unter `session_id="quick-<code>"`, zählt hoch, liefert
+  `{fact_check, limit, remaining}` (remaining=None für unlimited/Owner).
+- Frontend: `submitQuickCheck` / `fetchQuickCheckHistory` in `api.js`; neue `/pruefen`-Seite
+  (`QuickCheckPage`, reuse `ClaimCard` + `ClaimDetailOverlay`) mit Quota-Anzeige + Verlauf der
+  früheren Checks; Homepage-Link.
+- Deployment-Doku: Quota-Syntax + VPS-Owner-Exemption-Runbook (`docs/deployment.md`).
 
-**Abhängigkeiten:** Phase 3a (Gate). Brainstorming/Spec stehen noch aus.
+**Verifikation:** 204 Unit-Tests grün, ruff clean, Frontend-Build ok. Pro Task Spec- + Code-Quality-
+Review (subagent-driven); finaler holistischer Review = „ready to merge", nur kosmetische Notizen
+(eine — Input-Reset bei Auth-Fehler — gefixt; fehlende CSS-Klassen bewusst out-of-scope = Phase 1b).
+
+**Bewusst NICHT in dieser Phase:** Background/Polling (Endpunkt ist synchron), Zwei-Button-Homepage-
+Redesign (→ Phase 1b), Edit/Resend von Quick Checks. **Abhängigkeiten:** Phase 3a (Gate) — erfüllt.
 
 ---
 
@@ -247,14 +270,14 @@ da es den ursprünglichen Schmerzpunkt („muss lokal starten") direkt löst.
 ## Empfohlene Reihenfolge
 
 1. ~~**Phase 3a (Zugangs-Gate)**~~ — ✅ erledigt, live auf VPS (2026-06-10).
-2. **Phase R (Agent-Rewrite PydanticAI + Logfire)** — VOR Phase Q, da Quick Check denselben
-   `fact_checker`-Service nutzt. Eigener Spec.
-3. **Phase Q (Quick Check)** — schnellster Weg zu einem nutzbaren Produkt, unabhängig von
-   Browser-Audio. Baut auf dem (rewritten) Agenten auf.
-4. **Phase 2 (Browser-Audio)** — macht die Live-Mode ohne lokales `listener.py` nutzbar.
+2. ~~**Phase R (Agent-Rewrite PydanticAI + Logfire)**~~ — ✅ erledigt auf Branch (2026-06-10).
+3. ~~**Phase Q (Quick Check)**~~ — ✅ erledigt auf Branch (2026-06-10). Schnellster Weg zu einem
+   nutzbaren Produkt, baut auf dem (rewritten) Agenten auf.
+4. **Phase 2 (Browser-Audio)** — macht die Live-Mode ohne lokales `listener.py` nutzbar. **← nächster Schritt.**
 5. **Phase 3b (Live-Limits)** — 10-Min-Auto-Stop, zusammen mit/nach Phase 2.
 6. **Phase 1b (Homepage/IA)** — wenn beide Einstiegs-Modi (Quick Check + Live) stehen.
-7. **Phase 4 (Go-Live-Merge)** — Branch → main; Gate steht bereits.
+7. **Phase 4 (Go-Live-Merge)** — Branch → main; Gate + Agent-Rewrite stehen bereits. Aktiviert
+   beim Deploy auch die Phase-R-Logfire-Observability (Token auf VPS bereits vorgestaged).
 
 (Reihenfolge ist nicht zwingend; 1b kann parallel entworfen werden.)
 
