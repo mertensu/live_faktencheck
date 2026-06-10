@@ -19,6 +19,27 @@ export const FETCH_HEADERS = {
   'Content-Type': 'application/json'
 }
 
+// Access code (Phase 3a gate) — persisted in localStorage, sent as X-Access-Code.
+const ACCESS_CODE_KEY = 'fc_access_code'
+
+export const getAccessCode = () => {
+  try { return localStorage.getItem(ACCESS_CODE_KEY) || '' } catch { return '' }
+}
+
+export const setAccessCode = (code) => {
+  try {
+    if (code) localStorage.setItem(ACCESS_CODE_KEY, code)
+    else localStorage.removeItem(ACCESS_CODE_KEY)
+  } catch { /* ignore storage errors */ }
+}
+
+// Headers including the access code when present. Harmless on open GET endpoints,
+// required on gated POST/PUT endpoints.
+export const authHeaders = () => {
+  const code = getAccessCode()
+  return code ? { ...FETCH_HEADERS, 'X-Access-Code': code } : { ...FETCH_HEADERS }
+}
+
 const isJsonResponse = (response) => {
   const contentType = response.headers.get('content-type')
   return contentType && contentType.includes('application/json')
@@ -46,7 +67,7 @@ export const safeJsonParse = async (response, errorContext = '') => {
 
 export async function createSession(payload) {
   const res = await fetch(`${BACKEND_URL}/api/sessions`, {
-    method: 'POST', headers: FETCH_HEADERS, body: JSON.stringify(payload),
+    method: 'POST', headers: authHeaders(), body: JSON.stringify(payload),
   })
   const data = await safeJsonParse(res, 'createSession')
   if (!res.ok) {
@@ -57,7 +78,7 @@ export async function createSession(payload) {
 
 export async function endSession(sessionId) {
   const res = await fetch(`${BACKEND_URL}/api/sessions/${sessionId}/end`, {
-    method: 'POST', headers: FETCH_HEADERS,
+    method: 'POST', headers: authHeaders(),
   })
   const data = await safeJsonParse(res, 'endSession')
   if (!res.ok) {

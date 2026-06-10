@@ -57,6 +57,7 @@ class AudioRecorder:
         self.session_id = session_id
         self.backend_url = backend_url
         self.audio_endpoint = f"{backend_url}/api/audio-block"
+        self.access_code = os.getenv("ACCESS_CODE")
         self.block_duration = block_duration
         self.debug = debug
         self.debug_output_dir = Path(__file__).parent / "debug_audio"
@@ -146,10 +147,12 @@ class AudioRecorder:
                 'session_id': self.session_id,
             }
 
+            headers = {"X-Access-Code": self.access_code} if self.access_code else {}
             response = requests.post(
                 self.audio_endpoint,
                 files=files,
                 data=data,
+                headers=headers,
                 timeout=30
             )
 

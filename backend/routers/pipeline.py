@@ -10,8 +10,9 @@ import logging
 import os
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
+from backend.auth import require_code
 import backend.state as state
 
 logger = logging.getLogger(__name__)
@@ -57,7 +58,7 @@ async def get_pipeline_status():
 
 
 @router.post("/pipeline-status/{block_id}/retrigger")
-async def retrigger_pipeline(block_id: str):
+async def retrigger_pipeline(block_id: str, code: dict = Depends(require_code)):
     """
     Retrigger a failed (timeout/error) pipeline block from its saved temp file.
     """

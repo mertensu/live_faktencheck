@@ -9,8 +9,9 @@ import logging
 import os
 from datetime import datetime
 
-from fastapi import APIRouter, HTTPException, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 
+from backend.auth import require_code
 from backend.models import (
     TextBlockRequest,
     ClaimApprovalRequest,
@@ -34,7 +35,8 @@ router = APIRouter(prefix="/api", tags=["claims"])
 @router.post('/text-block', status_code=202, response_model=ProcessingResponse)
 async def receive_text_block(
     request: TextBlockRequest,
-    background_tasks: BackgroundTasks
+    background_tasks: BackgroundTasks,
+    code: dict = Depends(require_code),
 ):
     """
     Receive text directly for claim extraction (skip transcription).
@@ -219,6 +221,7 @@ async def dismiss_pending_block(block_id: str):
 @router.post('/approve-claims', status_code=202, response_model=ProcessingResponse)
 async def approve_claims(
     request: ClaimApprovalRequest,
+    code: dict = Depends(require_code),
 ):
     """
     Approve selected claims and start fact-checking.

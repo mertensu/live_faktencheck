@@ -8,9 +8,10 @@ import asyncio
 import logging
 import os
 from datetime import datetime, timezone
-from fastapi import APIRouter, BackgroundTasks, UploadFile, File, Form
+from fastapi import APIRouter, BackgroundTasks, Depends, UploadFile, File, Form
 
 from config import Episode
+from backend.auth import require_code
 from backend.models import ProcessingResponse
 from backend.state import processing_lock
 from backend.utils import to_dict, truncate
@@ -48,6 +49,7 @@ async def receive_audio_block(
     background_tasks: BackgroundTasks,
     audio: UploadFile = File(...),
     session_id: str = Form(...),
+    code: dict = Depends(require_code),
 ):
     """
     Receive audio block from listener.py and start processing pipeline.

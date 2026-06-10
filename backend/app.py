@@ -22,6 +22,7 @@ import asyncio
 from backend.routers import audio, claims, fact_checks, config, pipeline, sessions
 from backend.routers.audio import AUDIO_TMP_DIR
 from backend.routers.claims import claim_queue_worker
+from backend.auth import seed_codes_from_env
 from backend.database import Database
 from backend import state
 from config import EPISODES, episode_to_session_dict
@@ -65,6 +66,16 @@ async def lifespan(app: FastAPI):
     state.db = db
     await seed_legacy_episodes(db)
     logger.info("Legacy episodes seeded into sessions table")
+
+    # Startup: seed access codes from ACCESS_CODES env (fail-closed if unset)
+    seeded = await seed_codes_from_env(db)
+    if seeded:
+        logger.info(f"Seeded {seeded} access code(s) from ACCESS_CODES")
+    elif await db.count_codes() == 0:
+        logger.warning(
+            "No access codes configured (ACCESS_CODES unset) — gated endpoints "
+            "will reject all requests until codes are seeded."
+        )
 
     # Startup: start claim queue worker
     max_concurrency = int(os.getenv("FACT_CHECK_MAX_CONCURRENCY", "2"))
@@ -111,7 +122,7 @@ app.add_middleware(
     allow_origin_regex=r"https://[a-z0-9-]+-live-faktencheck\.mertens-ulf\.workers\.dev",
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "OPTIONS"],
-    allow_headers=["Content-Type", "Authorization", "Accept"],
+    allow_headers=["Content-Type", "Authorization", "Accept", "X-Access-Code"],
 )
 
 # Include routers

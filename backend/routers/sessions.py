@@ -3,8 +3,9 @@ import logging
 import uuid
 from datetime import datetime
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
+from backend.auth import require_code
 from backend.models import CreateSessionRequest, SessionResponse
 import backend.state as state
 
@@ -14,7 +15,7 @@ router = APIRouter(prefix="/api", tags=["sessions"])
 
 
 @router.post("/sessions", status_code=201, response_model=SessionResponse)
-async def create_session(request: CreateSessionRequest):
+async def create_session(request: CreateSessionRequest, code: dict = Depends(require_code)):
     db = state.get_db()
     session_id = uuid.uuid4().hex[:12]
     row = {
@@ -27,6 +28,7 @@ async def create_session(request: CreateSessionRequest):
         "type": request.type,
         "status": "active",
         "visibility": "private",
+        "owner_code": code["code"],
         "created_at": datetime.now().isoformat(),
     }
     await db.add_session(row)

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
-import { BACKEND_URL, N8N_VERIFIED_WEBHOOK, FETCH_HEADERS, safeJsonParse, debug } from '../services/api'
+import { BACKEND_URL, N8N_VERIFIED_WEBHOOK, authHeaders, safeJsonParse, debug } from '../services/api'
 import { AdminView } from '../components/AdminView'
 import { SpeakerColumns } from '../components/SpeakerColumns'
 import { BackendErrorDisplay } from '../components/BackendErrorDisplay'
@@ -73,7 +73,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
       const key = episodeKey || showKey || showName.toLowerCase()
       try {
         const response = await fetch(`${BACKEND_URL}/api/config/${key}`, {
-          headers: FETCH_HEADERS,
+          headers: authHeaders(),
           signal: controller.signal
         })
         if (response.ok) {
@@ -126,7 +126,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
         const timeoutId = setTimeout(() => controller.abort(), 5000)
 
         const response = await fetch(url, {
-          headers: FETCH_HEADERS,
+          headers: authHeaders(),
           signal: controller.signal
         })
 
@@ -181,7 +181,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
     const url = episodeKey
       ? `${BACKEND_URL}/api/fact-checks?session_id=${episodeKey}`
       : `${BACKEND_URL}/api/fact-checks`
-    fetch(url, { headers: FETCH_HEADERS })
+    fetch(url, { headers: authHeaders() })
       .then(r => r.ok ? r.json() : Promise.reject(r.status))
       .then(data => {
         setSentClaims(prev => {
@@ -212,7 +212,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
     const url = episodeKey
       ? `${BACKEND_URL}/api/fact-checks?session_id=${episodeKey}&status=discarded`
       : `${BACKEND_URL}/api/fact-checks?status=discarded`
-    fetch(url, { headers: FETCH_HEADERS })
+    fetch(url, { headers: authHeaders() })
       .then(r => r.ok ? r.json() : Promise.reject(r.status))
       .then(data => {
         setDiscardedClaims(prev => {
@@ -247,7 +247,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
           ? `${BACKEND_URL}/api/pending-claims?session_id=${episodeKey}`
           : `${BACKEND_URL}/api/pending-claims`
         const response = await fetch(pendingUrl, {
-          headers: FETCH_HEADERS,
+          headers: authHeaders(),
           signal: controller.signal
         })
 
@@ -331,7 +331,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
       currentController = controller
       try {
         const response = await fetch(`${BACKEND_URL}/api/pipeline-status`, {
-          headers: FETCH_HEADERS,
+          headers: authHeaders(),
           signal: controller.signal
         })
         if (!isMounted || !response.ok) return
@@ -358,7 +358,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
     try {
       const response = await fetch(`${BACKEND_URL}/api/pipeline-status/${blockId}/retrigger`, {
         method: 'POST',
-        headers: FETCH_HEADERS
+        headers: authHeaders()
       })
       if (!response.ok) {
         const err = await response.json().catch(() => ({}))
@@ -395,7 +395,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
     if (!blockId) return
     fetch(`${BACKEND_URL}/api/pending-claims/${blockId}`, {
       method: 'DELETE',
-      headers: FETCH_HEADERS
+      headers: authHeaders()
     }).catch(() => {})
   }
 
@@ -412,7 +412,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
     try {
       const resp = await fetch(`${BACKEND_URL}/api/discard-claims`, {
         method: 'POST',
-        headers: FETCH_HEADERS,
+        headers: authHeaders(),
         body: JSON.stringify({
           claims: claims.map(c => ({ name: c.name, claim: c.claim })),
           session_id: episodeKey
@@ -468,7 +468,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
     if (dbId) {
       fetch(`${BACKEND_URL}/api/fact-checks/${dbId}`, {
         method: 'DELETE',
-        headers: FETCH_HEADERS
+        headers: authHeaders()
       }).catch(() => {})
     }
     setPendingClaims(prev => [...prev, { ...claim }].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp)))
@@ -538,7 +538,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
 
         const response = await fetch(`${BACKEND_URL}/api/approve-claims`, {
           method: 'POST',
-          headers: FETCH_HEADERS,
+          headers: authHeaders(),
           body: JSON.stringify({
             block_id: `staged_${Date.now()}`,
             claims: claimsToSend,
@@ -560,7 +560,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
       await Promise.all(resendClaims.map(async (claim) => {
         const response = await fetch(`${BACKEND_URL}/api/fact-checks/resend`, {
           method: 'POST',
-          headers: FETCH_HEADERS,
+          headers: authHeaders(),
           body: JSON.stringify({
             name: claim.name,
             claim: claim.claim,

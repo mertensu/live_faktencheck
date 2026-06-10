@@ -10,8 +10,9 @@ import logging
 from datetime import datetime
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException, BackgroundTasks, Query
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Query
 
+from backend.auth import require_code
 from backend.models import (
     FactCheckRequest,
     ClaimUpdateRequest,
@@ -73,7 +74,8 @@ async def receive_fact_check(request: FactCheckRequest):
 async def update_fact_check(
     fact_check_id: int,
     request: ClaimUpdateRequest,
-    background_tasks: BackgroundTasks
+    background_tasks: BackgroundTasks,
+    code: dict = Depends(require_code),
 ):
     """
     Re-run fact-check for an existing claim (overwrite result).
@@ -121,7 +123,8 @@ async def delete_fact_check(fact_check_id: int):
 @router.post('/fact-checks/resend', status_code=202, response_model=ProcessingResponse)
 async def resend_fact_check(
     request: ClaimUpdateRequest,
-    background_tasks: BackgroundTasks
+    background_tasks: BackgroundTasks,
+    code: dict = Depends(require_code),
 ):
     """
     Re-run fact-check by matching speaker+claim text.

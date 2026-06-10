@@ -35,3 +35,32 @@ From the laptop: `./deploy/deploy.sh`
 
 ## DB backup (cron on the VPS)
 `0 4 * * * sqlite3 /opt/fact_check/backend/data/factcheck.db ".backup '/opt/fact_check/backend/data/backup-$(date +\%F).db'"`
+
+## Access gate (Phase 3a)
+
+Cost-incurring endpoints (`POST /api/sessions`, `audio-block`, `text-block`,
+`approve-claims`, `fact-checks/resend`, `PUT /api/fact-checks/{id}`, pipeline retrigger)
+require a valid `X-Access-Code` header. Codes live in the `codes` table and are seeded at
+startup from the `ACCESS_CODES` env var **if the table is empty**.
+
+- **Required env** in `/opt/fact_check/.env`:
+  `ACCESS_CODES=ulf:SOME_SECRET,anna:OTHER_SECRET` (comma-separated `name:code` pairs).
+- **Fail-closed:** if `ACCESS_CODES` is unset and the table is empty, every gated endpoint
+  rejects all requests. Set it before/at deploy or the live app stops accepting sessions.
+- **Seeding is one-shot** (only when the table is empty). To manage codes on a running DB:
+  - add: `sqlite3 backend/data/factcheck.db "INSERT INTO codes (code,name,active,created_at) VALUES ('newcode','name',1,datetime('now'));"`
+  - revoke: `sqlite3 backend/data/factcheck.db "UPDATE codes SET active=0 WHERE code='thecode';"`
+  - revocation takes effect immediately (no restart).
+- After editing `.env`, restart: `systemctl restart factcheck-backend`.
+- `listener.py` (laptop live capture) reads the code from its own `ACCESS_CODE` env var.
+
+## Provider budget caps (manual — do this once)
+
+The access gate is the primary control; provider-side spend caps are the outer ceiling that
+holds even if a code leaks or a bug loops. Set hard limits + alerts in each dashboard:
+
+- **AssemblyAI** — usage/spend cap + alert (transcription).
+- **Google / Gemini** (AI Studio or Cloud billing) — budget + alert (claim extraction + fact-check).
+- **Tavily** — usage cap/alert (web search).
+
+These are operational settings, not enforced in code.

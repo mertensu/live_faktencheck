@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { createSession } from '../services/api'
+import { createSession, getAccessCode, setAccessCode } from '../services/api'
 
 export function NewSessionPage() {
   const navigate = useNavigate()
@@ -9,6 +9,7 @@ export function NewSessionPage() {
   const [guests, setGuests] = useState('')
   const [context, setContext] = useState('')
   const [referenceLinks, setReferenceLinks] = useState('')
+  const [accessCode, setAccessCodeInput] = useState(getAccessCode())
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState(null)
 
@@ -16,6 +17,7 @@ export function NewSessionPage() {
     e.preventDefault()
     setSubmitting(true)
     setError(null)
+    setAccessCode(accessCode.trim())
     try {
       const payload = {
         title,
@@ -31,7 +33,10 @@ export function NewSessionPage() {
       }
       navigate('/' + result.session_id)
     } catch (err) {
-      setError(err.message || 'Fehler beim Erstellen der Session')
+      const msg = err.message || 'Fehler beim Erstellen der Session'
+      // Drop a rejected code so the user can re-enter it.
+      if (/401|403|Zugangscode/i.test(msg)) setAccessCode('')
+      setError(msg)
       setSubmitting(false)
     }
   }
@@ -41,6 +46,19 @@ export function NewSessionPage() {
       <div className="about-content">
         <h1>Neue Session erstellen</h1>
         <form onSubmit={handleSubmit} className="new-session-form">
+          <div className="form-field">
+            <label htmlFor="session-code">Zugangscode *</label>
+            <input
+              id="session-code"
+              type="password"
+              value={accessCode}
+              onChange={e => setAccessCodeInput(e.target.value)}
+              required
+              autoComplete="off"
+              placeholder="Dein persönlicher Zugangscode"
+            />
+          </div>
+
           <div className="form-field">
             <label htmlFor="session-title">Titel *</label>
             <input

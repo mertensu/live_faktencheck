@@ -20,6 +20,10 @@ from backend.services.registry import reset_services
 nest_asyncio.apply()
 
 
+# Access code seeded into every test DB so gated endpoints are reachable.
+TEST_ACCESS_CODE = "test-code"
+
+
 # =============================================================================
 # State Reset Fixture
 # =============================================================================
@@ -29,6 +33,7 @@ async def reset_state():
     """Reset shared state and provide fresh in-memory DB before each test."""
     db = Database(":memory:")
     await db.connect()
+    await db.add_code(TEST_ACCESS_CODE, "tester")
     state.db = db
     state.last_transcript_tail = None
     state.pipeline_events.clear()
@@ -50,7 +55,19 @@ async def reset_state():
 
 @pytest.fixture
 async def client():
-    """Async HTTP client for testing FastAPI endpoints."""
+    """Async HTTP client that sends a valid access code by default."""
+    transport = ASGITransport(app=app)
+    async with AsyncClient(
+        transport=transport,
+        base_url="http://test",
+        headers={"X-Access-Code": TEST_ACCESS_CODE},
+    ) as ac:
+        yield ac
+
+
+@pytest.fixture
+async def no_auth_client():
+    """Async HTTP client that sends no access code (for gate tests)."""
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac

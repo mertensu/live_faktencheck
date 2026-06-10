@@ -93,6 +93,13 @@ class Database:
                 created_at       TEXT NOT NULL,
                 ended_at         TEXT
             );
+
+            CREATE TABLE IF NOT EXISTS codes (
+                code        TEXT PRIMARY KEY,
+                name        TEXT NOT NULL,
+                active      INTEGER NOT NULL DEFAULT 1,
+                created_at  TEXT NOT NULL
+            );
         """)
         await self.db.commit()
 
@@ -302,6 +309,46 @@ class Database:
         existing = await self.get_session(session["session_id"])
         if existing is None:
             await self.add_session(session)
+
+    # =========================================================================
+    # Access Codes CRUD
+    # =========================================================================
+
+    async def add_code(self, code: str, name: str) -> None:
+        """Insert an access code (no-op if the code already exists)."""
+        from datetime import datetime
+        await self.db.execute(
+            "INSERT OR IGNORE INTO codes (code, name, active, created_at) VALUES (?, ?, 1, ?)",
+            (code, name, datetime.now().isoformat()),
+        )
+        await self.db.commit()
+
+    async def get_code(self, code: str) -> dict | None:
+        """Return an active code row, or None if unknown/inactive."""
+        cursor = await self.db.execute(
+            "SELECT * FROM codes WHERE code = ? AND active = 1", (code,)
+        )
+        row = await cursor.fetchone()
+        return dict(row) if row else None
+
+    async def deactivate_code(self, code: str) -> bool:
+        """Set a code inactive. Returns True if a row was changed."""
+        cursor = await self.db.execute(
+            "UPDATE codes SET active = 0 WHERE code = ?", (code,)
+        )
+        await self.db.commit()
+        return cursor.rowcount > 0
+
+    async def list_codes(self) -> list[dict]:
+        """Return all codes (active and inactive)."""
+        cursor = await self.db.execute("SELECT * FROM codes ORDER BY created_at")
+        return [dict(r) for r in await cursor.fetchall()]
+
+    async def count_codes(self) -> int:
+        """Return the total number of codes (active and inactive)."""
+        cursor = await self.db.execute("SELECT COUNT(*) FROM codes")
+        row = await cursor.fetchone()
+        return row[0]
 
     # =========================================================================
     # Pending Claims Blocks CRUD
