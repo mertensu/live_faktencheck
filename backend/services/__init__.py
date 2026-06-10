@@ -1,6 +1,5 @@
 # Backend services package
-from .transcription import TranscriptionService
-from .claim_extraction import ClaimExtractor
-from .fact_checker import FactChecker
+# Note: eager imports of ClaimExtractor and FactChecker removed during Phase R
+# (langchain_google_genai no longer installed; those modules are being rewritten).
+# Import them directly from their submodules where needed.
 
-__all__ = ['TranscriptionService', 'ClaimExtractor', 'FactChecker']
