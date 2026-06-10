@@ -95,10 +95,12 @@ class Database:
             );
 
             CREATE TABLE IF NOT EXISTS codes (
-                code        TEXT PRIMARY KEY,
-                name        TEXT NOT NULL,
-                active      INTEGER NOT NULL DEFAULT 1,
-                created_at  TEXT NOT NULL
+                code              TEXT PRIMARY KEY,
+                name              TEXT NOT NULL,
+                active            INTEGER NOT NULL DEFAULT 1,
+                created_at        TEXT NOT NULL,
+                quick_checks_used INTEGER NOT NULL DEFAULT 0,
+                quick_check_limit INTEGER DEFAULT 3
             );
         """)
         await self.db.commit()
@@ -108,6 +110,17 @@ class Database:
             "ALTER TABLE fact_checks ADD COLUMN status TEXT NOT NULL DEFAULT ''",
             "ALTER TABLE fact_checks ADD COLUMN double_check INTEGER NOT NULL DEFAULT 0",
             "ALTER TABLE fact_checks ADD COLUMN critique_note TEXT NOT NULL DEFAULT ''",
+        ]:
+            try:
+                await self.db.execute(migration)
+                await self.db.commit()
+            except Exception:
+                pass  # Column already exists
+
+        # Migrations: add Quick Check quota columns to existing codes tables
+        for migration in [
+            "ALTER TABLE codes ADD COLUMN quick_checks_used INTEGER NOT NULL DEFAULT 0",
+            "ALTER TABLE codes ADD COLUMN quick_check_limit INTEGER DEFAULT 3",
         ]:
             try:
                 await self.db.execute(migration)
@@ -314,12 +327,16 @@ class Database:
     # Access Codes CRUD
     # =========================================================================
 
-    async def add_code(self, code: str, name: str) -> None:
-        """Insert an access code (no-op if the code already exists)."""
+    async def add_code(self, code: str, name: str, quick_check_limit: int | None = 3) -> None:
+        """Insert an access code (no-op if the code already exists).
+
+        quick_check_limit: lifetime Quick Check cap; None means unlimited.
+        """
         from datetime import datetime
         await self.db.execute(
-            "INSERT OR IGNORE INTO codes (code, name, active, created_at) VALUES (?, ?, 1, ?)",
-            (code, name, datetime.now().isoformat()),
+            "INSERT OR IGNORE INTO codes (code, name, active, created_at, quick_check_limit) "
+            "VALUES (?, ?, 1, ?, ?)",
+            (code, name, datetime.now().isoformat(), quick_check_limit),
         )
         await self.db.commit()
 
@@ -349,6 +366,14 @@ class Database:
         cursor = await self.db.execute("SELECT COUNT(*) FROM codes")
         row = await cursor.fetchone()
         return row[0]
+
+    async def increment_quick_checks(self, code: str) -> None:
+        """Increment the lifetime Quick Check counter for a code by 1."""
+        await self.db.execute(
+            "UPDATE codes SET quick_checks_used = quick_checks_used + 1 WHERE code = ?",
+            (code,),
+        )
+        await self.db.commit()
 
     # =========================================================================
     # Pending Claims Blocks CRUD
