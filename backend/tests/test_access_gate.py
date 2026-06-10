@@ -146,3 +146,45 @@ def test_all_cost_endpoints_require_code():
                 found.add((method, route.path))
     missing = gated - found
     assert not missing, f"endpoints missing require_code: {missing}"
+
+
+# =============================================================================
+# GET /api/validate-code (cheap, side-effect-free code check)
+# =============================================================================
+
+async def test_validate_code_valid_returns_public_fields(client):
+    resp = await client.get("/api/validate-code")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["name"] == "tester"
+    assert body["quick_check_limit"] == 3
+    assert body["quick_checks_used"] == 0
+
+
+async def test_validate_code_does_not_leak_raw_code_or_active(client):
+    body = (await client.get("/api/validate-code")).json()
+    assert "code" not in body
+    assert "active" not in body
+    assert "created_at" not in body
+
+
+async def test_validate_code_without_header_is_401(no_auth_client):
+    resp = await no_auth_client.get("/api/validate-code")
+    assert resp.status_code == 401
+
+
+async def test_validate_code_with_invalid_code_is_403(no_auth_client):
+    resp = await no_auth_client.get(
+        "/api/validate-code", headers={"X-Access-Code": "wrong"}
+    )
+    assert resp.status_code == 403
+
+
+async def test_validate_code_is_side_effect_free(client):
+    """A validate call must not consume Quick Check quota or otherwise write."""
+    import backend.state as state
+
+    before = (await state.get_db().get_code(TEST_ACCESS_CODE))["quick_checks_used"]
+    await client.get("/api/validate-code")
+    after = (await state.get_db().get_code(TEST_ACCESS_CODE))["quick_checks_used"]
+    assert before == after == 0

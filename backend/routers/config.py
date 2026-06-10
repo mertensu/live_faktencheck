@@ -6,7 +6,7 @@ Handles show/episode configuration and health checks.
 
 import logging
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 
 from backend.models import (
     HealthResponse,
@@ -14,6 +14,7 @@ from backend.models import (
     EpisodesResponse,
 )
 from config import Episode, get_show_name, get_episodes_for_show
+from backend.auth import require_code
 from backend.services.trusted_domains import TRUSTED_DOMAINS_BY_CATEGORY
 import backend.state as state
 
@@ -92,3 +93,18 @@ async def health():
         pending_blocks=await db.count_pending_blocks(),
         fact_checks=await db.count_fact_checks()
     )
+
+
+@router.get('/validate-code')
+async def validate_code(code: dict = Depends(require_code)):
+    """Cheaply validate an access code.
+
+    Reuses ``require_code`` (missing header -> 401, unknown/inactive -> 403).
+    Side-effect-free: no DB write, no paid external call. Returns only public
+    fields — never the raw code or internal flags.
+    """
+    return {
+        "name": code["name"],
+        "quick_check_limit": code["quick_check_limit"],
+        "quick_checks_used": code["quick_checks_used"],
+    }
