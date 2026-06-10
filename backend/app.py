@@ -105,9 +105,10 @@ app.add_middleware(
         "http://127.0.0.1:3000",
         "http://127.0.0.1:5173"
     ],
-    # Cloudflare Pages preview deployments (per-deploy *.pages.dev subdomains) — lets the
-    # branch preview build call the live API before merging to main.
-    allow_origin_regex=r"https://[a-z0-9-]+\.pages\.dev",
+    # Cloudflare Workers preview deployments (per-branch/per-deploy subdomains of the form
+    # <hash>-live-faktencheck.mertens-ulf.workers.dev) — lets a branch preview build call
+    # the live API before merging to main.
+    allow_origin_regex=r"https://[a-z0-9-]+-live-faktencheck\.mertens-ulf\.workers\.dev",
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "OPTIONS"],
     allow_headers=["Content-Type", "Authorization", "Accept"],
