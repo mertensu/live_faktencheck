@@ -2165,3 +2165,162 @@
   font-size: 0.9rem;
   color: #d97706;
 }
+
+/* === Phase 1b: Homepage landing === */
+
+.access-unlock {
+  max-width: 480px;
+  margin: 0 auto 2rem;
+}
+
+.access-unlock-form {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.access-unlock-input {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  font-size: 1rem;
+  background: white;
+  color: var(--text-main);
+  font-family: inherit;
+  transition: border-color var(--transition-normal);
+}
+
+.access-unlock-input:focus {
+  outline: none;
+  border-color: var(--accent-blue);
+  box-shadow: var(--focus-ring);
+}
+
+.access-unlock-status {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  margin-top: 0.5rem;
+}
+
+.action-cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  max-width: 720px;
+  margin: 0 auto 3rem;
+}
+
+.action-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1.25rem;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  background: white;
+  text-decoration: none;
+  color: inherit;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  transition: border-color var(--transition-normal), transform var(--transition-normal);
+}
+
+.action-card:hover {
+  border-color: var(--accent-blue);
+  transform: translateY(-2px);
+}
+
+.action-card--locked {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.action-card--locked:hover {
+  border-color: var(--border-light);
+  transform: none;
+}
+
+.action-card-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.action-card-icon {
+  font-size: 1.4rem;
+}
+
+.action-card-title {
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.action-card-lock {
+  margin-left: auto;
+}
+
+.beta-tag {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.1rem 0.4rem;
+  border-radius: var(--radius-sm);
+  background: var(--accent-blue);
+  color: #fff;
+}
+
+.action-card-desc {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.examples-section {
+  max-width: 720px;
+  margin: 0 auto;
+  scroll-margin-top: 80px;
+}
+
+.examples-title {
+  font-size: 1.4rem;
+  font-weight: 500;
+  color: var(--text-main);
+  margin-bottom: 0.25rem;
+}
+
+.examples-intro {
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+}
+
+/* === Phase Q leftovers (now styled) === */
+
+.quota-note {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin: 1rem 0;
+}
+
+.quick-check-result,
+.quick-check-history {
+  margin-top: 2rem;
+}
+
+.quick-check-result h2,
+.quick-check-history h2 {
+  font-size: 1.2rem;
+  font-weight: 500;
+  color: var(--text-main);
+  margin-bottom: 1rem;
+}
+
+/* Stack action cards on narrow screens */
+@media (max-width: 600px) {
+  .action-cards {
+    grid-template-columns: 1fr;
+  }
+}
