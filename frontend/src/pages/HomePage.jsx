@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useShows } from '../hooks/useShows'
 import { AccessUnlock } from '../components/AccessUnlock'
@@ -56,10 +56,10 @@ export function HomePage() {
   const [name, setName] = useState(null)
   const unlockRef = useRef(null)
 
-  const handleUnlock = (_code, unlockedName) => {
+  const handleUnlock = useCallback((_code, unlockedName) => {
     setUnlocked(true)
     setName(unlockedName)
-  }
+  }, [])
 
   const focusUnlock = () => unlockRef.current?.focus()
 
