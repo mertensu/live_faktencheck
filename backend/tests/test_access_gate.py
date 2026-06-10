@@ -81,7 +81,8 @@ async def test_seed_codes_is_idempotent_when_table_nonempty(fresh_db):
     assert await fresh_db.get_code("s1") is None  # not re-seeded over existing codes
 
 
-async def test_seed_codes_empty_env_leaves_table_empty(fresh_db):
+async def test_seed_codes_empty_env_leaves_table_empty(fresh_db, monkeypatch):
+    monkeypatch.delenv("ACCESS_CODES", raising=False)
     assert await seed_codes_from_env(fresh_db, None) == 0
     assert await fresh_db.count_codes() == 0
 

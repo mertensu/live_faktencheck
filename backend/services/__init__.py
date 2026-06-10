@@ -1,5 +1,4 @@
 # Backend services package
-# Note: eager imports of ClaimExtractor and FactChecker removed during Phase R
-# (langchain_google_genai no longer installed; those modules are being rewritten).
+# Note: eager imports of ClaimExtractor and FactChecker removed during Phase R.
 # Import them directly from their submodules where needed.
 
