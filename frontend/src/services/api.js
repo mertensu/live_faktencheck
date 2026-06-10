@@ -86,3 +86,26 @@ export async function endSession(sessionId) {
   }
   return data
 }
+
+// Submit a single claim for a one-shot fact-check (Phase Q).
+export async function submitQuickCheck(claim) {
+  const res = await fetch(`${BACKEND_URL}/api/quick-check`, {
+    method: 'POST', headers: authHeaders(), body: JSON.stringify({ claim }),
+  })
+  const data = await safeJsonParse(res, 'submitQuickCheck')
+  if (!res.ok) {
+    throw new Error(data?.detail || `submitQuickCheck failed (${res.status})`)
+  }
+  return data  // { fact_check, limit, remaining }
+}
+
+// Load this code's past quick checks (open GET, keyed by quick-<code>).
+export async function fetchQuickCheckHistory() {
+  const code = getAccessCode()
+  if (!code) return []
+  const res = await fetch(`${BACKEND_URL}/api/fact-checks?session_id=quick-${encodeURIComponent(code)}`, {
+    headers: authHeaders(),
+  })
+  if (!res.ok) return []
+  return safeJsonParse(res, 'fetchQuickCheckHistory')
+}
