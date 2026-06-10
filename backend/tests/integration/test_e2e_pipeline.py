@@ -51,10 +51,9 @@ def skip_if_no_audio():
 @pytest.fixture
 def cheap_models(monkeypatch):
     """Use cheapest models for E2E tests to minimize cost."""
-    monkeypatch.setenv("GEMINI_MODEL_CLAIM_EXTRACTION", "gemini-2.0-flash-lite")
-    monkeypatch.setenv("GEMINI_MODEL_FACT_CHECKER", "gemini-2.0-flash-lite")
-    monkeypatch.setenv("FACT_CHECK_RECURSION_LIMIT", "5")
-    monkeypatch.setenv("MOCK_SEARCH", "true")
+    monkeypatch.setenv("GEMINI_MODEL_CLAIM_EXTRACTION", "gemini-2.5-flash")
+    monkeypatch.setenv("GEMINI_MODEL_FACT_CHECKER", "gemini-2.5-flash")
+    monkeypatch.setenv("FACT_CHECK_RECURSION_LIMIT", "10")
 
 
 # =============================================================================
@@ -70,8 +69,8 @@ def test_full_pipeline_with_audio(cheap_models):
     Uses a short audio file with the claim:
     "Der Spitzensteuersatz in Deutschland betraegt 42 Prozent"
 
-    Runs in subprocess to avoid pytest-asyncio conflicts with ChatGoogleGenerativeAI.
-    See: https://github.com/langchain-ai/langchain-google/issues/357
+    Runs in subprocess so the sync service wrappers (asyncio.run) don't collide
+    with pytest's running event loop.
     """
     import subprocess
     import sys
@@ -87,10 +86,9 @@ import asyncio
 from dotenv import load_dotenv
 load_dotenv()
 
-os.environ["GEMINI_MODEL_CLAIM_EXTRACTION"] = "gemini-2.0-flash-lite"
-os.environ["GEMINI_MODEL_FACT_CHECKER"] = "gemini-2.0-flash-lite"
-os.environ["FACT_CHECK_RECURSION_LIMIT"] = "5"
-os.environ["MOCK_SEARCH"] = "true"
+os.environ["GEMINI_MODEL_CLAIM_EXTRACTION"] = "gemini-2.5-flash"
+os.environ["GEMINI_MODEL_FACT_CHECKER"] = "gemini-2.5-flash"
+os.environ["FACT_CHECK_RECURSION_LIMIT"] = "10"
 
 from backend.services.transcription import TranscriptionService
 from backend.services.claim_extraction import ClaimExtractor
@@ -110,7 +108,7 @@ assert len(transcript) > 0
 # Step 2: Extract claims (async - google.genai works fine)
 print("[TEST] Step 2: Extracting claims...", flush=True)
 extractor = ClaimExtractor()
-claims = asyncio.run(extractor.extract_async(transcript, info="E2E Test"))
+claims = asyncio.run(extractor.extract_async(transcript, guests=[], context="E2E Test"))
 print(f"[TEST] Extracted {{len(claims)}} claims", flush=True)
 assert len(claims) > 0
 
@@ -185,8 +183,8 @@ def test_full_pipeline_with_text(cheap_models):
     Test pipeline without transcription: text -> extraction -> fact-check.
 
     Skips AssemblyAI transcription for faster, cheaper E2E testing.
-    Runs in subprocess to avoid pytest-asyncio conflicts with ChatGoogleGenerativeAI.
-    See: https://github.com/langchain-ai/langchain-google/issues/357
+    Runs in subprocess so the sync service wrappers (asyncio.run) don't collide
+    with pytest's running event loop.
     """
     import subprocess
     import sys
@@ -201,10 +199,9 @@ import asyncio
 from dotenv import load_dotenv
 load_dotenv()
 
-os.environ["GEMINI_MODEL_CLAIM_EXTRACTION"] = "gemini-2.0-flash-lite"
-os.environ["GEMINI_MODEL_FACT_CHECKER"] = "gemini-2.0-flash-lite"
-os.environ["FACT_CHECK_RECURSION_LIMIT"] = "5"
-os.environ["MOCK_SEARCH"] = "true"
+os.environ["GEMINI_MODEL_CLAIM_EXTRACTION"] = "gemini-2.5-flash"
+os.environ["GEMINI_MODEL_FACT_CHECKER"] = "gemini-2.5-flash"
+os.environ["FACT_CHECK_RECURSION_LIMIT"] = "10"
 
 from backend.services.claim_extraction import ClaimExtractor
 from backend.services.fact_checker import FactChecker
@@ -220,7 +217,7 @@ Schmidt: Ab einem zu versteuernden Einkommen von etwa 66.000 Euro im Jahr.
 # Step 1: Extract claims from text (async - google.genai works fine)
 print("[TEST] Step 1: Extracting claims from text...", flush=True)
 extractor = ClaimExtractor()
-claims = asyncio.run(extractor.extract_async(test_text, info="E2E Test: Spitzensteuersatz"))
+claims = asyncio.run(extractor.extract_async(test_text, guests=[], context="E2E Test: Spitzensteuersatz"))
 print(f"[TEST] Extracted {len(claims)} claims", flush=True)
 assert len(claims) > 0
 
@@ -293,7 +290,7 @@ def test_direct_fact_check_single_claim(cheap_models):
     """
     Test fact-checker service directly.
 
-    This is the fastest E2E test - runs in subprocess to avoid pytest-asyncio conflicts.
+    This is the fastest E2E test - runs in subprocess to avoid event-loop conflicts.
     Uses Popen with polling instead of subprocess.run to avoid blocking issues.
     """
     import subprocess
@@ -303,18 +300,16 @@ def test_direct_fact_check_single_claim(cheap_models):
 
     skip_if_missing_keys()
 
-    # Run the sync test in a subprocess to avoid event loop conflicts
-    # IMPORTANT: Use sync invoke() not ainvoke() - ChatGoogleGenerativeAI has async bugs
-    # See: https://github.com/langchain-ai/langchain-google/issues/357
+    # Run in a subprocess so the sync check_claim() wrapper (asyncio.run) does not
+    # collide with pytest's running event loop.
     code = '''
 import os
 import json
 from dotenv import load_dotenv
 load_dotenv()
 
-os.environ["GEMINI_MODEL_FACT_CHECKER"] = "gemini-2.0-flash-lite"
-os.environ["FACT_CHECK_RECURSION_LIMIT"] = "5"
-os.environ["MOCK_SEARCH"] = "true"
+os.environ["GEMINI_MODEL_FACT_CHECKER"] = "gemini-2.5-flash"
+os.environ["FACT_CHECK_RECURSION_LIMIT"] = "10"
 
 from backend.services.fact_checker import FactChecker
 
