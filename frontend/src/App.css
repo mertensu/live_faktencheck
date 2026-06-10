@@ -295,9 +295,9 @@
 
 .form-field input,
 .form-field textarea {
-  background: var(--bg-card, #1a1a2e);
-  border: 1px solid var(--border-color, #2a2a4a);
-  border-radius: 6px;
+  background: #fff;
+  border: 1px solid var(--border-medium, #D5DCE3);
+  border-radius: var(--radius-md, 6px);
   color: var(--text-main);
   font-size: 0.95rem;
   padding: 0.6rem 0.75rem;
@@ -307,10 +307,16 @@
   resize: vertical;
 }
 
+.form-field input::placeholder,
+.form-field textarea::placeholder {
+  color: var(--text-muted);
+}
+
 .form-field input:focus,
 .form-field textarea:focus {
   outline: none;
-  border-color: var(--accent-color, #6366f1);
+  border-color: var(--accent-blue, #64B5F6);
+  box-shadow: var(--focus-ring);
 }
 
 .form-error {
@@ -321,6 +327,102 @@
 
 .form-actions {
   margin-top: 1.5rem;
+}
+
+/* Quick Check — prompt box (Gemini-style rounded input) */
+.quick-check-form {
+  margin-top: 1.5rem;
+}
+
+.claim-box {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5rem;
+  background: #fff;
+  border: 1px solid var(--border-light);
+  border-radius: 26px;
+  box-shadow: var(--shadow-md);
+  padding: 0.5rem 0.5rem 0.5rem 1rem;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.claim-box:focus-within {
+  border-color: var(--accent-blue);
+  box-shadow: var(--focus-ring);
+}
+
+.claim-box-icon {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  color: var(--text-muted);
+  margin-bottom: 0.6rem;
+}
+
+.claim-box-input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  resize: none;
+  color: var(--text-main);
+  font-family: inherit;
+  font-size: 1rem;
+  line-height: 1.5;
+  padding: 0.5rem 0;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.claim-box-input::placeholder {
+  color: var(--text-muted);
+}
+
+.claim-box-send {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border: none;
+  border-radius: 50%;
+  background: var(--accent-blue);
+  color: #fff;
+  cursor: pointer;
+  transition: background var(--transition-fast), transform var(--transition-fast);
+}
+
+.claim-box-send:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.claim-box-send:active:not(:disabled) {
+  transform: scale(0.94);
+}
+
+.claim-box-send:disabled {
+  background: var(--border-medium);
+  cursor: not-allowed;
+}
+
+.claim-box-send svg {
+  width: 20px;
+  height: 20px;
+}
+
+.claim-box-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: claim-box-spin 0.7s linear infinite;
+}
+
+@keyframes claim-box-spin {
+  to { transform: rotate(360deg); }
 }
 
 /* Trusted Domains */
