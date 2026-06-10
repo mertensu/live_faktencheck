@@ -205,4 +205,5 @@ To run the system in a language other than German, see [`docs/language-adaptatio
 
 ## License
 
-MIT
+This project is source-available under the [PolyForm Noncommercial 1.0.0](LICENSE)
+license. Noncommercial use is permitted; for commercial use, please get in touch.
