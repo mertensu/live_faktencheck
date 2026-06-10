@@ -109,3 +109,16 @@ export async function fetchQuickCheckHistory() {
   if (!res.ok) return []
   return safeJsonParse(res, 'fetchQuickCheckHistory')
 }
+
+// Cheaply validate an access code without storing it (Phase 1b homepage unlock).
+// Returns { name, quick_check_limit, quick_checks_used } or throws on non-ok.
+export async function validateCode(code) {
+  const res = await fetch(`${BACKEND_URL}/api/validate-code`, {
+    headers: { ...FETCH_HEADERS, 'X-Access-Code': code },
+  })
+  const data = await safeJsonParse(res, 'validateCode')
+  if (!res.ok) {
+    throw new Error(data?.detail || `validateCode failed (${res.status})`)
+  }
+  return data
+}
