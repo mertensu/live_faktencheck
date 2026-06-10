@@ -41,7 +41,7 @@ Ergebnisse privat per Link teilbar.
 | Phase | Inhalt | Status |
 |-------|--------|--------|
 | **1** | Backend-Multi-Tenancy (Sessions statt globaler Episode) | ✅ **Abgeschlossen** |
-| **1b** | Homepage / App-Informationsarchitektur neu denken | ⬜ Offen (eigener Spec) |
+| **1b** | Homepage / App-Informationsarchitektur neu denken | ✅ **Abgeschlossen** |
 | **2** | Browser-Audio-Capture (ersetzt `listener.py`) | ⬜ Offen |
 | **3a** | **Minimaler Zugangs-Gate (Zugangscodes auf Kosten-Endpunkten)** | ✅ **Live auf VPS** (2026-06-10, `971a7de`; main-Merge offen) |
 | **R** | **Agent-Rewrite: LangChain/LangGraph → PydanticAI + Logfire** | ✅ **Abgeschlossen** (2026-06-10, Branch; main-Merge = Go-Live offen) |
@@ -85,7 +85,7 @@ multi-tenant-fähig.
 
 ---
 
-## ⬜ Phase 1b — Homepage / Informationsarchitektur
+## ✅ Phase 1b — Homepage / Informationsarchitektur
 
 **Warum:** Sobald Sessions privat/per-Link sind, verliert die Startseite ihren
 „Schaufenster"-Zweck (Live-Faktenchecks präsentieren). Sie braucht eine neue Aufgabe.
