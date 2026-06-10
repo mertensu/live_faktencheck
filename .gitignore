@@ -76,3 +76,6 @@ backend/data/factcheck.db
 memory.md
 handover/
 .test_override.json
+
+# Visual companion (brainstorming) artifacts
+.superpowers/
