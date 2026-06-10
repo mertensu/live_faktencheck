@@ -25,6 +25,7 @@ from backend.routers.claims import claim_queue_worker
 from backend.auth import seed_codes_from_env
 from backend.database import Database
 from backend import state
+from backend.services.observability import configure_logfire
 from config import EPISODES, episode_to_session_dict
 
 # Load environment variables
@@ -48,6 +49,9 @@ async def seed_legacy_episodes(db) -> None:
 # Lifespan context manager for startup/shutdown
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Startup: configure observability (no-op without LOGFIRE_TOKEN)
+    configure_logfire()
+
     # Startup: clear orphaned temp audio files from previous crash
     shutil.rmtree(AUDIO_TMP_DIR, ignore_errors=True)
     os.makedirs(AUDIO_TMP_DIR, exist_ok=True)
