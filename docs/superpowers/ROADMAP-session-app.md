@@ -43,7 +43,8 @@ Ergebnisse privat per Link teilbar.
 | **1** | Backend-Multi-Tenancy (Sessions statt globaler Episode) | ✅ **Abgeschlossen** |
 | **1b** | Homepage / App-Informationsarchitektur neu denken | ⬜ Offen (eigener Spec) |
 | **2** | Browser-Audio-Capture (ersetzt `listener.py`) | ⬜ Offen |
-| **3a** | **Minimaler Zugangs-Gate (Zugangscodes auf Kosten-Endpunkten)** | 🟢 **Spec fertig, in Umsetzung** |
+| **3a** | **Minimaler Zugangs-Gate (Zugangscodes auf Kosten-Endpunkten)** | ✅ **Live auf VPS** (2026-06-10, `971a7de`; main-Merge offen) |
+| **R** | **Agent-Rewrite: LangChain/LangGraph → PydanticAI + Logfire** | ⬜ Offen (eigener Spec) |
 | **Q** | Quick Check (One-Shot-Zitat → Fact-Check, ohne Audio) | ⬜ Offen (eigener Spec) |
 | **3b** | Live-Limits (10-Min-Session-Auto-Stop, ggf. Circuit Breaker) | ⬜ Offen |
 | **4** | VPS-Deployment (kein lokaler Start, JSON-Export entfällt) | 🟡 Backend live auf VPS; Go-Live-Merge offen |
@@ -124,9 +125,13 @@ mit `session_id` — exakt das Contract, das `listener.py` heute schon nutzt.
 
 ---
 
-## 🟢 Phase 3a — Minimaler Zugangs-Gate (in Umsetzung)
+## ✅ Phase 3a — Minimaler Zugangs-Gate (LIVE auf VPS)
 
 **Spec:** `docs/superpowers/specs/2026-06-10-access-gate-design.md`
+**Status:** Implementiert + deployed (Commit `971a7de`, 2026-06-10). Gate live auf dem VPS
+(`ACCESS_CODES=ulfkai:0311`, codes-Tabelle geseedet); verifiziert: ohne Code→401, falsch→403,
+`0311`→201, GETs offen, `/api/health` ok. **Offen:** Provider-Budget-Caps (manuell) + optionales
+Nachgaten von `POST /api/fact-checks`/`pending-claims`; Branch noch nicht nach main gemergt.
 
 **Ziel:** Die seit dem VPS-Cutover offene, unauthentifizierte API schließen — mit der
 kleinsten Änderung, die wirkt. Kein Feature-Ausbau.
@@ -149,6 +154,40 @@ kleinsten Änderung, die wirkt. Kein Feature-Ausbau.
 Per-Code-Kontingente, Admin-UI (Codes via DB/SQL verwaltet). Siehe Spec §Scope.
 
 **Abhängigkeiten:** Phase 1 (`owner_code`-Spalte, Sessions-Router) — erfüllt.
+
+---
+
+## ⬜ Phase R — Agent-Rewrite: LangChain → PydanticAI + Logfire (eigener Spec)
+
+**Ziel:** Den Fact-Check-Agenten weg vom LangChain/LangGraph-Universum auf **PydanticAI**
+(Agent/Tools/Structured Output) + **Logfire** (Observability) umstellen.
+
+**Heutiger LangChain-Footprint (zu migrieren):**
+- `backend/services/fact_checker.py` — Kern: LangGraph-ReAct-Agent (`create_agent`),
+  `ChatGoogleGenerativeAI` (primär + Fallback via `with_fallbacks`), `TavilySearch` +
+  `FallbackSearchTool` (Retry ohne Datumsfilter), Self-Critique-Schritt, Recursion-Trace-Dump.
+- `backend/services/studio_graph.py` — LangGraph-Studio-Graph (Dev-Visualisierung).
+- Deps: `langchain`, `langchain-google-genai`, `langchain-tavily`, `langgraph` (+ `langgraph-cli`).
+- **Nicht betroffen:** `claim_extraction.py` nutzt bereits `google-genai` direkt (kein LangChain);
+  Output-Modelle (`FactCheckResponse`, `Source`, `SelfCritiqueResponse`, `ClaimInput`) sind schon
+  reines Pydantic → von PydanticAI direkt nutzbar.
+
+**Offene Designfragen (fürs Brainstorming):**
+- Modell/Provider: PydanticAI-Gemini-Provider; **`FallbackModel`** für Primär→Fallback statt
+  `with_fallbacks`. Welche Gemini-Modelle (heute `gemini-2.5-pro`)?
+- Tavily als PydanticAI-Tool über `tavily-python` direkt (drop `langchain-tavily`); die
+  `FallbackSearchTool`-Retry-Logik (leeres Ergebnis → ohne Datumsfilter) erhalten.
+- **Logfire vs. `CostTracker`:** ersetzt/ergänzt Logfire den bestehenden `cost_tracker.py`?
+  (Token-Usage kommt über PydanticAI-`usage()`/Logfire-Spans.) Logfire-Token = neue env/Account.
+- Self-Critique: eigener zweiter PydanticAI-Agent oder integriert?
+- `studio_graph.py` + `langgraph-cli` ersatzlos raus (Logfire übernimmt Tracing)?
+- Tests: `test_fact_checker.py` + conftest-Mocks (FactCheckResponse etc.) neu schreiben
+  (PydanticAI-`TestModel`/`FunctionModel` statt LangChain-Mocks).
+
+**Abhängigkeiten/Reihenfolge:** unabhängig von 2/3b; **sinnvoll VOR Phase Q**, weil Quick Check
+denselben `fact_checker`-Service wiederverwendet — sonst würde Q erst auf LangChain gebaut und
+dann mitmigriert. Risiko: Kern-Logik des Backends; nach Rewrite gründlich gegen Live-Verhalten
+verifizieren (Integration-Tests mit echten Keys).
 
 ---
 
@@ -207,14 +246,15 @@ da es den ursprünglichen Schmerzpunkt („muss lokal starten") direkt löst.
 
 ## Empfohlene Reihenfolge
 
-1. **Phase 3a (Zugangs-Gate)** — JETZT: schließt die offene, unauthentifizierte API
-   (Backend ist seit VPS-Cutover öffentlich). In Umsetzung.
-2. **Phase Q (Quick Check)** — schnellster Weg zu einem nutzbaren Produkt, unabhängig von
-   Browser-Audio. Eigener Spec.
-3. **Phase 2 (Browser-Audio)** — macht die Live-Mode ohne lokales `listener.py` nutzbar.
-4. **Phase 3b (Live-Limits)** — 10-Min-Auto-Stop, zusammen mit/nach Phase 2.
-5. **Phase 1b (Homepage/IA)** — wenn beide Einstiegs-Modi (Quick Check + Live) stehen.
-6. **Phase 4 (Go-Live-Merge)** — Branch → main, erst wenn der Gate steht.
+1. ~~**Phase 3a (Zugangs-Gate)**~~ — ✅ erledigt, live auf VPS (2026-06-10).
+2. **Phase R (Agent-Rewrite PydanticAI + Logfire)** — VOR Phase Q, da Quick Check denselben
+   `fact_checker`-Service nutzt. Eigener Spec.
+3. **Phase Q (Quick Check)** — schnellster Weg zu einem nutzbaren Produkt, unabhängig von
+   Browser-Audio. Baut auf dem (rewritten) Agenten auf.
+4. **Phase 2 (Browser-Audio)** — macht die Live-Mode ohne lokales `listener.py` nutzbar.
+5. **Phase 3b (Live-Limits)** — 10-Min-Auto-Stop, zusammen mit/nach Phase 2.
+6. **Phase 1b (Homepage/IA)** — wenn beide Einstiegs-Modi (Quick Check + Live) stehen.
+7. **Phase 4 (Go-Live-Merge)** — Branch → main; Gate steht bereits.
 
 (Reihenfolge ist nicht zwingend; 1b kann parallel entworfen werden.)
 
