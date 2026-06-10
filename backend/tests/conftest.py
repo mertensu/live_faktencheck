@@ -6,7 +6,7 @@ from contextlib import ExitStack
 
 import nest_asyncio
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import patch
 from httpx import AsyncClient, ASGITransport
 from pydantic_ai import models
 from pydantic_ai.models.test import TestModel
@@ -15,7 +15,6 @@ from backend.app import app
 from backend import state
 from backend.database import Database
 from backend.services.claim_extraction import ExtractedClaim, ClaimList, ResolvedTranscript
-from backend.services.cost_tracker import CostTracker
 from backend.services.registry import reset_services
 
 models.ALLOW_MODEL_REQUESTS = False  # fail loudly if a test ever hits a real model
@@ -42,7 +41,6 @@ async def reset_state():
     state.db = db
     state.last_transcript_tail = None
     state.pipeline_events.clear()
-    CostTracker.reset_instance()
     reset_services()
     yield
     # Cleanup after test
@@ -50,7 +48,6 @@ async def reset_state():
     state.db = None
     state.last_transcript_tail = None
     state.pipeline_events.clear()
-    CostTracker.reset_instance()
     reset_services()
 
 
@@ -130,50 +127,23 @@ def mock_fact_check_response():
 
 
 @pytest.fixture
-def mock_create_agent(mock_fact_check_response):
-    """Mock the create_agent function for FactChecker."""
-    with patch("backend.services.fact_checker.create_agent") as mock_create:
-        mock_agent = MagicMock()
-
-        final_state = {
-            "structured_response": mock_fact_check_response,
-            "messages": []
-        }
-
-        # Mock stream (used by _invoke_with_trace) as a generator yielding one final state
-        def mock_stream(*args, **kwargs):
-            yield final_state
-        mock_agent.stream = MagicMock(side_effect=mock_stream)
-
-        # Mock invoke (used for retries) and ainvoke for compatibility
-        mock_agent.invoke = MagicMock(return_value=final_state)
-        mock_agent.ainvoke = AsyncMock(return_value=final_state)
-
-        mock_create.return_value = mock_agent
-        yield mock_create
-
-
-@pytest.fixture
-def mock_critique_async():
-    """Mock _critique_async to return a non-flagged default (no network calls)."""
-    from backend.services.fact_checker import SelfCritiqueResponse
-    default = SelfCritiqueResponse(confidence="high")
-    with patch(
-        "backend.services.fact_checker.FactChecker._critique_async",
-        new=AsyncMock(return_value=default),
-    ) as mock:
-        yield mock
-
-
-@pytest.fixture
-def mock_fact_checker(mock_create_agent, mock_critique_async):
-    """Fixture that provides a FactChecker with mocked LangChain agent."""
+def mock_fact_checker(mock_fact_check_response):
+    """FactChecker with both agents overridden by TestModel (no network, no tool calls)."""
     with patch.dict("os.environ", {
         "GEMINI_API_KEY": "test-api-key",
         "TAVILY_API_KEY": "test-tavily-key",
     }):
         from backend.services.fact_checker import FactChecker
         checker = FactChecker()
+
+    # call_tools=[] => go straight to typed output without invoking tavily_search.
+    fc_model = TestModel(call_tools=[], custom_output_args=mock_fact_check_response.model_dump())
+    crit_model = TestModel(custom_output_args={"confidence": "high", "reason": ""})
+    with ExitStack() as stack:
+        stack.enter_context(checker.agent.override(model=fc_model))
+        # critique_agent is None only if self-critique is disabled or its prompt is missing.
+        if checker.critique_agent is not None:
+            stack.enter_context(checker.critique_agent.override(model=crit_model))
         yield checker
 
 
