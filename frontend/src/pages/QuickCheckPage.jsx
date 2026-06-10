@@ -39,7 +39,10 @@ export function QuickCheckPage() {
     } catch (err) {
       const msg = err.message || 'Unbekannter Fehler'
       setError(msg)
-      if (/401|403|Zugangscode/i.test(msg)) setAccessCode('')
+      if (/401|403|Zugangscode/i.test(msg)) {
+        setAccessCode('')
+        setAccessCodeInput('')
+      }
     } finally {
       setSubmitting(false)
     }
