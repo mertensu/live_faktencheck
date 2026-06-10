@@ -2,6 +2,8 @@
 Pytest configuration and fixtures for backend tests.
 """
 
+from contextlib import ExitStack
+
 import nest_asyncio
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -12,7 +14,7 @@ from pydantic_ai.models.test import TestModel
 from backend.app import app
 from backend import state
 from backend.database import Database
-from backend.services.claim_extraction import ExtractedClaim, ClaimList
+from backend.services.claim_extraction import ExtractedClaim, ClaimList, ResolvedTranscript
 from backend.services.cost_tracker import CostTracker
 from backend.services.registry import reset_services
 
@@ -97,8 +99,13 @@ def mock_claim_extractor(mock_gemini_response):
         extractor = ClaimExtractor()
 
     claims_model = TestModel(custom_output_args=mock_gemini_response.model_dump())
-    with extractor.claim_extractor.override(model=claims_model), \
-         extractor.selection_agent.override(model=claims_model):
+    sl_model = TestModel(custom_output_args=ResolvedTranscript(mappings=[]).model_dump())
+    with ExitStack() as stack:
+        stack.enter_context(extractor.claim_extractor.override(model=claims_model))
+        stack.enter_context(extractor.selection_agent.override(model=claims_model))
+        # speaker_resolver is None only when the prompt file is missing; guard for safety.
+        if extractor.speaker_resolver is not None:
+            stack.enter_context(extractor.speaker_resolver.override(model=sl_model))
         yield extractor
 
 

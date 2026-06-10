@@ -117,7 +117,9 @@ class ClaimExtractor:
         """Step 1: Identify speaker label->name mappings and apply them to the transcript."""
         user_message = SpeakerLabelsInput(guests=guests, transcript=transcript).model_dump_json(indent=2)
         result = await self.speaker_resolver.run(user_message)
-        for m in result.output.mappings:
+        # Replace longest labels first so an overlapping short label (e.g. "Sprecher A")
+        # cannot corrupt a longer one (e.g. "Sprecher AB").
+        for m in sorted(result.output.mappings, key=lambda x: len(x.label), reverse=True):
             transcript = transcript.replace(m.label, m.name)
         return transcript
 

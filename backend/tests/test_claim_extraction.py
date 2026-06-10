@@ -28,8 +28,8 @@ def _empty_claims_model() -> TestModel:
 class TestClaimExtractorExtract:
     """Tests for ClaimExtractor.extract_async() / extract_claims_async()."""
 
-    async def test_extract_returns_claim_list(self, mock_claim_extractor, mock_gemini_response):
-        """extract_async returns list of ExtractedClaim objects."""
+    async def test_extract_claims_async_returns_claim_list(self, mock_claim_extractor, mock_gemini_response):
+        """extract_claims_async returns list of ExtractedClaim objects."""
         transcript = """
         Speaker A: Deutschland hat über 80 Millionen Einwohner.
         Speaker B: Die Wirtschaft wächst um 2 Prozent.
@@ -151,6 +151,22 @@ class TestSpeakerLabelResolution:
                 "Speaker A: Hallo.", guests=["Julia Berger (CDU)"]
             )
         assert resolved == "Julia Berger: Hallo."
+
+    async def test_resolve_labels_replaces_longest_first(self, mock_claim_extractor):
+        """Overlapping labels resolve correctly: the longer label is not corrupted by the shorter."""
+        resolver_out = ResolvedTranscript(mappings=[
+            SpeakerLabelMapping(label="Sprecher A", name="Anna Müller"),
+            SpeakerLabelMapping(label="Sprecher AB", name="Bert Klein"),
+        ])
+        with mock_claim_extractor.speaker_resolver.override(
+            model=TestModel(custom_output_args=resolver_out.model_dump())
+        ):
+            resolved = await mock_claim_extractor.resolve_labels_async(
+                "Sprecher AB: Hallo. Sprecher A: Tschüss.",
+                guests=["Anna Müller (CDU)", "Bert Klein (SPD)"],
+            )
+        # The longer label must map to Bert Klein, not get corrupted into "Anna MüllerB".
+        assert resolved == "Bert Klein: Hallo. Anna Müller: Tschüss."
 
     async def test_resolve_runs_before_extraction(self, mock_claim_extractor):
         """extract_async resolves speaker labels first, then extracts from the resolved transcript."""
