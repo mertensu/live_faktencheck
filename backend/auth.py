@@ -11,22 +11,39 @@ import os
 from fastapi import Header, HTTPException
 
 
-def parse_access_codes(raw: str | None) -> list[tuple[str, str]]:
-    """Parse ``ACCESS_CODES`` ("name:code,name:code") into ``[(name, code), ...]``.
+DEFAULT_QUICK_CHECK_LIMIT = 3
 
+
+def parse_access_codes(raw: str | None) -> list[tuple[str, str, int | None]]:
+    """Parse ``ACCESS_CODES`` into ``[(name, code, quick_check_limit), ...]``.
+
+    Each entry is ``name:code`` with an optional third field:
+      - absent            -> default cap (DEFAULT_QUICK_CHECK_LIMIT)
+      - ``unlimited``     -> None (no cap)
+      - a positive int    -> that cap
+      - anything else     -> default cap
     Malformed entries (no colon, empty name or code) are silently skipped.
     """
-    pairs: list[tuple[str, str]] = []
+    entries: list[tuple[str, str, int | None]] = []
     if not raw:
-        return pairs
+        return entries
     for entry in raw.split(","):
         entry = entry.strip()
         if ":" not in entry:
             continue
-        name, code = (part.strip() for part in entry.split(":", 1))
-        if name and code:
-            pairs.append((name, code))
-    return pairs
+        parts = [p.strip() for p in entry.split(":")]
+        name, code = parts[0], parts[1]
+        if not name or not code:
+            continue
+        limit: int | None = DEFAULT_QUICK_CHECK_LIMIT
+        if len(parts) >= 3:
+            third = parts[2].lower()
+            if third == "unlimited":
+                limit = None
+            elif third.isdigit():
+                limit = int(third)
+        entries.append((name, code, limit))
+    return entries
 
 
 async def seed_codes_from_env(db, raw: str | None = None) -> int:
@@ -39,10 +56,10 @@ async def seed_codes_from_env(db, raw: str | None = None) -> int:
         raw = os.getenv("ACCESS_CODES")
     if await db.count_codes() > 0:
         return 0
-    pairs = parse_access_codes(raw)
-    for name, code in pairs:
-        await db.add_code(code, name)
-    return len(pairs)
+    entries = parse_access_codes(raw)
+    for name, code, limit in entries:
+        await db.add_code(code, name, quick_check_limit=limit)
+    return len(entries)
 
 
 async def require_code(x_access_code: str | None = Header(default=None)) -> dict:

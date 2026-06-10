@@ -53,13 +53,13 @@ async def test_count_and_list_codes(fresh_db):
 # =============================================================================
 
 def test_parse_access_codes_basic():
-    assert parse_access_codes("ulf:s1,anna:s2") == [("ulf", "s1"), ("anna", "s2")]
+    assert parse_access_codes("ulf:s1,anna:s2") == [("ulf", "s1", 3), ("anna", "s2", 3)]
 
 
 def test_parse_access_codes_ignores_malformed_and_whitespace():
     assert parse_access_codes(" ulf : s1 , broken , :x , y: ,anna:s2") == [
-        ("ulf", "s1"),
-        ("anna", "s2"),
+        ("ulf", "s1", 3),
+        ("anna", "s2", 3),
     ]
 
 

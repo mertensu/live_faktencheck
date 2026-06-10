@@ -4,6 +4,7 @@ and the POST /api/quick-check endpoint."""
 import pytest
 
 from backend.database import Database
+from backend.auth import parse_access_codes, seed_codes_from_env
 
 
 @pytest.fixture
@@ -41,3 +42,32 @@ async def test_increment_quick_checks(fresh_db):
     await fresh_db.increment_quick_checks("c1")
     await fresh_db.increment_quick_checks("c1")
     assert (await fresh_db.get_code("c1"))["quick_checks_used"] == 2
+
+
+# ---------------------------------------------------------------------------
+# Env parsing: optional third "limit" field
+# ---------------------------------------------------------------------------
+
+def test_parse_access_codes_default_limit_is_3():
+    assert parse_access_codes("ulf:s1") == [("ulf", "s1", 3)]
+
+
+def test_parse_access_codes_unlimited():
+    assert parse_access_codes("ulf:s1:unlimited") == [("ulf", "s1", None)]
+
+
+def test_parse_access_codes_numeric_limit():
+    assert parse_access_codes("ulf:s1:5") == [("ulf", "s1", 5)]
+
+
+def test_parse_access_codes_bad_limit_falls_back_to_default():
+    # A non-numeric, non-"unlimited" third field is treated as the default cap.
+    assert parse_access_codes("ulf:s1:abc") == [("ulf", "s1", 3)]
+
+
+async def test_seed_applies_per_code_limit(fresh_db):
+    n = await seed_codes_from_env(fresh_db, "ulf:s1:unlimited,anna:s2:5,bob:s3")
+    assert n == 3
+    assert (await fresh_db.get_code("s1"))["quick_check_limit"] is None
+    assert (await fresh_db.get_code("s2"))["quick_check_limit"] == 5
+    assert (await fresh_db.get_code("s3"))["quick_check_limit"] == 3
