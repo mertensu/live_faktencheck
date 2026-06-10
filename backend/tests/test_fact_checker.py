@@ -63,26 +63,44 @@ class TestFactCheckerCheckClaim:
 
     async def test_usage_limit_retries_once_then_succeeds(self, mock_fact_check_response, monkeypatch):
         """On UsageLimitExceeded, retries once and returns a successful result."""
+        from types import SimpleNamespace
         with patch.dict("os.environ", {"GEMINI_API_KEY": "k", "TAVILY_API_KEY": "k"}):
             checker = FactChecker()
 
-        ok_model = TestModel(call_tools=[], custom_output_args=mock_fact_check_response.model_dump())
         calls = {"n": 0}
-        real_run = checker.agent.run
 
         async def flaky_run(*args, **kwargs):
             calls["n"] += 1
             if calls["n"] == 1:
                 raise UsageLimitExceeded("limit")
-            return await real_run(*args, **kwargs)
+            return SimpleNamespace(output=mock_fact_check_response)
 
-        with checker.agent.override(model=ok_model), \
-             patch.object(checker, "critique_agent", None):
-            monkeypatch.setattr(checker.agent, "run", flaky_run)
-            result = await checker.check_claim_async("Speaker", "Claim")
+        monkeypatch.setattr(checker.agent, "run", flaky_run)
+        monkeypatch.setattr(checker, "critique_agent", None)  # skip critique network call
+        result = await checker.check_claim_async("Speaker", "Claim")
 
         assert calls["n"] == 2
         assert result["consistency"] == "hoch"
+
+    async def test_usage_limit_both_calls_fail_returns_unklar(self, monkeypatch):
+        """When both agent.run calls raise UsageLimitExceeded, returns 'unklar' error dict."""
+        with patch.dict("os.environ", {"GEMINI_API_KEY": "k", "TAVILY_API_KEY": "k"}):
+            checker = FactChecker()
+
+        calls = {"n": 0}
+
+        async def always_raise(*args, **kwargs):
+            calls["n"] += 1
+            raise UsageLimitExceeded("limit")
+
+        monkeypatch.setattr(checker.agent, "run", always_raise)
+        monkeypatch.setattr(checker, "critique_agent", None)
+        result = await checker.check_claim_async("Speaker", "Claim")
+
+        assert calls["n"] == 2
+        assert result["consistency"] == "unklar"
+        assert result["double_check"] is False
+        assert result["critique_note"] == ""
 
     async def test_check_claim_handles_error_gracefully(self, mock_fact_check_response, monkeypatch):
         """check_claim_async returns 'unklar' when the agent run raises."""
@@ -104,6 +122,8 @@ class TestFactCheckerCheckClaim:
         assert result["original_claim"] == "Some claim to verify"
         assert "Fehler" in result["evidence"]
         assert result["sources"] == []
+        assert result["double_check"] is False
+        assert result["critique_note"] == ""
 
     async def test_check_claim_uses_configured_model(self):
         """check_claim_async uses model from environment."""

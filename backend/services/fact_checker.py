@@ -153,6 +153,7 @@ class FactChecker:
         try:
             try:
                 result = await self.agent.run(user_message, usage_limits=limits)
+            # Retry once with a fresh request counter (each run() tracks usage independently).
             except UsageLimitExceeded:
                 logger.warning(f"Usage limit hit for '{speaker}', retrying once...")
                 result = await self.agent.run(user_message, usage_limits=limits)
@@ -211,7 +212,7 @@ class FactChecker:
         """Sync wrapper for check_claims_async()."""
         return asyncio.run(self.check_claims_async(claims, context=context, episode_date=episode_date))
 
-    async def _check_claims_sequential_async(self, claims, context=None, episode_date=None):
+    async def _check_claims_sequential_async(self, claims: List[Dict[str, str]], context: str = None, episode_date: str | None = None) -> List[Dict[str, Any]]:
         results = []
         for i, claim_data in enumerate(claims):
             logger.info(f"Processing claim {i + 1}/{len(claims)}")
@@ -221,7 +222,7 @@ class FactChecker:
             results.append(await self._check_claim_async(speaker, claim, user_message))
         return results
 
-    async def _check_claims_parallel_async(self, claims, context=None, episode_date=None):
+    async def _check_claims_parallel_async(self, claims: List[Dict[str, str]], context: str = None, episode_date: str | None = None) -> List[Dict[str, Any]]:
         semaphore = asyncio.Semaphore(self.max_workers)
 
         async def check_with_limit(claim_data, index):
