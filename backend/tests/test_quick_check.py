@@ -3,6 +3,7 @@ and the POST /api/quick-check endpoint."""
 
 import pytest
 
+import backend.state as state
 from backend.database import Database
 from backend.auth import parse_access_codes, seed_codes_from_env
 
@@ -71,3 +72,78 @@ async def test_seed_applies_per_code_limit(fresh_db):
     assert (await fresh_db.get_code("s1"))["quick_check_limit"] is None
     assert (await fresh_db.get_code("s2"))["quick_check_limit"] == 5
     assert (await fresh_db.get_code("s3"))["quick_check_limit"] == 3
+
+
+# ---------------------------------------------------------------------------
+# Endpoint: POST /api/quick-check
+# ---------------------------------------------------------------------------
+
+async def test_quick_check_happy_path(client, mock_fact_checker, monkeypatch):
+    monkeypatch.setattr("backend.routers.quick_check.get_fact_checker", lambda: mock_fact_checker)
+
+    res = await client.post("/api/quick-check", json={"claim": "Die Inflation lag 2024 bei 2 Prozent."})
+
+    assert res.status_code == 200
+    body = res.json()
+    fc = body["fact_check"]
+    assert fc["behauptung"] == "Test claim statement"  # from mock_fact_check_response.original_claim
+    assert fc["consistency"] == "hoch"
+    assert fc["id"] > 0
+    assert body["limit"] == 3
+    assert body["remaining"] == 2
+    # persisted under quick-<code> and counted
+    stored = await state.get_db().get_fact_checks(session_id="quick-test-code")
+    assert len(stored) == 1
+    assert (await state.get_db().get_code("test-code"))["quick_checks_used"] == 1
+
+
+async def test_quick_check_requires_code(no_auth_client):
+    res = await no_auth_client.post("/api/quick-check", json={"claim": "x" * 10})
+    assert res.status_code == 401
+
+
+async def test_quick_check_invalid_code(no_auth_client):
+    res = await no_auth_client.post(
+        "/api/quick-check",
+        json={"claim": "x" * 10},
+        headers={"X-Access-Code": "nope"},
+    )
+    assert res.status_code == 403
+
+
+async def test_quick_check_empty_claim_is_422_and_no_increment(client):
+    res = await client.post("/api/quick-check", json={"claim": "   "})
+    assert res.status_code == 422
+    assert (await state.get_db().get_code("test-code"))["quick_checks_used"] == 0
+
+
+async def test_quick_check_oversized_claim_is_422(client):
+    res = await client.post("/api/quick-check", json={"claim": "x" * 1001})
+    assert res.status_code == 422
+
+
+async def test_quick_check_quota_exhausted_returns_429(client, mock_fact_checker, monkeypatch):
+    monkeypatch.setattr("backend.routers.quick_check.get_fact_checker", lambda: mock_fact_checker)
+    db = state.get_db()
+    # test-code default limit is 3; push used to 3
+    for _ in range(3):
+        await db.increment_quick_checks("test-code")
+
+    res = await client.post("/api/quick-check", json={"claim": "Eine Behauptung."})
+    assert res.status_code == 429
+    # no extra row, counter unchanged
+    assert await db.get_fact_checks(session_id="quick-test-code") == []
+    assert (await db.get_code("test-code"))["quick_checks_used"] == 3
+
+
+async def test_quick_check_owner_unlimited_never_blocked(client, mock_fact_checker, monkeypatch):
+    monkeypatch.setattr("backend.routers.quick_check.get_fact_checker", lambda: mock_fact_checker)
+    db = state.get_db()
+    # Re-seed test-code as unlimited by replacing it.
+    await db.db.execute("UPDATE codes SET quick_check_limit = NULL, quick_checks_used = 99 WHERE code = 'test-code'")
+    await db.db.commit()
+
+    res = await client.post("/api/quick-check", json={"claim": "Noch eine Behauptung."})
+    assert res.status_code == 200
+    assert res.json()["remaining"] is None
+    assert res.json()["limit"] is None

@@ -2,7 +2,7 @@
 Pydantic models for FastAPI request/response validation.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 from typing import List, Optional, Any
 
 
@@ -61,6 +61,19 @@ class ClaimUpdateRequest(BaseModel):
     session_id: Optional[str] = None
     fact_check_id: Optional[int] = None
     original_claim: Optional[str] = None
+
+
+class QuickCheckRequest(BaseModel):
+    """A single claim submitted for a one-shot fact-check."""
+    claim: str = Field(min_length=1, max_length=1000)
+
+    @field_validator("claim")
+    @classmethod
+    def _strip_and_require_nonempty(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("claim must not be empty")
+        return v
 
 
 class CreateSessionRequest(BaseModel):

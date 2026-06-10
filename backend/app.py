@@ -19,7 +19,7 @@ from dotenv import load_dotenv
 
 import asyncio
 
-from backend.routers import audio, claims, fact_checks, config, pipeline, sessions
+from backend.routers import audio, claims, fact_checks, config, pipeline, sessions, quick_check
 from backend.routers.audio import AUDIO_TMP_DIR
 from backend.routers.claims import claim_queue_worker
 from backend.auth import seed_codes_from_env
@@ -136,6 +136,7 @@ app.include_router(fact_checks.router)
 app.include_router(config.router)
 app.include_router(pipeline.router)
 app.include_router(sessions.router)
+app.include_router(quick_check.router)
 
 
 # =============================================================================
