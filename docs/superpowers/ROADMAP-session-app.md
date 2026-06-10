@@ -43,8 +43,18 @@ Ergebnisse privat per Link teilbar.
 | **1** | Backend-Multi-Tenancy (Sessions statt globaler Episode) | ✅ **Abgeschlossen** |
 | **1b** | Homepage / App-Informationsarchitektur neu denken | ⬜ Offen (eigener Spec) |
 | **2** | Browser-Audio-Capture (ersetzt `listener.py`) | ⬜ Offen |
-| **3** | Zugangscodes + Kosten-/Missbrauchslimits | ⬜ Offen |
+| **3a** | **Minimaler Zugangs-Gate (Zugangscodes auf Kosten-Endpunkten)** | 🟢 **Spec fertig, in Umsetzung** |
+| **Q** | Quick Check (One-Shot-Zitat → Fact-Check, ohne Audio) | ⬜ Offen (eigener Spec) |
+| **3b** | Live-Limits (10-Min-Session-Auto-Stop, ggf. Circuit Breaker) | ⬜ Offen |
 | **4** | VPS-Deployment (kein lokaler Start, JSON-Export entfällt) | 🟡 Backend live auf VPS; Go-Live-Merge offen |
+
+> **Reframing 2026-06-10:** Die alte „Phase 3 = Codes + Limits" wurde aufgeteilt. Auslöser:
+> (1) das Backend ist seit dem VPS-Cutover **öffentlich + unauthentifiziert** erreichbar
+> (CORS schützt NICHT vor `curl`/Bots) → der Zugangs-Gate ist *jetzt* dringend, nicht „vor
+> dem Rollout"; (2) eine neue **Quick-Check**-Idee (Text-Zitat → Fact-Check) ist unabhängig
+> von Phase 2 (Browser-Audio) und der billigste/schnellste Weg zu einem nutzbaren Produkt.
+> Der aktuelle Arbeitsschritt ist bewusst **nur** der minimale Gate (Phase 3a); Quick Check
+> und Live-Limits bekommen eigene Specs.
 
 ---
 
@@ -114,22 +124,54 @@ mit `session_id` — exakt das Contract, das `listener.py` heute schon nutzt.
 
 ---
 
-## ⬜ Phase 3 — Zugangscodes + Limits
+## 🟢 Phase 3a — Minimaler Zugangs-Gate (in Umsetzung)
 
-**Ziel:** Session-Erstellung gaten und Kosten/Missbrauch begrenzen.
+**Spec:** `docs/superpowers/specs/2026-06-10-access-gate-design.md`
+
+**Ziel:** Die seit dem VPS-Cutover offene, unauthentifizierte API schließen — mit der
+kleinsten Änderung, die wirkt. Kein Feature-Ausbau.
 
 **Technische Eckpunkte:**
-- Code-Tabelle (Code → gültig/Kontingent). `POST /api/sessions` verlangt einen
-  gültigen Code; das Feld `owner_code` der `sessions`-Tabelle wird damit befüllt
-  (Spalte existiert bereits, wird in Phase 1 noch nicht gesetzt).
-- Hinweis: `owner_code` wird aktuell aus der `/api/config/{session_id}`-Antwort
-  herausgefiltert (kein Leak) — beim Einführen echter Codes diesen Filter beibehalten.
-- Limits: Anzahl/Dauer Sessions pro Code, Deckelung der API-Calls
-  (Transkription/Gemini/Tavily). Bestehende `FACT_CHECK_MAX_CONCURRENCY`-Semaphore
-  begrenzt schon die globale Parallelität.
-- Optional: einfache Admin-Sicht zum Codes-Verwalten.
+- Neue `codes`-Tabelle (`code`, `name`, `active`, `created_at`), beim Startup aus
+  `ACCESS_CODES` env geseedet (**fail-closed**: ohne Seed lehnt der Gate alles ab).
+- `require_code`-Dependency prüft `X-Access-Code`-Header: fehlt → 401, ungültig/inaktiv
+  → 403, gültig → Row. Validierter Code landet in `owner_code` bei Session-Erstellung
+  (`owner_code` bleibt aus `/api/config/{id}` gefiltert).
+- Gegatet: alle Endpunkte, die einen **bezahlten externen API-Call** auslösen oder eine
+  Session erstellen (`POST /api/sessions`, `audio-block`, `text-block`, `approve-claims`,
+  `fact-checks/resend`, `pipeline`-Retrigger). GETs + nicht-bezahlte Mutationen (`end`,
+  pending-block-DELETE) bleiben offen — geteilte Privat-Links müssen ohne Code funktionieren.
+- Frontend: Zugangscode-Feld im `/new`-Flow, Header aus `localStorage`, 401/403-Handling.
+- **Provider-Budget-Caps** (AssemblyAI/Gemini/Tavily) als manueller Runbook-Schritt
+  dokumentiert — das äußere Limit, das auch bei geleaktem Code hält.
+
+**Bewusst NICHT in dieser Phase:** Quick Check, 10-Min-Auto-Stop, Circuit Breaker,
+Per-Code-Kontingente, Admin-UI (Codes via DB/SQL verwaltet). Siehe Spec §Scope.
 
 **Abhängigkeiten:** Phase 1 (`owner_code`-Spalte, Sessions-Router) — erfüllt.
+
+---
+
+## ⬜ Phase Q — Quick Check (eigener Spec)
+
+**Ziel:** Niedrigschwelliger Einstieg: Nutzer fügt ein **Text-Zitat** ein → direkt durch
+den `fact_checker` (Gemini + Tavily), ohne Audio/Transkription/Claim-Extraction.
+
+**Eckpunkte (noch zu entwerfen):** eigener Endpunkt (reuse `fact_checker`-Service),
+code-gegatet wie 3a, **Kontingent: 3 Quick-Checks pro Code (lifetime, gezählt via
+`owner_code`)**. Ergebnis-Darstellung über bestehendes `ClaimCard`. Unabhängig von Phase 2
+→ schnellster Weg zu einem nutzbaren Produkt.
+
+**Abhängigkeiten:** Phase 3a (Gate). Brainstorming/Spec stehen noch aus.
+
+---
+
+## ⬜ Phase 3b — Live-Limits (eigener Spec)
+
+**Ziel:** Kosten-Backstop für Live-Sessions. **10-Min-Auto-Stop** (Session endet nach
+10 Min Aktivität automatisch); optional später globaler Circuit Breaker.
+
+**Abhängigkeiten:** sinnvoll zusammen mit Phase 2 (Browser-Audio).
 
 ---
 
@@ -165,10 +207,14 @@ da es den ursprünglichen Schmerzpunkt („muss lokal starten") direkt löst.
 
 ## Empfohlene Reihenfolge
 
-1. **Phase 4 (Deployment)** — löst den Kern-Schmerz sofort, unabhängig vom Rest.
-2. **Phase 2 (Browser-Audio)** — macht die App ohne lokales `listener.py` nutzbar.
-3. **Phase 3 (Zugangscodes)** — vor öffentlichem Rollout, zur Kostenkontrolle.
-4. **Phase 1b (Homepage/IA)** — begleitend/zum Schluss, wenn die Flows stehen.
+1. **Phase 3a (Zugangs-Gate)** — JETZT: schließt die offene, unauthentifizierte API
+   (Backend ist seit VPS-Cutover öffentlich). In Umsetzung.
+2. **Phase Q (Quick Check)** — schnellster Weg zu einem nutzbaren Produkt, unabhängig von
+   Browser-Audio. Eigener Spec.
+3. **Phase 2 (Browser-Audio)** — macht die Live-Mode ohne lokales `listener.py` nutzbar.
+4. **Phase 3b (Live-Limits)** — 10-Min-Auto-Stop, zusammen mit/nach Phase 2.
+5. **Phase 1b (Homepage/IA)** — wenn beide Einstiegs-Modi (Quick Check + Live) stehen.
+6. **Phase 4 (Go-Live-Merge)** — Branch → main, erst wenn der Gate steht.
 
 (Reihenfolge ist nicht zwingend; 1b kann parallel entworfen werden.)
 
