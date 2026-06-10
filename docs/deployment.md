@@ -54,6 +54,25 @@ startup from the `ACCESS_CODES` env var **if the table is empty**.
 - After editing `.env`, restart: `systemctl restart factcheck-backend`.
 - `listener.py` (laptop live capture) reads the code from its own `ACCESS_CODE` env var.
 
+### Quick Check quota (Phase Q)
+
+`ACCESS_CODES` entries accept an optional third field — `name:code:limit`:
+- `name:code`            → default cap of 3 lifetime quick checks
+- `name:code:unlimited`  → no cap (use for your own owner code)
+- `name:code:<n>`        → custom cap
+
+The quota lives on the `codes` table (`quick_checks_used` / `quick_check_limit`); deleting
+a quick-check fact-check row does **not** refund quota.
+
+**On the VPS:** the existing live code was seeded before this column existed, so after
+deploying it defaults to a cap of 3. To make your owner code unlimited, either update it
+in place:
+
+    sqlite3 /opt/fact_check/backend/data/factcheck.db "UPDATE codes SET quick_check_limit = NULL WHERE name = 'ulf';"
+
+or set `ACCESS_CODES=ulf:SOME_SECRET:unlimited` in `/opt/fact_check/.env` before the **first**
+seeding of a fresh codes table (seeding is idempotent and will not re-run on a populated table).
+
 ## Provider budget caps (manual — do this once)
 
 The access gate is the primary control; provider-side spend caps are the outer ceiling that
