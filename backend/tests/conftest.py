@@ -6,14 +6,17 @@ import nest_asyncio
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 from httpx import AsyncClient, ASGITransport
+from pydantic_ai import models
+from pydantic_ai.models.test import TestModel
 
 from backend.app import app
 from backend import state
 from backend.database import Database
 from backend.services.claim_extraction import ExtractedClaim, ClaimList
-from backend.services.fact_checker import FactCheckResponse, Source, SelfCritiqueResponse
 from backend.services.cost_tracker import CostTracker
 from backend.services.registry import reset_services
+
+models.ALLOW_MODEL_REQUESTS = False  # fail loudly if a test ever hits a real model
 
 # Allow nested event loops - fixes LangChain agent hanging in pytest
 # See: https://github.com/pytest-dev/pytest-asyncio/discussions/546
@@ -79,7 +82,7 @@ async def no_auth_client():
 
 @pytest.fixture
 def mock_gemini_response():
-    """Default mock response for Gemini claim extraction."""
+    """Default extracted claims used by the claim_extractor override."""
     return ClaimList(claims=[
         ExtractedClaim(name="Test Speaker", claim="Test claim statement"),
         ExtractedClaim(name="Another Speaker", claim="Another test claim"),
@@ -87,27 +90,15 @@ def mock_gemini_response():
 
 
 @pytest.fixture
-def mock_genai_client(mock_gemini_response):
-    """Mock the genai.Client for ClaimExtractor."""
-    with patch("backend.services.claim_extraction.genai.Client") as mock_client_class:
-        mock_client = MagicMock()
-        mock_client_class.return_value = mock_client
-
-        # Mock the async generate_content method
-        mock_response = MagicMock()
-        mock_response.parsed = mock_gemini_response
-        mock_client.aio.models.generate_content = AsyncMock(return_value=mock_response)
-
-        yield mock_client
-
-
-@pytest.fixture
-def mock_claim_extractor(mock_genai_client):
-    """Fixture that provides a ClaimExtractor with mocked Gemini client."""
+def mock_claim_extractor(mock_gemini_response):
+    """ClaimExtractor with all agents overridden by TestModel (no network)."""
     with patch.dict("os.environ", {"GEMINI_API_KEY": "test-api-key"}):
         from backend.services.claim_extraction import ClaimExtractor
         extractor = ClaimExtractor()
-        extractor.speaker_labels_prompt_template = None  # disable for non-speaker-label tests
+
+    claims_model = TestModel(custom_output_args=mock_gemini_response.model_dump())
+    with extractor.claim_extractor.override(model=claims_model), \
+         extractor.selection_agent.override(model=claims_model):
         yield extractor
 
 
@@ -118,6 +109,7 @@ def mock_claim_extractor(mock_genai_client):
 @pytest.fixture
 def mock_fact_check_response():
     """Default mock response for fact-checking."""
+    from backend.services.fact_checker import FactCheckResponse, Source
     return FactCheckResponse(
         speaker="Test Speaker",
         original_claim="Test claim statement",
@@ -157,6 +149,7 @@ def mock_create_agent(mock_fact_check_response):
 @pytest.fixture
 def mock_critique_async():
     """Mock _critique_async to return a non-flagged default (no network calls)."""
+    from backend.services.fact_checker import SelfCritiqueResponse
     default = SelfCritiqueResponse(confidence="high")
     with patch(
         "backend.services.fact_checker.FactChecker._critique_async",
@@ -182,16 +175,9 @@ def mock_fact_checker(mock_create_agent, mock_critique_async):
 # =============================================================================
 
 @pytest.fixture
-def mock_all_services(mock_genai_client, mock_create_agent):
-    """Mock both ClaimExtractor and FactChecker services."""
-    with patch.dict("os.environ", {
-        "GEMINI_API_KEY": "test-api-key",
-        "TAVILY_API_KEY": "test-tavily-key",
-    }):
-        yield {
-            "genai_client": mock_genai_client,
-            "create_agent": mock_create_agent,
-        }
+def mock_all_services(mock_claim_extractor, mock_fact_checker):
+    """Provide both mocked services for API-level tests."""
+    return {"claim_extractor": mock_claim_extractor, "fact_checker": mock_fact_checker}
 
 
 # =============================================================================
