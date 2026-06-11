@@ -16,6 +16,7 @@ from backend.models import ProcessingResponse
 from backend.state import processing_lock
 from backend.utils import to_dict, truncate
 from backend.services.registry import get_transcription_service, get_claim_extractor
+from backend.services.transcription import keyterms_from_guests
 from backend.routers.claims import process_fact_checks_async
 import backend.state as state
 
@@ -111,6 +112,7 @@ async def process_audio_pipeline_async(block_id: str, audio_path: str, session_i
     ep_guests = ep.guests if ep else []
     ep_context = ep.context if ep else ""
     ep_conversation_type = ep.conversation_type if ep else "debate"
+    ep_keyterms = keyterms_from_guests(ep_guests)
 
     try:
         logger.info(f"[{block_id}] Starting audio processing pipeline...")
@@ -122,7 +124,7 @@ async def process_audio_pipeline_async(block_id: str, audio_path: str, session_i
             audio_data = f.read()
         try:
             transcript = await asyncio.wait_for(
-                asyncio.to_thread(transcription_service.transcribe, audio_data),
+                asyncio.to_thread(transcription_service.transcribe, audio_data, ep_keyterms),
                 timeout=60.0
             )
         except asyncio.TimeoutError:

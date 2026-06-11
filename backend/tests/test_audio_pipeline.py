@@ -105,3 +105,31 @@ async def test_conversation_type_passed_to_extractor(mock_audio_file):
 
     assert mock_extractor.resolve_labels_async.call_args.kwargs.get("conversation_type") == "private"
     assert mock_extractor.extract_claims_async.call_args.kwargs.get("conversation_type") == "private"
+
+
+async def test_keyterms_derived_from_guests_passed_to_transcription(mock_audio_file):
+    """The session's guests become keyterms boosted by the transcription model."""
+    mock_transcription = MagicMock()
+    mock_transcription.transcribe = MagicMock(return_value="Sprecher A: Test.")
+
+    mock_extractor = MagicMock()
+    mock_extractor.resolve_labels_async = AsyncMock(return_value="Heidi Reichinnek: Test.")
+    mock_extractor.extract_claims_async = AsyncMock(return_value=[])
+
+    state.last_transcript_tail = None
+    state.pipeline_events["kt-block"] = {"status": "processing"}
+
+    await state.get_db().add_session({
+        "session_id": "kt-sess", "title": "t",
+        "guests": ["Heidi Reichinnek (Linke, Fraktionsvorsitzende)", "Caren Miosga (Moderatorin)"],
+        "context": "ctx",
+    })
+
+    with patch("backend.routers.audio.get_transcription_service", return_value=mock_transcription), \
+         patch("backend.routers.audio.get_claim_extractor", return_value=mock_extractor):
+        await process_audio_pipeline_async("kt-block", mock_audio_file, "kt-sess")
+
+    # transcribe(audio_data, keyterms) — keyterms is the 2nd positional arg
+    call = mock_transcription.transcribe.call_args
+    keyterms = call.args[1] if len(call.args) > 1 else call.kwargs.get("keyterms")
+    assert keyterms == ["Heidi Reichinnek", "Linke", "Caren Miosga", "Moderatorin"]
