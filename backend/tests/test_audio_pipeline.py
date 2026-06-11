@@ -80,3 +80,28 @@ async def test_previous_block_ending_passed_with_resolved_names(mock_audio_file)
     # extract_claims_async must receive the previous resolved tail
     call_kwargs = mock_extractor.extract_claims_async.call_args.kwargs
     assert call_kwargs["previous_context"] == prev_resolved_tail
+
+
+async def test_conversation_type_passed_to_extractor(mock_audio_file):
+    """The session's conversation_type reaches resolve + extract."""
+    mock_transcription = MagicMock()
+    mock_transcription.transcribe = MagicMock(return_value="Sprecher A: Test.")
+
+    mock_extractor = MagicMock()
+    mock_extractor.resolve_labels_async = AsyncMock(return_value="Anna: Test.")
+    mock_extractor.extract_claims_async = AsyncMock(return_value=[])
+
+    state.last_transcript_tail = None
+    state.pipeline_events["ct-block"] = {"status": "processing"}
+
+    await state.get_db().add_session({
+        "session_id": "ct-sess", "title": "t", "guests": ["Anna"],
+        "context": "ctx", "conversation_type": "private",
+    })
+
+    with patch("backend.routers.audio.get_transcription_service", return_value=mock_transcription), \
+         patch("backend.routers.audio.get_claim_extractor", return_value=mock_extractor):
+        await process_audio_pipeline_async("ct-block", mock_audio_file, "ct-sess")
+
+    assert mock_extractor.resolve_labels_async.call_args.kwargs.get("conversation_type") == "private"
+    assert mock_extractor.extract_claims_async.call_args.kwargs.get("conversation_type") == "private"

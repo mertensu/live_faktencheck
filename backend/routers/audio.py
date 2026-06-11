@@ -109,8 +109,8 @@ async def process_audio_pipeline_async(block_id: str, audio_path: str, session_i
     session = await db.get_session(session_id)
     ep = Episode.from_session_row(session) if session else None
     ep_guests = ep.guests if ep else []
-    ep_date = ep.date if ep else ""
     ep_context = ep.context if ep else ""
+    ep_conversation_type = ep.conversation_type if ep else "debate"
 
     try:
         logger.info(f"[{block_id}] Starting audio processing pipeline...")
@@ -150,7 +150,7 @@ async def process_audio_pipeline_async(block_id: str, audio_path: str, session_i
         claim_extractor = get_claim_extractor()
 
         # Step 2a: Resolve speaker labels
-        resolved_transcript = await claim_extractor.resolve_labels_async(transcript, ep_guests)
+        resolved_transcript = await claim_extractor.resolve_labels_async(transcript, ep_guests, conversation_type=ep_conversation_type)
         logger.info(f"[{block_id}] Speaker labels resolved ({len(resolved_transcript)} chars)")
 
         # Store resolved tail in state for the next block (uses real names, not generic labels)
@@ -161,7 +161,8 @@ async def process_audio_pipeline_async(block_id: str, audio_path: str, session_i
         # Step 2b: Extract claims from resolved transcript
         claims = await claim_extractor.extract_claims_async(
             resolved_transcript, ep_guests,
-            date=ep_date, context=ep_context, previous_context=previous_context
+            context=ep_context, previous_context=previous_context,
+            conversation_type=ep_conversation_type,
         )
         logger.info(f"[{block_id}] Extracted {len(claims)} claims")
 

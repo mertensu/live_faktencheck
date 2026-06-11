@@ -86,7 +86,7 @@ async def process_text_pipeline_async(text: str, headline: str, source_id: str, 
         logger.info(f"[{block_id}] Extracting claims from article...")
         claim_extractor = get_claim_extractor()
 
-        claims = await claim_extractor.extract_async(text, guests=[], date=publication_date or "", context=headline)
+        claims = await claim_extractor.extract_async(text, guests=[], context=headline)
         logger.info(f"[{block_id}] Extracted {len(claims)} claims")
 
         if not claims:
