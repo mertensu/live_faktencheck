@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   TYPE_LABELS, STEPS, initialWizardState, wizardReducer,
-  formatParticipant, buildGuests, defaultContext, deriveTitle, buildSessionPayload,
+  formatParticipant, buildGuests, peopleStepValid, deriveTitle, buildSessionPayload,
 } from './wizardLogic'
 
 describe('formatParticipant', () => {
@@ -25,11 +25,15 @@ describe('buildGuests', () => {
   })
 })
 
-describe('defaultContext', () => {
-  it('maps each type to its German label', () => {
-    expect(defaultContext('debate')).toBe(TYPE_LABELS.debate)
-    expect(defaultContext('interview')).toBe('Interview')
-    expect(defaultContext('private')).toBe('Privates Gespräch')
+describe('peopleStepValid', () => {
+  it('private: always valid (step may be left empty)', () => {
+    expect(peopleStepValid('private', [{ name: '', party: '', role: '' }])).toBe(true)
+  })
+  it('debate/interview: needs at least one named person', () => {
+    expect(peopleStepValid('debate', [{ name: '', party: 'SPD', role: 'X' }])).toBe(false)
+    expect(peopleStepValid('debate', [{ name: '  ', party: '', role: '' }])).toBe(false)
+    expect(peopleStepValid('debate', [{ name: 'Anna', party: '', role: '' }])).toBe(true)
+    expect(peopleStepValid('interview', [{ name: '', party: '', role: '' }, { name: 'Bob', party: '', role: '' }])).toBe(true)
   })
 })
 
@@ -43,14 +47,14 @@ describe('deriveTitle', () => {
 })
 
 describe('buildSessionPayload', () => {
-  it('skipped topic => type-default context; date empty; no reference links', () => {
+  it('skipped topic => empty context; date empty; no reference links', () => {
     const s = { ...initialWizardState(), conversationType: 'private',
                 people: [{ name: 'Klaus', party: '', role: '' }], topic: '', title: '' }
     expect(buildSessionPayload(s)).toEqual({
       title: 'Privates Gespräch: Klaus',
       conversation_type: 'private',
       guests: ['Klaus'],
-      context: 'Privates Gespräch',
+      context: '',
       date: '',
       reference_links: [],
       type: 'show',

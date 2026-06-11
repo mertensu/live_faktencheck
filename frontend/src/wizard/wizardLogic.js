@@ -36,8 +36,13 @@ export function buildGuests(type, people) {
   return people.map((p) => formatParticipant(type, p)).filter(Boolean)
 }
 
-export function defaultContext(type) {
-  return TYPE_LABELS[type] || ''
+// Gating for the "people" step. Private conversations may be left empty;
+// debate/interview need at least one named participant — the name is what the
+// speaker-label resolver maps generic labels ("Sprecher A") onto. Party/role are
+// optional but help the resolver when names aren't spoken in the transcript.
+export function peopleStepValid(type, people) {
+  if (type === 'private') return true
+  return people.some((p) => (p.name || '').trim())
 }
 
 export function deriveTitle(type, people) {
@@ -52,7 +57,7 @@ export function buildSessionPayload(state) {
     title: (state.title && state.title.trim()) || deriveTitle(type, state.people),
     conversation_type: type,
     guests: buildGuests(type, state.people),
-    context: state.topic.trim() || defaultContext(type),
+    context: state.topic.trim(),
     date: '',
     reference_links: [],
     type: 'show',

@@ -2,7 +2,7 @@ import { useReducer, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { createSession, getAccessCode, setAccessCode } from '../services/api'
 import {
-  TYPE_LABELS, STEPS, initialWizardState, wizardReducer, buildSessionPayload,
+  TYPE_LABELS, STEPS, initialWizardState, wizardReducer, buildSessionPayload, peopleStepValid,
 } from '../wizard/wizardLogic'
 
 const TYPE_TILES = [
@@ -44,6 +44,7 @@ export function NewSessionPage() {
 
   const canAdvance = () => {
     if (stepName === 'type') return !!state.conversationType
+    if (stepName === 'people') return peopleStepValid(state.conversationType, state.people)
     return true
   }
 
@@ -97,6 +98,12 @@ export function NewSessionPage() {
             {state.conversationType === 'private' && (
               <p className="wizard-hint">Nur Vornamen/Rollen genügen — keine Partei nötig. Du kannst diesen Schritt auch leer lassen.</p>
             )}
+            {state.conversationType !== 'private' && (
+              <p className="wizard-hint">
+                Mindestens ein <strong>Name</strong> ist nötig – darauf ordnet die KI die Sprecher zu.
+                Partei/Organisation und Rolle sind optional, verbessern aber die Zuordnung, wenn Namen im Gespräch nicht fallen.
+              </p>
+            )}
             {state.people.map((p, i) => (
               <PersonFields key={i} person={p} index={i} type={state.conversationType}
                             dispatch={dispatch}
@@ -124,7 +131,7 @@ export function NewSessionPage() {
             <dl className="wizard-summary">
               <dt>Art</dt><dd>{TYPE_LABELS[state.conversationType]}</dd>
               <dt>Personen</dt><dd>{buildSessionPayload(state).guests.join(', ') || '—'}</dd>
-              <dt>Thema</dt><dd>{buildSessionPayload(state).context}</dd>
+              <dt>Thema</dt><dd>{state.topic.trim() || '— (nicht angegeben)'}</dd>
             </dl>
             <div className="form-field">
               <label htmlFor="wizard-title">Titel</label>
