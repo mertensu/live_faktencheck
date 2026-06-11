@@ -88,6 +88,7 @@ class Database:
                 reference_links  TEXT NOT NULL DEFAULT '[]',
                 type             TEXT NOT NULL DEFAULT 'show',
                 conversation_type TEXT NOT NULL DEFAULT 'debate',
+                auto_check       INTEGER NOT NULL DEFAULT 0,
                 status           TEXT NOT NULL DEFAULT 'active',
                 visibility       TEXT NOT NULL DEFAULT 'private',
                 owner_code       TEXT,
@@ -132,6 +133,16 @@ class Database:
         # Migration: add conversation_type to existing sessions tables
         for migration in [
             "ALTER TABLE sessions ADD COLUMN conversation_type TEXT NOT NULL DEFAULT 'debate'",
+        ]:
+            try:
+                await self.db.execute(migration)
+                await self.db.commit()
+            except Exception:
+                pass  # Column already exists
+
+        # Migration: add auto_check to existing sessions tables
+        for migration in [
+            "ALTER TABLE sessions ADD COLUMN auto_check INTEGER NOT NULL DEFAULT 0",
         ]:
             try:
                 await self.db.execute(migration)
@@ -276,6 +287,7 @@ class Database:
             "reference_links": json.loads(row["reference_links"]),
             "type": row["type"],
             "conversation_type": row["conversation_type"],
+            "auto_check": bool(row["auto_check"]),
             "status": row["status"],
             "visibility": row["visibility"],
             "owner_code": row["owner_code"],
@@ -289,8 +301,8 @@ class Database:
         await self.db.execute(
             """INSERT INTO sessions
                (session_id, title, date, guests, context, reference_links,
-                type, conversation_type, status, visibility, owner_code, created_at, ended_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                type, conversation_type, auto_check, status, visibility, owner_code, created_at, ended_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 session["session_id"],
                 session.get("title", ""),
@@ -300,6 +312,7 @@ class Database:
                 json.dumps(session.get("reference_links", []), ensure_ascii=False),
                 session.get("type", "show"),
                 session.get("conversation_type", "debate"),
+                int(bool(session.get("auto_check", False))),
                 session.get("status", "active"),
                 session.get("visibility", "private"),
                 session.get("owner_code"),
@@ -326,6 +339,15 @@ class Database:
         cursor = await self.db.execute(
             "UPDATE sessions SET status = 'ended', ended_at = ? WHERE session_id = ?",
             (datetime.now().isoformat(), session_id),
+        )
+        await self.db.commit()
+        return cursor.rowcount > 0
+
+    async def set_session_auto_check(self, session_id: str, enabled: bool) -> bool:
+        """Set the per-session auto_check flag. Returns True if a row was updated."""
+        cursor = await self.db.execute(
+            "UPDATE sessions SET auto_check = ? WHERE session_id = ?",
+            (int(enabled), session_id),
         )
         await self.db.commit()
         return cursor.rowcount > 0

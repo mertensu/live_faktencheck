@@ -85,3 +85,23 @@ async def test_add_session_defaults_conversation_type_to_debate():
     s = await db.get_session("ct2")
     assert s["conversation_type"] == "debate"
     await db.close()
+
+
+async def test_new_session_defaults_auto_check_false(db):
+    await db.add_session({"session_id": "ac1", "title": "T", "created_at": "now"})
+    s = await db.get_session("ac1")
+    assert s["auto_check"] is False
+
+
+async def test_set_session_auto_check_roundtrips_as_bool(db):
+    await db.add_session({"session_id": "ac2", "title": "T", "created_at": "now"})
+    changed = await db.set_session_auto_check("ac2", True)
+    assert changed is True
+    assert (await db.get_session("ac2"))["auto_check"] is True
+
+    await db.set_session_auto_check("ac2", False)
+    assert (await db.get_session("ac2"))["auto_check"] is False
+
+
+async def test_set_session_auto_check_unknown_session_returns_false(db):
+    assert await db.set_session_auto_check("nope", True) is False
