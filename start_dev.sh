@@ -147,19 +147,8 @@ echo -e "   Admin UI: ${GREEN}http://localhost:3000${NC}"
 echo ""
 echo -e "${BLUE}📝 Next Steps:${NC}"
 echo -e "   1. Open Admin UI: ${YELLOW}http://localhost:3000${NC}"
-echo -e "   2. Start Listener: ${YELLOW}uv run python listener.py $EPISODE_KEY${NC}"
+echo -e "   2. In Admin-Modus, click ${YELLOW}Aufnahme starten${NC} in the recording bar to capture mic audio"
 echo ""
 echo -e "${BLUE}🛑 Stop:${NC}"
 echo -e "   ${YELLOW}Ctrl+C, or kill the backend/frontend processes (ports $BACKEND_PORT/3000)${NC}"
-echo ""
-# Step 4: Start Listener?
-print_header "Step 4: Start Listener"
-printf "${BLUE}Start audio listener now? [y/N] ${NC}"
-read -r START_LISTENER
-if [[ "$START_LISTENER" =~ ^[Yy]$ ]]; then
-    echo ""
-    exec uv run python listener.py "$EPISODE_KEY"
-else
-    print_info "Run when ready: uv run python listener.py $EPISODE_KEY"
-fi
 echo ""
