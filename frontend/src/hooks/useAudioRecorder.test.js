@@ -87,3 +87,66 @@ describe('useAudioRecorder: start / error / stop', () => {
     expect(result.current.blocksSent).toBe(1)
   })
 })
+
+describe('useAudioRecorder: auto-send / sendNow / failures / lock', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    installMediaMocks()
+    vi.spyOn(api, 'sendAudioBlock').mockResolvedValue({ block_id: 'b1' })
+  })
+  afterEach(() => {
+    vi.useRealTimers()
+    vi.restoreAllMocks()
+  })
+
+  it('auto-send fires a flush at the configured interval and resumes recording', async () => {
+    const { result } = renderHook(() => useAudioRecorder('sess-1'))
+    act(() => { result.current.setBlockSeconds(60) })
+    await act(async () => { await result.current.start() })
+    expect(recorders).toHaveLength(1)
+
+    // advance one interval (60s)
+    await act(async () => { await vi.advanceTimersByTimeAsync(60_000) })
+
+    expect(api.sendAudioBlock).toHaveBeenCalledTimes(1)
+    expect(recorders).toHaveLength(2)               // a fresh recorder was created
+    expect(recorders[1].state).toBe('recording')
+    expect(result.current.status).toBe('recording')
+  })
+
+  it('sendNow flushes the current block and resets elapsed', async () => {
+    const { result } = renderHook(() => useAudioRecorder('sess-1'))
+    await act(async () => { await result.current.start() })
+    await act(async () => { await vi.advanceTimersByTimeAsync(5_000) })
+    expect(result.current.elapsed).toBe(5)
+
+    await act(async () => { await result.current.sendNow() })
+
+    expect(api.sendAudioBlock).toHaveBeenCalledTimes(1)
+    expect(result.current.elapsed).toBe(0)
+    expect(result.current.blocksSent).toBe(1)
+    expect(result.current.status).toBe('recording')   // still recording
+  })
+
+  it('a failed send surfaces an error but keeps recording', async () => {
+    api.sendAudioBlock.mockRejectedValueOnce(new Error('boom'))
+    const { result } = renderHook(() => useAudioRecorder('sess-1'))
+    await act(async () => { await result.current.start() })
+
+    await act(async () => { await result.current.sendNow() })
+
+    expect(result.current.error).toMatch(/Block konnte nicht gesendet werden/)
+    expect(result.current.status).toBe('recording')
+    expect(result.current.blocksSent).toBe(0)
+  })
+
+  it('setBlockSeconds is honored while idle but ignored while recording', async () => {
+    const { result } = renderHook(() => useAudioRecorder('sess-1'))
+    act(() => { result.current.setBlockSeconds(180) })
+    expect(result.current.blockSeconds).toBe(180)
+
+    await act(async () => { await result.current.start() })
+    act(() => { result.current.setBlockSeconds(60) })   // ignored while recording
+    expect(result.current.blockSeconds).toBe(180)
+  })
+})
