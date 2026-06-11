@@ -66,6 +66,7 @@ export function useAudioRecorder(sessionId) {
     try {
       await sendAudioBlock(sessionId, blob)
       setBlocksSent((n) => n + 1)
+      setError(null)   // a recovered send clears a prior send-failure indicator
     } catch {
       // One bad block must not kill the session: surface, keep recording.
       setError(MSG.sendFailed)

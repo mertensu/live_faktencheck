@@ -56,7 +56,7 @@ async def receive_audio_block(
     Receive audio block from the browser mic recorder and start the pipeline.
 
     Expected: multipart form data with:
-    - audio: WAV file
+    - audio: recorded audio block (WebM/Opus or MP4, browser-dependent)
     - session_id: Session identifier (required)
     """
     audio_data = await audio.read()

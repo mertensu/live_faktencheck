@@ -83,7 +83,7 @@ class TranscriptionService:
         Transcribe audio data and return formatted transcript with speaker labels.
 
         Args:
-            audio_data: Raw audio bytes (WAV format)
+            audio_data: Raw audio bytes (WebM/Opus, MP4, or WAV — format auto-detected)
             keyterms: Optional proper nouns (names, parties/orgs) to boost recognition
 
         Returns:
