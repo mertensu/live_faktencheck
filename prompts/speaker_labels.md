@@ -6,7 +6,7 @@ Du identifizierst im folgenden Transkript generische Sprecherbezeichnungen (z. B
 - Gib für jede generische Bezeichnung eine Zuordnung aus: label → echter Name.
 - Leite die Zuordnung ab aus
 1. Gesprächsverlauf 
-2. Den Informationen ueber die Gaeste (z.B welcher Partei gehoeren sie an?, wofuer stehen sie?)
+2. Den verfügbaren Informationen über die Teilnehmenden (z. B. Rolle/Funktion, Organisation oder Partei – falls vorhanden; bei privaten Gesprächen ggf. nur Vorname).
 </Regeln>
 
 <user_input>
