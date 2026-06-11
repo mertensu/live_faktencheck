@@ -84,6 +84,7 @@ class CreateSessionRequest(BaseModel):
     context: str = ""
     reference_links: List[str] = []
     type: str = "show"
+    conversation_type: str = "debate"
 
 
 # =============================================================================
@@ -141,6 +142,7 @@ class SessionResponse(BaseModel):
     context: str = ""
     reference_links: List[Any] = []
     type: str = "show"
+    conversation_type: str = "debate"
     status: str = "active"
     visibility: str = "private"
     created_at: Optional[str] = None

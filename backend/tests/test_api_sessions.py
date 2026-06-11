@@ -31,3 +31,15 @@ async def test_end_session(client):
     resp = await client.post(f"/api/sessions/{sid}/end")
     assert resp.status_code == 200
     assert (await client.get(f"/api/sessions/{sid}")).json()["status"] == "ended"
+
+
+async def test_create_session_accepts_conversation_type(client):
+    resp = await client.post("/api/sessions", json={"title": "I", "conversation_type": "private"})
+    assert resp.status_code == 201
+    assert resp.json()["conversation_type"] == "private"
+
+
+async def test_create_session_defaults_conversation_type(client):
+    resp = await client.post("/api/sessions", json={"title": "T"})
+    assert resp.status_code == 201
+    assert resp.json()["conversation_type"] == "debate"

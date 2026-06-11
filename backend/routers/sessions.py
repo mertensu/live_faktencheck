@@ -26,6 +26,7 @@ async def create_session(request: CreateSessionRequest, code: dict = Depends(req
         "context": request.context,
         "reference_links": request.reference_links,
         "type": request.type,
+        "conversation_type": request.conversation_type,
         "status": "active",
         "visibility": "private",
         "owner_code": code["code"],
