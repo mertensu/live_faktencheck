@@ -39,8 +39,9 @@ speakers. The system-audio (BlackHole) path is intentionally dropped along with
   FactCheckPage** (`/<session_id>`). It must stay mounted while the operator
   reviews claims on the same page — navigating to a separate page would unmount
   and stop the recorder.
-- **Block cadence:** configurable in the bar (60 / 120 / 180 s), **default 120 s**,
-  matching `listener.py`. Plus a manual flush and a stop.
+- **Block cadence:** chosen **before** recording (60 / 120 / 180 s), **default
+  120 s**, matching `listener.py`. The selector is **locked once recording
+  starts** and can only be changed after Stop. Plus a manual flush and a stop.
 - **`listener.py`:** **deleted**. The browser mic recorder is the only capture
   path. `pyaudio`/`pynput` dependencies removed.
 - **Backend:** **no changes.**
@@ -83,9 +84,8 @@ action) is the only thing that releases the mic tracks.
   - `elapsed` — seconds in the current block
   - `blocksSent` — count of blocks successfully POSTed this session
   - `error` — user-facing message (permission denied, no mic, send failure)
-  - `blockSeconds`, `setBlockSeconds(n)` — current/selectable interval
-    (changing it takes effect from the next block; it does not retroactively cut
-    the in-progress block)
+  - `blockSeconds`, `setBlockSeconds(n)` — interval selection; `setBlockSeconds`
+    is only honored while `status === 'idle'` (locked during recording)
   - `start()` — request mic (if needed), begin recording + timers
   - `sendNow()` — flush the current block immediately and reset the block timer
   - `stop()` — flush the final block, clear timers, release the mic tracks
@@ -105,9 +105,9 @@ and returns/throws based on the response. Mirrors the existing gated helpers.
 **`RecordingBar` component** (e.g. `frontend/src/components/RecordingBar.jsx`)
 — the persistent control bar:
 
-- Idle: a **Aufnahme starten** button + block-length selector.
-- Recording: `● REC mm:ss` (elapsed), block-length selector, **blocks sent: N**,
-  **Senden** (manual flush), **Stop**.
+- Idle: a **Aufnahme starten** button + block-length selector (editable).
+- Recording: `● REC mm:ss` (elapsed), block length shown but **disabled/locked**,
+  **blocks sent: N**, **Senden** (manual flush), **Stop**.
 - Error/permission states: clear German messaging (e.g. "Mikrofonzugriff
   verweigert", "Kein Mikrofon gefunden", "Block konnte nicht gesendet werden").
 - Styling via `App.css`, consistent with the existing admin UI.
@@ -166,8 +166,8 @@ Removing `listener.py` cleanly:
 - `stop` flushes the final block, clears timers, and stops the stream tracks
   (mic released).
 - A failed `sendAudioBlock` surfaces an error indicator but recording continues.
-- `setBlockSeconds` changes the interval for the next block without cutting the
-  current one.
+- `setBlockSeconds` is honored while idle but ignored once `status==='recording'`
+  (block length is locked for the duration of a recording).
 
 **Manual click-test:** with a real mic, start recording, speak a factual claim,
 confirm a block reaches the backend and a claim appears in pending claims;
