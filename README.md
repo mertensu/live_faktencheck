@@ -37,7 +37,7 @@ Real-time fact-checking system for German TV talk shows. Captures audio, extract
 └───────────────────┘
 ```
 
-1. **Audio Capture**: Listener captures audio via BlackHole virtual audio device
+1. **Audio Capture**: Browser mic recorder captures audio in fixed-length blocks
 2. **Transcription**: AssemblyAI transcribes with speaker detection
 3. **Claim Extraction**: Gemini extracts verifiable factual claims
 4. **Human Review**: Admin UI allows editing and approval of claims
@@ -54,7 +54,6 @@ For details on the LLM pipeline (models, schemas, prompts): [`docs/llm_pipeline.
 - Node.js 20+
 - [uv](https://github.com/astral-sh/uv) (Python package manager)
 - [cloudflared](https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/install-and-setup/installation/) (Cloudflare Tunnel)
-- [BlackHole](https://existential.audio/blackhole/) (virtual audio device for macOS)
 
 ## API Keys Required
 
@@ -88,7 +87,7 @@ cp .env.example .env
 
 ### Live Fact-Check (on air)
 
-The backend runs permanently on the Hostinger VPS. Start the listener locally and use the live admin UI. See [docs/live-workflow.md](docs/live-workflow.md) and [docs/deployment.md](docs/deployment.md).
+The backend runs permanently on the Hostinger VPS. Open the session dashboard in Admin-Modus and click "Aufnahme starten" to begin capturing audio via the browser mic recorder. See [docs/live-workflow.md](docs/live-workflow.md) and [docs/deployment.md](docs/deployment.md).
 
 ---
 
@@ -96,8 +95,9 @@ The backend runs permanently on the Hostinger VPS. Start the listener locally an
 
 ```bash
 ./start_dev.sh <episode-key>
-uv run python listener.py <episode-key>
 ```
+
+Then open the admin UI at **http://localhost:3000**, switch to Admin-Modus, and click "Aufnahme starten" to start the browser mic recorder.
 
 → Full details: [docs/development-workflow.md](docs/development-workflow.md)
 
@@ -127,7 +127,6 @@ All fact-checks are stored in `backend/data/factcheck.db` (SQLite). This is the 
 │   ├── factcheck-backend.service  # systemd service for the VPS
 │   ├── cloudflared-config.yml     # Cloudflare tunnel config
 │   └── deploy.sh                  # Update the deployed backend on the VPS
-├── listener.py                # Audio capture with fixed-interval sending
 ├── config.py                  # Episode configuration (EPISODES dict)
 └── start_dev.sh               # Development startup (backend + frontend, no tunnel)
 ```

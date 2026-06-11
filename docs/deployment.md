@@ -10,9 +10,7 @@ systemd services. The frontend is on Cloudflare Pages and reads the live API at
 - Both are isolated from the unrelated NanoClaw stack on the same VPS (no Docker, no ports 80/443).
 
 ## First-time provisioning (run on the VPS as root)
-0. Install system build deps (required so `uv sync` can compile `pyaudio` + `evdev`, which
-   are pulled in transitively even though only the laptop's `listener.py` uses them):
-   `apt-get update && apt-get install -y build-essential portaudio19-dev python3-dev python3.12-dev sqlite3`
+0. Install sqlite3: `apt-get update && apt-get install -y sqlite3`
 1. Install uv: `curl -LsSf https://astral.sh/uv/install.sh | sh`
 2. `git clone https://github.com/mertensu/live_faktencheck.git /opt/fact_check`
 3. Copy secrets/data from the laptop:
@@ -52,7 +50,6 @@ startup from the `ACCESS_CODES` env var **if the table is empty**.
   - revoke: `sqlite3 backend/data/factcheck.db "UPDATE codes SET active=0 WHERE code='thecode';"`
   - revocation takes effect immediately (no restart).
 - After editing `.env`, restart: `systemctl restart factcheck-backend`.
-- `listener.py` (laptop live capture) reads the code from its own `ACCESS_CODE` env var.
 
 ### Quick Check quota (Phase Q)
 

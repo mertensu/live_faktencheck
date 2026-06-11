@@ -53,7 +53,7 @@ async def receive_audio_block(
     code: dict = Depends(require_code),
 ):
     """
-    Receive audio block from listener.py and start processing pipeline.
+    Receive audio block from the browser mic recorder and start the pipeline.
 
     Expected: multipart form data with:
     - audio: WAV file

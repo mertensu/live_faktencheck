@@ -42,7 +42,7 @@ Ergebnisse privat per Link teilbar.
 |-------|--------|--------|
 | **1** | Backend-Multi-Tenancy (Sessions statt globaler Episode) | ✅ **Abgeschlossen** |
 | **1b** | Homepage / App-Informationsarchitektur neu denken | ✅ **Abgeschlossen** |
-| **2** | Browser-Audio-Capture (ersetzt `listener.py`) | ⬜ Offen |
+| **2** | Browser-Audio-Capture (ersetzt `listener.py`) | ✅ **Abgeschlossen** |
 | **3a** | **Minimaler Zugangs-Gate (Zugangscodes auf Kosten-Endpunkten)** | ✅ **Live auf VPS** (2026-06-10, `971a7de`; main-Merge offen) |
 | **R** | **Agent-Rewrite: LangChain/LangGraph → PydanticAI + Logfire** | ✅ **Abgeschlossen** (2026-06-10, Branch; main-Merge = Go-Live offen) |
 | **Q** | Quick Check (One-Shot-Zitat → Fact-Check, ohne Audio) | ✅ **Abgeschlossen** (2026-06-10, Branch; main-Merge = Go-Live offen) |
@@ -130,7 +130,7 @@ Test-DB-Artefakt (In-Memory-DB seedet nur Session-Metadaten, keine Fact-Checks).
 
 ---
 
-## ⬜ Phase 2 — Browser-Audio-Capture
+## ✅ Phase 2 — Browser-Audio-Capture (ABGESCHLOSSEN)
 
 **Ziel:** `listener.py` durch Browser-Aufnahme ersetzen. Der Browser nimmt das
 Mikrofon (Desktop/Handy) in festen Blöcken auf und POSTet sie an `/api/audio-block`
@@ -339,7 +339,7 @@ da es den ursprünglichen Schmerzpunkt („muss lokal starten") direkt löst.
    nutzbaren Produkt, baut auf dem (rewritten) Agenten auf.
 4. ~~**Phase 1b (Homepage/IA)**~~ — ✅ erledigt auf Branch (2026-06-10). Einzelne Landing-Page mit
    beiden Einstiegs-Modi (Quick Check + Live) + Beispiele-Archiv.
-5. **Phase 2 (Browser-Audio)** — macht die Live-Mode ohne lokales `listener.py` nutzbar. **← nächster Schritt.**
+5. ~~**Phase 2 (Browser-Audio)**~~ — ✅ erledigt auf Branch. Browser-Mic-Recorder ersetzt `listener.py`.
 6. **Phase 3b (Live-Limits)** — 10-Min-Auto-Stop, zusammen mit/nach Phase 2.
 7. **Phase 4 (Go-Live-Merge)** — Branch → main; Gate + Agent-Rewrite stehen bereits. Aktiviert
    beim Deploy auch die Phase-R-Logfire-Observability (Token auf VPS bereits vorgestaged).

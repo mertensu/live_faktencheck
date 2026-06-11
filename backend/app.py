@@ -155,7 +155,7 @@ if __name__ == '__main__':
 |  API Docs:   http://0.0.0.0:{port}/docs                       |
 |                                                              |
 |  Endpoints:                                                  |
-|    POST /api/audio-block     - Receive audio from listener   |
+|    POST /api/audio-block     - Receive audio from browser    |
 |    POST /api/text-block      - Receive text from reader      |
 |    GET  /api/pending-claims  - Get pending claims            |
 |    POST /api/approve-claims  - Approve claims for checking   |

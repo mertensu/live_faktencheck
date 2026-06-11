@@ -33,13 +33,15 @@ Commit and push — the VPS backend picks up the new episode on the next deploy 
 
 ## During the show
 
-The backend runs permanently on the VPS. Start the listener locally:
+The backend runs permanently on the VPS. Open the session dashboard in Admin-Modus to start recording:
 
-```bash
-uv run python listener.py maischberger-2026-03-01
-```
+1. Navigate to **https://live-faktencheck.de/maischberger-2026-03-01** and switch to Admin-Modus.
+2. Choose your block length (60/120/180s, default 120s) in the recording bar.
+3. Click **"Aufnahme starten"** — the browser mic recorder begins capturing audio.
+4. Audio blocks are uploaded automatically; click **"Senden"** to flush the current block early, or **"Stopp"** to end the recording.
 
-- Route your audio through BlackHole into the listener
+The browser mic captures live speech (in-person conversations or shows playing on speakers) — no virtual audio device needed.
+
 - Review extracted claims at the admin UI (served by the VPS backend at `https://api.live-faktencheck.de`)
 - Approve claims → fact-checking runs automatically
 - Results appear live at **https://live-faktencheck.de/maischberger-2026-03-01**
