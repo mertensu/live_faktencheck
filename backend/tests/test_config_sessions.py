@@ -30,3 +30,15 @@ def test_episode_to_session_dict_roundtrip():
     assert d["status"] == "ended"
     ep2 = Episode.from_session_row(d)
     assert ep2.speakers == ep.speakers
+
+
+def test_from_session_row_reads_conversation_type():
+    from config import Episode
+    ep = Episode.from_session_row({"session_id": "s", "conversation_type": "interview"})
+    assert ep.conversation_type == "interview"
+
+
+def test_from_session_row_defaults_conversation_type():
+    from config import Episode
+    ep = Episode.from_session_row({"session_id": "s"})
+    assert ep.conversation_type == "debate"

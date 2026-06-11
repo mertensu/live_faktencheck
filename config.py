@@ -49,6 +49,7 @@ class Episode:
     context: str = ""
     reference_links: list[str] = field(default_factory=list)
     type: str = "show"
+    conversation_type: str = "debate"
     publish: bool = False
 
     @property
@@ -77,6 +78,7 @@ class Episode:
             context=row.get("context", ""),
             reference_links=row.get("reference_links", []),
             type=row.get("type", "show"),
+            conversation_type=row.get("conversation_type", "debate"),
             publish=row.get("visibility") == "public",
         )
 
@@ -246,6 +248,7 @@ def episode_to_session_dict(ep: Episode) -> dict:
         "context": ep.context,
         "reference_links": ep.reference_links,
         "type": ep.type,
+        "conversation_type": ep.conversation_type,
         "status": "ended",
         "visibility": "public" if ep.publish else "private",
         "created_at": _datetime.now().isoformat(),
