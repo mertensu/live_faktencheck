@@ -143,3 +143,59 @@ export async function sendAudioBlock(sessionId, blob) {
   }
   return data  // { status, message, block_id }
 }
+
+// Toggle the per-session auto-check flag (Review view "Auto-Prüfung").
+export async function setSessionAutoCheck(sessionId, enabled) {
+  const res = await fetch(`${BACKEND_URL}/api/sessions/${sessionId}/auto-check`, {
+    method: 'POST', headers: authHeaders(), body: JSON.stringify({ enabled }),
+  })
+  const data = await safeJsonParse(res, 'setSessionAutoCheck')
+  if (!res.ok) {
+    throw new Error(data?.detail || `setSessionAutoCheck failed (${res.status})`)
+  }
+  return data  // SessionResponse (includes auto_check)
+}
+
+// Approve one or more claims for fact-checking (Swipe right).
+export async function approveClaims(sessionId, claims) {
+  const res = await fetch(`${BACKEND_URL}/api/approve-claims`, {
+    method: 'POST', headers: authHeaders(),
+    body: JSON.stringify({ claims, session_id: sessionId, block_id: `swipe_${Date.now()}` }),
+  })
+  const data = await safeJsonParse(res, 'approveClaims')
+  if (!res.ok) {
+    throw new Error(data?.detail || `approveClaims failed (${res.status})`)
+  }
+  return data
+}
+
+// Discard one or more claims (Swipe left) — recorded with status='discarded'.
+export async function discardClaims(sessionId, claims) {
+  const res = await fetch(`${BACKEND_URL}/api/discard-claims`, {
+    method: 'POST', headers: authHeaders(),
+    body: JSON.stringify({ claims, session_id: sessionId }),
+  })
+  const data = await safeJsonParse(res, 'discardClaims')
+  if (!res.ok) {
+    throw new Error(data?.detail || `discardClaims failed (${res.status})`)
+  }
+  return data
+}
+
+// Fetch pending claim blocks for a session (open GET).
+export async function fetchPendingClaims(sessionId) {
+  const res = await fetch(`${BACKEND_URL}/api/pending-claims?session_id=${encodeURIComponent(sessionId)}`, {
+    headers: authHeaders(),
+  })
+  if (!res.ok) return []
+  return safeJsonParse(res, 'fetchPendingClaims')
+}
+
+// Fetch fact-check results for a session (open GET).
+export async function fetchFactChecks(sessionId) {
+  const res = await fetch(`${BACKEND_URL}/api/fact-checks?session_id=${encodeURIComponent(sessionId)}`, {
+    headers: authHeaders(),
+  })
+  if (!res.ok) return []
+  return safeJsonParse(res, 'fetchFactChecks')
+}
