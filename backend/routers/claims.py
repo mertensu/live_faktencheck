@@ -6,7 +6,6 @@ Handles pending claims and text-based claim extraction.
 
 import asyncio
 import logging
-import os
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
@@ -18,7 +17,7 @@ from backend.models import (
     PendingClaimsRequest,
     ProcessingResponse,
 )
-from backend.utils import to_dict, truncate, build_fact_check_dict
+from backend.utils import auto_check_enabled, to_dict, truncate, build_fact_check_dict
 import backend.state as state
 
 from backend.services.registry import get_claim_extractor, get_fact_checker
@@ -108,8 +107,9 @@ async def process_text_pipeline_async(text: str, headline: str, source_id: str, 
         }
         await db.add_pending_block(pending_block)
 
-        if os.getenv("AUTO_APPROVE", "false").lower() == "true":
-            logger.info(f"[{block_id}] AUTO_APPROVE enabled, selecting best claims...")
+        session = await db.get_session(session_id) if session_id else None
+        if auto_check_enabled(session):
+            logger.info(f"[{block_id}] Auto-check enabled (session flag or AUTO_APPROVE), selecting best claims...")
             selected = await claim_extractor.select_async(pending_block["claims"], max_claims=3)
             # Insert processing placeholders so viewers see spinners immediately
             now = datetime.now().isoformat()

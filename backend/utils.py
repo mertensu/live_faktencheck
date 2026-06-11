@@ -2,8 +2,20 @@
 Shared utility functions for the backend.
 """
 
+import os
 from datetime import datetime
 from pathlib import Path
+
+
+def auto_check_enabled(session: dict | None) -> bool:
+    """True if auto-checking should run for this session.
+
+    Per-session ``auto_check`` flag OR the global ``AUTO_APPROVE`` env var (kept
+    for tests/dev). ``session`` may be ``None`` when no session row exists.
+    """
+    if session and session.get("auto_check"):
+        return True
+    return os.getenv("AUTO_APPROVE", "false").lower() == "true"
 
 
 def to_dict(obj):

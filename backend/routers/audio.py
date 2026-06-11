@@ -14,7 +14,7 @@ from config import Episode
 from backend.auth import require_code
 from backend.models import ProcessingResponse
 from backend.state import processing_lock
-from backend.utils import to_dict, truncate
+from backend.utils import auto_check_enabled, to_dict, truncate
 from backend.services.registry import get_transcription_service, get_claim_extractor
 from backend.services.transcription import keyterms_from_guests
 from backend.routers.claims import process_fact_checks_async
@@ -186,8 +186,8 @@ async def process_audio_pipeline_async(block_id: str, audio_path: str, session_i
         }
         await db.add_pending_block(pending_block)
 
-        if os.getenv("AUTO_APPROVE", "false").lower() == "true":
-            logger.info(f"[{block_id}] AUTO_APPROVE enabled, selecting best claims...")
+        if auto_check_enabled(session):
+            logger.info(f"[{block_id}] Auto-check enabled (session flag or AUTO_APPROVE), selecting best claims...")
             selected = await claim_extractor.select_async(pending_block["claims"], max_claims=3)
 
             # Insert processing placeholders so viewers see spinners immediately
