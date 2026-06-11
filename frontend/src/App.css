@@ -2413,4 +2413,55 @@
 .wizard-summary dt { color: #6b7280; }
 .wizard-summary dd { margin: 0; color: #1f2533; }
 .wizard-nav { display: flex; justify-content: space-between; gap: 12px; margin-top: 28px; }
+
+/* ── RecordingBar ─────────────────────────────────────────────── */
+.recording-bar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  background: #1e1e24;
+  border: 1px solid #33333d;
+  border-radius: 8px;
+}
+
+.recording-bar-rec {
+  font-weight: 700;
+  color: #e23b3b;
+  font-variant-numeric: tabular-nums;
+}
+
+.recording-bar-interval {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: #cfcfd6;
+}
+
+.recording-bar-count {
+  color: #9a9aa3;
+  font-variant-numeric: tabular-nums;
+}
+
+.recording-bar button {
+  padding: 0.4rem 0.9rem;
+  border-radius: 6px;
+  border: 1px solid #44444f;
+  background: #2a2a33;
+  color: #f0f0f3;
+  cursor: pointer;
+}
+
+.recording-bar button:hover { background: #34343f; }
+.recording-bar button:disabled { opacity: 0.5; cursor: default; }
+
+.recording-bar-start { border-color: #2e7d32; }
+.recording-bar-stop { border-color: #b53b3b; }
+
+.recording-bar-error {
+  color: #e88;
+  font-weight: 600;
+}
 .wizard-nav .action-button.primary { margin-left: auto; }
