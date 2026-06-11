@@ -129,7 +129,7 @@ export function NewSessionPage() {
             <div className="form-field">
               <label htmlFor="wizard-title">Titel</label>
               <input id="wizard-title" className="wizard-input"
-                     value={state.title || buildSessionPayload(state).title}
+                     value={state.titleEdited ? state.title : buildSessionPayload(state).title}
                      onChange={(e) => dispatch({ type: 'SET_TITLE', value: e.target.value })} />
             </div>
             {needsCode && (
