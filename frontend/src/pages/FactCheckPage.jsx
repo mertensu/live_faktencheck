@@ -4,6 +4,7 @@ import { AdminView } from '../components/AdminView'
 import { SpeakerColumns } from '../components/SpeakerColumns'
 import { BackendErrorDisplay } from '../components/BackendErrorDisplay'
 import { ClaimDetailOverlay } from '../components/ClaimDetailOverlay'
+import { RecordingBar } from '../components/RecordingBar'
 
 // Default speakers as fallback
 const DEFAULT_SPEAKERS = []
@@ -655,23 +656,26 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
 
       <main className="main-content">
         {isAdminMode ? (
-          <AdminView
-            pendingClaims={pendingClaims}
-            pendingBlocks={pendingBlocks}
-            stagedClaims={stagedClaims}
-            discardedClaims={discardedClaims}
-            sentClaims={sentClaims}
-            pipelineEvents={pipelineEvents}
-            onStage={stageClaimForSending}
-            onUnstage={unstageClaim}
-            onDiscard={discardClaim}
-            onUndiscard={undiscardClaim}
-            onDiscardCollection={discardCollection}
-            onUpdatePending={updatePendingClaim}
-            onSendAll={sendStagedClaims}
-            onResend={prepareResend}
-            onRetrigger={retriggerBlock}
-          />
+          <>
+            <RecordingBar sessionId={episodeKey} />
+            <AdminView
+              pendingClaims={pendingClaims}
+              pendingBlocks={pendingBlocks}
+              stagedClaims={stagedClaims}
+              discardedClaims={discardedClaims}
+              sentClaims={sentClaims}
+              pipelineEvents={pipelineEvents}
+              onStage={stageClaimForSending}
+              onUnstage={unstageClaim}
+              onDiscard={discardClaim}
+              onUndiscard={undiscardClaim}
+              onDiscardCollection={discardCollection}
+              onUpdatePending={updatePendingClaim}
+              onSendAll={sendStagedClaims}
+              onResend={prepareResend}
+              onRetrigger={retriggerBlock}
+            />
+          </>
         ) : (
           <>
             <BackendErrorDisplay error={backendError} />
