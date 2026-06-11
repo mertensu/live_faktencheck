@@ -87,6 +87,7 @@ class Database:
                 context          TEXT NOT NULL DEFAULT '',
                 reference_links  TEXT NOT NULL DEFAULT '[]',
                 type             TEXT NOT NULL DEFAULT 'show',
+                conversation_type TEXT NOT NULL DEFAULT 'debate',
                 status           TEXT NOT NULL DEFAULT 'active',
                 visibility       TEXT NOT NULL DEFAULT 'private',
                 owner_code       TEXT,
@@ -121,6 +122,16 @@ class Database:
         for migration in [
             "ALTER TABLE codes ADD COLUMN quick_checks_used INTEGER NOT NULL DEFAULT 0",
             "ALTER TABLE codes ADD COLUMN quick_check_limit INTEGER DEFAULT 3",
+        ]:
+            try:
+                await self.db.execute(migration)
+                await self.db.commit()
+            except Exception:
+                pass  # Column already exists
+
+        # Migration: add conversation_type to existing sessions tables
+        for migration in [
+            "ALTER TABLE sessions ADD COLUMN conversation_type TEXT NOT NULL DEFAULT 'debate'",
         ]:
             try:
                 await self.db.execute(migration)
@@ -264,6 +275,7 @@ class Database:
             "context": row["context"],
             "reference_links": json.loads(row["reference_links"]),
             "type": row["type"],
+            "conversation_type": row["conversation_type"],
             "status": row["status"],
             "visibility": row["visibility"],
             "owner_code": row["owner_code"],
@@ -277,8 +289,8 @@ class Database:
         await self.db.execute(
             """INSERT INTO sessions
                (session_id, title, date, guests, context, reference_links,
-                type, status, visibility, owner_code, created_at, ended_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                type, conversation_type, status, visibility, owner_code, created_at, ended_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 session["session_id"],
                 session.get("title", ""),
@@ -287,6 +299,7 @@ class Database:
                 session.get("context", ""),
                 json.dumps(session.get("reference_links", []), ensure_ascii=False),
                 session.get("type", "show"),
+                session.get("conversation_type", "debate"),
                 session.get("status", "active"),
                 session.get("visibility", "private"),
                 session.get("owner_code"),

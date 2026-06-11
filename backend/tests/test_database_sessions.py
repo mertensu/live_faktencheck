@@ -64,3 +64,24 @@ async def test_seed_session_if_absent_is_idempotent(db):
     s = await db.get_session("leg")
     assert s["title"] == "Legacy"  # not overwritten
     assert s["visibility"] == "public"
+
+
+async def test_add_session_persists_conversation_type():
+    from backend.database import Database
+    db = Database(":memory:")
+    await db.connect()
+    await db.add_session({"session_id": "ct1", "title": "T", "conversation_type": "interview",
+                          "created_at": "2026-06-11"})
+    s = await db.get_session("ct1")
+    assert s["conversation_type"] == "interview"
+    await db.close()
+
+
+async def test_add_session_defaults_conversation_type_to_debate():
+    from backend.database import Database
+    db = Database(":memory:")
+    await db.connect()
+    await db.add_session({"session_id": "ct2", "title": "T", "created_at": "2026-06-11"})
+    s = await db.get_session("ct2")
+    assert s["conversation_type"] == "debate"
+    await db.close()
