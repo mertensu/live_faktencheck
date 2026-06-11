@@ -64,6 +64,31 @@ class TestClaimExtractorExtract:
         assert "Test transcript content" in captured["user_message"]
         assert "Context information" in captured["user_message"]
 
+    def test_claim_extraction_input_drops_date_adds_conversation_type(self):
+        """The date field is gone; conversation_type is present."""
+        from backend.services.claim_extraction import ClaimExtractionInput, SpeakerLabelsInput
+        assert "date" not in ClaimExtractionInput.model_fields
+        assert "conversation_type" in ClaimExtractionInput.model_fields
+        assert "conversation_type" in SpeakerLabelsInput.model_fields
+
+    async def test_extract_passes_conversation_type(self, mock_claim_extractor):
+        """conversation_type reaches the model as part of the user message."""
+        captured = {}
+
+        async def capture(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
+            for part in messages[-1].parts:
+                content = getattr(part, "content", None)
+                if isinstance(content, str):
+                    captured["user_message"] = content
+            return await _empty_claims_model().request(messages, info.model_settings, info.model_request_parameters)
+
+        with mock_claim_extractor.claim_extractor.override(model=FunctionModel(capture)):
+            await mock_claim_extractor.extract_claims_async(
+                "Test transcript", ["Speaker A"], conversation_type="private"
+            )
+
+        assert "private" in captured["user_message"]
+
     def test_extract_uses_configured_model(self):
         """ClaimExtractor reads the model name from the environment."""
         with patch.dict("os.environ", {
