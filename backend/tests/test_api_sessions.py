@@ -43,3 +43,27 @@ async def test_create_session_defaults_conversation_type(client):
     resp = await client.post("/api/sessions", json={"title": "T"})
     assert resp.status_code == 201
     assert resp.json()["conversation_type"] == "debate"
+
+
+async def test_session_response_includes_auto_check_default_false(client):
+    sid = (await client.post("/api/sessions", json={"title": "T"})).json()["session_id"]
+    resp = await client.get(f"/api/sessions/{sid}")
+    assert resp.json()["auto_check"] is False
+
+
+async def test_set_auto_check_toggles_flag(client):
+    sid = (await client.post("/api/sessions", json={"title": "T"})).json()["session_id"]
+    resp = await client.post(f"/api/sessions/{sid}/auto-check", json={"enabled": True})
+    assert resp.status_code == 200
+    assert resp.json()["auto_check"] is True
+    assert (await client.get(f"/api/sessions/{sid}")).json()["auto_check"] is True
+
+
+async def test_set_auto_check_unknown_session_404(client):
+    resp = await client.post("/api/sessions/does-not-exist/auto-check", json={"enabled": True})
+    assert resp.status_code == 404
+
+
+async def test_set_auto_check_requires_code(no_auth_client):
+    resp = await no_auth_client.post("/api/sessions/whatever/auto-check", json={"enabled": True})
+    assert resp.status_code == 401

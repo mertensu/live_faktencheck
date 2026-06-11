@@ -87,6 +87,11 @@ class CreateSessionRequest(BaseModel):
     conversation_type: str = "debate"
 
 
+class AutoCheckRequest(BaseModel):
+    """Request body for POST /api/sessions/{session_id}/auto-check."""
+    enabled: bool
+
+
 # =============================================================================
 # Response Models
 # =============================================================================
@@ -143,6 +148,7 @@ class SessionResponse(BaseModel):
     reference_links: List[Any] = []
     type: str = "show"
     conversation_type: str = "debate"
+    auto_check: bool = False
     status: str = "active"
     visibility: str = "private"
     created_at: Optional[str] = None
