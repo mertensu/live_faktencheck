@@ -1,40 +1,62 @@
-import { useState } from 'react'
+import { useReducer, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { createSession, getAccessCode, setAccessCode } from '../services/api'
+import {
+  TYPE_LABELS, STEPS, initialWizardState, wizardReducer, buildSessionPayload,
+} from '../wizard/wizardLogic'
+
+const TYPE_TILES = [
+  { value: 'debate', icon: '🏛️', label: 'Öffentliche Debatte / Talkshow' },
+  { value: 'interview', icon: '🎙️', label: 'Interview' },
+  { value: 'private', icon: '💬', label: 'Privates Gespräch' },
+]
+
+function PersonFields({ person, index, type, dispatch, removable }) {
+  const upd = (field) => (e) =>
+    dispatch({ type: 'UPDATE_PERSON', index, field, value: e.target.value })
+  return (
+    <div className="wizard-person">
+      <input className="wizard-input" value={person.name} onChange={upd('name')}
+             placeholder="Name" />
+      {type !== 'private' && (
+        <input className="wizard-input" value={person.party} onChange={upd('party')}
+               placeholder="Partei / Organisation" />
+      )}
+      <input className="wizard-input" value={person.role} onChange={upd('role')}
+             placeholder={type === 'private' ? 'Rolle (optional, z. B. Nachbar)' : 'Rolle / Funktion'} />
+      {removable && (
+        <button type="button" className="wizard-remove"
+                onClick={() => dispatch({ type: 'REMOVE_PERSON', index })}>Entfernen</button>
+      )}
+    </div>
+  )
+}
 
 export function NewSessionPage() {
   const navigate = useNavigate()
-  const [title, setTitle] = useState('')
-  const [date, setDate] = useState('')
-  const [guests, setGuests] = useState('')
-  const [context, setContext] = useState('')
-  const [referenceLinks, setReferenceLinks] = useState('')
+  const [state, dispatch] = useReducer(wizardReducer, undefined, initialWizardState)
   const [accessCode, setAccessCodeInput] = useState(getAccessCode())
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState(null)
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
+  const needsCode = !getAccessCode()
+  const stepName = STEPS[state.step]
+
+  const canAdvance = () => {
+    if (stepName === 'type') return !!state.conversationType
+    return true
+  }
+
+  const handleSubmit = async () => {
     setSubmitting(true)
     setError(null)
-    setAccessCode(accessCode.trim())
+    if (accessCode) setAccessCode(accessCode.trim())
     try {
-      const payload = {
-        title,
-        date,
-        guests: guests.split('\n').map(s => s.trim()).filter(Boolean),
-        context,
-        reference_links: referenceLinks.split('\n').map(s => s.trim()).filter(Boolean),
-        type: 'show',
-      }
-      const result = await createSession(payload)
-      if (!result?.session_id) {
-        throw new Error('Keine Session-ID erhalten')
-      }
+      const result = await createSession(buildSessionPayload(state))
+      if (!result?.session_id) throw new Error('Keine Session-ID erhalten')
       navigate('/' + result.session_id)
     } catch (err) {
       const msg = err.message || 'Fehler beim Erstellen der Session'
-      // Drop a rejected code so the user can re-enter it.
       if (/401|403|Zugangscode/i.test(msg)) setAccessCode('')
       setError(msg)
       setSubmitting(false)
@@ -43,92 +65,100 @@ export function NewSessionPage() {
 
   return (
     <div className="about-page">
-      <div className="about-content">
-        <h1>Neue Session erstellen</h1>
-        <form onSubmit={handleSubmit} className="new-session-form">
-          <div className="form-field">
-            <label htmlFor="session-code">Zugangscode *</label>
-            <input
-              id="session-code"
-              type="password"
-              value={accessCode}
-              onChange={e => setAccessCodeInput(e.target.value)}
-              required
-              autoComplete="off"
-              placeholder="Dein persönlicher Zugangscode"
-            />
-          </div>
+      <div className="about-content wizard">
+        <div className="wizard-progress">
+          {STEPS.map((s, i) => (
+            <span key={s} className={`wizard-dot ${i === state.step ? 'active' : ''} ${i < state.step ? 'done' : ''}`} />
+          ))}
+        </div>
 
-          <div className="form-field">
-            <label htmlFor="session-title">Titel *</label>
-            <input
-              id="session-title"
-              type="text"
-              value={title}
-              onChange={e => setTitle(e.target.value)}
-              required
-              placeholder="z.B. Maischberger 2026-02-09"
-            />
-          </div>
+        {stepName === 'type' && (
+          <section className="wizard-step">
+            <h1>Was für ein Gespräch?</h1>
+            <div className="wizard-tiles">
+              {TYPE_TILES.map((t) => (
+                <button key={t.value} type="button"
+                        className={`wizard-tile ${state.conversationType === t.value ? 'selected' : ''}`}
+                        onClick={() => dispatch({ type: 'SET_TYPE', value: t.value })}>
+                  <span className="wizard-tile-icon">{t.icon}</span>
+                  <span>{t.label}</span>
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
 
-          <div className="form-field">
-            <label htmlFor="session-date">Datum</label>
-            <input
-              id="session-date"
-              type="text"
-              value={date}
-              onChange={e => setDate(e.target.value)}
-              placeholder="z.B. 9. Februar 2026"
-            />
-          </div>
+        {stepName === 'people' && (
+          <section className="wizard-step">
+            <h1>Wer spricht?</h1>
+            {state.conversationType === 'interview' && (
+              <p className="wizard-hint">Erste Person = interviewt, zweite = interviewende Person/Medium (optional).</p>
+            )}
+            {state.conversationType === 'private' && (
+              <p className="wizard-hint">Nur Vornamen/Rollen genügen — keine Partei nötig. Du kannst diesen Schritt auch leer lassen.</p>
+            )}
+            {state.people.map((p, i) => (
+              <PersonFields key={i} person={p} index={i} type={state.conversationType}
+                            dispatch={dispatch}
+                            removable={state.conversationType !== 'interview' && state.people.length > 1} />
+            ))}
+            {state.conversationType !== 'interview' && (
+              <button type="button" className="wizard-add"
+                      onClick={() => dispatch({ type: 'ADD_PERSON' })}>+ weitere Person</button>
+            )}
+          </section>
+        )}
 
-          <div className="form-field">
-            <label htmlFor="session-guests">Gäste (eine Person pro Zeile, Format: Name (Rolle))</label>
-            <textarea
-              id="session-guests"
-              value={guests}
-              onChange={e => setGuests(e.target.value)}
-              rows={5}
-              placeholder={"Alice Müller (SPD-Politikerin)\nBob Schmidt (Journalist)"}
-            />
-          </div>
+        {stepName === 'topic' && (
+          <section className="wizard-step">
+            <h1>Worum geht es? <span className="wizard-optional">(optional)</span></h1>
+            <textarea className="wizard-input" rows={4} value={state.topic}
+                      onChange={(e) => dispatch({ type: 'SET_TOPIC', value: e.target.value })}
+                      placeholder="Thema / Hintergrund — kann leer bleiben" />
+          </section>
+        )}
 
-          <div className="form-field">
-            <label htmlFor="session-context">Kontext</label>
-            <textarea
-              id="session-context"
-              value={context}
-              onChange={e => setContext(e.target.value)}
-              rows={4}
-              placeholder="Thema und Hintergrund der Sendung..."
-            />
-          </div>
+        {stepName === 'review' && (
+          <section className="wizard-step">
+            <h1>Übersicht</h1>
+            <dl className="wizard-summary">
+              <dt>Art</dt><dd>{TYPE_LABELS[state.conversationType]}</dd>
+              <dt>Personen</dt><dd>{buildSessionPayload(state).guests.join(', ') || '—'}</dd>
+              <dt>Thema</dt><dd>{buildSessionPayload(state).context}</dd>
+            </dl>
+            <div className="form-field">
+              <label htmlFor="wizard-title">Titel</label>
+              <input id="wizard-title" className="wizard-input"
+                     value={state.title || buildSessionPayload(state).title}
+                     onChange={(e) => dispatch({ type: 'SET_TITLE', value: e.target.value })} />
+            </div>
+            {needsCode && (
+              <div className="form-field">
+                <label htmlFor="wizard-code">Zugangscode</label>
+                <input id="wizard-code" type="password" className="wizard-input" autoComplete="off"
+                       value={accessCode} onChange={(e) => setAccessCodeInput(e.target.value)}
+                       placeholder="Dein persönlicher Zugangscode" />
+              </div>
+            )}
+            {error && <p className="form-error">{error}</p>}
+          </section>
+        )}
 
-          <div className="form-field">
-            <label htmlFor="session-refs">Referenz-Links (eine URL pro Zeile)</label>
-            <textarea
-              id="session-refs"
-              value={referenceLinks}
-              onChange={e => setReferenceLinks(e.target.value)}
-              rows={4}
-              placeholder={"https://example.com/artikel-1\nhttps://example.com/artikel-2"}
-            />
-          </div>
-
-          {error && (
-            <p className="form-error">{error}</p>
+        <div className="wizard-nav">
+          {state.step > 0 && (
+            <button type="button" className="action-button"
+                    onClick={() => dispatch({ type: 'BACK' })} disabled={submitting}>Zurück</button>
           )}
-
-          <div className="form-actions">
-            <button
-              type="submit"
-              className="action-button primary"
-              disabled={submitting}
-            >
+          {stepName !== 'review' ? (
+            <button type="button" className="action-button primary"
+                    onClick={() => dispatch({ type: 'NEXT' })} disabled={!canAdvance()}>Weiter</button>
+          ) : (
+            <button type="button" className="action-button primary"
+                    onClick={handleSubmit} disabled={submitting}>
               {submitting ? 'Wird erstellt...' : 'Session erstellen'}
             </button>
-          </div>
-        </form>
+          )}
+        </div>
       </div>
     </div>
   )

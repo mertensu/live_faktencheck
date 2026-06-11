@@ -2387,3 +2387,30 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ---- Session-Setup-Wizard ---- */
+.wizard { max-width: 640px; }
+.wizard-progress { display: flex; gap: 8px; justify-content: center; margin-bottom: 28px; }
+.wizard-dot { width: 10px; height: 10px; border-radius: 50%; background: #d0d4dd; transition: background .2s; }
+.wizard-dot.active { background: #2563eb; }
+.wizard-dot.done { background: #93b4f5; }
+.wizard-step { animation: wizardFade .25s ease; }
+@keyframes wizardFade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.wizard-tiles { display: grid; gap: 12px; margin-top: 20px; }
+.wizard-tile { display: flex; align-items: center; gap: 14px; padding: 18px 20px; border: 2px solid #e2e6ee;
+  border-radius: 14px; background: #fff; color: #1f2533; font-size: 1.05rem; cursor: pointer; text-align: left; transition: border-color .15s, box-shadow .15s; }
+.wizard-tile:hover { border-color: #b9c6e8; }
+.wizard-tile.selected { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,.15); }
+.wizard-tile-icon { font-size: 1.6rem; }
+.wizard-person { display: grid; gap: 8px; padding: 14px; border: 1px solid #e2e6ee; border-radius: 12px; margin-bottom: 12px; background: #fff; }
+.wizard-input { width: 100%; padding: 10px 12px; border: 1px solid #cfd5e1; border-radius: 8px;
+  background: #fff; color: #1f2533; font-size: 1rem; }
+.wizard-input::placeholder { color: #8a93a6; }
+.wizard-add, .wizard-remove { align-self: start; background: none; border: none; color: #2563eb; cursor: pointer; padding: 4px 0; font-size: .95rem; }
+.wizard-remove { color: #b04242; }
+.wizard-hint, .wizard-optional { color: #6b7280; font-size: .9rem; }
+.wizard-summary { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; margin: 16px 0; }
+.wizard-summary dt { color: #6b7280; }
+.wizard-summary dd { margin: 0; color: #1f2533; }
+.wizard-nav { display: flex; justify-content: space-between; gap: 12px; margin-top: 28px; }
+.wizard-nav .action-button.primary { margin-left: auto; }
