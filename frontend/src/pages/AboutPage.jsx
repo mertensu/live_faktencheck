@@ -21,7 +21,8 @@ export function AboutPage() {
         <p>
           Mit diesem Projekt möchte ich einen kleinen Beitrag liefern, um dieser Dynamik etwas entgegensetzen.
           live-faktencheck.de ist eine Plattform, die Aussagen aus Talkshows oder Interviews live* auf ihre
-          empirische Untermauerung prüft. Mithilfe von künstlicher Intelligenz wird dabei eine Einstufung der Vertrauenswürdigkeit und eine ausführliche Begründung der
+          empirische Untermauerung prüft. Neben der Begleitung ganzer Sendungen lässt sich auch eine einzelne
+          Aussage direkt einfügen und prüfen. Mithilfe von künstlicher Intelligenz wird dabei eine Einstufung der Vertrauenswürdigkeit und eine ausführliche Begründung der
           Entscheidungsfindung vorgenommen. Darüberhinaus werden die der Entscheidung zugrunde liegenden Quellen angegeben. Um die Gefahr von Halluzinationen des
           Sprachmodells, also dem Erzeugen einer plausiblen aber falschen Begründung, zu minimieren, findet
           eine gerichtete, iterative Web-Recherche statt. Das Modell wird gezwungen, eine Liste an
@@ -31,9 +32,9 @@ export function AboutPage() {
           Ich möchte betonen, dass bei diesem Projekt großer Wert auf politische Neutralität gelegt wird und
           in keiner Weise diskreditiert oder diffamiert werden soll. Es geht vielmehr darum, aufzuzeigen,
           wie sehr bestimmte Behauptungen durch Studien, Statistiken oder andere vertrauenswürdige Quellen
-          gestützt werden. Das gesamte laufende Projekt ist{' '}
-          <a href="https://github.com/mertensu/live_faktencheck">vollständig zugänglich</a> und ich möchte
-          alle herzlich einladen mitzuwirken.
+          gestützt werden. Der Quellcode des Projekts ist{' '}
+          <a href="https://github.com/mertensu/live_faktencheck">quelloffen einsehbar</a> (unter einer
+          nicht-kommerziellen Lizenz); über Rückmeldungen und Hinweise freue ich mich jederzeit.
         </p>
         <p>
           Nicht zuletzt sei betont, dass dieses Projekt in den Anfängen steht und Fehler bzw. Ungenauigkeiten nicht ausgeschlossen werden können. Bei Fragen, Anmerkungen oder Verbesserungsvorschlägen wenden Sie sich gerne jederzeit an <a href="mailto:info@live-faktencheck.de">info@live-faktencheck.de</a>
@@ -57,7 +58,7 @@ export function AboutPage() {
         )}
         <p>
           Die Sendungen werden in zeitlich begrenzte Blöcke aufgeteilt und dann live transkribiert. Das Transkript wird im Anschluss an ein großes Sprachmodell (LLM) weitergereicht,
-          welches überprüfbare Behauptungen extrahiert und diese automatisch den jeweiligen Sprechern zuweist. Ein Moderator prüft diese Aussagen auf Relevanz und stilistische Korrektheit und gibt sie schließlich
+          welches überprüfbare Behauptungen extrahiert und diese automatisch den jeweiligen Sprechern zuweist. Sie selbst prüfen diese Aussagen auf Relevanz und stilistische Korrektheit und geben sie schließlich
           einem weiteren KI-Agenten zur Bewertung frei. Es folgt ein iterativer Prozess, bei dem im Web nach relevanten Statistiken und Daten gesucht wird —
           beschränkt auf vertrauenswürdige Quellen wie offizielle Regierungsseiten oder anerkannte Institute —,
           diese Informationen dann mit Blick auf die Aussagen eingeordnet werden und, sofern keine erschöpfende

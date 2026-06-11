@@ -147,6 +147,44 @@ mit `session_id` — exakt das Contract, das `listener.py` heute schon nutzt.
 - Optional/später: Tab-/System-Audio via `getDisplayMedia({audio:true})` für Shows,
   die im Web laufen (BlackHole-Ersatz).
 
+### Frontend / Nutzerführung — Session-Setup-Wizard
+
+**Problem:** Ein Live-Check braucht vorab Metadaten, die heute hartcodiert in
+`config.py` stehen (`Episode`: `show`/`date`/`guests`/`context`). Im Self-Service muss
+der Nutzer sie liefern — aber unterschiedlich je nach Gesprächssituation (politische
+Talkshow mit benannten Gästen vs. privates Gespräch mit Verwandten). Statt eines
+überladenen Formulars: ein **geführter Wizard**, eine Frage pro Schritt, verzweigt nach
+Gesprächsart.
+
+**Umsetzung:** Ein-Route-Wizard auf `/new` — interne Schritt-Zustandsmaschine +
+Fortschrittsanzeige, animierte Übergänge, Zurück/Weiter über State. (Verworfen:
+Route-pro-Schritt = unnötiges Plumbing; langes Formular = widerspricht „eine Frage nach
+der anderen".)
+
+**Wizard-Flow:**
+
+1. **Gesprächsart** (drei Kacheln): 🏛️ Öffentliche Debatte / Talkshow · 🎙️ Interview ·
+   💬 Privates Gespräch.
+2. **Personen** (verzweigt nach Auswahl):
+   - *Öffentliche Debatte:* dynamische Personen-Liste, pro Person **Name + Partei/
+     Organisation + Rolle/Funktion** („weitere Person hinzufügen").
+   - *Interview:* interviewte Person (Name + Partei/Org + Rolle) · interviewende Person/
+     Medium (nur Name, optional).
+   - *Privates Gespräch:* Teilnehmende nur als **Vorname/Rolle**, keine Partei — bewusst
+     schlank; Personenliste optional.
+3. **Thema (optional):** Freitext „Worum geht es?", überspringbar (v.a. beim privaten
+   Gespräch). Wird übersprungen → `context` defaultet automatisch auf ein vom
+   Gesprächstyp abgeleitetes Label („Öffentliche Debatte" / „Interview" / „Privates
+   Gespräch"), damit das Modell immer minimalen Kontext hat.
+4. **Übersicht & Start:** Zusammenfassung aller Angaben → „Aufnahme starten".
+   Datum = automatisch heute.
+
+**Backend-Anbindung:** Mapping auf den Session-Erstellungs-Payload (Phase 1): `type`,
+strukturierte `participants[]` (name/party/role), `context` (optional → Typ-Default),
+`date=heute`. Die Namen speisen Sprecher-Auflösung + Claim-Kontext (`guests`). Nötige
+Backend-Änderung: Session-Payload um `type` und strukturierte `participants` erweitern
+(heute nur flache `guests`-Liste).
+
 **Abhängigkeiten:** Phase 1 (Session-Scoping) — erfüllt.
 
 ---
