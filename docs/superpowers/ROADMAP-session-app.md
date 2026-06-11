@@ -1,7 +1,7 @@
 # Roadmap — Von „Live Faktencheck" zur Multi-User-App
 
 **Stand:** 2026-06-10
-**Branch dieser Arbeit:** `worktree-session-multitenancy` (Phasen 1, 3a, R, Q abgeschlossen; nicht gemergt)
+**Branch dieser Arbeit:** `worktree-session-multitenancy` (Phasen 1, 1b, 3a, R, Q abgeschlossen; nicht gemergt)
 
 Dieses Dokument hält den Gesamtplan und die bereits getroffenen Entscheidungen fest,
 damit die Arbeit später nahtlos fortgesetzt werden kann. Jede Phase bekommt einen
@@ -85,22 +85,48 @@ multi-tenant-fähig.
 
 ---
 
-## ✅ Phase 1b — Homepage / Informationsarchitektur
+## ✅ Phase 1b — Homepage / Informationsarchitektur (ABGESCHLOSSEN)
+
+**Spec:** `docs/superpowers/specs/2026-06-10-homepage-ia-design.md`
+**Plan:** `docs/superpowers/plans/2026-06-10-homepage-ia.md`
+**Status:** Implementiert + verifiziert auf Branch `worktree-session-multitenancy`
+(2026-06-10, Commits `43179da`→`1789e65`). **NICHT nach main gemergt** — Merge = Go-Live (Phase 4).
 
 **Warum:** Sobald Sessions privat/per-Link sind, verliert die Startseite ihren
-„Schaufenster"-Zweck (Live-Faktenchecks präsentieren). Sie braucht eine neue Aufgabe.
+„Schaufenster"-Zweck. Statt zweier Varianten (Prod/Dev) gibt es jetzt **eine
+ausgewogene Landing-Page** mit klarem Einstieg.
 
-**Offene Designfragen (für Brainstorming):**
-- Was ist die primäre Aufgabe der Startseite? Wahrscheinlich: Produkt erklären +
-  Einstieg „Eigene Session starten" (Code eingeben → Session-Formular).
-- Wie werden die Legacy-Episoden (öffentlich) künftig dargestellt — eigener
-  „Beispiele/Archiv"-Bereich?
-- Navigation/IA der ganzen App: Create-Flow, Live-Ansicht, geteilte Link-Ansicht,
-  Archiv, About.
-- Visual-Companion (Mockups) bietet sich hier an, da stark visuell.
+**Was gebaut wurde:**
+- **Neue Homepage** (`HomePage.jsx`): Hero → **ein** Zugangscode-Unlock → **zwei
+  gleichwertige Action-Cards** (Quick Check `/pruefen` + Live-Session `/new` mit
+  „beta"-Tag) → **Beispiele**-Sektion (`#beispiele`, Legacy-Episoden als flache
+  Liste, `test` herausgefiltert). Die alte `isProduction`-Verzweigung ist raus.
+  Gesperrte Cards sind `aria-disabled`-Buttons, die den Unlock fokussieren.
+- **`GET /api/validate-code`** (`config.py`): billiger, **seiteneffektfreier**
+  Code-Check für den Homepage-Unlock; liefert nur `{name, quick_check_limit,
+  quick_checks_used}` (nie das rohe Code-/`active`-Feld). 5 neue Gate-Tests.
+- **`AccessUnlock`-Komponente** (`forwardRef`, `focus()` exponiert): validiert den
+  Code, speichert ihn in `localStorage`, zeigt „Freigeschaltet"-Status; rendert
+  sofort entsperrt, wenn schon ein Code gespeichert ist. Code wird app-weit via
+  `localStorage` (`fc_access_code`) geteilt; Flow-Seiten behalten ihr eigenes
+  Code-Feld als Deep-Link-Fallback.
+- **Navigation:** „Beispiele"-Link (`/#beispiele`); `ScrollToHash` in `App.jsx`
+  (BrowserRouter scrollt nicht nativ zu Hash-Ankern).
+- **`/pruefen`-Politur:** Kontrast-Fix der Formularfelder (vorher dunkle Felder mit
+  grauem Text → echte Light-Theme-Tokens), redundantes Zugangscode-Feld nur noch als
+  Fallback, **Gemini-artige abgerundete Prompt-Box** (`.claim-box`, Auto-Grow,
+  Enter=Senden / Shift+Enter=Zeilenumbruch, kreisrunder Senden-Button + Spinner).
+- **Relicense** (`ce5bc02`, eigenständig): MIT → **PolyForm Noncommercial 1.0.0**
+  (source-available, nur nicht-kommerziell; Required Notices für `live-faktencheck.de`
+  + `Copyright 2026 Ulf Mertens`). README-Lizenzabschnitt angepasst.
 
-**Abhängigkeiten:** keine harten; kann unabhängig von Phase 2–4 entworfen werden.
-In Phase 1 wurde die Homepage bewusst NICHT angefasst (nur `/new` ergänzt).
+**Verifikation:** 209 Unit-Tests grün, ruff clean, Frontend-Build ok. Umgesetzt via
+subagent-driven-development (Spec- + Code-Quality-Review pro Task); finaler holistischer
+Review = „ready to merge". Manueller Klick-Test deckte 3 UI-Punkte auf — 2 echte gefixt
+(Kontrast, redundantes Code-Feld), der dritte („Beispiele zeigen keine Claims") war ein
+Test-DB-Artefakt (In-Memory-DB seedet nur Session-Metadaten, keine Fact-Checks).
+
+**Abhängigkeiten:** keine harten; baute auf Phase Q (`/pruefen`) + Phase 3a (Gate) auf.
 
 ---
 
@@ -273,13 +299,12 @@ da es den ursprünglichen Schmerzpunkt („muss lokal starten") direkt löst.
 2. ~~**Phase R (Agent-Rewrite PydanticAI + Logfire)**~~ — ✅ erledigt auf Branch (2026-06-10).
 3. ~~**Phase Q (Quick Check)**~~ — ✅ erledigt auf Branch (2026-06-10). Schnellster Weg zu einem
    nutzbaren Produkt, baut auf dem (rewritten) Agenten auf.
-4. **Phase 2 (Browser-Audio)** — macht die Live-Mode ohne lokales `listener.py` nutzbar. **← nächster Schritt.**
-5. **Phase 3b (Live-Limits)** — 10-Min-Auto-Stop, zusammen mit/nach Phase 2.
-6. **Phase 1b (Homepage/IA)** — wenn beide Einstiegs-Modi (Quick Check + Live) stehen.
+4. ~~**Phase 1b (Homepage/IA)**~~ — ✅ erledigt auf Branch (2026-06-10). Einzelne Landing-Page mit
+   beiden Einstiegs-Modi (Quick Check + Live) + Beispiele-Archiv.
+5. **Phase 2 (Browser-Audio)** — macht die Live-Mode ohne lokales `listener.py` nutzbar. **← nächster Schritt.**
+6. **Phase 3b (Live-Limits)** — 10-Min-Auto-Stop, zusammen mit/nach Phase 2.
 7. **Phase 4 (Go-Live-Merge)** — Branch → main; Gate + Agent-Rewrite stehen bereits. Aktiviert
    beim Deploy auch die Phase-R-Logfire-Observability (Token auf VPS bereits vorgestaged).
-
-(Reihenfolge ist nicht zwingend; 1b kann parallel entworfen werden.)
 
 ## Wiedereinstieg
 
