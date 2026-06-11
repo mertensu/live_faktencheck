@@ -122,3 +122,24 @@ export async function validateCode(code) {
   }
   return data
 }
+
+// Upload one recorded audio block to the existing /api/audio-block endpoint.
+// Uses FormData, so we must NOT set Content-Type (the browser sets the
+// multipart boundary). Only the access-code header is attached manually.
+export async function sendAudioBlock(sessionId, blob) {
+  const form = new FormData()
+  form.append('audio', blob, 'block.webm')
+  form.append('session_id', sessionId)
+
+  const code = getAccessCode()
+  const headers = code ? { 'X-Access-Code': code } : {}
+
+  const res = await fetch(`${BACKEND_URL}/api/audio-block`, {
+    method: 'POST', headers, body: form,
+  })
+  const data = await safeJsonParse(res, 'sendAudioBlock')
+  if (!res.ok) {
+    throw new Error(data?.detail || `sendAudioBlock failed (${res.status})`)
+  }
+  return data  // { status, message, block_id }
+}
