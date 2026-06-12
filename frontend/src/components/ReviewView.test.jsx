@@ -101,6 +101,26 @@ describe('ReviewView', () => {
     expect(await screen.findByText(/behauptungen werden extrahiert/i)).toBeDefined()
   })
 
+  it('reports a completed 0-claim block ("Keine Behauptungen in diesem Abschnitt gefunden")', async () => {
+    api.fetchPendingClaims.mockResolvedValue([])
+    api.fetchPipelineStatus.mockResolvedValue([
+      { block_id: 'blk1', session_id: 's1', status: 'done', started_at: '2026-06-12T10:00:00Z', claim_count: 0 },
+    ])
+    render(<ReviewView sessionId="s1" initialAutoCheck={false} isRecording={true} />)
+    expect(await screen.findByText(/keine behauptungen in diesem abschnitt gefunden/i)).toBeDefined()
+  })
+
+  it('does not report 0-claim when the most recent completed block had claims', async () => {
+    api.fetchPendingClaims.mockResolvedValue([])
+    api.fetchPipelineStatus.mockResolvedValue([
+      { block_id: 'blk1', session_id: 's1', status: 'done', started_at: '2026-06-12T10:00:00Z', claim_count: 0 },
+      { block_id: 'blk2', session_id: 's1', status: 'done', started_at: '2026-06-12T10:01:00Z', claim_count: 2 },
+    ])
+    render(<ReviewView sessionId="s1" initialAutoCheck={false} isRecording={true} />)
+    expect(await screen.findByText(/noch keine behauptungen/i)).toBeDefined()
+    expect(screen.queryByText(/in diesem abschnitt/i)).toBeNull()
+  })
+
   it('keeps already-decided claims out of the queue (seeded from backend records)', async () => {
     // Anna already approved (fact-check exists), Bert already discarded — neither
     // should appear even though both are still in the pending store. This is the

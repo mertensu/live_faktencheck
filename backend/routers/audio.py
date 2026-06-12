@@ -38,11 +38,13 @@ def _cleanup_audio_file(block_id: str):
         pass
 
 
-def _set_event_status(block_id: str, status: str, message: str | None = None):
+def _set_event_status(block_id: str, status: str, message: str | None = None, claim_count: int | None = None):
     ev = state.pipeline_events.get(block_id)
     if ev is not None:
         ev["status"] = status
         ev["message"] = message
+        if claim_count is not None:
+            ev["claim_count"] = claim_count
 
 
 @router.post('/audio-block', status_code=202, response_model=ProcessingResponse)
@@ -170,7 +172,7 @@ async def process_audio_pipeline_async(block_id: str, audio_path: str, session_i
 
         if not claims:
             logger.info(f"[{block_id}] No claims extracted, skipping")
-            _set_event_status(block_id, "done", "Keine Claims gefunden")
+            _set_event_status(block_id, "done", "Keine Claims gefunden", claim_count=0)
             _cleanup_audio_file(block_id)
             return
 
@@ -210,7 +212,7 @@ async def process_audio_pipeline_async(block_id: str, audio_path: str, session_i
             await process_fact_checks_async(selected, session_id, ep_context, placeholder_ids=placeholder_ids)
 
         logger.info(f"[{block_id}] Pipeline complete. {len(claims)} claims added to pending.")
-        _set_event_status(block_id, "done", f"{len(claims)} Claims extrahiert")
+        _set_event_status(block_id, "done", f"{len(claims)} Claims extrahiert", claim_count=len(claims))
         _cleanup_audio_file(block_id)
 
     except Exception:

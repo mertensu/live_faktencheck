@@ -2476,6 +2476,7 @@
 .review-stage { min-height: 220px; display: flex; align-items: center; justify-content: center; }
 .review-auto-status,
 .review-waiting { text-align: center; color: #6b7280; font-size: 1.05rem; padding: 2rem 1rem; }
+.review-empty-block { text-align: center; color: #9ca3af; font-size: 1rem; font-style: italic; padding: 2rem 1rem; }
 .review-extracting {
   display: inline-flex; align-items: center; gap: 0.5rem;
   color: #6b7280; font-size: 1.05rem; padding: 2rem 1rem;
