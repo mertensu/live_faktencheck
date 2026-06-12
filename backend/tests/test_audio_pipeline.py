@@ -20,7 +20,7 @@ async def test_last_transcript_tail_stored_with_resolved_names(mock_audio_file):
     resolved_transcript = "Anna Müller: Die Wirtschaft wächst.\nKarl Schmidt: Das stimmt nicht."
 
     mock_transcription = MagicMock()
-    mock_transcription.transcribe = MagicMock(return_value=raw_transcript)
+    mock_transcription.transcribe = MagicMock(return_value=(raw_transcript, 30.0))
 
     mock_extractor = MagicMock()
     mock_extractor.resolve_labels_async = AsyncMock(return_value=resolved_transcript)
@@ -40,7 +40,7 @@ async def test_last_transcript_tail_stored_with_resolved_names(mock_audio_file):
 
     with patch("backend.routers.audio.get_transcription_service", return_value=mock_transcription), \
          patch("backend.routers.audio.get_claim_extractor", return_value=mock_extractor):
-        await process_audio_pipeline_async("test-block", mock_audio_file, "test-session")
+        await process_audio_pipeline_async("test-block", mock_audio_file, "test-session", None)
 
     # Tail must contain resolved names, not generic labels
     assert state.last_transcript_tail is not None
@@ -55,7 +55,7 @@ async def test_previous_block_ending_passed_with_resolved_names(mock_audio_file)
     resolved_transcript = "Karl Schmidt: Neuer Block."
 
     mock_transcription = MagicMock()
-    mock_transcription.transcribe = MagicMock(return_value=raw_transcript)
+    mock_transcription.transcribe = MagicMock(return_value=(raw_transcript, 30.0))
 
     mock_extractor = MagicMock()
     mock_extractor.resolve_labels_async = AsyncMock(return_value=resolved_transcript)
@@ -75,7 +75,7 @@ async def test_previous_block_ending_passed_with_resolved_names(mock_audio_file)
 
     with patch("backend.routers.audio.get_transcription_service", return_value=mock_transcription), \
          patch("backend.routers.audio.get_claim_extractor", return_value=mock_extractor):
-        await process_audio_pipeline_async("test-block-2", mock_audio_file, "test-session-2")
+        await process_audio_pipeline_async("test-block-2", mock_audio_file, "test-session-2", None)
 
     # extract_claims_async must receive the previous resolved tail
     call_kwargs = mock_extractor.extract_claims_async.call_args.kwargs
@@ -85,7 +85,7 @@ async def test_previous_block_ending_passed_with_resolved_names(mock_audio_file)
 async def test_conversation_type_passed_to_extractor(mock_audio_file):
     """The session's conversation_type reaches resolve + extract."""
     mock_transcription = MagicMock()
-    mock_transcription.transcribe = MagicMock(return_value="Sprecher A: Test.")
+    mock_transcription.transcribe = MagicMock(return_value=("Sprecher A: Test.", 30.0))
 
     mock_extractor = MagicMock()
     mock_extractor.resolve_labels_async = AsyncMock(return_value="Anna: Test.")
@@ -101,7 +101,7 @@ async def test_conversation_type_passed_to_extractor(mock_audio_file):
 
     with patch("backend.routers.audio.get_transcription_service", return_value=mock_transcription), \
          patch("backend.routers.audio.get_claim_extractor", return_value=mock_extractor):
-        await process_audio_pipeline_async("ct-block", mock_audio_file, "ct-sess")
+        await process_audio_pipeline_async("ct-block", mock_audio_file, "ct-sess", None)
 
     assert mock_extractor.resolve_labels_async.call_args.kwargs.get("conversation_type") == "private"
     assert mock_extractor.extract_claims_async.call_args.kwargs.get("conversation_type") == "private"
@@ -110,7 +110,7 @@ async def test_conversation_type_passed_to_extractor(mock_audio_file):
 async def test_keyterms_derived_from_guests_passed_to_transcription(mock_audio_file):
     """The session's guests become keyterms boosted by the transcription model."""
     mock_transcription = MagicMock()
-    mock_transcription.transcribe = MagicMock(return_value="Sprecher A: Test.")
+    mock_transcription.transcribe = MagicMock(return_value=("Sprecher A: Test.", 30.0))
 
     mock_extractor = MagicMock()
     mock_extractor.resolve_labels_async = AsyncMock(return_value="Heidi Reichinnek: Test.")
@@ -127,9 +127,30 @@ async def test_keyterms_derived_from_guests_passed_to_transcription(mock_audio_f
 
     with patch("backend.routers.audio.get_transcription_service", return_value=mock_transcription), \
          patch("backend.routers.audio.get_claim_extractor", return_value=mock_extractor):
-        await process_audio_pipeline_async("kt-block", mock_audio_file, "kt-sess")
+        await process_audio_pipeline_async("kt-block", mock_audio_file, "kt-sess", None)
 
     # transcribe(audio_data, keyterms) — keyterms is the 2nd positional arg
     call = mock_transcription.transcribe.call_args
     keyterms = call.args[1] if len(call.args) > 1 else call.kwargs.get("keyterms")
     assert keyterms == ["Heidi Reichinnek", "Linke", "Caren Miosga", "Moderatorin"]
+
+
+async def test_pipeline_increments_audio_seconds_for_code(mock_audio_file):
+    """The transcribed audio_duration is added to the code's lifetime budget."""
+    mock_transcription = MagicMock()
+    mock_transcription.transcribe = MagicMock(return_value=("Sprecher A: Test.", 47.0))
+
+    mock_extractor = MagicMock()
+    mock_extractor.resolve_labels_async = AsyncMock(return_value="Anna: Test.")
+    mock_extractor.extract_claims_async = AsyncMock(return_value=[])
+
+    state.last_transcript_tail = None
+    state.pipeline_events["inc-block"] = {"status": "processing"}
+    await state.get_db().add_code("inc-code", "ann")
+    await state.get_db().add_session({"session_id": "inc-sess", "title": "t", "guests": [], "context": ""})
+
+    with patch("backend.routers.audio.get_transcription_service", return_value=mock_transcription), \
+         patch("backend.routers.audio.get_claim_extractor", return_value=mock_extractor):
+        await process_audio_pipeline_async("inc-block", mock_audio_file, "inc-sess", "inc-code")
+
+    assert (await state.get_db().get_code("inc-code"))["audio_seconds_used"] == 47
