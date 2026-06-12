@@ -149,4 +149,24 @@ describe('useAudioRecorder: auto-send / sendNow / failures / lock', () => {
     act(() => { result.current.setBlockSeconds(60) })   // ignored while recording
     expect(result.current.blockSeconds).toBe(180)
   })
+
+  it('stops recording and reports quota error when a block is rejected with 429', async () => {
+    api.sendAudioBlock.mockRejectedValueOnce(Object.assign(new Error('quota'), { isQuota: true }))
+    const { result } = renderHook(() => useAudioRecorder('sess-1'))
+    await act(async () => { await result.current.start() })
+
+    await act(async () => { await result.current.sendNow() })   // triggers flush -> rejected
+
+    expect(result.current.status).toBe('idle')          // recorder stopped
+    expect(result.current.error).toMatch(/Kontingent/)
+    expect(tracks[0].stop).toHaveBeenCalled()           // mic released
+  })
+
+  it('exposes remaining seconds from a successful block', async () => {
+    api.sendAudioBlock.mockResolvedValueOnce({ status: 'processing', remaining_seconds: 90 })
+    const { result } = renderHook(() => useAudioRecorder('sess-1'))
+    await act(async () => { await result.current.start() })
+    await act(async () => { await result.current.sendNow() })
+    expect(result.current.remainingSeconds).toBe(90)
+  })
 })

@@ -9,6 +9,7 @@ const MSG = {
   noMic: 'Kein Mikrofon gefunden',
   sendFailed: 'Block konnte nicht gesendet werden',
   unsupported: 'Audioaufnahme wird von diesem Browser nicht unterstützt',
+  quota: 'Audio-Kontingent für diesen Code aufgebraucht',
 }
 
 export function useAudioRecorder(sessionId) {
@@ -17,6 +18,7 @@ export function useAudioRecorder(sessionId) {
   const [blocksSent, setBlocksSent] = useState(0)
   const [error, setError] = useState(null)
   const [blockSeconds, setBlockSecondsState] = useState(DEFAULT_BLOCK_SECONDS)
+  const [remainingSeconds, setRemainingSeconds] = useState(null)
 
   const streamRef = useRef(null)
   const recorderRef = useRef(null)
@@ -64,14 +66,32 @@ export function useAudioRecorder(sessionId) {
     setElapsed(0)
 
     try {
-      await sendAudioBlock(sessionId, blob)
+      const data = await sendAudioBlock(sessionId, blob)
       setBlocksSent((n) => n + 1)
       setError(null)   // a recovered send clears a prior send-failure indicator
-    } catch {
+      if (data && data.remaining_seconds !== undefined) {
+        setRemainingSeconds(data.remaining_seconds)
+      }
+    } catch (e) {
+      if (e && e.isQuota) {
+        // Budget exhausted: stop the session and surface a clear message.
+        setError(MSG.quota)
+        setRemainingSeconds(0)
+        stoppingRef.current = true
+        clearTimers()
+        if (streamRef.current) {
+          streamRef.current.getTracks().forEach((t) => t.stop())
+          streamRef.current = null
+        }
+        recorderRef.current = null
+        setElapsed(0)
+        setStatus('idle')
+        return
+      }
       // One bad block must not kill the session: surface, keep recording.
       setError(MSG.sendFailed)
     }
-  }, [sessionId, startRecorder])
+  }, [sessionId, startRecorder, clearTimers])
 
   const start = useCallback(async (overrideSeconds) => {
     if (typeof MediaRecorder === 'undefined') {
@@ -123,6 +143,7 @@ export function useAudioRecorder(sessionId) {
   return {
     status, elapsed, blocksSent, error,
     blockSeconds, setBlockSeconds,
+    remainingSeconds,
     start, sendNow, stop,
   }
 }
