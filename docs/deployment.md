@@ -70,6 +70,32 @@ in place:
 or set `ACCESS_CODES=ulf:SOME_SECRET:unlimited` in `/opt/fact_check/.env` before the **first**
 seeding of a fresh codes table (seeding is idempotent and will not re-run on a populated table).
 
+### Live-Audio-Limit (Phase 3b)
+
+Live audio (`POST /api/audio-block`) is metered by **real transcribed seconds** against a
+lifetime cap per code, stored on the `codes` table (`audio_seconds_used` / `audio_seconds_limit`,
+`NULL` = unlimited). This is independent of the Quick Check quota.
+
+- `LIVE_AUDIO_LIMIT_MINUTES` (default `5`) sets the cap applied at **seeding** as
+  `audio_seconds_limit = minutes * 60`. Set it in `/opt/fact_check/.env` before the first seed.
+- The `ACCESS_CODES` syntax is **unchanged** (no fourth field). Per-code overrides are DB edits.
+- **Fail-closed migration:** the migration backfills **existing** codes to `300` s (5 min) — not
+  unlimited. After deploy every old code is capped at 5 minutes of live audio.
+- **Owner-code wrinkle (same as Quick Check):** a code already seeded as `unlimited` is **not**
+  updated to `NULL` by the idempotent `INSERT OR IGNORE` seed and will sit at the 300 s backfill.
+  To make it truly unlimited again:
+
+      sqlite3 /opt/fact_check/backend/data/factcheck.db "UPDATE codes SET audio_seconds_limit = NULL WHERE name = 'ulf';"
+
+- Per-code custom cap (e.g. 30 minutes):
+
+      sqlite3 /opt/fact_check/backend/data/factcheck.db "UPDATE codes SET audio_seconds_limit = 1800 WHERE code = 'thecode';"
+
+- The lifetime counter is deletion-proof: removing fact-checks or sessions does **not** refund
+  audio seconds. Reset = DB edit (`UPDATE codes SET audio_seconds_used = 0 WHERE code = '…'`).
+- `MAX_AUDIO_BLOCK_BYTES` (default ~25 MB) bounds a single uploaded block (returns `413`); raise
+  only if legitimate blocks ever exceed it. The browser recorder sends ~60–180 s blocks, well under.
+
 ## Provider budget caps (manual — do this once)
 
 The access gate is the primary control; provider-side spend caps are the outer ceiling that
