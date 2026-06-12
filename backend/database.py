@@ -96,12 +96,14 @@ class Database:
             );
 
             CREATE TABLE IF NOT EXISTS codes (
-                code              TEXT PRIMARY KEY,
-                name              TEXT NOT NULL,
-                active            INTEGER NOT NULL DEFAULT 1,
-                created_at        TEXT NOT NULL,
-                quick_checks_used INTEGER NOT NULL DEFAULT 0,
-                quick_check_limit INTEGER DEFAULT 3
+                code                TEXT PRIMARY KEY,
+                name                TEXT NOT NULL,
+                active              INTEGER NOT NULL DEFAULT 1,
+                created_at          TEXT NOT NULL,
+                quick_checks_used   INTEGER NOT NULL DEFAULT 0,
+                quick_check_limit   INTEGER DEFAULT 3,
+                audio_seconds_used  INTEGER NOT NULL DEFAULT 0,
+                audio_seconds_limit INTEGER DEFAULT 300
             );
         """)
         await self.db.commit()
@@ -122,6 +124,18 @@ class Database:
         for migration in [
             "ALTER TABLE codes ADD COLUMN quick_checks_used INTEGER NOT NULL DEFAULT 0",
             "ALTER TABLE codes ADD COLUMN quick_check_limit INTEGER DEFAULT 3",
+        ]:
+            try:
+                await self.db.execute(migration)
+                await self.db.commit()
+            except Exception:
+                pass  # Column already exists
+
+        # Migration: add Live-Audio quota columns to existing codes tables.
+        # DEFAULT 300 backfills existing codes to 5 min (fail-closed) — NOT NULL/unlimited.
+        for migration in [
+            "ALTER TABLE codes ADD COLUMN audio_seconds_used INTEGER NOT NULL DEFAULT 0",
+            "ALTER TABLE codes ADD COLUMN audio_seconds_limit INTEGER DEFAULT 300",
         ]:
             try:
                 await self.db.execute(migration)
@@ -359,16 +373,24 @@ class Database:
     # Access Codes CRUD
     # =========================================================================
 
-    async def add_code(self, code: str, name: str, quick_check_limit: int | None = 3) -> None:
+    async def add_code(
+        self,
+        code: str,
+        name: str,
+        quick_check_limit: int | None = 3,
+        audio_seconds_limit: int | None = 300,
+    ) -> None:
         """Insert an access code (no-op if the code already exists).
 
         quick_check_limit: lifetime Quick Check cap; None means unlimited.
+        audio_seconds_limit: lifetime live-audio cap in seconds; None means unlimited.
         """
         from datetime import datetime
         await self.db.execute(
-            "INSERT OR IGNORE INTO codes (code, name, active, created_at, quick_check_limit) "
-            "VALUES (?, ?, 1, ?, ?)",
-            (code, name, datetime.now().isoformat(), quick_check_limit),
+            "INSERT OR IGNORE INTO codes "
+            "(code, name, active, created_at, quick_check_limit, audio_seconds_limit) "
+            "VALUES (?, ?, 1, ?, ?, ?)",
+            (code, name, datetime.now().isoformat(), quick_check_limit, audio_seconds_limit),
         )
         await self.db.commit()
 
@@ -404,6 +426,14 @@ class Database:
         await self.db.execute(
             "UPDATE codes SET quick_checks_used = quick_checks_used + 1 WHERE code = ?",
             (code,),
+        )
+        await self.db.commit()
+
+    async def increment_audio_seconds(self, code: str, seconds: int) -> None:
+        """Add transcribed audio seconds to a code's lifetime counter."""
+        await self.db.execute(
+            "UPDATE codes SET audio_seconds_used = audio_seconds_used + ? WHERE code = ?",
+            (seconds, code),
         )
         await self.db.commit()
 
