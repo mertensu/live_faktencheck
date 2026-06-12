@@ -12,6 +12,7 @@ export function RecordingBar({ recorder }) {
   const {
     status, elapsed, blocksSent, error,
     blockSeconds, setBlockSeconds, start, sendNow, stop,
+    remainingSeconds,
   } = recorder
 
   const isRecording = status === 'recording'
@@ -31,6 +32,11 @@ export function RecordingBar({ recorder }) {
             </select>
           </label>
           <span className="recording-bar-count">Blöcke gesendet: {blocksSent}</span>
+          {remainingSeconds != null && (
+            <span className="recording-bar-remaining">
+              noch {formatElapsed(Math.max(remainingSeconds, 0))} übrig
+            </span>
+          )}
           <button className="recording-bar-send" onClick={() => sendNow()}>Senden</button>
           <button className="recording-bar-stop" onClick={() => stop()}>Stop</button>
         </>
