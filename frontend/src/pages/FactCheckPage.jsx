@@ -5,6 +5,7 @@ import { SpeakerColumns } from '../components/SpeakerColumns'
 import { BackendErrorDisplay } from '../components/BackendErrorDisplay'
 import { ClaimDetailOverlay } from '../components/ClaimDetailOverlay'
 import { RecordingBar } from '../components/RecordingBar'
+import { ReviewView } from '../components/ReviewView'
 
 // Default speakers as fallback
 const DEFAULT_SPEAKERS = []
@@ -65,6 +66,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
   const [speakers, setSpeakers] = useState(DEFAULT_SPEAKERS)  // Load config from backend
   const [displayTitle, setDisplayTitle] = useState(showName)  // Full show title (updated from config)
   const [backendError, setBackendError] = useState(null)  // Backend connection error
+  const [initialAutoCheck, setInitialAutoCheck] = useState(false)  // Per-session auto-check flag from config
 
   // Load episode configuration from backend
   useEffect(() => {
@@ -89,6 +91,9 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
             setDisplayTitle(`${config.show_name} vom ${config.date}`)
           } else if (config.show_name) {
             setDisplayTitle(config.show_name)
+          }
+          if (typeof config.auto_check === 'boolean') {
+            setInitialAutoCheck(config.auto_check)
           }
         } else {
           debug.warn(`Could not load config for ${key}, using fallback`)
@@ -648,7 +653,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
               className="admin-toggle"
               onClick={() => setIsAdminMode(!isAdminMode)}
             >
-              {isAdminMode ? 'Normal-Modus' : 'Admin-Modus'}
+              {isAdminMode ? 'Zurück' : '⚙ Pro'}
             </button>
           )}
         </div>
@@ -679,9 +684,9 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
         ) : (
           <>
             <BackendErrorDisplay error={backendError} />
-            <SpeakerColumns
-              speakers={speakers}
-              groupedBySpeaker={groupedBySpeaker}
+            <ReviewView
+              sessionId={episodeKey}
+              initialAutoCheck={initialAutoCheck}
               onSelect={setSelectedClaim}
             />
             {selectedClaim && (
