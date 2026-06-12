@@ -1,18 +1,18 @@
-import { useAudioRecorder } from '../hooks/useAudioRecorder'
-
 const BLOCK_OPTIONS = [60, 120, 180]
 
-function formatElapsed(totalSeconds) {
+export function formatElapsed(totalSeconds) {
   const m = String(Math.floor(totalSeconds / 60)).padStart(2, '0')
   const s = String(totalSeconds % 60).padStart(2, '0')
   return `${m}:${s}`
 }
 
-export function RecordingBar({ sessionId }) {
+// Presentational: the recorder state/controls are owned by FactCheckPage (so
+// recording survives switching between the Review and Pro views) and passed in.
+export function RecordingBar({ recorder }) {
   const {
     status, elapsed, blocksSent, error,
     blockSeconds, setBlockSeconds, start, sendNow, stop,
-  } = useAudioRecorder(sessionId)
+  } = recorder
 
   const isRecording = status === 'recording'
   const isRequesting = status === 'requesting'

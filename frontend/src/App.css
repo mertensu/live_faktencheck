@@ -2476,6 +2476,26 @@
 .review-stage { min-height: 220px; display: flex; align-items: center; justify-content: center; }
 .review-auto-status,
 .review-waiting { text-align: center; color: #6b7280; font-size: 1.05rem; padding: 2rem 1rem; }
+.review-extracting {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  color: #6b7280; font-size: 1.05rem; padding: 2rem 1rem;
+}
+.review-extracting-gear {
+  display: inline-block; animation: review-gear-spin 1.6s linear infinite;
+}
+@keyframes review-gear-spin { to { transform: rotate(360deg); } }
+
+/* Initial start screen: just an info note + the start button. */
+.review-start {
+  display: flex; flex-direction: column; align-items: center; gap: 1.25rem;
+  text-align: center; padding: 3rem 1rem;
+}
+.review-start-info { color: #6b7280; font-size: 1rem; line-height: 1.5; max-width: 30rem; margin: 0; }
+.review-start-btn {
+  padding: 0.9rem 1.75rem; border: none; border-radius: 14px;
+  background: #2563eb; color: #fff; font-size: 1.05rem; font-weight: 700; cursor: pointer;
+}
+.review-start-btn:active { background: #1d4ed8; }
 
 .swipe-card-wrap { width: 100%; }
 .swipe-remaining { text-align: center; color: #6b7280; font-size: 0.85rem; margin: 0 0 0.5rem; }
@@ -2507,3 +2527,21 @@
 .results-feed-item { display: flex; flex-direction: column; gap: 0.25rem; }
 .results-feed-speaker { font-weight: 700; font-size: 0.9rem; color: #374151; }
 .results-empty { text-align: center; color: #6b7280; margin-top: 1.5rem; }
+
+/* Recording indicator in the page header (Review view) */
+.factcheck-header-actions { display: inline-flex; align-items: center; gap: 0.75rem; }
+.header-rec {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  font-weight: 700; font-size: 0.9rem; color: #b91c1c;
+}
+.header-rec-dot { animation: header-rec-blink 1.2s steps(1) infinite; }
+@keyframes header-rec-blink { 50% { opacity: 0.25; } }
+.header-rec-stop {
+  margin-left: 0.25rem; padding: 0.25rem 0.6rem; border: none; border-radius: 8px;
+  background: #fee2e2; color: #b91c1c; font-weight: 600; cursor: pointer;
+}
+.header-rec-start {
+  padding: 0.35rem 0.75rem; border: none; border-radius: 8px;
+  background: #2563eb; color: #fff; font-weight: 600; cursor: pointer;
+}
+.header-rec-start:disabled { opacity: 0.6; cursor: default; }

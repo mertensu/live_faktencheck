@@ -3,11 +3,17 @@ import { BACKEND_URL, N8N_VERIFIED_WEBHOOK, authHeaders, safeJsonParse, debug } 
 import { AdminView } from '../components/AdminView'
 import { BackendErrorDisplay } from '../components/BackendErrorDisplay'
 import { ClaimDetailOverlay } from '../components/ClaimDetailOverlay'
-import { RecordingBar } from '../components/RecordingBar'
+import { RecordingBar, formatElapsed } from '../components/RecordingBar'
 import { ReviewView } from '../components/ReviewView'
+import { useAudioRecorder } from '../hooks/useAudioRecorder'
 
 // Default speakers as fallback
 const DEFAULT_SPEAKERS = []
+
+// Content identity of a claim (speaker + text). The backend keeps decided
+// claims in the pending store, so a decision made anywhere (Review or Pro) is
+// reconciled by content, not by positional block-index id.
+const claimKey = (c) => `${(c.name || '').trim()} ${(c.claim || '').trim()}`
 
 // Helper: Flatten pending blocks into chronologically sorted claims
 const flattenPendingBlocks = (blocks) => {
@@ -66,6 +72,16 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
   const [displayTitle, setDisplayTitle] = useState(showName)  // Full show title (updated from config)
   const [backendError, setBackendError] = useState(null)  // Backend connection error
   const [initialAutoCheck, setInitialAutoCheck] = useState(false)  // Per-session auto-check flag from config
+
+  // Recorder lives at page level so recording survives switching Review <-> Pro.
+  const recorder = useAudioRecorder(episodeKey)
+  const isRecording = recorder.status === 'recording'
+  const isStarting = recorder.status === 'requesting'
+  // The full-screen "Aufnahme starten" splash is a one-time onboarding screen:
+  // once recording has started, we never bounce back to it (stopping keeps the
+  // review UI; re-recording is a small header control instead).
+  const [everRecorded, setEverRecorded] = useState(false)
+  useEffect(() => { if (isRecording) setEverRecorded(true) }, [isRecording])
 
   // Load episode configuration from backend
   useEffect(() => {
@@ -264,12 +280,21 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
         const data = await safeJsonParse(response, 'Error loading pending claims')
         debug.log(`Loaded pending blocks: ${data.length}`, data)
 
-        // Flatten blocks into claims, excluding those already staged or sent
+        // Flatten blocks into claims, excluding those already staged, sent or
+        // discarded. Staging is in-session (positional id); sent/discarded are
+        // reconciled by content so decisions made in Review (which only writes a
+        // fact-check row, leaving the claim in the pending store) are honored.
         const flatClaims = flattenPendingBlocks(data)
         const stagedIds = new Set(stagedClaimsRef.current.map(c => c.id))
         const sentIds = new Set(sentClaimsRef.current.map(c => c.originalId || c.id))
         const discardedIds = new Set(discardedClaimsRef.current.map(c => c.id))
-        const newPending = flatClaims.filter(c => !stagedIds.has(c.id) && !sentIds.has(c.id) && !discardedIds.has(c.id))
+        const decidedKeys = new Set([
+          ...sentClaimsRef.current.map(claimKey),
+          ...discardedClaimsRef.current.map(claimKey),
+        ])
+        const newPending = flatClaims.filter(c =>
+          !stagedIds.has(c.id) && !sentIds.has(c.id) && !discardedIds.has(c.id) && !decidedKeys.has(claimKey(c))
+        )
         const currentEdits = localEditsRef.current
         setPendingClaims(prev => {
           // Preserve locally-added resend claims (not from backend)
@@ -298,7 +323,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
                   timestamp: block.timestamp,
                   info: block.info || block.headline || ''
                 }
-                return filteredIds.has(id) ? null : (currentEdits[id] ? { ...base, ...currentEdits[id] } : base)
+                return (filteredIds.has(id) || decidedKeys.has(claimKey(base))) ? null : (currentEdits[id] ? { ...base, ...currentEdits[id] } : base)
               })
               .filter(Boolean)
             return enrichedClaims.length > 0
@@ -633,21 +658,46 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
           <div>
             <h1>Fakten-Check - {displayTitle}</h1>
           </div>
-          {showAdminMode && (
-            <button
-              className="admin-toggle"
-              onClick={() => setIsAdminMode(!isAdminMode)}
-            >
-              {isAdminMode ? 'Zurück' : '⚙ Pro'}
-            </button>
-          )}
+          <div className="factcheck-header-actions">
+            {isRecording && !isAdminMode && (
+              <span className="header-rec" role="status">
+                <span className="header-rec-dot" aria-hidden="true">●</span>
+                REC {formatElapsed(recorder.elapsed)}
+                <button
+                  type="button"
+                  className="header-rec-stop"
+                  onClick={() => recorder.stop()}
+                >
+                  Stop
+                </button>
+              </span>
+            )}
+            {!isRecording && everRecorded && !isAdminMode && (
+              <button
+                type="button"
+                className="header-rec-start"
+                onClick={() => recorder.start(60)}
+                disabled={isStarting}
+              >
+                {isStarting ? 'Mikrofon…' : '⏺ Aufnahme'}
+              </button>
+            )}
+            {showAdminMode && (
+              <button
+                className="admin-toggle"
+                onClick={() => setIsAdminMode(!isAdminMode)}
+              >
+                {isAdminMode ? 'Zurück' : '⚙ Pro'}
+              </button>
+            )}
+          </div>
         </div>
       </header>
 
       <main className="main-content">
         {isAdminMode ? (
           <>
-            <RecordingBar sessionId={episodeKey} />
+            <RecordingBar recorder={recorder} />
             <AdminView
               pendingClaims={pendingClaims}
               pendingBlocks={pendingBlocks}
@@ -673,6 +723,11 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
               sessionId={episodeKey}
               initialAutoCheck={initialAutoCheck}
               onSelect={setSelectedClaim}
+              isRecording={isRecording}
+              isStarting={isStarting}
+              everRecorded={everRecorded}
+              onStartRecording={() => recorder.start(60)}
+              recordingError={recorder.error}
             />
             {selectedClaim && (
               <ClaimDetailOverlay

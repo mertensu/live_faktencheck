@@ -73,9 +73,13 @@ export function useAudioRecorder(sessionId) {
     }
   }, [sessionId, startRecorder])
 
-  const start = useCallback(async () => {
+  const start = useCallback(async (overrideSeconds) => {
     if (typeof MediaRecorder === 'undefined') {
       setStatus('error'); setError(MSG.unsupported); return
+    }
+    if (typeof overrideSeconds === 'number') {
+      blockSecondsRef.current = overrideSeconds
+      setBlockSecondsState(overrideSeconds)
     }
     setStatus('requesting'); setError(null)
     try {

@@ -199,3 +199,24 @@ export async function fetchFactChecks(sessionId) {
   if (!res.ok) return []
   return safeJsonParse(res, 'fetchFactChecks')
 }
+
+// Fetch discarded claims for a session (open GET). Used to keep already-decided
+// claims out of the swipe queue across reloads / view switches, since discards
+// are excluded from the default fact-checks response.
+export async function fetchDiscardedClaims(sessionId) {
+  const res = await fetch(`${BACKEND_URL}/api/fact-checks?session_id=${encodeURIComponent(sessionId)}&status=discarded`, {
+    headers: authHeaders(),
+  })
+  if (!res.ok) return []
+  return safeJsonParse(res, 'fetchDiscardedClaims')
+}
+
+// Fetch in-flight pipeline events (audio block -> transcription -> extraction).
+// Returns events for all sessions; filter by session_id on the caller side.
+export async function fetchPipelineStatus() {
+  const res = await fetch(`${BACKEND_URL}/api/pipeline-status`, {
+    headers: authHeaders(),
+  })
+  if (!res.ok) return []
+  return safeJsonParse(res, 'fetchPipelineStatus')
+}
