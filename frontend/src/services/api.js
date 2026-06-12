@@ -139,9 +139,11 @@ export async function sendAudioBlock(sessionId, blob) {
   })
   const data = await safeJsonParse(res, 'sendAudioBlock')
   if (!res.ok) {
-    throw new Error(data?.detail || `sendAudioBlock failed (${res.status})`)
+    const err = new Error(data?.detail || `sendAudioBlock failed (${res.status})`)
+    if (res.status === 429) err.isQuota = true   // budget exhausted -> caller stops recording
+    throw err
   }
-  return data  // { status, message, block_id }
+  return data  // { status, message, block_id, remaining_seconds }
 }
 
 // Toggle the per-session auto-check flag (Review view "Auto-Prüfung").

@@ -46,6 +46,36 @@ describe('sendAudioBlock', () => {
   })
 })
 
+describe('sendAudioBlock quota handling', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    global.fetch = vi.fn()
+  })
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('throws a quota-flagged error on 429', async () => {
+    global.fetch.mockResolvedValue({
+      ok: false, status: 429, url: '',
+      headers: { get: () => 'application/json' },
+      text: async () => JSON.stringify({ detail: 'Audio-Kontingent aufgebraucht' }),
+    })
+    await expect(sendAudioBlock('s1', new Blob(['x'])))
+      .rejects.toMatchObject({ isQuota: true })
+  })
+
+  it('returns remaining_seconds on success', async () => {
+    global.fetch.mockResolvedValue({
+      ok: true, status: 202, url: '',
+      headers: { get: () => 'application/json' },
+      text: async () => JSON.stringify({ status: 'processing', block_id: 'b1', remaining_seconds: 180 }),
+    })
+    const data = await sendAudioBlock('s1', new Blob(['x']))
+    expect(data.remaining_seconds).toBe(180)
+  })
+})
+
 describe('claim + auto-check helpers', () => {
   beforeEach(() => { localStorage.clear(); global.fetch = vi.fn() })
   afterEach(() => { vi.restoreAllMocks() })
