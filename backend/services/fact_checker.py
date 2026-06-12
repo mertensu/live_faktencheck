@@ -6,7 +6,6 @@ separate self-critique agent that annotates the verdict without gating it.
 """
 
 import os
-import json
 import asyncio
 import logging
 from typing import List, Dict, Any, Literal
@@ -78,10 +77,8 @@ class FactChecker:
         # Bound the agent loop. Env name kept for backwards compatibility with existing .env/tests.
         self.request_limit = int(os.getenv("FACT_CHECK_RECURSION_LIMIT", "35"))
 
-        # Bake the input schema into the prompt; {current_date} is filled per run.
-        prompt = load_prompt("fact_checker.md")
-        input_schema = json.dumps(ClaimInput.model_json_schema(), indent=2, ensure_ascii=False)
-        self.prompt_template = prompt.replace("{input_schema}", input_schema)
+        # {current_date} is filled per run; input fields are described in the prompt itself.
+        self.prompt_template = load_prompt("fact_checker.md")
 
         self.agent = Agent(
             build_model(self.model_name, self.fallback_model_name),
@@ -103,11 +100,10 @@ class FactChecker:
         if self.self_critique_enabled:
             try:
                 critique_prompt = load_prompt("self_critique.md")
-                critique_schema = json.dumps(SelfCritiqueInput.model_json_schema(), indent=2, ensure_ascii=False)
                 self.critique_agent = Agent(
                     build_model(self.critique_model_name),
                     output_type=SelfCritiqueResponse,
-                    instructions=critique_prompt.replace("{input_schema}", critique_schema),
+                    instructions=critique_prompt,
                     model_settings=MODEL_SETTINGS,
                 )
             except FileNotFoundError:

@@ -10,7 +10,8 @@ Du identifizierst im folgenden Transkript generische Sprecherbezeichnungen (z. B
 </Regeln>
 
 <user_input>
-Der Benutzer übergibt die Eingabe als JSON-Objekt mit folgendem Schema:
-
-{input_schema}
+Der Benutzer übergibt die Eingabe als JSON-Objekt mit den Feldern:
+- conversation_type: Art des Gesprächs ('debate', 'interview' oder 'private')
+- guests: Teilnehmer des Gesprächs
+- transcript: Transkript mit generischen Sprecherbezeichnungen
 </user_input>

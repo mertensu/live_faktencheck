@@ -32,9 +32,12 @@ Wenn ein Sprecher mehrere Fakten nennt, die nicht kausal verknüpft sind, trenne
 </Regeln>
 
 <user_input>
-Der Benutzer übergibt die Eingabe als JSON-Objekt mit folgendem Schema:
-
-{input_schema}
+Der Benutzer übergibt die Eingabe als JSON-Objekt mit den Feldern:
+- conversation_type: Art des Gesprächs ('debate', 'interview' oder 'private')
+- guests: Teilnehmer des Gesprächs
+- context: Thematischer Hintergrund des Gesprächs
+- transcript: Das zu analysierende Transkript
+- previous_block_ending: Letzte Zeilen des vorherigen Transkriptblocks (optional, nur zur Kontinuität)
 
 Wenn `previous_block_ending` vorhanden ist, verwende es nur, um Verweise am Anfang des aktuellen Transkripts aufzulösen – extrahiere keine Aussagen daraus.
 </user_input>

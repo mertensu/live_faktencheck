@@ -20,7 +20,8 @@ Gib immer eine kurze Erklärung auf Deutsch. Fasse in einem Satz zusammen, warum
 </Regeln>
 
 <user_input>
-Der Benutzer übergibt die Eingabe als JSON-Objekt mit folgendem Schema:
-
-{input_schema}
+Der Benutzer übergibt die Eingabe als JSON-Objekt mit den Feldern:
+- behauptung: Die überprüfte Behauptung
+- urteil: Das Konsistenz-Urteil des Faktencheckers (hoch / niedrig / unklar / keine Datenlage)
+- begruendung: Die Begründung des Faktencheckers
 </user_input>

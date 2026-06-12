@@ -6,7 +6,6 @@ plus a selection agent for autopilot mode. No tools, no loop.
 """
 
 import os
-import json
 import asyncio
 import logging
 from dataclasses import dataclass
@@ -76,13 +75,11 @@ class ClaimExtractor:
         self.model_name = os.getenv("GEMINI_MODEL_CLAIM_EXTRACTION", DEFAULT_MODEL)
         model = build_model(self.model_name)
 
-        # Bake the input schema into each prompt (placeholder {input_schema}).
-        prompt = load_prompt("claim_extraction.md")
-        extraction_schema = json.dumps(ClaimExtractionInput.model_json_schema(), indent=2, ensure_ascii=False)
+        # Input fields are described in the prompts themselves; no schema baking needed.
         self.claim_extractor = Agent(
             model,
             output_type=ClaimList,
-            instructions=prompt.replace("{input_schema}", extraction_schema),
+            instructions=load_prompt("claim_extraction.md"),
             model_settings=MODEL_SETTINGS,
         )
 
@@ -102,11 +99,10 @@ class ClaimExtractor:
         # Speaker label resolution agent (optional — only if prompt exists).
         try:
             sl_prompt = load_prompt("speaker_labels.md")
-            sl_schema = json.dumps(SpeakerLabelsInput.model_json_schema(), indent=2, ensure_ascii=False)
             self.speaker_resolver = Agent(
                 model,
                 output_type=ResolvedTranscript,
-                instructions=sl_prompt.replace("{input_schema}", sl_schema),
+                instructions=sl_prompt,
                 model_settings=MODEL_SETTINGS,
             )
         except FileNotFoundError:
