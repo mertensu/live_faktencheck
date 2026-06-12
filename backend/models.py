@@ -82,7 +82,6 @@ class CreateSessionRequest(BaseModel):
     date: str = ""
     guests: List[str] = []
     context: str = ""
-    reference_links: List[str] = []
     type: str = "show"
     conversation_type: str = "debate"
 
@@ -145,7 +144,6 @@ class SessionResponse(BaseModel):
     date: str = ""
     guests: List[str] = []
     context: str = ""
-    reference_links: List[Any] = []
     type: str = "show"
     conversation_type: str = "debate"
     auto_check: bool = False

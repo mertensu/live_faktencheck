@@ -25,14 +25,12 @@ async def test_add_and_get_session(db):
         "date": "9. Juni 2026",
         "guests": ["Sandra Maischberger (Moderatorin)", "Gast (CDU)"],
         "context": "Testkontext",
-        "reference_links": ["https://example.com"],
         "type": "show",
     })
     assert sid == "abc123"
     s = await db.get_session("abc123")
     assert s["title"] == "Maischberger"
     assert s["guests"] == ["Sandra Maischberger (Moderatorin)", "Gast (CDU)"]
-    assert s["reference_links"] == ["https://example.com"]
     assert s["status"] == "active"
     assert s["visibility"] == "private"
 

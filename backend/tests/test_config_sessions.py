@@ -9,7 +9,6 @@ def test_from_session_row_builds_episode():
         "date": "9. Juni 2026",
         "guests": ["Sandra Maischberger (Moderatorin)", "Gast (CDU)"],
         "context": "Kontext",
-        "reference_links": [],
         "type": "show",
     }
     ep = Episode.from_session_row(row)

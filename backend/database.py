@@ -85,7 +85,6 @@ class Database:
                 date             TEXT NOT NULL DEFAULT '',
                 guests           TEXT NOT NULL DEFAULT '[]',
                 context          TEXT NOT NULL DEFAULT '',
-                reference_links  TEXT NOT NULL DEFAULT '[]',
                 type             TEXT NOT NULL DEFAULT 'show',
                 conversation_type TEXT NOT NULL DEFAULT 'debate',
                 auto_check       INTEGER NOT NULL DEFAULT 0,
@@ -284,7 +283,6 @@ class Database:
             "date": row["date"],
             "guests": json.loads(row["guests"]),
             "context": row["context"],
-            "reference_links": json.loads(row["reference_links"]),
             "type": row["type"],
             "conversation_type": row["conversation_type"],
             "auto_check": bool(row["auto_check"]),
@@ -300,16 +298,15 @@ class Database:
         from datetime import datetime
         await self.db.execute(
             """INSERT INTO sessions
-               (session_id, title, date, guests, context, reference_links,
+               (session_id, title, date, guests, context,
                 type, conversation_type, auto_check, status, visibility, owner_code, created_at, ended_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 session["session_id"],
                 session.get("title", ""),
                 session.get("date", ""),
                 json.dumps(session.get("guests", []), ensure_ascii=False),
                 session.get("context", ""),
-                json.dumps(session.get("reference_links", []), ensure_ascii=False),
                 session.get("type", "show"),
                 session.get("conversation_type", "debate"),
                 int(bool(session.get("auto_check", False))),

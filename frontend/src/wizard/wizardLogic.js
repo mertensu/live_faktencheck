@@ -59,7 +59,6 @@ export function buildSessionPayload(state) {
     guests: buildGuests(type, state.people),
     context: state.topic.trim(),
     date: '',
-    reference_links: [],
     type: 'show',
   }
 }

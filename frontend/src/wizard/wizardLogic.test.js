@@ -47,7 +47,7 @@ describe('deriveTitle', () => {
 })
 
 describe('buildSessionPayload', () => {
-  it('skipped topic => empty context; date empty; no reference links', () => {
+  it('skipped topic => empty context; date empty', () => {
     const s = { ...initialWizardState(), conversationType: 'private',
                 people: [{ name: 'Klaus', party: '', role: '' }], topic: '', title: '' }
     expect(buildSessionPayload(s)).toEqual({
@@ -56,7 +56,6 @@ describe('buildSessionPayload', () => {
       guests: ['Klaus'],
       context: '',
       date: '',
-      reference_links: [],
       type: 'show',
     })
   })
