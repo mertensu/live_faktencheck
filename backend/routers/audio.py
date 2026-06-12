@@ -8,7 +8,7 @@ import asyncio
 import logging
 import os
 from datetime import datetime, timezone
-from fastapi import APIRouter, BackgroundTasks, Depends, UploadFile, File, Form
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, UploadFile, File, Form
 
 from config import Episode
 from backend.auth import require_code
@@ -25,6 +25,11 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api", tags=["audio"])
 
 AUDIO_TMP_DIR = "/tmp/factcheck_blocks"
+
+# Upper bound on a single uploaded audio block, enforced before any paid
+# transcription. Our recorder sends ~60-180s blocks (well under this); the cap
+# bounds the "one giant block" abuse vector. Overridable via env.
+MAX_AUDIO_BLOCK_BYTES = int(os.getenv("MAX_AUDIO_BLOCK_BYTES", str(25 * 1024 * 1024)))
 
 
 def _audio_file_path(block_id: str) -> str:
@@ -64,6 +69,18 @@ async def receive_audio_block(
     audio_data = await audio.read()
     ep_key = session_id
 
+    # Pre-call guard A — budget. None limit means unlimited.
+    limit = code.get("audio_seconds_limit")
+    used = code.get("audio_seconds_used", 0)
+    if limit is not None and used >= limit:
+        raise HTTPException(status_code=429, detail="Audio-Kontingent aufgebraucht")
+
+    # Pre-call guard B — block size, bounded before we pay for transcription.
+    if len(audio_data) > MAX_AUDIO_BLOCK_BYTES:
+        raise HTTPException(status_code=413, detail="Audio-Block zu groß")
+
+    remaining_seconds = None if limit is None else max(limit - used, 0)
+
     # Generate block_id here so it can be tracked immediately
     now = datetime.now(timezone.utc)
     block_id = f"block_{int(now.timestamp() * 1000)}"
@@ -86,16 +103,17 @@ async def receive_audio_block(
     }
 
     # Start background processing (pass path, not bytes, to avoid holding memory in handler)
-    background_tasks.add_task(process_audio_pipeline_async, block_id, audio_path, ep_key)
+    background_tasks.add_task(process_audio_pipeline_async, block_id, audio_path, ep_key, code["code"])
 
     return ProcessingResponse(
         status="processing",
         message="Audio received, processing started",
         block_id=block_id,
+        remaining_seconds=remaining_seconds,
     )
 
 
-async def process_audio_pipeline_async(block_id: str, audio_path: str, session_id: str):
+async def process_audio_pipeline_async(block_id: str, audio_path: str, session_id: str, code: str | None = None):
     """
     Background pipeline: audio -> transcription -> claim extraction -> pending claims
     """
@@ -125,7 +143,7 @@ async def process_audio_pipeline_async(block_id: str, audio_path: str, session_i
         with open(audio_path, "rb") as f:
             audio_data = f.read()
         try:
-            transcript = await asyncio.wait_for(
+            transcript, audio_duration = await asyncio.wait_for(
                 asyncio.to_thread(transcription_service.transcribe, audio_data, ep_keyterms),
                 timeout=60.0
             )
@@ -137,6 +155,13 @@ async def process_audio_pipeline_async(block_id: str, audio_path: str, session_i
 
         slow_task.cancel()
         logger.info(f"[{block_id}] Transcription complete: {len(transcript)} chars")
+
+        # Meter the real audio length against the code's lifetime budget. Runs
+        # right after a successful (paid) transcription, before extraction, so
+        # even claim-free audio counts. check-before/increment-after: at most one
+        # block overshoots the budget, then the code is closed.
+        if code is not None and audio_duration > 0:
+            await db.increment_audio_seconds(code, int(round(audio_duration)))
 
         # Grab previous transcript tail for cross-block context.
         # NOTE: two separate lock acquisitions are intentional — label resolution

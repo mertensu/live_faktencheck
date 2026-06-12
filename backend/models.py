@@ -103,6 +103,7 @@ class ProcessingResponse(BaseModel):
     claims_count: Optional[int] = None
     source_id: Optional[str] = None
     block_id: Optional[str] = None
+    remaining_seconds: Optional[int] = None
 
 
 class HealthResponse(BaseModel):
