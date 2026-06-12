@@ -41,6 +41,7 @@ class TestTranscribeConfig:
                 fake.status = tr.aai.TranscriptStatus.completed
                 fake.utterances = []
                 fake.text = "ok"
+                fake.audio_duration = 12.5
                 return fake
 
         monkeypatch.setattr(tr.aai, "Transcriber", FakeTranscriber)
@@ -63,3 +64,9 @@ class TestTranscribeConfig:
         svc, captured = self._service_capturing_config(monkeypatch)
         svc.transcribe(b"audio", keyterms=[])
         assert captured["config"].keyterms_prompt is None
+
+    def test_transcribe_returns_text_and_duration(self, monkeypatch):
+        svc, _ = self._service_capturing_config(monkeypatch)
+        text, duration = svc.transcribe(b"audio")
+        assert text == "ok"   # no utterances -> formatter falls back to transcript.text
+        assert duration == 12.5

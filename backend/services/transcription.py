@@ -78,7 +78,7 @@ class TranscriptionService:
             kwargs["keyterms_prompt"] = keyterms
         return aai.TranscriptionConfig(**kwargs)
 
-    def transcribe(self, audio_data: bytes, keyterms: list[str] | None = None) -> str:
+    def transcribe(self, audio_data: bytes, keyterms: list[str] | None = None) -> tuple[str, float]:
         """
         Transcribe audio data and return formatted transcript with speaker labels.
 
@@ -87,7 +87,7 @@ class TranscriptionService:
             keyterms: Optional proper nouns (names, parties/orgs) to boost recognition
 
         Returns:
-            Formatted transcript string with speaker labels
+            Tuple of (formatted transcript, audio_duration_seconds)
 
         Raises:
             Exception: If transcription fails
@@ -99,10 +99,11 @@ class TranscriptionService:
         self._raise_on_error(transcript)
 
         formatted = self._format_transcript(transcript)
-        logger.info(f"Transcription completed: {len(formatted)} characters")
-        return formatted
+        duration = float(transcript.audio_duration or 0.0)
+        logger.info(f"Transcription completed: {len(formatted)} characters, {duration:.1f}s audio")
+        return formatted, duration
 
-    def transcribe_file(self, file_path: str, keyterms: list[str] | None = None) -> str:
+    def transcribe_file(self, file_path: str, keyterms: list[str] | None = None) -> tuple[str, float]:
         """
         Transcribe audio from a file path.
 
@@ -111,13 +112,13 @@ class TranscriptionService:
             keyterms: Optional proper nouns to boost recognition
 
         Returns:
-            Formatted transcript string with speaker labels
+            Tuple of (formatted transcript, audio_duration_seconds)
         """
         logger.info(f"Transcribing file: {file_path}")
 
         transcript = aai.Transcriber().transcribe(file_path, self._build_config(keyterms))
         self._raise_on_error(transcript)
-        return self._format_transcript(transcript)
+        return self._format_transcript(transcript), float(transcript.audio_duration or 0.0)
 
     def _raise_on_error(self, transcript: aai.Transcript) -> None:
         if transcript.status == aai.TranscriptStatus.error:
