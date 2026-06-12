@@ -12,6 +12,14 @@ from fastapi import Header, HTTPException
 
 
 DEFAULT_QUICK_CHECK_LIMIT = 3
+DEFAULT_LIVE_AUDIO_LIMIT_MINUTES = 5
+
+
+def live_audio_limit_seconds() -> int:
+    """Lifetime live-audio cap in seconds, from ``LIVE_AUDIO_LIMIT_MINUTES`` (default 5)."""
+    raw = os.getenv("LIVE_AUDIO_LIMIT_MINUTES")
+    minutes = int(raw) if raw and raw.isdigit() else DEFAULT_LIVE_AUDIO_LIMIT_MINUTES
+    return minutes * 60
 
 
 def parse_access_codes(raw: str | None) -> list[tuple[str, str, int | None]]:
@@ -57,8 +65,14 @@ async def seed_codes_from_env(db, raw: str | None = None) -> int:
     if await db.count_codes() > 0:
         return 0
     entries = parse_access_codes(raw)
+    audio_limit = live_audio_limit_seconds()
     for name, code, limit in entries:
-        await db.add_code(code, name, quick_check_limit=limit)
+        await db.add_code(
+            code,
+            name,
+            quick_check_limit=limit,
+            audio_seconds_limit=None if limit is None else audio_limit,
+        )
     return len(entries)
 
 
