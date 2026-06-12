@@ -1,7 +1,6 @@
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { BACKEND_URL, N8N_VERIFIED_WEBHOOK, authHeaders, safeJsonParse, debug } from '../services/api'
 import { AdminView } from '../components/AdminView'
-import { SpeakerColumns } from '../components/SpeakerColumns'
 import { BackendErrorDisplay } from '../components/BackendErrorDisplay'
 import { ClaimDetailOverlay } from '../components/ClaimDetailOverlay'
 import { RecordingBar } from '../components/RecordingBar'
@@ -626,20 +625,6 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
     }
     setPendingClaims(prev => [resendClaim, ...prev])
   }
-
-  // Group fact-checks by speaker
-  // Supports exact match and partial match (e.g., "Connemann" matches "Gitta Connemann")
-  const groupedBySpeaker = useMemo(() => speakers.reduce((acc, speaker) => {
-    acc[speaker] = factChecks.filter(fc => {
-      const factCheckSpeaker = fc.sprecher || ''
-      // Exact match
-      if (factCheckSpeaker === speaker) return true
-      // Partial match: if config speaker contains fact-check speaker or vice versa
-      if (speaker.includes(factCheckSpeaker) || factCheckSpeaker.includes(speaker)) return true
-      return false
-    })
-    return acc
-  }, {}), [speakers, factChecks])
 
   return (
     <>
