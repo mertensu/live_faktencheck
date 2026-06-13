@@ -87,7 +87,10 @@ async def receive_audio_block(
 
     logger.info(f"Received audio block {block_id}: {len(audio_data)} bytes, session: {ep_key}")
 
-    # Save audio to temp file for transcription and potential retrigger (dir guaranteed by startup)
+    # Save audio to temp file for transcription and potential retrigger.
+    # Ensure the dir exists here too: startup creates it, but /tmp can be
+    # reaped while the backend is long-running (and tests skip the lifespan).
+    os.makedirs(AUDIO_TMP_DIR, exist_ok=True)
     audio_path = _audio_file_path(block_id)
     with open(audio_path, "wb") as f:
         f.write(audio_data)
