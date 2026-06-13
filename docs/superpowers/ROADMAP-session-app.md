@@ -46,7 +46,7 @@ Ergebnisse privat per Link teilbar.
 | **3a** | **Minimaler Zugangs-Gate (Zugangscodes auf Kosten-Endpunkten)** | ✅ **Live auf VPS** (2026-06-10, `971a7de`; main-Merge offen) |
 | **R** | **Agent-Rewrite: LangChain/LangGraph → PydanticAI + Logfire** | ✅ **Abgeschlossen** (2026-06-10, Branch; main-Merge = Go-Live offen) |
 | **Q** | Quick Check (One-Shot-Zitat → Fact-Check, ohne Audio) | ✅ **Abgeschlossen** (2026-06-10, Branch; main-Merge = Go-Live offen) |
-| **3b** | Live-Limits (10-Min-Session-Auto-Stop, ggf. Circuit Breaker) | ⬜ Offen |
+| **3b** | Live-Limits (per-Code-Audio-Budget, Auto-Stop bei 429) | ✅ **Abgeschlossen** (2026-06-13, Branch `0e91b8a`→`34107e9`; main-Merge = Go-Live offen) |
 | **4** | VPS-Deployment (kein lokaler Start, JSON-Export entfällt) | 🟡 Backend live auf VPS; Go-Live-Merge offen |
 
 > **Reframing 2026-06-10:** Die alte „Phase 3 = Codes + Limits" wurde aufgeteilt. Auslöser:
@@ -292,12 +292,28 @@ Redesign (→ Phase 1b), Edit/Resend von Quick Checks. **Abhängigkeiten:** Phas
 
 ---
 
-## ⬜ Phase 3b — Live-Limits (eigener Spec)
+## ✅ Phase 3b — Live-Limits (ABGESCHLOSSEN)
 
-**Ziel:** Kosten-Backstop für Live-Sessions. **10-Min-Auto-Stop** (Session endet nach
-10 Min Aktivität automatisch); optional später globaler Circuit Breaker.
+**Status (2026-06-13):** Abgeschlossen auf Branch `worktree-session-multitenancy`
+(Commits `0e91b8a`→`34107e9`). **NICHT nach main gemergt** — Merge = Go-Live (Phase 4).
 
-**Abhängigkeiten:** sinnvoll zusammen mit Phase 2 (Browser-Audio).
+**Ziel:** Kosten-Backstop für Live-Sessions. Statt eines pauschalen 10-Min-Auto-Stops
+ein **per-Code-Audio-Budget**: jeder Zugangscode hat ein Kontingent transkribierter
+Audio-Sekunden (`LIVE_AUDIO_LIMIT_MINUTES`), das beim Seeden gesetzt wird.
+
+**Umsetzung:**
+- DB-Spalten für per-Code-Audio-Sekunden-Budget + Increment (`1763386`); Seeding aus
+  `LIVE_AUDIO_LIMIT_MINUTES` (`ed914d5`).
+- `transcribe()` liefert `(text, audio_duration)` (`f478029`); Audio-Pipeline metert
+  transkribierte Sekunden ins Budget (`f2dfec5`) mit Pre-Call-Budget-/Größen-Guards
+  und `remaining_seconds` (`bcace71`).
+- API flaggt **429**-Audio-Quota-Fehler + exponiert `remaining_seconds` (`ee29aa8`);
+  Recorder stoppt bei 429 und trackt Restzeit (`1e24001`), Recording-Bar zeigt
+  verbleibende Audio-Zeit (`6cea976`).
+- Doku: `LIVE_AUDIO_LIMIT_MINUTES` + Audio-Quota-Runbook (`34107e9`).
+- Design/Plan: `specs/2026-06-12-live-audio-limits-design.md`, `plans/2026-06-12-live-audio-limits.md` (Commits `0e91b8a`/`fd9945a`).
+
+**Abhängigkeiten:** Phase 2 (Browser-Audio) — erfüllt; Phase 3a (Gate, per-Code-Spalten) — erfüllt.
 
 ---
 
@@ -340,9 +356,11 @@ da es den ursprünglichen Schmerzpunkt („muss lokal starten") direkt löst.
 4. ~~**Phase 1b (Homepage/IA)**~~ — ✅ erledigt auf Branch (2026-06-10). Einzelne Landing-Page mit
    beiden Einstiegs-Modi (Quick Check + Live) + Beispiele-Archiv.
 5. ~~**Phase 2 (Browser-Audio)**~~ — ✅ erledigt auf Branch. Browser-Mic-Recorder ersetzt `listener.py`.
-6. **Phase 3b (Live-Limits)** — 10-Min-Auto-Stop, zusammen mit/nach Phase 2.
-7. **Phase 4 (Go-Live-Merge)** — Branch → main; Gate + Agent-Rewrite stehen bereits. Aktiviert
-   beim Deploy auch die Phase-R-Logfire-Observability (Token auf VPS bereits vorgestaged).
+6. ~~**Phase 3b (Live-Limits)**~~ — ✅ erledigt auf Branch (2026-06-13). Per-Code-Audio-Budget
+   + 429-Auto-Stop statt pauschalem 10-Min-Stop.
+7. **Phase 4 (Go-Live-Merge)** — Branch → main; Gate + Agent-Rewrite + Live-Limits stehen bereits.
+   Aktiviert beim Deploy auch die Phase-R-Logfire-Observability (Token auf VPS bereits vorgestaged).
+   **Letzter offener Roadmap-Schritt.**
 
 ## Wiedereinstieg
 
