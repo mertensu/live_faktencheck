@@ -18,6 +18,12 @@ const block = (id, claims) => ({ block_id: id, timestamp: '2026-06-11T10:00:00',
 
 beforeEach(() => {
   vi.clearAllMocks()
+  // jsdom has no matchMedia; SpeakerColumns (read-only view) uses it for responsiveness.
+  window.matchMedia = window.matchMedia || ((query) => ({
+    matches: false, media: query, onchange: null,
+    addEventListener: () => {}, removeEventListener: () => {},
+    addListener: () => {}, removeListener: () => {}, dispatchEvent: () => false,
+  }))
   api.fetchPendingClaims.mockResolvedValue([
     block('b1', [{ name: 'Anna', claim: 'A1' }, { name: 'Bert', claim: 'A2' }]),
   ])
@@ -145,13 +151,14 @@ describe('ReviewView', () => {
     expect(screen.getByText(/noch 1/i)).toBeDefined()
   })
 
-  it('shows existing fact-checks (past example episode) instead of the start splash', async () => {
+  it('shows a read-only speaker-column view for a past example episode', async () => {
     // Opening a "Beispiel" episode: no pending claims, never recorded this load,
-    // but the session already has fact-checks in the DB. The results must show,
-    // not the onboarding "Aufnahme starten" splash.
+    // but the session already has fact-checks in the DB. Show finished results
+    // grouped by speaker — not the swipe queue, the Auto toggle, or the splash.
     api.fetchPendingClaims.mockResolvedValue([])
     api.fetchFactChecks.mockResolvedValue([
-      { id: 1, sprecher: 'Anna', behauptung: 'A1', status: 'done', timestamp: '2026-03-26T20:00:00Z' },
+      { id: 1, sprecher: 'Anna', behauptung: 'A1', consistency: 'hoch', status: 'done', timestamp: '2026-03-26T20:00:00Z' },
+      { id: 2, sprecher: 'Bert', behauptung: 'B1', consistency: 'niedrig', status: 'done', timestamp: '2026-03-26T20:01:00Z' },
     ])
     render(
       <ReviewView
@@ -161,8 +168,15 @@ describe('ReviewView', () => {
         everRecorded={false}
       />
     )
+    // Speaker column headers and their claims render.
     expect(await screen.findByText('Anna')).toBeDefined()
+    expect(screen.getByText('Bert')).toBeDefined()
+    expect(screen.getByText('A1')).toBeDefined()
+    expect(screen.getByText('B1')).toBeDefined()
+    // No onboarding splash, no Auto toggle, no swipe-stage placeholder.
     expect(screen.queryByRole('button', { name: /aufnahme starten/i })).toBeNull()
+    expect(screen.queryByRole('checkbox', { name: /auto-prüfung/i })).toBeNull()
+    expect(screen.queryByText(/noch keine behauptungen/i)).toBeNull()
   })
 
   it('does not return to the start screen after recording has happened (stopped, empty)', async () => {
