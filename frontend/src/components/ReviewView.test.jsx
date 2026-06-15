@@ -145,6 +145,26 @@ describe('ReviewView', () => {
     expect(screen.getByText(/noch 1/i)).toBeDefined()
   })
 
+  it('shows existing fact-checks (past example episode) instead of the start splash', async () => {
+    // Opening a "Beispiel" episode: no pending claims, never recorded this load,
+    // but the session already has fact-checks in the DB. The results must show,
+    // not the onboarding "Aufnahme starten" splash.
+    api.fetchPendingClaims.mockResolvedValue([])
+    api.fetchFactChecks.mockResolvedValue([
+      { id: 1, sprecher: 'Anna', behauptung: 'A1', status: 'done', timestamp: '2026-03-26T20:00:00Z' },
+    ])
+    render(
+      <ReviewView
+        sessionId="maischberger"
+        initialAutoCheck={false}
+        isRecording={false}
+        everRecorded={false}
+      />
+    )
+    expect(await screen.findByText('Anna')).toBeDefined()
+    expect(screen.queryByRole('button', { name: /aufnahme starten/i })).toBeNull()
+  })
+
   it('does not return to the start screen after recording has happened (stopped, empty)', async () => {
     api.fetchPendingClaims.mockResolvedValue([])
     render(
