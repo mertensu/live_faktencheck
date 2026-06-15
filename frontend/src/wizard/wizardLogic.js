@@ -36,16 +36,15 @@ export function buildGuests(type, people) {
   return people.map((p) => formatParticipant(type, p)).filter(Boolean)
 }
 
-// Gating for the "people" step. Private conversations may be left empty;
-// debate/interview need at least one named participant — the name is what the
-// speaker-label resolver maps generic labels ("Sprecher A") onto. Party/role are
-// optional but help the resolver when names aren't spoken in the transcript.
-// Any participant flagged `exclude` must be named: the extractor identifies
-// excluded speakers by their resolved name.
+// Gating for the "people" step. Naming is optional for every conversation type:
+// the step may be left empty, and any unnamed speaker simply stays as its generic
+// label ("Sprecher A/B/C") in the fact-check. Names are what the speaker-label
+// resolver maps those generic labels onto; party/role further help when names
+// aren't spoken in the transcript. The one hard rule: any participant flagged
+// `exclude` must be named, because the extractor identifies excluded speakers by
+// their resolved name.
 export function peopleStepValid(type, people) {
-  if (people.some((p) => p.exclude && !(p.name || '').trim())) return false
-  if (type === 'private') return true
-  return people.some((p) => (p.name || '').trim())
+  return !people.some((p) => p.exclude && !(p.name || '').trim())
 }
 
 export function deriveTitle(type, people) {

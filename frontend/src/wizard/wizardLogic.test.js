@@ -29,9 +29,9 @@ describe('peopleStepValid', () => {
   it('private: always valid (step may be left empty)', () => {
     expect(peopleStepValid('private', [{ name: '', party: '', role: '' }])).toBe(true)
   })
-  it('debate/interview: needs at least one named person', () => {
-    expect(peopleStepValid('debate', [{ name: '', party: 'SPD', role: 'X' }])).toBe(false)
-    expect(peopleStepValid('debate', [{ name: '  ', party: '', role: '' }])).toBe(false)
+  it('debate/interview: naming is optional (unnamed speakers stay Sprecher A/B/C)', () => {
+    expect(peopleStepValid('debate', [{ name: '', party: 'SPD', role: 'X' }])).toBe(true)
+    expect(peopleStepValid('debate', [{ name: '  ', party: '', role: '' }])).toBe(true)
     expect(peopleStepValid('debate', [{ name: 'Anna', party: '', role: '' }])).toBe(true)
     expect(peopleStepValid('interview', [{ name: '', party: '', role: '' }, { name: 'Bob', party: '', role: '' }])).toBe(true)
   })

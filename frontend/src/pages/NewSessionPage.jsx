@@ -19,7 +19,7 @@ function PersonFields({ person, index, type, dispatch, removable }) {
   return (
     <div className="wizard-person">
       <input className="wizard-input" value={person.name} onChange={upd('name')}
-             placeholder="Name" />
+             placeholder={type === 'private' ? 'Name' : `Sprecher ${String.fromCharCode(65 + index)}`} />
       {type !== 'private' && (
         <input className="wizard-input" value={person.party} onChange={upd('party')}
                placeholder="Partei / Organisation" />
@@ -106,8 +106,8 @@ export function NewSessionPage() {
             )}
             {state.conversationType !== 'private' && (
               <p className="wizard-hint">
-                Mindestens ein <strong>Name</strong> ist nötig – darauf ordnet die KI die Sprecher zu.
-                Partei/Organisation und Rolle sind optional, verbessern aber die Zuordnung, wenn Namen im Gespräch nicht fallen.
+                Namen sind optional – ohne Namen bleiben die Sprecher:innen als <strong>Sprecher A/B/C</strong>.
+                Mit Namen ordnet die KI die Aussagen den Personen zu; Partei/Organisation und Rolle helfen zusätzlich, wenn Namen im Gespräch nicht fallen.
               </p>
             )}
             {state.people.map((p, i) => (
