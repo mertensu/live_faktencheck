@@ -1,0 +1,391 @@
+"""
+Tests for fact-checks API endpoints.
+
+Tests:
+- GET /api/fact-checks
+- GET /api/fact-checks?session_id=xxx
+- POST /api/fact-checks
+- PUT /api/fact-checks/{id}
+- GET /api/health
+"""
+
+
+from backend import state
+
+
+class TestGetFactChecks:
+    """Tests for GET /api/fact-checks endpoint."""
+
+    async def test_get_fact_checks_requires_session_id(self, client):
+        """GET /api/fact-checks without session_id is rejected (must never dump
+        every session's fact-checks across users)."""
+        db = state.get_db()
+        await db.add_fact_check({
+            "sprecher": "Speaker A", "behauptung": "Claim 1",
+            "timestamp": "2024-01-01T10:00:00", "session_id": "ep1",
+        })
+
+        response = await client.get("/api/fact-checks")
+
+        assert response.status_code == 400
+
+    async def test_get_fact_checks_blank_session_id_rejected(self, client):
+        """A blank session_id is treated as missing scope and rejected."""
+        response = await client.get("/api/fact-checks?session_id=")
+
+        assert response.status_code == 400
+
+    async def test_get_fact_checks_does_not_leak_other_sessions(self, client):
+        """A scoped request returns only that session's fact-checks, never another's."""
+        db = state.get_db()
+        await db.add_fact_check({
+            "sprecher": "Speaker A", "behauptung": "Claim 1",
+            "timestamp": "2024-01-01T10:00:00", "session_id": "ep1",
+        })
+        await db.add_fact_check({
+            "sprecher": "Speaker B", "behauptung": "Claim 2",
+            "timestamp": "2024-01-01T11:00:00", "session_id": "ep2",
+        })
+
+        response = await client.get("/api/fact-checks?session_id=ep1")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) == 1
+        assert data[0]["sprecher"] == "Speaker A"
+        assert all(fc["session_id"] == "ep1" for fc in data)
+
+    async def test_get_fact_checks_with_session_filter(self, client):
+        """GET /api/fact-checks?session_id=xxx filters by session."""
+        db = state.get_db()
+        await db.add_fact_check({"sprecher": "A", "session_id": "session-1", "behauptung": "C1", "timestamp": "2024-01-01T10:00:00"})
+        await db.add_fact_check({"sprecher": "B", "session_id": "session-2", "behauptung": "C2", "timestamp": "2024-01-01T11:00:00"})
+        await db.add_fact_check({"sprecher": "C", "session_id": "session-1", "behauptung": "C3", "timestamp": "2024-01-01T12:00:00"})
+
+        response = await client.get("/api/fact-checks?session_id=session-1")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) == 2
+        assert all(fc["session_id"] == "session-1" for fc in data)
+
+    async def test_get_fact_checks_session_filter_no_match(self, client):
+        """GET /api/fact-checks?session_id=xxx returns empty if no match."""
+        db = state.get_db()
+        await db.add_fact_check({
+            "sprecher": "A", "session_id": "ep1", "behauptung": "C", "timestamp": "2024-01-01T10:00:00"
+        })
+
+        response = await client.get("/api/fact-checks?session_id=nonexistent")
+
+        assert response.status_code == 200
+        assert response.json() == []
+
+
+class TestPostFactCheck:
+    """Tests for POST /api/fact-checks endpoint."""
+
+    async def test_post_fact_check_german_fields(self, client):
+        """POST /api/fact-checks accepts German field names."""
+        payload = {
+            "sprecher": "Angela Merkel",
+            "behauptung": "Deutschland hat 80 Millionen Einwohner",
+            "consistency": "hoch",
+            "begruendung": "Laut Statistischem Bundesamt korrekt.",
+            "quellen": ["https://destatis.de"],
+            "session_id": "test-ep",
+        }
+
+        response = await client.post("/api/fact-checks", json=payload)
+
+        assert response.status_code == 201
+        data = response.json()
+        assert data["status"] == "success"
+        assert data["id"] == 1
+
+        # Verify stored correctly
+        db = state.get_db()
+        fact_checks = await db.get_fact_checks()
+        assert len(fact_checks) == 1
+        fc = fact_checks[0]
+        assert fc["sprecher"] == "Angela Merkel"
+        assert fc["consistency"] == "hoch"
+
+    async def test_post_fact_check_english_fields(self, client):
+        """POST /api/fact-checks accepts English field names."""
+        payload = {
+            "speaker": "Joe Biden",
+            "claim": "The economy is growing",
+            "consistency": "hoch",
+            "evidence": "According to official statistics.",
+            "sources": ["https://example.com"],
+            "session_id": "test-ep",
+        }
+
+        response = await client.post("/api/fact-checks", json=payload)
+
+        assert response.status_code == 201
+
+        # Verify mapped to German field names in storage
+        db = state.get_db()
+        fact_checks = await db.get_fact_checks()
+        fc = fact_checks[0]
+        assert fc["sprecher"] == "Joe Biden"
+        assert fc["behauptung"] == "The economy is growing"
+
+    async def test_post_fact_check_mixed_fields(self, client):
+        """POST /api/fact-checks handles mixed German/English fields."""
+        payload = {
+            "sprecher": "Mixed Speaker",
+            "claim": "Mixed claim",
+            "consistency": "unklar",
+        }
+
+        response = await client.post("/api/fact-checks", json=payload)
+
+        assert response.status_code == 201
+        db = state.get_db()
+        fact_checks = await db.get_fact_checks()
+        fc = fact_checks[0]
+        assert fc["sprecher"] == "Mixed Speaker"
+        assert fc["behauptung"] == "Mixed claim"
+
+    async def test_post_fact_check_list_sources(self, client):
+        """POST /api/fact-checks handles list sources correctly."""
+        payload = {
+            "sprecher": "Test",
+            "behauptung": "Test claim",
+            "quellen": ["https://source1.com", "https://source2.com"],
+        }
+
+        response = await client.post("/api/fact-checks", json=payload)
+
+        assert response.status_code == 201
+        db = state.get_db()
+        fact_checks = await db.get_fact_checks()
+        fc = fact_checks[0]
+        assert isinstance(fc["quellen"], list)
+        assert len(fc["quellen"]) == 2
+        assert fc["quellen"][0] == "https://source1.com"
+
+    async def test_post_fact_check_increments_id(self, client):
+        """POST /api/fact-checks assigns incrementing IDs."""
+        for i in range(3):
+            await client.post("/api/fact-checks", json={
+                "sprecher": f"Speaker {i}",
+                "behauptung": f"Claim {i}",
+            })
+
+        db = state.get_db()
+        fact_checks = await db.get_fact_checks()
+        assert len(fact_checks) == 3
+        assert fact_checks[0]["id"] == 1
+        assert fact_checks[1]["id"] == 2
+        assert fact_checks[2]["id"] == 3
+
+    async def test_post_fact_check_stores_session_id(self, client):
+        """POST /api/fact-checks stores session_id from request."""
+        response = await client.post("/api/fact-checks", json={
+            "sprecher": "Test",
+            "behauptung": "Claim",
+            "session_id": "my-session",
+        })
+
+        assert response.status_code == 201
+        db = state.get_db()
+        fact_checks = await db.get_fact_checks()
+        assert fact_checks[0]["session_id"] == "my-session"
+
+
+class TestPutFactCheck:
+    """Tests for PUT /api/fact-checks/{id} endpoint."""
+
+    async def test_put_fact_check_not_found(self, client):
+        """PUT /api/fact-checks/{id} returns 404 for unknown ID."""
+        payload = {
+            "name": "Speaker",
+            "claim": "Updated claim",
+        }
+
+        response = await client.put("/api/fact-checks/999", json=payload)
+
+        assert response.status_code == 404
+        assert "not found" in response.json()["detail"]
+
+    async def test_put_fact_check_starts_recheck(self, client, mock_all_services):
+        """PUT /api/fact-checks/{id} starts background re-check."""
+        # Add existing fact-check via DB
+        db = state.get_db()
+        await db.add_fact_check({
+            "sprecher": "Original",
+            "behauptung": "Original claim",
+            "consistency": "unklar",
+            "begruendung": "",
+            "quellen": [],
+            "timestamp": "2024-01-01T10:00:00",
+            "session_id": "ep1",
+        })
+
+        payload = {
+            "name": "Updated Speaker",
+            "claim": "Updated claim text",
+        }
+
+        response = await client.put("/api/fact-checks/1", json=payload)
+
+        assert response.status_code == 202
+        data = response.json()
+        assert data["status"] == "processing"
+
+
+class TestHealthEndpoint:
+    """Tests for GET /api/health endpoint."""
+
+    async def test_health_returns_ok(self, client):
+        """GET /api/health returns status ok."""
+        response = await client.get("/api/health")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "ok"
+
+    async def test_health_includes_counts(self, client):
+        """GET /api/health includes pending and fact-check counts."""
+        db = state.get_db()
+        await db.add_pending_block({
+            "block_id": "b1", "timestamp": "2024-01-01T10:00:00",
+            "claims": [], "status": "pending",
+        })
+        await db.add_pending_block({
+            "block_id": "b2", "timestamp": "2024-01-01T11:00:00",
+            "claims": [], "status": "pending",
+        })
+        await db.add_fact_check({
+            "sprecher": "A", "behauptung": "C", "timestamp": "2024-01-01T10:00:00",
+        })
+
+        response = await client.get("/api/health")
+
+        data = response.json()
+        assert data["pending_blocks"] == 2
+        assert data["fact_checks"] == 1
+
+    async def test_health_reports_active_sessions(self, client):
+        """GET /api/health reports active_sessions count."""
+        response = await client.get("/api/health")
+
+        data = response.json()
+        assert "active_sessions" in data
+
+
+class TestResendFactCheckEndpoint:
+    """Tests for POST /api/fact-checks/resend endpoint."""
+
+    async def test_resend_matches_by_fact_check_id(self, client, mock_all_services):
+        """POST /api/fact-checks/resend re-runs by fact_check_id when provided."""
+        db = state.get_db()
+        await db.add_fact_check({
+            "sprecher": "Original Speaker",
+            "behauptung": "Original claim",
+            "consistency": "unklar",
+            "begruendung": "",
+            "quellen": [],
+            "timestamp": "2024-01-01T10:00:00",
+            "session_id": "ep1",
+        })
+
+        response = await client.post("/api/fact-checks/resend", json={
+            "name": "Original Speaker",
+            "claim": "Updated claim text",
+            "fact_check_id": 1,
+        })
+
+        assert response.status_code == 202
+        data = response.json()
+        assert data["status"] == "processing"
+        assert "1" in data["message"]
+
+    async def test_resend_matches_by_original_claim(self, client, mock_all_services):
+        """POST /api/fact-checks/resend matches by speaker + original_claim."""
+        db = state.get_db()
+        await db.add_fact_check({
+            "sprecher": "Speaker A",
+            "behauptung": "The exact original claim",
+            "consistency": "unklar",
+            "begruendung": "",
+            "quellen": [],
+            "timestamp": "2024-01-01T10:00:00",
+            "session_id": "ep1",
+        })
+
+        response = await client.post("/api/fact-checks/resend", json={
+            "name": "Speaker A",
+            "claim": "The exact original claim",
+            "original_claim": "The exact original claim",
+        })
+
+        assert response.status_code == 202
+        assert response.json()["status"] == "processing"
+
+    async def test_resend_creates_new_when_no_match(self, client, mock_all_services):
+        """POST /api/fact-checks/resend creates new fact-check when no match found."""
+        response = await client.post("/api/fact-checks/resend", json={
+            "name": "Unknown Speaker",
+            "claim": "A claim with no existing match",
+        })
+
+        assert response.status_code == 202
+        data = response.json()
+        assert data["status"] == "processing"
+        assert "new" in data["message"].lower() or "New" in data["message"]
+
+    async def test_resend_falls_back_to_claim_match(self, client, mock_all_services):
+        """POST /api/fact-checks/resend falls back to matching by speaker + claim."""
+        db = state.get_db()
+        await db.add_fact_check({
+            "sprecher": "Speaker B",
+            "behauptung": "The fallback claim",
+            "consistency": "hoch",
+            "begruendung": "",
+            "quellen": [],
+            "timestamp": "2024-01-01T10:00:00",
+            "session_id": "ep1",
+        })
+
+        response = await client.post("/api/fact-checks/resend", json={
+            "name": "Speaker B",
+            "claim": "The fallback claim",
+        })
+
+        assert response.status_code == 202
+        assert response.json()["status"] == "processing"
+
+
+
+class TestDeleteFactCheckEndpoint:
+    """Tests for DELETE /api/fact-checks/{id} endpoint."""
+
+    async def test_delete_existing_fact_check(self, client):
+        """DELETE /api/fact-checks/{id} returns 200 and removes the record."""
+        db = state.get_db()
+        await db.add_fact_check({
+            "sprecher": "Speaker A",
+            "behauptung": "Some claim",
+            "timestamp": "2024-01-01T10:00:00",
+            "session_id": "ep1",
+        })
+
+        response = await client.delete("/api/fact-checks/1")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "deleted"
+        assert data["id"] == 1
+        assert await db.get_fact_check_by_id(1) is None
+
+    async def test_delete_nonexistent_fact_check(self, client):
+        """DELETE /api/fact-checks/{id} returns 404 for unknown ID."""
+        response = await client.delete("/api/fact-checks/9999")
+
+        assert response.status_code == 404
+        assert "not found" in response.json()["detail"]

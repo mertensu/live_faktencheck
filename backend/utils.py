@@ -1,0 +1,69 @@
+"""
+Shared utility functions for the backend.
+"""
+
+import os
+from datetime import datetime
+from pathlib import Path
+
+
+def auto_check_enabled(session: dict | None) -> bool:
+    """True if auto-checking should run for this session.
+
+    Per-session ``auto_check`` flag OR the global ``AUTO_APPROVE`` env var (kept
+    for tests/dev). ``session`` may be ``None`` when no session row exists.
+    """
+    if session and session.get("auto_check"):
+        return True
+    return os.getenv("AUTO_APPROVE", "false").lower() == "true"
+
+
+def to_dict(obj):
+    """Convert Pydantic model to dict, or return as-is if already a dict."""
+    return obj.model_dump() if hasattr(obj, "model_dump") else obj
+
+
+def truncate(text: str, max_length: int = 200) -> str:
+    """Truncate text to max_length, appending '...' if truncated."""
+    return text[:max_length] + "..." if len(text) > max_length else text
+
+
+def build_fact_check_dict(
+    result_dict: dict,
+    session_id: str,
+    speaker_fallback: str = "",
+    claim_fallback: str = "",
+) -> dict:
+    """Build a fact-check storage dict from a checker result."""
+    sources = result_dict.get("sources", [])
+    return {
+        "sprecher": result_dict.get("speaker", speaker_fallback),
+        "behauptung": result_dict.get("original_claim", claim_fallback),
+        "consistency": result_dict.get("consistency", "unklar"),
+        "begruendung": result_dict.get("evidence", ""),
+        "quellen": [to_dict(s) for s in sources] if sources else [],
+        "timestamp": datetime.now().isoformat(),
+        "session_id": session_id,
+        "status": "",
+        "double_check": result_dict.get("double_check", False),
+        "critique_note": result_dict.get("critique_note", ""),
+    }
+
+
+def load_prompt(filename: str, fallback: str | None = None) -> str:
+    """Load a prompt template from the prompts directory."""
+    roots = [
+        Path(__file__).parent.parent / "prompts",
+        Path("prompts"),
+    ]
+
+    for root in roots:
+        try:
+            return (root / filename).read_text(encoding="utf-8")
+        except FileNotFoundError:
+            continue
+
+    if fallback is not None:
+        return fallback
+
+    raise FileNotFoundError(f"Could not find prompt file: {filename}")

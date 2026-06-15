@@ -1,0 +1,329 @@
+"""
+Tests for claims management API endpoints.
+
+Tests:
+- POST /api/pending-claims
+- GET /api/pending-claims
+- POST /api/approve-claims
+"""
+
+
+from backend import state
+
+
+class TestPendingClaimsEndpoint:
+    """Tests for /api/pending-claims endpoints."""
+
+    async def test_post_pending_claims(self, client):
+        """POST /api/pending-claims stores claims and returns success."""
+        payload = {
+            "claims": [
+                {"name": "Speaker A", "claim": "Test claim 1"},
+                {"name": "Speaker B", "claim": "Test claim 2"},
+            ],
+            "block_id": "test-block-001",
+            "session_id": "test-session",
+        }
+
+        response = await client.post("/api/pending-claims", json=payload)
+
+        assert response.status_code == 201
+        data = response.json()
+        assert data["status"] == "success"
+        assert data["block_id"] == "test-block-001"
+        assert data["claims_count"] == 2
+
+        # Verify state was updated
+        db = state.get_db()
+        blocks = await db.get_pending_blocks()
+        assert len(blocks) == 1
+        block = blocks[0]
+        assert block["block_id"] == "test-block-001"
+        assert block["claims_count"] == 2
+        assert block["status"] == "pending"
+
+    async def test_post_pending_claims_generates_block_id(self, client):
+        """POST /api/pending-claims generates block_id if not provided."""
+        payload = {
+            "claims": [{"name": "Speaker", "claim": "A claim"}],
+        }
+
+        response = await client.post("/api/pending-claims", json=payload)
+
+        assert response.status_code == 201
+        data = response.json()
+        assert data["block_id"].startswith("block_")
+
+    async def test_post_pending_claims_unique_block_id(self, client):
+        """POST /api/pending-claims ensures unique block_id."""
+        # Add first block
+        payload1 = {
+            "claims": [{"name": "A", "claim": "Claim 1"}],
+            "block_id": "duplicate-id",
+        }
+        await client.post("/api/pending-claims", json=payload1)
+
+        # Add second block with same ID
+        payload2 = {
+            "claims": [{"name": "B", "claim": "Claim 2"}],
+            "block_id": "duplicate-id",
+        }
+        response = await client.post("/api/pending-claims", json=payload2)
+
+        assert response.status_code == 201
+        data = response.json()
+        # Should have been modified to be unique
+        assert data["block_id"] == "duplicate-id_1"
+
+    async def test_get_pending_claims_empty(self, client):
+        """GET /api/pending-claims returns empty list when no claims."""
+        response = await client.get("/api/pending-claims")
+
+        assert response.status_code == 200
+        assert response.json() == []
+
+    async def test_get_pending_claims_returns_all(self, client):
+        """GET /api/pending-claims returns all pending blocks."""
+        # Add some claims
+        for i in range(3):
+            await client.post("/api/pending-claims", json={
+                "claims": [{"name": f"Speaker {i}", "claim": f"Claim {i}"}],
+                "block_id": f"block-{i}",
+            })
+
+        response = await client.get("/api/pending-claims")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) == 3
+
+    async def test_get_pending_claims_sorted_by_timestamp(self, client):
+        """GET /api/pending-claims returns blocks newest first."""
+        # Add blocks with specific timestamps via DB
+        db = state.get_db()
+        await db.add_pending_block({
+            "block_id": "old",
+            "timestamp": "2024-01-01T10:00:00",
+            "claims_count": 1,
+            "claims": [],
+            "status": "pending",
+        })
+        await db.add_pending_block({
+            "block_id": "new",
+            "timestamp": "2024-01-02T10:00:00",
+            "claims_count": 1,
+            "claims": [],
+            "status": "pending",
+        })
+
+        response = await client.get("/api/pending-claims")
+
+        data = response.json()
+        assert data[0]["block_id"] == "new"
+        assert data[1]["block_id"] == "old"
+
+
+class TestApproveClaimsEndpoint:
+    """Tests for /api/approve-claims endpoint."""
+
+    async def test_approve_claims_triggers_fact_checking(self, client, mock_all_services):
+        """POST /api/approve-claims starts background fact-checking."""
+        db = state.get_db()
+        await db.add_session({"session_id": "test-session", "title": "t", "context": "ctx", "date": "2026"})
+
+        payload = {
+            "claims": [
+                {"name": "Speaker A", "claim": "Test claim to verify"},
+            ],
+            "block_id": "test-block",
+            "session_id": "test-session",
+        }
+
+        response = await client.post("/api/approve-claims", json=payload)
+
+        assert response.status_code == 202
+        data = response.json()
+        assert data["status"] == "processing"
+        assert data["claims_count"] == 1
+
+    async def test_approve_claims_empty_list_rejected(self, client):
+        """POST /api/approve-claims rejects empty claims list."""
+        payload = {
+            "claims": [],
+            "block_id": "test-block",
+        }
+
+        response = await client.post("/api/approve-claims", json=payload)
+
+        assert response.status_code == 400
+        assert "No claims selected" in response.json()["detail"]
+
+    async def test_approve_claims_uses_context_from_block(self, client, mock_all_services):
+        """POST /api/approve-claims retrieves context from pending block."""
+        # First add a pending block with context via DB
+        db = state.get_db()
+        await db.add_pending_block({
+            "block_id": "context-block",
+            "headline": "Important context headline",
+            "claims": [{"name": "X", "claim": "Y"}],
+            "status": "pending",
+            "timestamp": "2024-01-01T10:00:00",
+        })
+
+        payload = {
+            "claims": [{"name": "X", "claim": "Y"}],
+            "block_id": "context-block",
+        }
+
+        response = await client.post("/api/approve-claims", json=payload)
+
+        assert response.status_code == 202
+
+    async def test_approve_claims_without_session_id(self, client, mock_all_services):
+        """POST /api/approve-claims works without session_id (uses None)."""
+        payload = {
+            "claims": [{"name": "A", "claim": "B"}],
+        }
+
+        response = await client.post("/api/approve-claims", json=payload)
+
+        assert response.status_code == 202
+
+
+class TestTextBlockEndpoint:
+    """Tests for /api/text-block endpoint."""
+
+    async def test_text_block_accepts_valid_request(self, client, mock_all_services):
+        """POST /api/text-block accepts text and returns 202."""
+        db = state.get_db()
+        await db.add_session({"session_id": "sess-1", "title": "t", "context": "ctx", "date": "2026"})
+
+        payload = {
+            "text": "This is the article content with some claims.",
+            "headline": "Test Headline",
+            "session_id": "sess-1",
+        }
+
+        response = await client.post("/api/text-block", json=payload)
+
+        assert response.status_code == 202
+        data = response.json()
+        assert data["status"] == "accepted"
+        assert data["source_id"].startswith("article-")
+
+    async def test_text_block_uses_provided_source_id(self, client, mock_all_services):
+        """POST /api/text-block uses provided source_id."""
+        db = state.get_db()
+        await db.add_session({"session_id": "sess-2", "title": "t", "context": "ctx", "date": "2026"})
+
+        payload = {
+            "text": "Article content here.",
+            "headline": "Headline",
+            "source_id": "my-custom-source",
+            "session_id": "sess-2",
+        }
+
+        response = await client.post("/api/text-block", json=payload)
+
+        assert response.status_code == 202
+        assert response.json()["source_id"] == "my-custom-source"
+
+    async def test_text_block_rejects_empty_text(self, client):
+        """POST /api/text-block rejects empty text."""
+        payload = {
+            "text": "",
+            "headline": "Headline",
+            "session_id": "some-session",
+        }
+
+        response = await client.post("/api/text-block", json=payload)
+
+        assert response.status_code == 400
+        assert "No text provided" in response.json()["detail"]
+
+    async def test_text_block_rejects_whitespace_only(self, client):
+        """POST /api/text-block rejects whitespace-only text."""
+        payload = {
+            "text": "   \n\t  ",
+            "headline": "Headline",
+            "session_id": "some-session",
+        }
+
+        response = await client.post("/api/text-block", json=payload)
+
+        assert response.status_code == 400
+
+
+class TestDiscardClaimsEndpoint:
+    """Tests for POST /api/discard-claims."""
+
+    async def test_discard_claims_saves_to_db(self, client):
+        """POST /api/discard-claims persists claims with status='discarded'."""
+        db = state.get_db()
+        await db.add_session({"session_id": "test-session", "title": "t", "context": "ctx", "date": "2026"})
+
+        payload = {
+            "claims": [
+                {"name": "Speaker A", "claim": "First claim"},
+                {"name": "Speaker B", "claim": "Second claim"},
+            ],
+            "session_id": "test-session",
+        }
+        response = await client.post("/api/discard-claims", json=payload)
+
+        assert response.status_code == 201
+        data = response.json()
+        assert data["status"] == "discarded"
+        assert data["count"] == 2
+        # IDs must be returned so the frontend can delete them later
+        assert "ids" in data
+        assert len(data["ids"]) == 2
+        assert all(isinstance(i, int) for i in data["ids"])
+
+        # Verify DB rows have correct status
+        rows = await db.get_fact_checks(session_id="test-session", status="discarded")
+        assert len(rows) == 2
+        assert rows[0]["status"] == "discarded"
+        assert rows[0]["behauptung"] == "First claim"
+
+    async def test_discard_claims_empty_list_rejected(self, client):
+        """POST /api/discard-claims rejects empty claims list."""
+        response = await client.post("/api/discard-claims", json={"claims": []})
+        assert response.status_code == 400
+
+    async def test_get_fact_checks_excludes_discarded_by_default(self, client):
+        """GET /api/fact-checks omits discarded rows unless asked."""
+        db = state.get_db()
+        from datetime import datetime
+        now = datetime.now().isoformat()
+        await db.add_fact_check({"sprecher": "A", "behauptung": "Normal", "consistency": "true",
+                                  "begruendung": "", "quellen": [], "timestamp": now,
+                                  "session_id": "ep", "status": ""})
+        await db.add_fact_check({"sprecher": "B", "behauptung": "Discarded", "consistency": "",
+                                  "begruendung": "", "quellen": [], "timestamp": now,
+                                  "session_id": "ep", "status": "discarded"})
+
+        response = await client.get("/api/fact-checks?session_id=ep")
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) == 1
+        assert data[0]["behauptung"] == "Normal"
+
+    async def test_get_fact_checks_status_filter_returns_only_discarded(self, client):
+        """GET /api/fact-checks?status=discarded returns only discarded rows."""
+        db = state.get_db()
+        from datetime import datetime
+        now = datetime.now().isoformat()
+        await db.add_fact_check({"sprecher": "A", "behauptung": "Normal", "consistency": "true",
+                                  "begruendung": "", "quellen": [], "timestamp": now,
+                                  "session_id": "ep", "status": ""})
+        await db.add_fact_check({"sprecher": "B", "behauptung": "Discarded", "consistency": "",
+                                  "begruendung": "", "quellen": [], "timestamp": now,
+                                  "session_id": "ep", "status": "discarded"})
+
+        response = await client.get("/api/fact-checks?session_id=ep&status=discarded")
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) == 1
+        assert data[0]["behauptung"] == "Discarded"
+        assert data[0]["status"] == "discarded"

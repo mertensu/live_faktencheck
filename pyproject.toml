@@ -1,0 +1,52 @@
+[project]
+name = "fact-check"
+version = "2.0.0"
+description = "Live fact-checking application for German TV shows"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    # Audio processing
+    "silero-vad>=4.0.0",
+    "torch>=2.0.0",
+    "numpy>=1.24.0",
+    # Web framework
+    "fastapi>=0.128.0",
+    "uvicorn[standard]>=0.40.0",
+    "python-multipart>=0.0.20",
+    "requests>=2.31.0",
+    # AI Services
+    "assemblyai>=0.37.0",
+    "google-genai>=1.0.0",
+    "tavily-python>=0.5.0",
+    # PydanticAI + Logfire
+    "pydantic-ai>=1.0.0",
+    "logfire>=3.0.0",
+    # Database
+    "aiosqlite>=0.20.0",
+    # Utilities
+    "python-dotenv>=1.0.0",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "pytest-cov>=4.1.0",
+    "httpx>=0.27.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["backend/tests"]
+asyncio_mode = "auto"
+markers = [
+    "slow: marks tests as slow",
+    "integration: marks tests requiring real API keys",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.14.14",
+]
+test = [
+    "nest-asyncio>=1.6.0",
+]

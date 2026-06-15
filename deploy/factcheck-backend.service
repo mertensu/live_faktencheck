@@ -1,0 +1,17 @@
+[Unit]
+Description=Live Faktencheck Backend (FastAPI/uvicorn)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/fact_check
+EnvironmentFile=/opt/fact_check/.env
+# Single process required: backend/state.py holds in-memory state (no --workers, no --reload)
+ExecStart=/root/.local/bin/uv run uvicorn backend.app:app --host 127.0.0.1 --port 5000
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

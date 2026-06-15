@@ -1,0 +1,81 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+ENV/
+*.egg-info/
+dist/
+build/
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+dist/
+dist-ssr/
+*.local
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+logs/
+
+# Frontend build
+frontend/dist/
+
+# Audio files (wenn gespeichert)
+*.wav
+*.mp3
+*.flac
+
+# Debug audio files
+debug_audio/
+
+# Data files für GitHub Pages (werden committed)
+# frontend/public/data/*.json
+
+# Production Scripts (PID files, logs)
+.cloudflared_pid
+.cloudflared_tunnel.log
+.backend_pid
+.frontend_pid
+backend.log
+frontend_dev.log
+.current_episode
+.ngrok_pid
+
+# Cost tracking data
+backend/data/cost_history.json
+
+# SQLite database
+backend/data/factcheck.db
+
+# Claude Code session memory
+memory.md
+handover/
+.test_override.json
+
+# Visual companion (brainstorming) artifacts
+.superpowers/
