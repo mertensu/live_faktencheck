@@ -99,7 +99,7 @@ export function NewSessionPage() {
           <section className="wizard-step">
             <h1>Wer spricht?</h1>
             {state.conversationType === 'interview' && (
-              <p className="wizard-hint">Erste Person = interviewt, zweite = interviewende Person/Medium (optional).</p>
+              <p className="wizard-hint">Meist sollen nur die Aussagen der interviewten Person geprüft werden – bei der interviewenden Person kannst du „Aussagen nicht prüfen“ setzen (Name dafür nötig).</p>
             )}
             {state.conversationType === 'private' && (
               <p className="wizard-hint">Nur Vornamen/Rollen genügen — keine Partei nötig. Du kannst diesen Schritt auch leer lassen.</p>
