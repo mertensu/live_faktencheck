@@ -1974,6 +1974,41 @@
   color: var(--text-secondary);
 }
 
+/* Limit info popup (reuses .impressum-overlay / .impressum-modal) */
+.limit-info-list {
+  list-style: none;
+  margin: 0 0 1.25rem;
+  padding: 0;
+}
+
+.limit-info-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.limit-info-item:last-child {
+  border-bottom: none;
+}
+
+.limit-info-icon {
+  font-size: 1.1rem;
+}
+
+.limit-info-label {
+  flex: 1;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.limit-info-value {
+  font-weight: 600;
+  color: var(--text-main);
+  font-size: 0.9rem;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .hero-title {

@@ -159,6 +159,8 @@ async def test_validate_code_valid_returns_public_fields(client):
     assert body["name"] == "tester"
     assert body["quick_check_limit"] == 3
     assert body["quick_checks_used"] == 0
+    assert body["audio_seconds_limit"] == 300
+    assert body["audio_limit_minutes"] == 5
 
 
 async def test_validate_code_does_not_leak_raw_code_or_active(client):

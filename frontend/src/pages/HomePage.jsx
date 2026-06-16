@@ -2,6 +2,7 @@ import { useCallback, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useShows } from '../hooks/useShows'
 import { AccessUnlock } from '../components/AccessUnlock'
+import { LimitInfoModal } from '../components/LimitInfoModal'
 import { getAccessCode } from '../services/api'
 
 function getEpisodeDisplayName(show) {
@@ -54,11 +55,15 @@ export function HomePage() {
   const { shows, loading } = useShows()
   const [unlocked, setUnlocked] = useState(Boolean(getAccessCode()))
   const [name, setName] = useState(null)
+  const [limitInfo, setLimitInfo] = useState(null)
   const unlockRef = useRef(null)
 
-  const handleUnlock = useCallback((_code, unlockedName) => {
+  const handleUnlock = useCallback((_code, unlockedName, data) => {
     setUnlocked(true)
     setName(unlockedName)
+    // Only show the limit popup on an active code entry (data present),
+    // not on auto-unlock from a stored code on page reload.
+    if (data) setLimitInfo(data)
   }, [])
 
   const focusUnlock = () => unlockRef.current?.focus()
@@ -67,6 +72,9 @@ export function HomePage() {
 
   return (
     <div className="home-page">
+      {limitInfo && (
+        <LimitInfoModal info={limitInfo} onClose={() => setLimitInfo(null)} />
+      )}
       <section className="hero-section">
         <h1 className="hero-title">Live-Faktencheck</h1>
         <p className="hero-subtitle">KI-gestützte Faktenchecks zu Politik, Wirtschaft und Gesellschaft in Deutschland – im Minutentakt.</p>

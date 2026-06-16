@@ -103,8 +103,13 @@ async def validate_code(code: dict = Depends(require_code)):
     Side-effect-free: no DB write, no paid external call. Returns only public
     fields — never the raw code or internal flags.
     """
+    audio_seconds_limit = code["audio_seconds_limit"]
     return {
         "name": code["name"],
         "quick_check_limit": code["quick_check_limit"],
         "quick_checks_used": code["quick_checks_used"],
+        "audio_seconds_limit": audio_seconds_limit,
+        "audio_limit_minutes": (
+            None if audio_seconds_limit is None else audio_seconds_limit // 60
+        ),
     }

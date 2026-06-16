@@ -25,7 +25,7 @@ export const AccessUnlock = forwardRef(function AccessUnlock({ unlocked, name, o
     try {
       const data = await validateCode(trimmed)
       setAccessCode(trimmed)
-      onUnlock(trimmed, data?.name ?? null)
+      onUnlock(trimmed, data?.name ?? null, data)
       setCode('')
     } catch (err) {
       const msg = err.message || 'Unbekannter Fehler'
