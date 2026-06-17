@@ -29,29 +29,6 @@ jobs:
 
       - name: Test
         run: uv run pytest backend/tests -m "not integration" -q
-
-  deploy-backend:
-    needs: test
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    runs-on: ubuntu-latest
-    concurrency:
-      group: deploy-backend
-      cancel-in-progress: false
-    steps:
-      - name: Deploy to VPS over SSH
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: root
-          key: ${{ secrets.VPS_SSH_KEY }}
-          script_stop: true
-          script: |
-            cd /opt/fact_check
-            git fetch --prune origin
-            git reset --hard origin/main
-            /root/.local/bin/uv sync
-            systemctl restart factcheck-backend
-            systemctl --no-pager status factcheck-backend | head -5
-
-      - name: Smoke test
-        run: curl -fsS https://api.live-faktencheck.de/api/health
+        # Note: no deploy job here. The Hostinger firewall blocks inbound SSH from
+        # GitHub runners, so the backend is deployed from the laptop via deploy/deploy.sh
+        # (auto-triggered by a local git-push wrapper in ~/.zshrc).
