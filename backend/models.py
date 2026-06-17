@@ -85,6 +85,7 @@ class CreateSessionRequest(BaseModel):
     type: str = "show"
     conversation_type: str = "debate"
     excluded_speakers: List[str] = []
+    auto_check: bool = False
 
 
 class AutoCheckRequest(BaseModel):

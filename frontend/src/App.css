@@ -2439,6 +2439,13 @@
 .wizard-tile:hover { border-color: #b9c6e8; }
 .wizard-tile.selected { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,.15); }
 .wizard-tile-icon { font-size: 1.6rem; }
+.wizard-tile-text { display: flex; flex-direction: column; gap: 3px; }
+.wizard-tile-hint { font-size: .88rem; color: #6b7280; font-weight: 400; }
+.wizard-explainer { display: flex; gap: 14px; align-items: flex-start; margin-top: 20px; padding: 16px 18px;
+  background: #eef3ff; border: 1px solid #d4e0fb; border-radius: 14px; animation: wizardFade .2s ease; }
+.wizard-explainer-icon { font-size: 1.5rem; line-height: 1.4; }
+.wizard-explainer strong { display: block; margin-bottom: 4px; color: #1f2533; }
+.wizard-explainer p { margin: 0; color: #45506a; font-size: .94rem; line-height: 1.5; }
 .wizard-person { display: grid; gap: 8px; padding: 14px; border: 1px solid #e2e6ee; border-radius: 12px; margin-bottom: 12px; background: #fff; }
 .wizard-input { width: 100%; padding: 10px 12px; border: 1px solid #cfd5e1; border-radius: 8px;
   background: #fff; color: #1f2533; font-size: 1rem; }

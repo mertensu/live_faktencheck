@@ -27,6 +27,7 @@ async def create_session(request: CreateSessionRequest, code: dict = Depends(req
         "type": request.type,
         "conversation_type": request.conversation_type,
         "excluded_speakers": request.excluded_speakers,
+        "auto_check": request.auto_check,
         "status": "active",
         "visibility": "private",
         "owner_code": code["code"],

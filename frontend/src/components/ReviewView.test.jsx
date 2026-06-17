@@ -91,6 +91,23 @@ describe('ReviewView', () => {
     expect(onStartRecording).toHaveBeenCalled()
   })
 
+  it('still shows the big start button before the first recording when Auto was chosen upfront', async () => {
+    api.fetchPendingClaims.mockResolvedValue([])
+    const onStartRecording = vi.fn()
+    render(
+      <ReviewView
+        sessionId="s1"
+        initialAutoCheck={true}
+        isRecording={false}
+        onStartRecording={onStartRecording}
+      />
+    )
+    const btn = await screen.findByRole('button', { name: /aufnahme starten/i })
+    expect(screen.getByText(/automatisch geprüft/i)).toBeDefined()
+    fireEvent.click(btn)
+    expect(onStartRecording).toHaveBeenCalled()
+  })
+
   it('shows "Noch keine Behauptungen" while recording with no pending claims (Auto off)', async () => {
     api.fetchPendingClaims.mockResolvedValue([])
     render(<ReviewView sessionId="s1" initialAutoCheck={false} isRecording={true} />)

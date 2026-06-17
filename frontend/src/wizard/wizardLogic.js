@@ -8,7 +8,7 @@ export const TYPE_LABELS = {
   private: 'Privates Gespräch',
 }
 
-export const STEPS = ['type', 'people', 'topic', 'review']
+export const STEPS = ['type', 'people', 'topic', 'mode', 'review']
 
 const emptyPerson = () => ({ name: '', party: '', role: '', exclude: false })
 
@@ -18,6 +18,9 @@ export function initialWizardState() {
     conversationType: null,
     people: [emptyPerson()],
     topic: '',
+    // The user's chosen role for this session: null = not yet decided,
+    // false = Moderator:in (decide each claim manually), true = automatic checking.
+    autoCheck: null,
     title: '',
     titleEdited: false,
   }
@@ -65,6 +68,7 @@ export function buildSessionPayload(state) {
     excluded_speakers: state.people
       .filter((p) => p.exclude && (p.name || '').trim())
       .map((p) => p.name.trim()),
+    auto_check: !!state.autoCheck,
   }
 }
 
@@ -88,6 +92,8 @@ export function wizardReducer(state, action) {
       }
     case 'SET_TOPIC':
       return { ...state, topic: action.value }
+    case 'SET_AUTO_CHECK':
+      return { ...state, autoCheck: action.value }
     case 'SET_TITLE':
       return { ...state, title: action.value, titleEdited: true }
     case 'NEXT':

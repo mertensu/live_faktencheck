@@ -11,6 +11,26 @@ const TYPE_TILES = [
   { value: 'private', icon: '💬', label: 'Privates Gespräch' },
 ]
 
+const MODE_TILES = [
+  { value: false, icon: '🙋', label: 'Moderator:in',
+    hint: 'Du entscheidest selbst, welche Behauptungen geprüft werden.' },
+  { value: true, icon: '🤖', label: 'Automatisch prüfen lassen',
+    hint: 'Das System wählt selbst – das Smartphone kann liegen bleiben.' },
+]
+
+const MODE_EXPLAINER = {
+  false: {
+    icon: '🙋',
+    title: 'Du moderierst',
+    text: 'Alle 60 Sekunden werden aus dem Gesagten Behauptungen extrahiert. Jede legen wir dir einzeln vor – du entscheidest mit einem Wisch, ob sie geprüft oder verworfen wird.',
+  },
+  true: {
+    icon: '🤖',
+    title: 'Die KI übernimmt',
+    text: 'Alle 60 Sekunden werden Behauptungen extrahiert. Die KI wählt automatisch die relevantesten aus und prüft sie für dich – du musst nichts tun und kannst einfach zuhören.',
+  },
+}
+
 function PersonFields({ person, index, type, dispatch, removable }) {
   const upd = (field) => (e) =>
     dispatch({ type: 'UPDATE_PERSON', index, field, value: e.target.value })
@@ -51,6 +71,7 @@ export function NewSessionPage() {
   const canAdvance = () => {
     if (stepName === 'type') return !!state.conversationType
     if (stepName === 'people') return peopleStepValid(state.conversationType, state.people)
+    if (stepName === 'mode') return state.autoCheck !== null
     return true
   }
 
@@ -131,6 +152,36 @@ export function NewSessionPage() {
           </section>
         )}
 
+        {stepName === 'mode' && (
+          <section className="wizard-step">
+            <h1>Welche Rolle nimmst du ein?</h1>
+            <div className="wizard-tiles">
+              {MODE_TILES.map((t) => (
+                <button key={String(t.value)} type="button"
+                        className={`wizard-tile ${state.autoCheck === t.value ? 'selected' : ''}`}
+                        onClick={() => dispatch({ type: 'SET_AUTO_CHECK', value: t.value })}>
+                  <span className="wizard-tile-icon">{t.icon}</span>
+                  <span className="wizard-tile-text">
+                    <strong>{t.label}</strong>
+                    <span className="wizard-tile-hint">{t.hint}</span>
+                  </span>
+                </button>
+              ))}
+            </div>
+            {state.autoCheck !== null && (
+              <div className="wizard-explainer" role="status">
+                <span className="wizard-explainer-icon" aria-hidden="true">
+                  {MODE_EXPLAINER[state.autoCheck].icon}
+                </span>
+                <div>
+                  <strong>{MODE_EXPLAINER[state.autoCheck].title}</strong>
+                  <p>{MODE_EXPLAINER[state.autoCheck].text}</p>
+                </div>
+              </div>
+            )}
+          </section>
+        )}
+
         {stepName === 'review' && (
           <section className="wizard-step">
             <h1>Übersicht</h1>
@@ -138,6 +189,7 @@ export function NewSessionPage() {
               <dt>Art</dt><dd>{TYPE_LABELS[state.conversationType]}</dd>
               <dt>Personen</dt><dd>{buildSessionPayload(state).guests.join(', ') || '—'}</dd>
               <dt>Thema</dt><dd>{state.topic.trim() || '— (nicht angegeben)'}</dd>
+              <dt>Prüfung</dt><dd>{state.autoCheck ? 'Automatisch' : 'Moderator:in (selbst entscheiden)'}</dd>
             </dl>
             <div className="form-field">
               <label htmlFor="wizard-title">Titel</label>
