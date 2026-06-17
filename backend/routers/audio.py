@@ -220,7 +220,7 @@ async def process_audio_pipeline_async(block_id: str, audio_path: str, session_i
 
         if auto_check_enabled(session):
             logger.info(f"[{block_id}] Auto-check enabled (session flag or AUTO_APPROVE), selecting best claims...")
-            selected = await claim_extractor.select_async(pending_block["claims"], max_claims=3)
+            selected = await claim_extractor.select_async(pending_block["claims"])
 
             # Insert processing placeholders so viewers see spinners immediately
             now = datetime.now().isoformat()

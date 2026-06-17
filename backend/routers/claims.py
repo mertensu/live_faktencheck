@@ -110,7 +110,7 @@ async def process_text_pipeline_async(text: str, headline: str, source_id: str, 
         session = await db.get_session(session_id) if session_id else None
         if auto_check_enabled(session):
             logger.info(f"[{block_id}] Auto-check enabled (session flag or AUTO_APPROVE), selecting best claims...")
-            selected = await claim_extractor.select_async(pending_block["claims"], max_claims=3)
+            selected = await claim_extractor.select_async(pending_block["claims"])
             # Insert processing placeholders so viewers see spinners immediately
             now = datetime.now().isoformat()
             placeholder_ids = []

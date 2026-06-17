@@ -8,11 +8,10 @@ plus a selection agent for autopilot mode. No tools, no loop.
 import os
 import asyncio
 import logging
-from dataclasses import dataclass
 from typing import List
 
 from pydantic import BaseModel, Field
-from pydantic_ai import Agent, RunContext
+from pydantic_ai import Agent
 
 from backend.utils import load_prompt
 from backend.lang import CLAIM_NAME_DESCRIPTION, CLAIM_TEXT_DESCRIPTION
@@ -22,6 +21,11 @@ logger = logging.getLogger(__name__)
 
 # Default model if not specified in environment
 DEFAULT_MODEL = "gemini-2.5-flash"
+
+# Auto-check safety net: the selection agent picks all *prüfwürdige* claims per
+# block (no fixed target), but we never fan out more than this many fact-checks
+# from a single block, to bound cost and pipeline load on unusually dense blocks.
+AUTO_SELECT_MAX = int(os.getenv("AUTO_SELECT_MAX", "6"))
 
 
 class ExtractedClaim(BaseModel):
@@ -63,12 +67,6 @@ class ClaimExtractionInput(BaseModel):
     previous_block_ending: str | None = Field(default=None, description="Letzte Zeilen des vorherigen Transkriptblocks zur Gewährleistung der Kontinuität")
 
 
-@dataclass
-class SelectionDeps:
-    """Runtime dependency for the selection agent — templates {max_claims}."""
-    max_claims: int
-
-
 class ClaimExtractor:
     """Extracts verifiable claims from transcripts using PydanticAI + Gemini."""
 
@@ -84,18 +82,14 @@ class ClaimExtractor:
             model_settings=MODEL_SETTINGS,
         )
 
-        # Selection agent: same ClaimList schema, different prompt, {max_claims} per run.
-        self.selection_prompt_template = load_prompt("claim_selection.md")
+        # Selection agent: same ClaimList schema, different prompt. It picks all
+        # check-worthy claims (no fixed count); the cap is applied in code below.
         self.selection_agent = Agent(
             model,
             output_type=ClaimList,
-            deps_type=SelectionDeps,
+            instructions=load_prompt("claim_selection.md"),
             model_settings=MODEL_SETTINGS,
         )
-
-        @self.selection_agent.instructions
-        def _selection_instructions(ctx: RunContext[SelectionDeps]) -> str:
-            return self.selection_prompt_template.replace("{max_claims}", str(ctx.deps.max_claims))
 
         # Speaker label resolution agent (optional — only if prompt exists).
         try:
@@ -156,18 +150,23 @@ class ClaimExtractor:
         """Sync wrapper for extract_async()."""
         return asyncio.run(self.extract_async(transcript, guests, context=context, previous_context=previous_context, conversation_type=conversation_type, excluded_speakers=excluded_speakers))
 
-    async def select_async(self, claims: List[dict], max_claims: int = 3) -> List[dict]:
-        """Select the top N most fact-checkable claims (autopilot mode)."""
-        logger.info(f"Autopilot: selecting up to {max_claims} relevant claims from {len(claims)}...")
+    async def select_async(self, claims: List[dict], max_claims: int = AUTO_SELECT_MAX) -> List[dict]:
+        """Select all check-worthy claims (autopilot mode).
+
+        The agent decides how many claims are worth checking based on quality, not
+        a fixed target. ``max_claims`` is only a safety cap to bound fan-out on
+        unusually dense blocks; it normally does not bind.
+        """
+        logger.info(f"Autopilot: selecting check-worthy claims from {len(claims)} (cap {max_claims})...")
         claims_text = "\n".join(
             f"{i + 1}. [{c.get('name', '?')}]: {c.get('claim', '')}"
             for i, c in enumerate(claims)
         )
         user_message = f"Behauptungen:\n{claims_text}"
         try:
-            result = await self.selection_agent.run(user_message, deps=SelectionDeps(max_claims=max_claims))
+            result = await self.selection_agent.run(user_message)
             selected = [{"name": c.name, "claim": c.claim} for c in result.output.claims]
-            logger.info(f"Autopilot: selected {len(selected)} claims")
+            logger.info(f"Autopilot: selected {len(selected)} claims (cap {max_claims})")
             return selected[:max_claims]
         except Exception:
             logger.exception("Claim selection failed, falling back to all claims (capped)")
