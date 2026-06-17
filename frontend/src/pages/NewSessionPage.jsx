@@ -27,7 +27,7 @@ const MODE_EXPLAINER = {
   true: {
     icon: '🤖',
     title: 'Die KI übernimmt',
-    text: 'Alle 60 Sekunden werden Behauptungen extrahiert. Die KI wählt automatisch die relevantesten aus und prüft sie für dich – du musst nichts tun und kannst einfach zuhören.',
+    text: 'Alle 60 Sekunden werden Behauptungen extrahiert. Die KI wählt automatisch die relevantesten aus und prüft sie für dich – du musst dich um nichts kümmern und kannst dich ganz auf das Gespräch konzentrieren.',
   },
 }
 
