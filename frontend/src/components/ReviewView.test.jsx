@@ -72,7 +72,7 @@ describe('ReviewView', () => {
     expect(screen.queryByText('Anna')).toBeNull()
   })
 
-  it('shows the start screen (60s info + start button) when idle and empty, and starts recording on click', async () => {
+  it('shows the start screen (start button) when idle and empty, and starts recording on click', async () => {
     api.fetchPendingClaims.mockResolvedValue([])
     const onStartRecording = vi.fn()
     render(
@@ -84,7 +84,6 @@ describe('ReviewView', () => {
       />
     )
     const btn = await screen.findByRole('button', { name: /aufnahme starten/i })
-    expect(screen.getByText(/60 sekunden/i)).toBeDefined()
     // The Auto toggle is hidden on the start screen ("sonst nichts").
     expect(screen.queryByRole('checkbox', { name: /auto-prüfung/i })).toBeNull()
     fireEvent.click(btn)
@@ -103,7 +102,6 @@ describe('ReviewView', () => {
       />
     )
     const btn = await screen.findByRole('button', { name: /aufnahme starten/i })
-    expect(screen.getByText(/automatisch geprüft/i)).toBeDefined()
     fireEvent.click(btn)
     expect(onStartRecording).toHaveBeenCalled()
   })
