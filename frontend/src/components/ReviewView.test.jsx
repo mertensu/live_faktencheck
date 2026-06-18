@@ -72,6 +72,21 @@ describe('ReviewView', () => {
     expect(screen.queryByText('Anna')).toBeNull()
   })
 
+  it('hides the swipe card when the auto flag arrives after mount (async config load)', async () => {
+    // Reproduces the real bug: the session is in auto mode, but the parent only
+    // learns auto_check=true after the async config fetch resolves, so ReviewView
+    // first mounts with initialAutoCheck={false} and then re-renders with {true}.
+    // The swipe card must follow the prop, not stay stuck on its mount value.
+    const { rerender } = render(<ReviewView sessionId="s1" initialAutoCheck={false} />)
+    await screen.findByText('Anna')  // swipe card is showing (Auto off)
+
+    rerender(<ReviewView sessionId="s1" initialAutoCheck={true} />)
+
+    expect(await screen.findByText(/handy kann liegen bleiben/i)).toBeDefined()
+    expect(screen.queryByText('Anna')).toBeNull()
+    expect(screen.getByRole('checkbox', { name: /auto-prüfung/i }).checked).toBe(true)
+  })
+
   it('shows the start screen (start button) when idle and empty, and starts recording on click', async () => {
     api.fetchPendingClaims.mockResolvedValue([])
     const onStartRecording = vi.fn()
