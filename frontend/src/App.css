@@ -1584,6 +1584,16 @@
   cursor: not-allowed;
 }
 
+/* Disabled primary: avoid washed-out white-on-pale-blue (unreadable).
+   Keep the blue background with full white text like enabled blue buttons,
+   using a slightly lighter blue to signal the disabled state. */
+.action-button.primary:disabled {
+  opacity: 1;
+  background: #9DC9F2;
+  color: white;
+  border-color: #9DC9F2;
+}
+
 /* Editable fields in admin mode */
 .claim-speaker-edit {
   width: 100%;
