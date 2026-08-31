@@ -728,6 +728,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
               everRecorded={everRecorded}
               onStartRecording={() => recorder.start(60)}
               recordingError={recorder.error}
+              recorder={recorder}
             />
             {selectedClaim && (
               <ClaimDetailOverlay

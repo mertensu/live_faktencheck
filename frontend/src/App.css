@@ -2567,6 +2567,26 @@
 }
 .review-start-btn:active { background: #1d4ed8; }
 
+/* Mic input picker (start screen + Pro recording bar). */
+.mic-select {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  color: var(--text-secondary); font-size: 0.9rem; flex-wrap: wrap;
+}
+.mic-select select {
+  max-width: 14rem; padding: 0.3rem 0.4rem;
+  border-radius: 6px; border: 1px solid #44444f;
+  background: #2a2a33; color: #f0f0f3;
+}
+.mic-select-load {
+  padding: 0.25rem 0.6rem; border-radius: 6px;
+  border: 1px solid #44444f; background: #2a2a33; color: #f0f0f3;
+  cursor: pointer; font-size: 0.85rem;
+}
+.mic-select-load:hover { background: #34343f; }
+/* On the light start screen the plain-text label needs a readable color. */
+.review-start-mic { color: var(--text-secondary); justify-content: center; }
+.review-start-mic select { max-width: 16rem; }
+
 .swipe-card-wrap { width: 100%; }
 .swipe-remaining { text-align: center; color: var(--text-muted); font-size: 0.85rem; margin: 0 0 0.5rem; }
 .swipe-card {

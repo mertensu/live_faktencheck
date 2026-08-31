@@ -26,7 +26,7 @@ class FakeMediaRecorder {
   }
 }
 
-function installMediaMocks({ deny = false } = {}) {
+function installMediaMocks({ deny = false, inputs = [] } = {}) {
   recorders = []
   tracks = [{ stop: vi.fn() }]
   const stream = { getTracks: () => tracks }
@@ -37,6 +37,9 @@ function installMediaMocks({ deny = false } = {}) {
         ? Promise.reject(Object.assign(new Error('denied'), { name: 'NotAllowedError' }))
         : Promise.resolve(stream)
     ),
+    enumerateDevices: vi.fn(() => Promise.resolve(inputs)),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
   }
 }
 
@@ -168,5 +171,69 @@ describe('useAudioRecorder: auto-send / sendNow / failures / lock', () => {
     await act(async () => { await result.current.start() })
     await act(async () => { await result.current.sendNow() })
     expect(result.current.remainingSeconds).toBe(90)
+  })
+})
+
+describe('useAudioRecorder: device selection', () => {
+  const MICS = [
+    { kind: 'audioinput', deviceId: 'default', label: 'Standard-Mikrofon' },
+    { kind: 'audioinput', deviceId: 'usb-1', label: 'USB Podium-Mikro' },
+    { kind: 'audiooutput', deviceId: 'spk', label: 'Speaker' },   // filtered out
+  ]
+
+  beforeEach(() => {
+    vi.useFakeTimers()
+    installMediaMocks({ inputs: MICS })
+    vi.spyOn(api, 'sendAudioBlock').mockResolvedValue({ block_id: 'b1' })
+  })
+  afterEach(() => {
+    vi.useRealTimers()
+    vi.restoreAllMocks()
+  })
+
+  it('listDevices exposes only audio inputs', async () => {
+    const { result } = renderHook(() => useAudioRecorder('sess-1'))
+    await act(async () => { await result.current.listDevices() })
+    expect(result.current.devices).toEqual([
+      { deviceId: 'default', label: 'Standard-Mikrofon' },
+      { deviceId: 'usb-1', label: 'USB Podium-Mikro' },
+    ])
+  })
+
+  it('start() opens the selected input with an exact deviceId constraint', async () => {
+    const { result } = renderHook(() => useAudioRecorder('sess-1'))
+    act(() => { result.current.setDeviceId('usb-1') })
+    await act(async () => { await result.current.start() })
+    expect(navigator.mediaDevices.getUserMedia).toHaveBeenCalledWith({
+      audio: { deviceId: { exact: 'usb-1' } },
+    })
+    expect(result.current.status).toBe('recording')
+  })
+
+  it('a vanished selected device falls back to the system default', async () => {
+    const { result } = renderHook(() => useAudioRecorder('sess-1'))
+    act(() => { result.current.setDeviceId('usb-1') })
+    navigator.mediaDevices.getUserMedia
+      .mockRejectedValueOnce(Object.assign(new Error('gone'), { name: 'OverconstrainedError' }))
+    await act(async () => { await result.current.start() })
+    expect(navigator.mediaDevices.getUserMedia).toHaveBeenLastCalledWith({ audio: true })
+    expect(result.current.deviceId).toBe('')
+    expect(result.current.status).toBe('recording')
+  })
+
+  it('switching device while recording swaps the stream at the block boundary', async () => {
+    const { result } = renderHook(() => useAudioRecorder('sess-1'))
+    await act(async () => { await result.current.start() })       // default input
+    const firstStop = tracks[0].stop
+
+    await act(async () => { result.current.setDeviceId('usb-1') }) // triggers flush + swap
+    await act(async () => {})
+
+    expect(result.current.deviceId).toBe('usb-1')
+    expect(firstStop).toHaveBeenCalled()                           // old stream released
+    expect(navigator.mediaDevices.getUserMedia).toHaveBeenLastCalledWith({
+      audio: { deviceId: { exact: 'usb-1' } },
+    })
+    expect(result.current.status).toBe('recording')
   })
 })

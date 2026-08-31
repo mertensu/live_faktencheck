@@ -1,3 +1,5 @@
+import { MicSelect } from './MicSelect'
+
 const BLOCK_OPTIONS = [60, 120, 180]
 
 export function formatElapsed(totalSeconds) {
@@ -23,6 +25,7 @@ export function RecordingBar({ recorder }) {
       {isRecording ? (
         <>
           <span className="recording-bar-rec">● REC {formatElapsed(elapsed)}</span>
+          <MicSelect recorder={recorder} className="recording-bar-mic" />
           <label className="recording-bar-interval">
             Blocklänge:
             <select value={blockSeconds} disabled>
@@ -42,6 +45,7 @@ export function RecordingBar({ recorder }) {
         </>
       ) : (
         <>
+          <MicSelect recorder={recorder} className="recording-bar-mic" disabled={isRequesting} />
           <label className="recording-bar-interval">
             Blocklänge:
             <select
