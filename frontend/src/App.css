@@ -2577,12 +2577,7 @@
   border-radius: 6px; border: 1px solid #44444f;
   background: #2a2a33; color: #f0f0f3;
 }
-.mic-select-load {
-  padding: 0.25rem 0.6rem; border-radius: 6px;
-  border: 1px solid #44444f; background: #2a2a33; color: #f0f0f3;
-  cursor: pointer; font-size: 0.85rem;
-}
-.mic-select-load:hover { background: #34343f; }
+.mic-select-hint { color: var(--text-muted); font-size: 0.8rem; font-style: italic; }
 /* On the light start screen the plain-text label needs a readable color. */
 .review-start-mic { color: var(--text-secondary); justify-content: center; }
 .review-start-mic select { max-width: 16rem; }
