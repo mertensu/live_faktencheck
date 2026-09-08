@@ -9,6 +9,7 @@ vi.mock('../services/api', () => ({
   approveClaims: vi.fn().mockResolvedValue({}),
   discardClaims: vi.fn().mockResolvedValue({}),
   setSessionAutoCheck: vi.fn().mockResolvedValue({ auto_check: true }),
+  getAccessCode: vi.fn(() => 'TESTCODE'),
 }))
 
 import * as api from '../services/api'
@@ -181,10 +182,10 @@ describe('ReviewView', () => {
     expect(screen.getByText(/noch 1/i)).toBeDefined()
   })
 
-  it('shows a read-only speaker-column view for a past example episode', async () => {
+  it('shows a read-only result stream for a past example episode', async () => {
     // Opening a "Beispiel" episode: no pending claims, never recorded this load,
-    // but the session already has fact-checks in the DB. Show finished results
-    // grouped by speaker — not the swipe queue, the Auto toggle, or the splash.
+    // but the session already has fact-checks in the DB. Show finished results as
+    // the Fokus-Stream — not the swipe queue, the Auto toggle, or the splash.
     api.fetchPendingClaims.mockResolvedValue([])
     api.fetchFactChecks.mockResolvedValue([
       { id: 1, sprecher: 'Anna', behauptung: 'A1', consistency: 'hoch', status: 'done', timestamp: '2026-03-26T20:00:00Z' },
@@ -198,11 +199,12 @@ describe('ReviewView', () => {
         everRecorded={false}
       />
     )
-    // Speaker column headers and their claims render.
-    expect(await screen.findByText('Anna')).toBeDefined()
-    expect(screen.getByText('Bert')).toBeDefined()
-    expect(screen.getByText('A1')).toBeDefined()
+    // Both claims render in the stream (claim texts are unique; speaker names also
+    // appear as filter chips, so assert on the claim text and on presence >= 1).
+    expect(await screen.findByText('A1')).toBeDefined()
     expect(screen.getByText('B1')).toBeDefined()
+    expect(screen.getAllByText('Anna').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Bert').length).toBeGreaterThan(0)
     // No onboarding splash, no Auto toggle, no swipe-stage placeholder.
     expect(screen.queryByRole('button', { name: /aufnahme starten/i })).toBeNull()
     expect(screen.queryByRole('checkbox', { name: /auto-prüfung/i })).toBeNull()
@@ -222,5 +224,37 @@ describe('ReviewView', () => {
     // Neutral empty state, NOT the splash start button.
     expect(await screen.findByText(/noch keine behauptungen/i)).toBeDefined()
     expect(screen.queryByRole('button', { name: /aufnahme starten/i })).toBeNull()
+  })
+
+  it('a viewer (no access code) sees the waiting screen before any results, never the swipe queue', async () => {
+    // Opening the shared link: no access code, not recording, and the session has
+    // pending claims but no fact-checks yet. A viewer must see the friendly waiting
+    // screen — never the swipe controls or the recording splash.
+    api.getAccessCode.mockReturnValue(null)
+    api.fetchPendingClaims.mockResolvedValue([
+      block('b1', [{ name: 'Anna', claim: 'A1' }]),
+    ])
+    api.fetchFactChecks.mockResolvedValue([])
+    render(<ReviewView sessionId="s1" initialAutoCheck={false} isRecording={false} everRecorded={false} />)
+    expect(await screen.findByText(/startet in kürze/i)).toBeDefined()
+    expect(screen.queryByRole('button', { name: /behalten/i })).toBeNull()
+    expect(screen.queryByRole('button', { name: /aufnahme starten/i })).toBeNull()
+    expect(screen.queryByText('Anna')).toBeNull()
+  })
+
+  it('a viewer (no access code) sees the read-only stream once results exist', async () => {
+    api.getAccessCode.mockReturnValue(null)
+    api.fetchPendingClaims.mockResolvedValue([
+      block('b1', [{ name: 'Bert', claim: 'B-pending' }]),
+    ])
+    api.fetchFactChecks.mockResolvedValue([
+      { id: 1, sprecher: 'Anna', behauptung: 'A1', consistency: 'hoch', status: 'done', timestamp: '2026-03-26T20:00:00Z' },
+    ])
+    render(<ReviewView sessionId="s1" initialAutoCheck={false} isRecording={false} everRecorded={false} />)
+    expect(await screen.findByText('A1')).toBeDefined()
+    // No swipe queue leaks in from the pending claims.
+    expect(screen.queryByText('B-pending')).toBeNull()
+    expect(screen.queryByRole('button', { name: /behalten/i })).toBeNull()
+    expect(screen.queryByRole('checkbox', { name: /auto-prüfung/i })).toBeNull()
   })
 })
