@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, useParams, useLocation } from 'react-rout
 import { useEffect } from 'react'
 import './App.css'
 
+import { getAccessCode } from './services/api'
 import { Navigation } from './components/Navigation'
 import { Footer } from './components/Footer'
 import { HomePage } from './pages/HomePage'
@@ -30,22 +31,38 @@ function EpisodeRoute() {
   return <FactCheckPage showName={showName} episodeKey={episodeKey} />
 }
 
+// Static top-level routes; anything else is an episode/session page.
+const STATIC_ROUTES = new Set(['/', '/about', '/trusted-domains', '/new', '/pruefen'])
+
+function AppInner() {
+  const { pathname } = useLocation()
+  // A viewer opening a shared session link (no access code) gets a stripped-down
+  // public page: just the fact-check stream, no site nav or footer chrome. The
+  // moderator (holds a code) keeps the full app.
+  const isEpisodeRoute = !STATIC_ROUTES.has(pathname)
+  const viewerMinimal = isEpisodeRoute && !getAccessCode()
+
+  return (
+    <div className={`app${viewerMinimal ? ' app--viewer' : ''}`}>
+      {!viewerMinimal && <Navigation />}
+      <ScrollToHash />
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/about" element={<AboutPage />} />
+        <Route path="/trusted-domains" element={<TrustedDomainsPage />} />
+        <Route path="/new" element={<NewSessionPage />} />
+        <Route path="/pruefen" element={<QuickCheckPage />} />
+        <Route path="/:episodeKey" element={<EpisodeRoute />} />
+      </Routes>
+      {viewerMinimal ? <Footer slim /> : <Footer />}
+    </div>
+  )
+}
+
 function App() {
   return (
     <BrowserRouter>
-      <div className="app">
-        <Navigation />
-        <ScrollToHash />
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/about" element={<AboutPage />} />
-          <Route path="/trusted-domains" element={<TrustedDomainsPage />} />
-          <Route path="/new" element={<NewSessionPage />} />
-          <Route path="/pruefen" element={<QuickCheckPage />} />
-          <Route path="/:episodeKey" element={<EpisodeRoute />} />
-        </Routes>
-        <Footer />
-      </div>
+      <AppInner />
     </BrowserRouter>
   )
 }

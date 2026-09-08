@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { BACKEND_URL, N8N_VERIFIED_WEBHOOK, authHeaders, safeJsonParse, debug } from '../services/api'
+import { BACKEND_URL, N8N_VERIFIED_WEBHOOK, authHeaders, safeJsonParse, debug, getAccessCode } from '../services/api'
 import { AdminView } from '../components/AdminView'
 import { BackendErrorDisplay } from '../components/BackendErrorDisplay'
 import { ClaimDetailOverlay } from '../components/ClaimDetailOverlay'
@@ -48,6 +48,9 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
       window.location.hostname === '127.0.0.1' ||
       window.location.hostname.startsWith('192.168.'))
   const showAdminMode = !isProduction || isLocalhost || forceAdmin
+  // A viewer opened the shared link without an access code: strip the page down
+  // to the debate name and the stream — no "Fakten-Check -" prefix, no controls.
+  const isViewer = !getAccessCode()
 
   const [isAdminMode, setIsAdminMode] = useState(false)
   const [factChecks, setFactChecks] = useState([])
@@ -656,8 +659,9 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
       <header className="app-header">
         <div className="factcheck-header-content">
           <div>
-            <h1>Fakten-Check - {displayTitle}</h1>
+            <h1>{isViewer ? displayTitle : `Fakten-Check - ${displayTitle}`}</h1>
           </div>
+          {!isViewer && (
           <div className="factcheck-header-actions">
             {isRecording && !isAdminMode && (
               <span className="header-rec" role="status">
@@ -691,6 +695,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
               </button>
             )}
           </div>
+          )}
         </div>
       </header>
 

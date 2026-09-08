@@ -1,7 +1,41 @@
 import { useState } from "react"
 
-export function Footer() {
+export function Footer({ slim = false }) {
   const [showImpressum, setShowImpressum] = useState(false)
+
+  const impressumModal = showImpressum && (
+    <div className="impressum-overlay" onClick={() => setShowImpressum(false)}>
+      <div className="impressum-modal" onClick={e => e.stopPropagation()}>
+        <button className="impressum-close" onClick={() => setShowImpressum(false)}>×</button>
+        <h2>Impressum</h2>
+        <p>
+          Ulf Mertens<br />
+          c/o Postflex #PFX-006-869<br />
+          Emsdettener Str. 10<br />
+          48268 Greven
+        </p>
+        <p className="impressum-note">
+          Hinweis: Pakete und Päckchen können unter dieser Anschrift nicht angenommen werden.
+        </p>
+      </div>
+    </div>
+  )
+
+  // Slim variant for the viewer (shared-link) page: a single-line KI hint plus
+  // the Impressum link — enough to meet the legal duty without site chrome.
+  if (slim) {
+    return (
+      <footer className="app-footer app-footer--slim">
+        <p className="footer-slim-note">
+          <span>KI-generiert – kann Fehler enthalten, keine Gewähr.</span>
+          <button className="impressum-button" onClick={() => setShowImpressum(true)}>
+            Impressum
+          </button>
+        </p>
+        {impressumModal}
+      </footer>
+    )
+  }
 
   return (
     <footer className="app-footer">
@@ -22,23 +56,7 @@ export function Footer() {
         </p>
       </div>
 
-      {showImpressum && (
-        <div className="impressum-overlay" onClick={() => setShowImpressum(false)}>
-          <div className="impressum-modal" onClick={e => e.stopPropagation()}>
-            <button className="impressum-close" onClick={() => setShowImpressum(false)}>×</button>
-            <h2>Impressum</h2>
-            <p>
-              Ulf Mertens<br />
-              c/o Postflex #PFX-006-869<br />
-              Emsdettener Str. 10<br />
-              48268 Greven
-            </p>
-            <p className="impressum-note">
-              Hinweis: Pakete und Päckchen können unter dieser Anschrift nicht angenommen werden.
-            </p>
-          </div>
-        </div>
-      )}
+      {impressumModal}
     </footer>
   )
 }
