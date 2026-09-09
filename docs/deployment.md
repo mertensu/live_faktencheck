@@ -31,6 +31,10 @@ systemd services. The frontend is on Cloudflare Pages and reads the live API at
 ## Updating the backend
 From the laptop: `./deploy/deploy.sh`
 
+## Updating the frontend
+Just `git push` to `origin/main` — Cloudflare Pages is wired to the GitHub repo and
+builds & deploys the frontend automatically on every push. No manual deploy step.
+
 ## DB backup (cron on the VPS)
 `0 4 * * * sqlite3 /opt/fact_check/backend/data/factcheck.db ".backup '/opt/fact_check/backend/data/backup-$(date +\%F).db'"`
 
