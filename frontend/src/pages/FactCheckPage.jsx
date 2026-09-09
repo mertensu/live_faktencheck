@@ -74,6 +74,12 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
   const [speakers, setSpeakers] = useState(DEFAULT_SPEAKERS)  // Load config from backend
   const [displayTitle, setDisplayTitle] = useState(showName)  // Full show title (updated from config)
   const [backendError, setBackendError] = useState(null)  // Backend connection error
+  // Only surface a connection error after several *consecutive* failed polls.
+  // A single transient blip (load race, one slow request tripping the 5s abort)
+  // self-heals on the next 2s poll, so showing it immediately just flashes a
+  // scary box for one cycle. Reset to 0 on any success.
+  const pollFailuresRef = useRef(0)
+  const POLL_FAILURE_THRESHOLD = 3  // ~6s of continuous failure before we alarm
   const [initialAutoCheck, setInitialAutoCheck] = useState(false)  // Per-session auto-check flag from config
 
   // Recorder lives at page level so recording survives switching Review <-> Pro.
@@ -171,25 +177,30 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
         const data = await safeJsonParse(response, 'Error loading fact-checks')
         debug.log(`Loaded fact-checks (Live): ${data.length}`, data)
         setFactChecks(data)
+        pollFailuresRef.current = 0
         setBackendError(null)  // Clear error on success
       } catch (error) {
         if (!isMounted) return
 
-        if (error.name === 'AbortError') {
-          setBackendError({
-            message: 'Backend request timed out',
-            backendUrl: BACKEND_URL,
-            episodeKey: episodeKey
-          })
-        } else {
+        pollFailuresRef.current += 1
+        const message = error.name === 'AbortError'
+          ? 'Backend request timed out'
+          : (error.message || 'Unknown error')
+        if (error.name !== 'AbortError') {
           debug.error('Error loading from backend:', error)
+        }
+
+        // Tolerate transient failures: only alarm (and blank the results) once
+        // failures pile up. Below the threshold we keep the last-known list and
+        // stay silent, so a single blip is invisible to the viewer.
+        if (pollFailuresRef.current >= POLL_FAILURE_THRESHOLD) {
           setBackendError({
-            message: error.message || 'Unknown error',
+            message,
             backendUrl: BACKEND_URL,
             episodeKey: episodeKey
           })
+          setFactChecks([])  // Clear fact checks on sustained error
         }
-        setFactChecks([])  // Clear fact checks on error
       }
     }
 

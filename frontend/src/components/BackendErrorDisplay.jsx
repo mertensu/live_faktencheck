@@ -3,7 +3,11 @@ export function BackendErrorDisplay({ error }) {
 
   return (
     <div className="backend-error">
-      <p className="backend-error-message">Coming soon</p>
+      <p className="backend-error-message">Verbindung zum Backend unterbrochen</p>
+      <p className="backend-error-hint">
+        Die Ergebnisse konnten gerade nicht geladen werden. Es wird automatisch
+        erneut versucht.
+      </p>
     </div>
   )
 }
