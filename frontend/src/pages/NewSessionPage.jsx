@@ -146,9 +146,14 @@ export function NewSessionPage() {
         {stepName === 'topic' && (
           <section className="wizard-step">
             <h1>Worum geht es? <span className="wizard-optional">(optional)</span></h1>
+            <p className="wizard-hint">
+              Je konkreter, desto besser prüft die KI: Mit klarem Hintergrund kann sie mehrdeutige
+              Bezüge richtig einordnen und passendere Quellen finden. Hilfreich sind – soweit relevant –
+              Anlass, Ort und Zeitraum sowie die zentralen Themen des Gesprächs.
+            </p>
             <textarea className="wizard-input" rows={4} value={state.topic}
                       onChange={(e) => dispatch({ type: 'SET_TOPIC', value: e.target.value })}
-                      placeholder="Thema / Hintergrund — kann leer bleiben" />
+                      placeholder="Anlass, Ort/Zeitraum und zentrale Themen des Gesprächs — kann leer bleiben" />
           </section>
         )}
 
