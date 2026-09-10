@@ -729,6 +729,11 @@ test = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "httpx" },
+    { name = "nest-asyncio" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
     { name = "ruff" },
 ]
 test = [
@@ -759,7 +764,14 @@ requires-dist = [
 provides-extras = ["test"]
 
 [package.metadata.requires-dev]
-dev = [{ name = "ruff", specifier = ">=0.14.14" }]
+dev = [
+    { name = "httpx", specifier = ">=0.27.0" },
+    { name = "nest-asyncio", specifier = ">=1.6.0" },
+    { name = "pytest", specifier = ">=8.0.0" },
+    { name = "pytest-asyncio", specifier = ">=0.23.0" },
+    { name = "pytest-cov", specifier = ">=4.1.0" },
+    { name = "ruff", specifier = ">=0.14.14" },
+]
 test = [{ name = "nest-asyncio", specifier = ">=1.6.0" }]
 
 [[package]]
