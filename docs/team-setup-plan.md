@@ -101,27 +101,37 @@ Team, der ohne Serverzugang auskommt.
   Ein **Schreibtoken** für die VPS, ein **Lesetoken** fürs Team, beide auf diesen Bucket
   beschränkt. Das Lesetoken ist der Ersatz für SSH.
 
-- [ ] **2.2 Litestream als systemd-Dienst einrichten**
-  Die DB läuft im WAL-Modus (`PRAGMA journal_mode=WAL` in `backend/database.py`). Litestream
-  liest dieses Änderungsprotokoll mit und lädt es laufend nach R2 — Verlustfenster Sekunden
-  statt bis zu 24 Stunden, plus Wiederherstellung auf einen Zeitpunkt. Läuft als eigener
-  Dienst neben `factcheck-backend` und `cloudflared`.
+- [x] **2.2 Litestream als systemd-Dienst einrichten**
+  Litestream **0.5.17** per `.deb` installiert, Konfiguration in `/etc/litestream.yml`
+  (`chmod 600`), Dienst `enable --now`. Die mitgelieferte systemd-Unit reicht — keine eigene nötig.
+  Zwei Voreinstellungen von 0.5 waren für ein Backup zu knapp und wurden angehoben:
+  Snapshots wurden nur **24 h** aufbewahrt, feingranulare Historie nur **5 min**. Jetzt:
+  Snapshot alle 6 h, **30 Tage** Aufbewahrung, 24 h sekundengenaue Historie. Kostet bei
+  ~700 KB Datenbank ein paar MB.
+  Achtung beim Eintragen der Schlüssel: In YAML braucht es ein **Leerzeichen nach dem
+  Doppelpunkt** — `key:wert` ist kein Schlüssel-Wert-Paar, sondern eine Zeichenkette.
 
-- [ ] **2.3 Alten Cron abschalten, Altlasten aufräumen**
-  Litestream **ersetzt** den 4-Uhr-Cron, es ergänzt ihn nicht. Danach die 93 angesammelten
-  `backup-*.db` entfernen — 67 MB auf einer Platte, die zu 71 % voll ist.
+- [x] **2.3a Alten Cron abschalten**
+  `crontab -r`; die alte Zeile liegt gesichert unter `/root/crontab.backup-2026-09-10`.
 
-- [ ] **2.4 Restore testen — nicht optional**
-  ```sh
-  litestream restore -o /tmp/probe.db s3://<bucket>/factcheck
-  sqlite3 /tmp/probe.db "SELECT COUNT(*) FROM fact_checks;"
-  ```
-  Zeilenzahl gegen die Live-DB halten. Fünf Minuten — danach ist das Backup eine Tatsache
-  statt einer Annahme.
+- [ ] **2.3b Die 93 Altdateien — Entscheidung offen**
+  Sie sind **nicht** redundant zu R2: Litestream repliziert erst ab Einrichtung, die
+  Tageskopien reichen bis Juni zurück. Löschen heißt also, drei Monate Historie aufzugeben.
+  Bei 28 GB freiem Speicher drängt nichts. Optionen: behalten, auf die letzten 14 eindampfen,
+  oder einmalig als Archiv nach R2 schieben (Prefix `archive/`, stört Litestream nicht).
 
-- [ ] **2.5 `pull-db.sh` von SSH auf R2 umstellen**
-  Ab hier zieht jeder im Team seinen Datenstand mit dem Lesetoken aus dem Bucket. Der letzte
-  alltägliche Grund für einen Serverzugang fällt weg.
+- [x] **2.4 Restore testen**
+  Restore aus R2 auf dem VPS: **319 Fact-Checks / 29 Sessions**, identisch zur Live-DB,
+  `PRAGMA integrity_check` → `ok`.
+
+- [x] **2.5 `pull-db.sh` von SSH auf R2 umstellen**
+  Nutzt `litestream restore` mit `LITESTREAM_ACCESS_KEY_ID` / `LITESTREAM_SECRET_ACCESS_KEY`
+  aus den vier `R2_*`-Variablen der lokalen `.env`. Kein SSH mehr nötig.
+  Nebeneffekt, der zählt: Jeder Datenabruf im Alltag ist derselbe Restore-Pfad wie im
+  Ernstfall — der Weg bleibt dadurch dauerhaft erprobt, statt einmal getestet und vergessen.
+  Restore läuft in eine temporäre Datei und wird erst nach `integrity_check` eingewechselt,
+  damit ein Abbruch nie die vorhandene lokale DB zerstört.
+  Optionales Argument: Zeitpunkt (`./scripts/pull-db.sh 2026-09-08T21:00:00Z`).
 
 > **Abnahme:** Ein Restore aus R2 auf dem Laptop ergibt dieselbe Zeilenzahl wie die Live-DB,
 > und `pull-db.sh` läuft auf einem Rechner ohne SSH-Schlüssel durch.
