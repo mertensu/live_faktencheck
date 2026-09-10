@@ -35,6 +35,34 @@ From the laptop: `./deploy/deploy.sh`
 Just `git push` to `origin/main` — Cloudflare Pages is wired to the GitHub repo and
 builds & deploys the frontend automatically on every push. No manual deploy step.
 
+## Container image
+
+`Dockerfile` in the repo root pins the runtime (Python 3.12 + `uv sync --locked`), so the
+same environment runs locally, in CI and in production. CI builds it on every PR and pushes
+to GHCR from `main`, tagged with the commit SHA:
+
+```
+ghcr.io/mertensu/live_faktencheck:<commit-sha>
+ghcr.io/mertensu/live_faktencheck:latest
+```
+
+Run it locally against an R2 snapshot (`./scripts/pull-db.sh` first):
+
+```sh
+docker build -t factcheck .
+docker run --rm -p 5000:5000 --env-file .env \
+  -v "$PWD/backend/data:/app/backend/data" factcheck
+curl -fsS http://127.0.0.1:5000/api/health
+```
+
+Two things the image does not change:
+- **Single process.** `backend/state.py` keeps the claim queue and pipeline status in
+  process memory — no `--workers`, no `--reload`, and no second replica.
+- **The DB stays outside.** `backend/data/` is a volume; the image ships no database.
+
+The VPS still deploys via systemd + `deploy/deploy.sh`, not from this image. Phase 5 of
+`docs/team-setup-plan.md` switches that over.
+
 ## DB backup (Litestream → Cloudflare R2)
 
 Litestream continuously replicates `backend/data/factcheck.db` to the R2 bucket

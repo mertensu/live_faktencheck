@@ -182,19 +182,34 @@ Team, der ohne Serverzugang auskommt.
 **Warum:** Macht die Laufumgebung reproduzierbar statt handgepflegt — und ist Vorarbeit für
 Phase 5 und 6. Der Nutzen entsteht unabhängig davon, wo am Ende gehostet wird.
 
-- [ ] **4.1 Tote Abhängigkeiten entfernen**
+- [x] **4.1 Tote Abhängigkeiten entfernen**
   `torch` und `silero-vad` stehen in `pyproject.toml`, werden aber nirgends im Code
   importiert; die CI installiert zusätzlich `portaudio19-dev` ohne Verwendung. Zusammen
   ~790 MB im venv. Vor dem Image-Bau raus, sonst wandert der Ballast in jede Schicht.
+  `numpy` ging als dritter mit — ebenfalls nirgends importiert. **825 MB → 322 MB.**
 
-- [ ] **4.2 Rezept schreiben und lokal prüfen**
-  Python 3.12, `uv sync`, App starten — etwa 15 Zeilen. Ersetzt die handschriftliche
-  Provisioning-Anleitung in `docs/deployment.md` durch etwas Versioniertes, das lokal, in
-  der CI und in Produktion identisch läuft. Beendet „bei mir läuft's" als Fehlerklasse.
+  Beim Image-Bau kam ein vierter Posten dazu, der von außen nicht sichtbar war:
+  `pydantic-ai` ist ein Meta-Paket und zieht das SDK **jedes** unterstützten Anbieters mit —
+  `temporalio` (56 MB), `botocore` (30 MB), `mistralai`, `anthropic`, `cohere`, `xai-sdk`,
+  `tokenizers`. Der Code baut nur `GoogleModel` und `OpenAIModel`
+  (`backend/services/llm_base.py`), also `pydantic-ai-slim[google,openai]`.
+  **322 MB → 112 MB**, Image 1,17 GB → 542 MB.
 
-- [ ] **4.3 Image in der CI bauen und nach GHCR schieben**
-  Ein zusätzlicher Job in `.github/workflows/ci.yml`, nur auf `main`. Getaggt mit dem
-  Commit-SHA — Grundlage für Rollbacks.
+- [x] **4.2 Rezept schreiben und lokal prüfen**
+  `Dockerfile` (~25 Zeilen) plus `.dockerignore`. Zwei Eigenheiten fürs Protokoll:
+  - `pyproject.toml` hat **kein `[build-system]`** — uv behandelt das Projekt damit als
+    *virtual project*: Es installiert die Abhängigkeiten, aber nicht den Code. Der wird
+    schlicht kopiert und aus dem `WORKDIR` importiert; ein zweites `uv sync` nach dem
+    `COPY` wäre wirkungslos.
+  - Die `.dockerignore` schließt erst **alles** aus und holt gezielt zurück. Andersherum
+    landen `.env` und die SQLite-DB früher oder später im Image.
+
+  Getestet wurde auf der VPS, weil auf dem Laptop keine Container-Runtime installiert ist.
+
+- [x] **4.3 Image in der CI bauen und nach GHCR schieben**
+  Job `image` in `.github/workflows/ci.yml`, `needs: test`. **Baut auf jedem PR**, damit ein
+  kaputtes Dockerfile im Review auffällt und nicht auf `main`; gepusht wird nur von `main`,
+  getaggt mit Commit-SHA und `latest`. Build-Cache über `type=gha`.
 
 > ⚠️ **Einschränkung bleibt bestehen:** `backend/state.py` hält Claim-Queue und
 > Pipeline-Status im Prozessspeicher. Der Kommentar in der Unit-Datei —
@@ -202,6 +217,17 @@ Phase 5 und 6. Der Nutzen entsteht unabhängig davon, wo am Ende gehostet wird.
 > Ein Container ist keine Lösung dafür, er transportiert die Einschränkung mit.
 
 > **Abnahme:** Das Image läuft lokal mit einem R2-Datenstand und beantwortet `/api/health`.
+>
+> **Ergebnis (10.09.2026):** Bestanden — mit einer Abweichung: kein Lauftest auf dem Laptop,
+> dort ist keine Container-Runtime installiert. Stattdessen auf der VPS in `/tmp`, isoliert
+> vom Live-Dienst: Image gebaut, mit dem R2-Datenstand als Volume gestartet,
+> `/api/health` → `{"status":"ok","active_sessions":16,"pending_blocks":41,"fact_checks":319}`
+> — dieselben 319 Fact-Checks wie in der Live-DB. Docker-Healthcheck `healthy`, Start-Log
+> ohne Fehler. Test-Container, Image und Build-Kontext danach entfernt; der Live-Dienst lief
+> durchgehend.
+>
+> Offen: ein Lauftest auf einem Entwickler-Laptop, sobald dort eine Runtime steht — der
+> eigentliche Zweck des Images ist ja, dass es *dort* ohne VPS läuft.
 
 ---
 

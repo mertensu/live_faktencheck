@@ -1,0 +1,14 @@
+# Exclude everything, then allow back exactly what the Dockerfile copies.
+# This direction keeps .env, the SQLite DB and frontend/node_modules out by default.
+*
+
+!pyproject.toml
+!uv.lock
+!prompts/
+!backend/
+
+# Still excluded inside the allowed paths:
+backend/data/
+backend/tests/
+**/__pycache__/
+**/*.py[cod]
