@@ -69,8 +69,12 @@ frontend_dev.log
 # Cost tracking data
 backend/data/cost_history.json
 
-# SQLite database
+# SQLite database (incl. WAL sidecar files and local snapshots from scripts/pull-db.sh)
 backend/data/factcheck.db
+backend/data/factcheck.db-shm
+backend/data/factcheck.db-wal
+backend/data/*.bak
+backend/data/backup-*.db
 
 # Claude Code session memory
 memory.md
