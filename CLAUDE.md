@@ -63,6 +63,24 @@ cd frontend && bun run build         # Build frontend for deployment
 ### Production (VPS)
 The backend runs on the Hostinger VPS as systemd services; the frontend reads the live API. See `docs/deployment.md`. Update the deployed backend with `./deploy/deploy.sh`.
 
+**To look at real data, do not reach for SSH.** `./scripts/pull-db.sh` restores a snapshot
+from R2 into `backend/data/factcheck.db` using the read-only R2 token from `.env` — no server
+access needed, and it works for everyone on the team:
+```bash
+./scripts/pull-db.sh                      # latest snapshot
+./scripts/pull-db.sh 2026-09-08T21:00:00Z # a point in time
+sqlite3 backend/data/factcheck.db 'SELECT ...'
+```
+
+SSH (`ssh hostinger`) is Ulf-only and reserved for operating the server itself — service
+restarts, logs, deploys. Key paths/units there:
+- App directory: `/opt/fact_check/`
+- Live database: `/opt/fact_check/backend/data/factcheck.db` (SQLite)
+- Backend service: `factcheck-backend.service` (FastAPI/uvicorn)
+
+Never write to the live DB from a session, and never copy the live file while it is being
+written — `pull-db.sh` exists precisely to avoid both.
+
 ## Architecture Overview
 
 ### Data Flow
