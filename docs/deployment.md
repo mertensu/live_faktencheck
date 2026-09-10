@@ -35,8 +35,36 @@ From the laptop: `./deploy/deploy.sh`
 Just `git push` to `origin/main` — Cloudflare Pages is wired to the GitHub repo and
 builds & deploys the frontend automatically on every push. No manual deploy step.
 
-## DB backup (cron on the VPS)
-`0 4 * * * sqlite3 /opt/fact_check/backend/data/factcheck.db ".backup '/opt/fact_check/backend/data/backup-$(date +\%F).db'"`
+## DB backup (Litestream → Cloudflare R2)
+
+Litestream continuously replicates `backend/data/factcheck.db` to the R2 bucket
+`factcheck-backup` (prefix `factcheck/`). It reads the SQLite WAL, so the loss window is
+seconds rather than the up-to-24h of the nightly cron it replaced — and it supports
+point-in-time restores.
+
+- Service: `litestream.service` (config `/etc/litestream.yml`, mode 600, root only).
+  The annotated upstream template is kept at `/etc/litestream.yml.dist`.
+- Retention: snapshot every 6h, kept 30 days; 24h of fine-grained history. Litestream 0.5
+  defaults to 24h / 5m, which is too short to recover from a delete noticed days later.
+- Status: `systemctl status litestream`, `journalctl -u litestream -f`
+
+**Restore on the server:**
+```bash
+litestream restore -o /tmp/probe.db /opt/fact_check/backend/data/factcheck.db
+sqlite3 /tmp/probe.db "PRAGMA integrity_check; SELECT COUNT(*) FROM fact_checks;"
+```
+
+**Restore for local development:** `./scripts/pull-db.sh` — uses the read-only R2 token
+from your `.env`, no SSH required. It is the same restore path as above, so routine use
+keeps recovery exercised. Optional argument: an ISO timestamp for point-in-time restore.
+
+**Archive:** the 96 pre-Litestream daily backups (June–September 2026) live under the
+`archive/` prefix of the same bucket. They are not reachable via `litestream restore` —
+fetch them with any S3 client, e.g.
+`rclone copy r2:factcheck-backup/archive/backup-2026-06-09.db .`
+
+The old nightly cron has been removed; the previous crontab is saved at
+`/root/crontab.backup-2026-09-10`.
 
 ## Access gate (Phase 3a)
 

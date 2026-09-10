@@ -114,11 +114,16 @@ Team, der ohne Serverzugang auskommt.
 - [x] **2.3a Alten Cron abschalten**
   `crontab -r`; die alte Zeile liegt gesichert unter `/root/crontab.backup-2026-09-10`.
 
-- [ ] **2.3b Die 93 Altdateien — Entscheidung offen**
-  Sie sind **nicht** redundant zu R2: Litestream repliziert erst ab Einrichtung, die
-  Tageskopien reichen bis Juni zurück. Löschen heißt also, drei Monate Historie aufzugeben.
-  Bei 28 GB freiem Speicher drängt nichts. Optionen: behalten, auf die letzten 14 eindampfen,
-  oder einmalig als Archiv nach R2 schieben (Prefix `archive/`, stört Litestream nicht).
+- [x] **2.3b Die Altdateien nach R2 archiviert**
+  Sie waren **nicht** redundant zu R2: Litestream repliziert erst ab Einrichtung, die
+  Tageskopien reichten bis Juni zurück. Statt sie zu löschen, einmalig per `rclone` unter
+  dem Prefix `archive/` gesichert (96 Dateien, 66 MB) — Litestreams `factcheck/`-Prefix
+  bleibt unberührt. Vor dem lokalen Löschen dreifach geprüft: `rclone check` (0 Abweichungen,
+  94 Treffer), Rückholtest der ältesten Datei (`backup-2026-06-09.db`, `integrity_check` ok,
+  241 Fact-Checks), erst dann `rm`. Verzeichnis von 68 MB auf 2,8 MB.
+  Eigenheit fürs Protokoll: `rclone` meldet gegen R2 im ersten Anlauf `501 NotImplemented`
+  (ein S3-Aufruf zum Setzen der Änderungszeit, den Cloudflare nicht implementiert) und ist im
+  zweiten erfolgreich. Die Daten sind nicht betroffen — der Prüfsummen-Abgleich belegt das.
 
 - [x] **2.4 Restore testen**
   Restore aus R2 auf dem VPS: **319 Fact-Checks / 29 Sessions**, identisch zur Live-DB,
@@ -135,6 +140,21 @@ Team, der ohne Serverzugang auskommt.
 
 > **Abnahme:** Ein Restore aus R2 auf dem Laptop ergibt dieselbe Zeilenzahl wie die Live-DB,
 > und `pull-db.sh` läuft auf einem Rechner ohne SSH-Schlüssel durch.
+>
+> **Ergebnis (10.09.2026):** Bestanden. `./scripts/pull-db.sh` holt 319 Fact-Checks und
+> 29 Sessions ausschließlich über den R2-Lesetoken; die Zeitpunkt-Variante
+> (`./scripts/pull-db.sh <ISO-Zeit>`) ebenso. Gegenprobe: Ein Schreibversuch mit dem
+> Lesetoken scheitert mit `403 AccessDenied` — die Rechtetrennung ist nicht nur
+> konfiguriert, sondern nachgewiesen.
+
+### Offen aus Phase 2
+
+- [ ] **Schreib-Token rotieren.** Beim Debuggen eines YAML-Fehlers wurde `/etc/litestream.yml`
+      im Klartext ausgegeben; damit stehen die Zugangsdaten des Schreib-Tokens in einem
+      Chat-Transkript. Ersetzen: Token in Cloudflare löschen, neues Account-Token mit
+      denselben Rechten anlegen (Object Read & Write, nur dieser Bucket), in
+      `/etc/litestream.yml` eintragen, `systemctl restart litestream`.
+- [ ] **`docs/deployment.md` nachziehen** — beschreibt noch den abgeschalteten 4-Uhr-Cron.
 
 ---
 
