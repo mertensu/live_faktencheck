@@ -30,9 +30,9 @@ jobs:
   # Builds on every PR so a broken Dockerfile fails review, not main.
   # Pushes to GHCR only from main, tagged with the commit SHA for rollbacks.
   #
-  # Note: no deploy job here. The Hostinger firewall blocks inbound SSH from GitHub
-  # runners, so the backend is deployed from the laptop via deploy/deploy.sh. Phase 5
-  # of docs/team-setup-plan.md turns that around: the VPS pulls the image built here.
+  # Note: no deploy job here, by design. The Hostinger firewall blocks inbound SSH from
+  # GitHub runners, so the deploy runs the other way round: publishing :latest here IS
+  # the deploy trigger — the VPS pulls it (deploy/pull-deploy.sh, every 5 min).
   image:
     needs: test
     runs-on: ubuntu-latest
