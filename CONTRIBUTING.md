@@ -6,20 +6,23 @@ Thank you for your interest in contributing! This document provides guidelines f
 
 ### Prerequisites
 
-- Python 3.11+
-- Node.js 18+
+- Python 3.12+
 - [uv](https://github.com/astral-sh/uv) for Python dependency management
 - [bun](https://bun.sh/) for frontend dependency management
+- `sqlite3` (optional, for inspecting the local database)
 
 ### Installation
 
+Budget about 30 minutes. If anything here does not work as written, that is a bug
+in this document — please open an issue.
+
 1. Clone the repository:
    ```bash
-   git clone https://github.com/your-username/fact_check.git
-   cd fact_check
+   git clone https://github.com/mertensu/live_faktencheck.git
+   cd live_faktencheck
    ```
 
-2. Install Python dependencies:
+2. Install Python dependencies (this includes ruff and the test tools):
    ```bash
    uv sync
    ```
@@ -32,17 +35,29 @@ Thank you for your interest in contributing! This document provides guidelines f
 4. Set up environment variables:
    ```bash
    cp .env.example .env
-   # Edit .env with your API keys
    ```
+   Then fill in your **own development API keys** — never the production ones — and
+   set a spending limit at each provider. `.env.example` documents every variable
+   the code reads, including `ACCESS_CODES`: without it the app starts, but every
+   cost-incurring endpoint rejects all requests.
+
+5. Pull a database snapshot so the app has something to display:
+   ```bash
+   ./scripts/pull-db.sh
+   ```
+   `backend/data/` is empty in a fresh clone — no snapshot means an empty frontend.
+   This step currently needs VPS access; see `docs/team-setup-plan.md` (Phase 2) for
+   the R2-based replacement.
 
 ### Running the Development Servers
 
 ```bash
-# Backend (port 5000)
-./backend/run.sh
+# Both together (preferred)
+./start_dev.sh <episode-key>
 
-# Frontend (port 3000, in a separate terminal)
-cd frontend && bun run dev
+# Or separately:
+./backend/run.sh                  # backend on port 5000
+cd frontend && bun run dev        # frontend on port 3000
 ```
 
 ## Running Tests

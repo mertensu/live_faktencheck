@@ -60,10 +60,13 @@ Google-only weiter.
 Der Backend-Deploy erfolgt über `deploy/deploy.sh` (`git reset --hard origin/main`
 auf der VPS → deployt, **was auf `origin/main` liegt**, nicht lokale Dateien).
 
-Auf dem **alten** Rechner löst ein `~/.zshrc`-`git`-Wrapper `deploy.sh` automatisch
-nach `git push` aus. **Auf dem neuen Rechner existiert dieser Wrapper nicht** — dort
-also nach dem Push **manuell** `./deploy/deploy.sh` laufen lassen (oder den Wrapper
-neu einrichten).
+**Ein Push deployt nicht.** Nach dem Push immer **manuell** `./deploy/deploy.sh`
+laufen lassen. (Frühere Fassungen dieser Datei beschrieben einen `~/.zshrc`-`git`-Wrapper,
+der das automatisch auslöste — den gibt es nicht mehr. Verlass dich nicht darauf.)
+
+> ⚠️ **`git reset --hard` löscht auf der VPS alles, was von `origin/main` abweicht** —
+> kommentarlos. Bearbeite dort keine Dateien; was du auf der VPS änderst, ist beim
+> nächsten Deploy weg. Zum Entwickeln lokal arbeiten (siehe `CONTRIBUTING.md`).
 
 Zusätzlich: Die VPS hat eine **eigene** `.env`. Neue Secrets (z. B. `REQUESTY_API_KEY`)
 müssen dort separat in `/opt/fact_check/.env` eingetragen und der Dienst neu gestartet
