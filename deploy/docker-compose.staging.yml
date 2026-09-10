@@ -1,0 +1,29 @@
+# Staging on the same VPS: same image, own port, own database, own access codes.
+# Exists so a change can be tried somewhere other than the system that goes live
+# in the evening.
+#
+#   COMPOSE_FILE=/opt/fact_check/deploy/docker-compose.staging.yml \
+#   HEALTH_URL=http://127.0.0.1:5001/api/health \
+#     /opt/fact_check/deploy/pull-deploy.sh
+#
+# Deliberately NOT replicated by Litestream — /etc/litestream.yml points at the
+# production database only. Staging data is disposable; refill it with
+# `litestream restore` or scripts/pull-db.sh output.
+
+services:
+  backend:
+    image: ${FACTCHECK_IMAGE:-ghcr.io/mertensu/live_faktencheck:latest}
+    container_name: factcheck-backend-staging
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5001:5000"
+    volumes:
+      - /opt/fact_check/staging/data:/app/backend/data
+    env_file:
+      - /opt/fact_check/.env.staging
+    stop_grace_period: 20s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

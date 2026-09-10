@@ -1,0 +1,31 @@
+# Production backend on the VPS. The image is built and published by CI from main;
+# the VPS only pulls it — nothing deploys inward over SSH.
+#
+#   /opt/fact_check/deploy/pull-deploy.sh          # normal update
+#   FACTCHECK_IMAGE=ghcr.io/...@sha256:… docker compose -f … up -d   # pinned rollback
+#
+# FACTCHECK_IMAGE defaults to :latest but pull-deploy.sh always resolves it to a
+# digest first, so a rollback can name the exact image that was running before.
+
+services:
+  backend:
+    image: ${FACTCHECK_IMAGE:-ghcr.io/mertensu/live_faktencheck:latest}
+    container_name: factcheck-backend
+    restart: unless-stopped
+    # Bound to loopback: cloudflared is the only way in from outside.
+    ports:
+      - "127.0.0.1:5000:5000"
+    # Same path as before the container, so /etc/litestream.yml keeps replicating
+    # the very same file it always did.
+    volumes:
+      - /opt/fact_check/backend/data:/app/backend/data
+    # Production keys and ACCESS_CODES. Note: no inline "# comments" after a value
+    # in this file — compose keeps them as part of the value.
+    env_file:
+      - /opt/fact_check/.env
+    stop_grace_period: 20s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"

@@ -1,0 +1,12 @@
+[Unit]
+Description=Check GHCR for a new backend image every 5 minutes
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=5min
+# Keeps the pull off the exact minute boundary shared with every other timer.
+RandomizedDelaySec=30s
+Unit=factcheck-deploy.service
+
+[Install]
+WantedBy=timers.target

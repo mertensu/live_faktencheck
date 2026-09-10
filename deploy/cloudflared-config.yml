@@ -4,4 +4,8 @@ credentials-file: /etc/cloudflared/b18ee8aa-2ea2-4632-abe8-2ab716829574.json
 ingress:
   - hostname: api.live-faktencheck.de
     service: http://localhost:5000
+  # Staging container (deploy/docker-compose.staging.yml). Needs a DNS route once:
+  #   cloudflared tunnel route dns faktencheck-api staging-api.live-faktencheck.de
+  - hostname: staging-api.live-faktencheck.de
+    service: http://localhost:5001
   - service: http_status:404

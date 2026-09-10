@@ -1,0 +1,12 @@
+[Unit]
+Description=Pull the latest backend image from GHCR and restart if it changed
+After=network-online.target docker.service
+Wants=network-online.target
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/fact_check/deploy/pull-deploy.sh
+# A failed deploy rolls itself back; the non-zero exit is there to be visible in
+# `systemctl status factcheck-deploy` and the journal, not to stop the timer.
+SuccessExitStatus=0

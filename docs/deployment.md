@@ -5,9 +5,14 @@ systemd services. The frontend is on Cloudflare Pages and reads the live API at
 `https://api.live-faktencheck.de`. There is no local start and no static-JSON export.
 
 ## Architecture
-- `factcheck-backend.service` — `uv run uvicorn backend.app:app` on 127.0.0.1:5000, single process.
-- `cloudflared` — reuses the named tunnel `faktencheck-api`; maps `api.live-faktencheck.de` -> localhost:5000.
-- Both are isolated from the unrelated NanoClaw stack on the same VPS (no Docker, no ports 80/443).
+- `factcheck-backend` — the container from `deploy/docker-compose.yml` on 127.0.0.1:5000,
+  single process. (`factcheck-backend.service`, the pre-container systemd unit that ran
+  `uv run uvicorn` from the checkout, is kept as a fallback — see "Updating the backend".)
+- `factcheck-deploy.timer` — pulls a new image from GHCR every 5 minutes.
+- `cloudflared` — reuses the named tunnel `faktencheck-api`; maps `api.live-faktencheck.de`
+  -> localhost:5000 and `staging-api.live-faktencheck.de` -> localhost:5001.
+- All of it is isolated from the unrelated NanoClaw stack on the same VPS: own containers,
+  no ports 80/443, everything on loopback behind the tunnel.
 
 ## First-time provisioning (run on the VPS as root)
 0. Install sqlite3: `apt-get update && apt-get install -y sqlite3`
@@ -29,7 +34,121 @@ systemd services. The frontend is on Cloudflare Pages and reads the live API at
    - Verify: `curl -fsS https://api.live-faktencheck.de/api/health`
 
 ## Updating the backend
-From the laptop: `./deploy/deploy.sh`
+
+Merging a PR into `main` is the deploy. CI builds the image and pushes it to GHCR; the
+VPS pulls it. Nothing connects inward — the Hostinger firewall stays closed, and no
+laptop is involved.
+
+```
+PR merged → CI: test + build → ghcr.io/mertensu/live_faktencheck:latest
+                                   ↓ (timer, every 5 min)
+                          VPS: deploy/pull-deploy.sh → docker compose up -d
+                                   ↓ health check fails?
+                          automatic rollback to the previous digest
+```
+
+- Watch it land: `ssh hostinger 'journalctl -u factcheck-deploy -n 50'`
+- Deploy now instead of waiting: `ssh hostinger '/opt/fact_check/deploy/pull-deploy.sh'`
+- **Pause deploys** (broadcast evening): `ssh hostinger 'touch /opt/fact_check/deploy-hold'`,
+  resume with `rm`. The timer keeps running and logs that it skipped.
+
+`deploy/deploy.sh` (the old source-checkout deploy from the laptop) still works but is
+legacy. It runs `git reset --hard origin/main` on the server and deletes anything
+uncommitted there without asking — see the warning in the file itself.
+
+### One-time setup on the VPS
+
+1. `apt-get install -y docker.io docker-compose-plugin`
+2. Log in to GHCR — the package is private, so the pull needs a token:
+   ```sh
+   echo "$GHCR_READ_TOKEN" | docker login ghcr.io -u mertensu --password-stdin
+   ```
+   Use a classic PAT with **`read:packages` only**, created for the machine. It lands in
+   `/root/.docker/config.json`; nothing else on the VPS needs it.
+3. Install the timer:
+   ```sh
+   cp /opt/fact_check/deploy/factcheck-deploy.{service,timer} /etc/systemd/system/
+   systemctl daemon-reload && systemctl enable --now factcheck-deploy.timer
+   ```
+4. Cut over from systemd-uvicorn to the container (do this once, with the show off air):
+   ```sh
+   systemctl disable --now factcheck-backend      # frees port 5000
+   /opt/fact_check/deploy/pull-deploy.sh
+   curl -fsS http://127.0.0.1:5000/api/health
+   ```
+   `factcheck-backend.service` stays in the repo as the fallback: re-enable it after
+   `docker compose -f deploy/docker-compose.yml down` if the container path ever has to
+   be abandoned mid-evening.
+
+The database path does not move — the container bind-mounts `/opt/fact_check/backend/data`,
+so Litestream keeps replicating the same file with no config change.
+
+## Rollback
+
+The failure that gets caught automatically: a new image that does not answer
+`/api/health` within ~60s. `pull-deploy.sh` puts the previous digest back and says so in
+the journal. Nothing to do by hand.
+
+The failure that does not: an image that is healthy but wrong (bad answers, broken
+pipeline). Then go back deliberately:
+
+```sh
+ssh hostinger
+touch /opt/fact_check/deploy-hold                      # stop the timer re-pulling latest
+cd /opt/fact_check
+export FACTCHECK_IMAGE=ghcr.io/mertensu/live_faktencheck:<good-commit-sha>
+docker compose -f deploy/docker-compose.yml up -d
+curl -fsS http://127.0.0.1:5000/api/health
+```
+
+Every CI build from `main` is tagged with its commit SHA, so any past commit is a valid
+`<good-commit-sha>`. `docker images ghcr.io/mertensu/live_faktencheck` lists what is still
+on disk locally; older tags are pulled from GHCR on demand.
+
+Then fix forward on a branch, merge, and `rm /opt/fact_check/deploy-hold` — leaving the
+hold file in place is the one way to end up silently running an old build for days.
+
+**A rollback is only real once it has been done.** Do it once on a quiet afternoon:
+pin the previous SHA, confirm `/api/health`, un-pin, confirm the timer pulls `latest` back.
+
+## Staging
+
+A second container on the same VPS: `deploy/docker-compose.staging.yml` — port 5001, own
+database in `/opt/fact_check/staging/data`, own `/opt/fact_check/.env.staging`, reachable
+at `https://staging-api.live-faktencheck.de` through the same tunnel.
+
+```sh
+mkdir -p /opt/fact_check/staging/data
+cp /opt/fact_check/.env /opt/fact_check/.env.staging   # then: own ACCESS_CODES, own keys
+litestream restore -o /opt/fact_check/staging/data/factcheck.db \
+  /opt/fact_check/backend/data/factcheck.db            # optional: real data to look at
+cloudflared tunnel route dns faktencheck-api staging-api.live-faktencheck.de
+systemctl restart cloudflared
+
+COMPOSE_FILE=/opt/fact_check/deploy/docker-compose.staging.yml \
+HEALTH_URL=http://127.0.0.1:5001/api/health \
+  /opt/fact_check/deploy/pull-deploy.sh
+```
+
+Two things to keep straight: staging is **not** replicated by Litestream (its data is
+disposable, refill it with the restore above), and it needs its **own** `ACCESS_CODES` —
+copying the production code means staging traffic burns the production quota.
+
+## Secrets — three places, three owners
+
+| What | Where | Who has it |
+|---|---|---|
+| Production keys, `ACCESS_CODES` | `/opt/fact_check/.env` on the VPS | Ulf |
+| GHCR read token (pull), `GITHUB_TOKEN` (push, automatic) | `/root/.docker/config.json`, GitHub Actions | Repo admins |
+| Dev keys, R2 read token | each contributor's local `.env` | everyone, their own |
+
+**The trap worth knowing:** neither `deploy.sh` nor the image deploy touches
+`/opt/fact_check/.env`. A new required env var added in code deploys fine and then fails
+at startup on the server. When a PR adds one, add it to the server `.env` **before**
+merging — and to `.env.example` in the same PR, so nobody's local setup silently lags.
+
+Also: no inline `# comments` after a value in the server `.env`. Both systemd's
+`EnvironmentFile` and compose's `env_file` keep them as part of the value.
 
 ## Updating the frontend
 Just `git push` to `origin/main` — Cloudflare Pages is wired to the GitHub repo and
@@ -60,8 +179,7 @@ Two things the image does not change:
   process memory — no `--workers`, no `--reload`, and no second replica.
 - **The DB stays outside.** `backend/data/` is a volume; the image ships no database.
 
-The VPS still deploys via systemd + `deploy/deploy.sh`, not from this image. Phase 5 of
-`docs/team-setup-plan.md` switches that over.
+This is the image production runs — see "Updating the backend" above.
 
 ## DB backup (Litestream → Cloudflare R2)
 

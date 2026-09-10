@@ -236,21 +236,47 @@ Phase 5 und 6. Der Nutzen entsteht unabhängig davon, wo am Ende gehostet wird.
 **Warum:** Nimmt den Deploy vom Laptop und macht ihn zu etwas, das jeder im Team durch einen
 Merge auslöst — ohne Maschinenzugang.
 
-- [ ] **5.1 `main` schützen**
+> **Reihenfolge, die nicht verhandelbar ist:** 5.1 **vor** 5.2. Der CI-Job pusht das Image
+> nur von `main` — solange die fünf Phase-1..4-Commits auf `phase-1-team-onboarding` liegen,
+> existiert `ghcr.io/mertensu/live_faktencheck:latest` schlicht nicht. Eine VPS, die vorher
+> auf Pull umgestellt wird, zieht ins Leere.
+
+- [ ] **5.1 `main` schützen** *(nur Ulf — Repo-Einstellungen)*
   PR erforderlich, CI muss grün sein, kein direkter Push. Ohne das ist die vorhandene CI
   Dekoration — jeder kann an ihr vorbei auf `main` pushen. Zehn Minuten in den Repo-Einstellungen.
 
-- [ ] **5.2 Deploy umdrehen: Pull statt Push**
+  Konkret unter *Settings → Rules → Rulesets → New branch ruleset*, Target `main`:
+  - Require a pull request before merging (1 Approval; bei Solo-Arbeit 0, der PR-Zwang
+    allein reicht schon, damit die CI zwingend läuft)
+  - Require status checks to pass → `test` **und** `image` auswählen
+  - Block force pushes, Restrict deletions
+  - „Do not allow bypass" — sonst gilt der Schutz für Admins nicht, und Admin ist hier jeder,
+    der überhaupt pusht.
+
+  Danach: PR von `phase-1-team-onboarding` auf `main`, mergen. **Erst dieser Merge erzeugt
+  das GHCR-Image**, das 5.2 braucht.
+
+- [x] **5.2 Deploy umdrehen: Pull statt Push** *(im Repo fertig — VPS-Schritt offen)*
   Die Firewall blockt SSH von GitHub-Runnern — deshalb steht heute im Workflow ausdrücklich
   `no deploy job here`. Statt dagegen anzukämpfen, wird die Richtung getauscht: Die CI baut
   und veröffentlicht das Image, die VPS holt es sich.
-  ```sh
-  # auf der VPS, per Cron oder Webhook
-  docker compose pull && docker compose up -d
-  ```
-  Damit entfällt jeder eingehende Zugang von außen — und der Laptop als Flaschenhals.
 
-- [ ] **5.3 Secrets sauber trennen**
+  Im Repo liegt jetzt:
+  - `deploy/docker-compose.yml` — Produktion, Port 127.0.0.1:5000, Bind-Mount auf
+    `/opt/fact_check/backend/data`. Der DB-Pfad bleibt derselbe, **Litestream merkt vom
+    Umzug in den Container nichts** und braucht keine Änderung.
+  - `deploy/pull-deploy.sh` — läuft auf der VPS. Löst `:latest` erst auf einen Digest auf,
+    merkt sich den vorherigen, startet neu und **rollt bei rotem Healthcheck automatisch
+    zurück**. Kennt eine Bremse: `touch /opt/fact_check/deploy-hold` pausiert alle
+    automatischen Deploys — für Sendeabende.
+  - `deploy/factcheck-deploy.{service,timer}` — Timer alle 5 Minuten.
+
+  Auf der VPS auszuführen (Schritte in `docs/deployment.md`, „One-time setup"): Docker
+  installieren, `docker login ghcr.io` mit einem PAT, das **nur** `read:packages` kann,
+  Timer aktivieren, dann einmalig `systemctl disable --now factcheck-backend` (gibt Port
+  5000 frei) und `pull-deploy.sh`. Der alte systemd-Dienst bleibt als Rückfallebene liegen.
+
+- [x] **5.3 Secrets sauber trennen**
   Drei Orte, drei Zuständigkeiten — heute ist alles vermischt:
 
   | Was | Wo | Zugriff |
@@ -259,25 +285,50 @@ Merge auslöst — ohne Maschinenzugang.
   | GHCR-Token, Build-Secrets | GitHub Actions Secrets | Repo-Admins |
   | Dev-Schlüssel, R2-Lesetoken | lokale `.env` | jeder, eigene |
 
-  Bekannte Falle mitdokumentieren: `deploy.sh` fasst die `.env` auf dem Server **nicht** an.
-  Ein neues Secret im Code, das dort fehlt, lässt den Dienst beim nächsten Start scheitern.
+  Steht als Tabelle in `docs/deployment.md`. Bekannte Falle mitdokumentiert: `deploy.sh`
+  fasst die `.env` auf dem Server **nicht** an — und der Image-Deploy genauso wenig. Ein
+  neues Pflicht-Env im Code deployt sauber durch und lässt den Dienst dann beim Start
+  scheitern. Regel: Wer eine Variable hinzufügt, trägt sie **vor** dem Merge in die
+  Server-`.env` ein und im selben PR in `.env.example`.
+  Zweiter Stolperstein, jetzt notiert: keine `# Kommentare` hinter einem Wert in der
+  Server-`.env` — sowohl systemd als auch compose zählen sie zum Wert.
 
-- [ ] **5.4 Rollback definieren und einmal üben**
-  Auf das vorherige Image-Tag zurückgehen und neu starten. Der Weg gehört in
-  `docs/deployment.md` — ein Rollback, den niemand geübt hat, existiert im Ernstfall nicht.
+- [x] **5.4 Rollback definieren** *(üben steht aus)*
+  Zwei Fälle, sauber getrennt in `docs/deployment.md`: Der Healthcheck-Fall rollt sich
+  selbst zurück (`pull-deploy.sh` kennt den vorherigen Digest). Der stille Fall — Image
+  ist gesund, aber falsch — geht über `deploy-hold` + `FACTCHECK_IMAGE=…:<sha>`; jeder
+  CI-Build von `main` trägt seinen Commit-SHA als Tag.
+  **Offen und wichtig:** einmal an einem ruhigen Nachmittag durchspielen. Ein Rollback,
+  den niemand geübt hat, existiert im Ernstfall nicht.
 
-- [ ] **5.5 Staging-Instanz aufsetzen**
+- [x] **5.5 Staging-Instanz vorbereitet** *(VPS-Schritt offen)*
   Zweiter Container auf derselben VPS: eigener Port, eigene Datenbank, eigene Subdomain.
   Kostet nichts und beendet die Lage, in der jeder Test auf dem System stattfindet, das
   abends live geht.
+  `deploy/docker-compose.staging.yml` (Port 5001, `/opt/fact_check/staging/data`,
+  `.env.staging`), Tunnel-Eintrag `staging-api.live-faktencheck.de` in
+  `deploy/cloudflared-config.yml`. Zwei Dinge, die man dabei falsch machen kann und die in
+  der Doku stehen: Staging wird **nicht** von Litestream repliziert (Daten sind
+  Wegwerfware), und es braucht **eigene** `ACCESS_CODES` — sonst frisst jeder Staging-Test
+  das Produktivkontingent.
 
-> ⚠️ **Vorher entschärfen:** `deploy/deploy.sh` führt auf dem Server `git reset --hard
-> origin/main` aus — alles, was dort abweicht, wird kommentarlos gelöscht. Solange jemand die
-> VPS noch als Arbeitsplatz benutzt, ist das ein Datenverlust-Risiko. Mit dem Image-Deploy
-> verschwindet der Befehl; bis dahin gehört ein Warnhinweis in die Doku.
+> ⚠️ **Entschärft, nicht beseitigt:** `deploy/deploy.sh` führt auf dem Server `git reset
+> --hard origin/main` aus — alles, was dort abweicht, wird kommentarlos gelöscht. Der
+> Image-Deploy braucht den Befehl nicht mehr, aber das Skript liegt noch da und funktioniert
+> noch. Es trägt jetzt den Warnhinweis im Kopf und ist als *legacy* markiert; **löschen,
+> sobald der Container ein paar Sendeabende getragen hat.**
 
 > **Abnahme:** Ein Teammitglied merged einen PR, und die Änderung geht live — ohne Ulfs
 > Laptop, ohne SSH-Schlüssel, mit dokumentiertem Rückweg.
+>
+> **Stand (10.09.2026):** Repo-Seite steht (5.2–5.5 als Dateien und Doku). Was noch fehlt,
+> hängt an Konten und an der Maschine und ist nicht delegierbar:
+> 1. **5.1** Ruleset auf `main` setzen, dann `phase-1-team-onboarding` per PR mergen —
+>    dieser Merge erzeugt das erste GHCR-Image.
+> 2. Auf der VPS: Docker, `docker login ghcr.io`, Timer, Umschalten vom systemd-Dienst
+>    auf den Container.
+> 3. Staging aufsetzen, Rollback einmal üben.
+> Erst danach ist die Abnahme oben tatsächlich fahrbar.
 
 ---
 
