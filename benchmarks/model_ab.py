@@ -179,6 +179,13 @@ async def main():
     print(f"    Hochrechnung 6 Checks/Block: ~${cost * 6:.3f}"
           + ("" if rate["in"] else "   [!] keine Rate hinterlegt – RATE_IN/RATE_OUT setzen"))
 
+    # (D) Wie oft welche Suchtiefe (zeigt, ob der Agent eskaliert)
+    try:
+        from backend.services.search import SEARCH_DEPTH_COUNTS
+        print(f"\n[D] Tavily-Suchtiefen (über alle Checks): {dict(SEARCH_DEPTH_COUNTS)}")
+    except Exception:
+        pass
+
 
 if __name__ == "__main__":
     asyncio.run(main())
