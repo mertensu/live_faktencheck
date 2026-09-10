@@ -36,10 +36,15 @@ in this document — please open an issue.
    ```bash
    cp .env.example .env
    ```
-   Then fill in your **own development API keys** — never the production ones — and
-   set a spending limit at each provider. `.env.example` documents every variable
-   the code reads, including `ACCESS_CODES`: without it the app starts, but every
-   cost-incurring endpoint rejects all requests.
+   `.env.example` documents every variable the code reads, including `ACCESS_CODES`:
+   without it the app starts, but every cost-incurring endpoint rejects all requests.
+
+   **You do not need API keys to start contributing.** The unit tests run without any
+   — only the integration tests and the live pipeline call out to providers. When you
+   do need keys, sign up for your **own** at [Google AI Studio](https://aistudio.google.com/),
+   [Tavily](https://tavily.com/) and [AssemblyAI](https://www.assemblyai.com/); all three
+   offer a free tier. Set a spending limit at each. Never use the production keys: a
+   runaway local test must not be able to exhaust the live budget mid-broadcast.
 
 5. Pull a database snapshot so the app has something to display:
    ```bash

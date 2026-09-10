@@ -46,10 +46,13 @@ SSH-Zugang. Diese Phase schneidet die Abhängigkeit durch und ist Voraussetzung 
   lehnt es jeden kostenverursachenden Endpunkt ab, ohne erkennbaren Grund für jemanden,
   der das System nicht kennt.
 
-- [ ] **1.3 Dev-Schlüssel pro Person, mit eigenem Budget** *(nur Ulf — Konten)*
-  Je ein eigener Key bei Google AI Studio, Tavily und AssemblyAI, nicht der Produktivschlüssel.
-  Bei jedem Anbieter ein Ausgabenlimit setzen. Trennt „Kollege probiert etwas aus" von
-  „Live-Sendung fällt aus"; beim Ausscheiden wird ein Schlüssel widerrufen statt alle rotiert.
+- [x] **1.3 Dev-Schlüssel: Selbstbedienung statt Verteilung**
+  Ursprünglich als Ulf-Aufgabe geplant — besser ist, dass **jeder seinen eigenen Key anlegt**.
+  Google AI Studio, Tavily und AssemblyAI haben Self-Signup mit Gratiskontingent. Damit geht
+  kein Schlüssel durch Ulfs Hände, beim Ausscheiden ist nichts zu widerrufen, und jeder trägt
+  sein eigenes Kontingent. Reduziert sich auf eine Doku-Zeile in `CONTRIBUTING.md`.
+  Wichtig dort auch: **die Unit-Tests brauchen gar keine Keys** — nur Integrationstests und
+  die echte Pipeline. Ohne diesen Hinweis denkt jeder Neue, er müsse zuerst drei Konten anlegen.
 
 - [x] **1.4 `scripts/pull-db.sh` anlegen**
   Holt einen Datenstand zum lokalen Arbeiten, damit das Frontend echte Fact-Checks zeigt
