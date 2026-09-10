@@ -26,7 +26,7 @@ from backend.auth import seed_codes_from_env
 from backend.database import Database
 from backend import state
 from backend.services.observability import configure_logfire
-from config import EPISODES, episode_to_session_dict
+from backend.config import EPISODES, episode_to_session_dict
 
 # Load environment variables
 load_dotenv()

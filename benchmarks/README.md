@@ -59,7 +59,8 @@ Modell dort ergänzen oder `RATE_IN`/`RATE_OUT` setzen.
 
 - `uv` ist im nicht-interaktiven SSH **nicht im PATH** → voller Pfad
   `/root/.local/bin/uv`. Verifizieren mit `ssh hostinger "command -v uv"`.
-- `PYTHONPATH=/opt/fact_check` ist Pflicht (Imports wie `from config import ...`).
+- `PYTHONPATH=/opt/fact_check` ist Pflicht: Bei einem Skript liegt dessen eigenes Verzeichnis
+  auf `sys.path`, nicht das Projekt-Root — ohne die Variable schlägt schon `import backend` fehl.
 - `load_dotenv` sucht relativ zum Skript, nicht zum CWD → das Skript setzt den
   `.env`-Pfad explizit.
 - Ergebnis-Dict nutzt **englische** Keys: `consistency`, `sources`, `evidence`

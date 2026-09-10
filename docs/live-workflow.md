@@ -8,10 +8,10 @@ For VPS deployment and the always-on backend, see [`docs/deployment.md`](deploym
 
 ## Before the show
 
-Add the episode to `config.py`:
+Add the episode to `backend/config.py`:
 
 ```python
-# In config.py — add a new Episode to the EPISODES dict
+# In backend/config.py — add a new Episode to the EPISODES dict
 EPISODES = {
     "maischberger-2026-03-01": Episode(
         key="maischberger-2026-03-01",
