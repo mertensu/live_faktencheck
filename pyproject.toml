@@ -5,10 +5,6 @@ description = "Live fact-checking application for German TV shows"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    # Audio processing
-    "silero-vad>=4.0.0",
-    "torch>=2.0.0",
-    "numpy>=1.24.0",
     # Web framework
     "fastapi>=0.128.0",
     "uvicorn[standard]>=0.40.0",
@@ -18,8 +14,12 @@ dependencies = [
     "assemblyai>=0.37.0",
     "google-genai>=1.0.0",
     "tavily-python>=0.5.0",
-    # PydanticAI + Logfire
-    "pydantic-ai>=1.0.0",
+    # PydanticAI + Logfire.
+    # -slim with explicit extras instead of the full "pydantic-ai": that meta-package
+    # pulls in the SDK of every supported provider (temporalio, botocore, mistralai,
+    # anthropic, cohere, ...) — ~250 MB for code we never import. We only build
+    # GoogleModel and OpenAIModel (see backend/services/llm_base.py).
+    "pydantic-ai-slim[google,openai]>=1.0.0",
     "logfire>=3.0.0",
     # Database
     "aiosqlite>=0.20.0",
