@@ -61,7 +61,7 @@ cd frontend && bun run build         # Build frontend for deployment
 ```
 
 ### Production (VPS)
-The backend runs on the Hostinger VPS as systemd services; the frontend reads the live API. See `docs/deployment.md`. Update the deployed backend with `./deploy/deploy.sh`.
+The backend runs as a container on the project's VPS; the frontend reads the live API. See `docs/deployment.md`. **Deploying is merging a PR into `main`** — CI builds the image, the server pulls it within a few minutes. Do not deploy by hand.
 
 **To look at real data, do not reach for SSH.** `./scripts/pull-db.sh` restores a snapshot
 from R2 into `backend/data/factcheck.db` using the read-only R2 token from `.env` — no server
@@ -72,11 +72,13 @@ access needed, and it works for everyone on the team:
 sqlite3 backend/data/factcheck.db 'SELECT ...'
 ```
 
-SSH (`ssh hostinger`) is Ulf-only and reserved for operating the server itself — service
-restarts, logs, deploys. Key paths/units there:
-- App directory: `/opt/fact_check/`
-- Live database: `/opt/fact_check/backend/data/factcheck.db` (SQLite)
-- Backend service: `factcheck-backend.service` (FastAPI/uvicorn)
+Shell access to the server is held by maintainers only, and is reserved for operating the
+machine itself — not for deploys, not for reading data, not for editing claims. Assume you
+do not have it: if a task seems to need it, there is almost always a path through the API,
+`pull-db.sh`, or Logfire. Key paths there, for context:
+- App directory: `/opt/fact_check/` (compose files and scripts; the app ships as an image)
+- Live database: `/opt/fact_check/backend/data/factcheck.db` (SQLite, bind-mounted)
+- Container: `factcheck-backend`, deploy timer `factcheck-deploy.timer`
 
 Never write to the live DB from a session, and never copy the live file while it is being
 written — `pull-db.sh` exists precisely to avoid both.

@@ -1,8 +1,17 @@
 # Deployment (VPS)
 
-The backend runs permanently on the Hostinger VPS (`hostinger`, 72.61.83.151) as two
-systemd services. The frontend is on Cloudflare Pages and reads the live API at
-`https://api.live-faktencheck.de`. There is no local start and no static-JSON export.
+The backend runs permanently on the project's VPS. The frontend is on Cloudflare Pages and
+reads the live API at `https://api.live-faktencheck.de`. There is no local start and no
+static-JSON export.
+
+**Almost nothing here needs server access.** Deploying is merging a PR; reading production
+data is `scripts/pull-db.sh`; traces are in Logfire; claims are managed through the admin
+UI and the API. Shell access exists for operating the machine itself — installing the
+services below, and the rare incident — and is held by maintainers.
+
+Commands written as `ssh <prod>` mean the production host. Set up the alias in your own
+`~/.ssh/config`; ask a maintainer for the address and access. If you find yourself needing
+it for something routine, that is a gap in this document — please report it.
 
 ## Architecture
 - `factcheck-backend` — the container from `deploy/docker-compose.yml` on 127.0.0.1:5000,
@@ -14,30 +23,36 @@ systemd services. The frontend is on Cloudflare Pages and reads the live API at
 - All of it is isolated from the unrelated NanoClaw stack on the same VPS: own containers,
   no ports 80/443, everything on loopback behind the tunnel.
 
-## First-time provisioning (run on the VPS as root)
-0. Install sqlite3: `apt-get update && apt-get install -y sqlite3`
-1. Install uv: `curl -LsSf https://astral.sh/uv/install.sh | sh`
+## First-time provisioning (run on the host as root)
+
+Only needed to build a *new* production host — a move, or a rebuild after a loss. Day-to-day
+work never touches this section.
+
+1. `apt-get update && apt-get install -y sqlite3 docker.io docker-compose-plugin`
 2. `git clone https://github.com/mertensu/live_faktencheck.git /opt/fact_check`
-3. Copy secrets/data from the laptop:
-   - `scp .env hostinger:/opt/fact_check/.env`
-   - `scp backend/data/factcheck.db hostinger:/opt/fact_check/backend/data/factcheck.db`
-4. `cd /opt/fact_check && /root/.local/bin/uv sync`
-5. Install the backend service:
-   - `cp deploy/factcheck-backend.service /etc/systemd/system/`
-   - `systemctl daemon-reload && systemctl enable --now factcheck-backend`
-   - Verify: `curl -fsS http://127.0.0.1:5000/api/health`
-6. Install cloudflared + tunnel (AFTER stopping the laptop tunnel so the named tunnel runs in only one place):
+   (the checkout provides the compose files and scripts; the app itself ships as an image)
+3. Secrets and data — neither is in git:
+   - `/opt/fact_check/.env` — production keys and `ACCESS_CODES`, from the password manager.
+     `.env.example` lists every variable the code reads.
+   - `mkdir -p /opt/fact_check/backend/data`, then restore the database from R2:
+     `litestream restore -o /opt/fact_check/backend/data/factcheck.db <replica-url>`.
+     A fresh install with no history starts empty instead.
+4. Follow "One-time setup on the VPS" below: GHCR login, deploy timer, first `pull-deploy.sh`.
+5. Cloudflare tunnel:
    - `curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb -o /tmp/cf.deb && dpkg -i /tmp/cf.deb`
-   - `mkdir -p /etc/cloudflared`
-   - From the laptop: `scp ~/.cloudflared/b18ee8aa-2ea2-4632-abe8-2ab716829574.json hostinger:/etc/cloudflared/` and `scp deploy/cloudflared-config.yml hostinger:/etc/cloudflared/config.yml`
+   - `mkdir -p /etc/cloudflared`, put the tunnel credentials JSON there (Cloudflare dashboard
+     → Zero Trust → Tunnels, or a copy from the password manager) and
+     `deploy/cloudflared-config.yml` as `/etc/cloudflared/config.yml`
+   - A named tunnel runs in **one** place only — stop it wherever it ran before.
    - `cloudflared service install && systemctl enable --now cloudflared`
    - Verify: `curl -fsS https://api.live-faktencheck.de/api/health`
+6. Litestream for backups — see "DB backup" below.
 
 ## Updating the backend
 
 Merging a PR into `main` is the deploy. CI builds the image and pushes it to GHCR; the
-VPS pulls it. Nothing connects inward — the Hostinger firewall stays closed, and no
-laptop is involved.
+VPS pulls it. Nothing connects inward — the firewall stays closed — and no particular
+machine is involved. Anyone who can merge can deploy.
 
 ```
 PR merged → CI: test + build → ghcr.io/mertensu/live_faktencheck:latest
@@ -47,24 +62,26 @@ PR merged → CI: test + build → ghcr.io/mertensu/live_faktencheck:latest
                           automatic rollback to the previous digest
 ```
 
-- Watch it land: `ssh hostinger 'journalctl -u factcheck-deploy -n 50'`
-- Deploy now instead of waiting: `ssh hostinger '/opt/fact_check/deploy/pull-deploy.sh'`
-- **Pause deploys** (broadcast evening): `ssh hostinger 'touch /opt/fact_check/deploy-hold'`,
+- Watch it land: `ssh <prod> 'journalctl -u factcheck-deploy -n 50'`
+- Deploy now instead of waiting: `ssh <prod> '/opt/fact_check/deploy/pull-deploy.sh'`
+- **Pause deploys** (broadcast evening): `ssh <prod> 'touch /opt/fact_check/deploy-hold'`,
   resume with `rm`. The timer keeps running and logs that it skipped.
 
-`deploy/deploy.sh` (the old source-checkout deploy from the laptop) still works but is
-legacy. It runs `git reset --hard origin/main` on the server and deletes anything
-uncommitted there without asking — see the warning in the file itself.
+`deploy/deploy.sh` — the old deploy, which pushed from a maintainer's machine over SSH —
+still works but is legacy, and it is exactly the bottleneck this replaced. It runs
+`git reset --hard origin/main` on the server and deletes anything uncommitted there
+without asking; see the warning in the file itself.
 
 ### One-time setup on the VPS
 
 1. `apt-get install -y docker.io docker-compose-plugin`
 2. Log in to GHCR — the package is private, so the pull needs a token:
    ```sh
-   echo "$GHCR_READ_TOKEN" | docker login ghcr.io -u mertensu --password-stdin
+   echo "$GHCR_READ_TOKEN" | docker login ghcr.io -u <github-user> --password-stdin
    ```
-   Use a classic PAT with **`read:packages` only**, created for the machine. It lands in
-   `/root/.docker/config.json`; nothing else on the VPS needs it.
+   Use a classic PAT with **`read:packages` only**, created for this machine — not a
+   personal token that also opens other doors. It lands in `/root/.docker/config.json`;
+   nothing else on the VPS needs it.
 3. Install the timer:
    ```sh
    cp /opt/fact_check/deploy/factcheck-deploy.{service,timer} /etc/systemd/system/
@@ -93,7 +110,7 @@ The failure that does not: an image that is healthy but wrong (bad answers, brok
 pipeline). Then go back deliberately:
 
 ```sh
-ssh hostinger
+ssh <prod>
 touch /opt/fact_check/deploy-hold                      # stop the timer re-pulling latest
 cd /opt/fact_check
 export FACTCHECK_IMAGE=ghcr.io/mertensu/live_faktencheck:<good-commit-sha>
@@ -138,8 +155,8 @@ copying the production code means staging traffic burns the production quota.
 
 | What | Where | Who has it |
 |---|---|---|
-| Production keys, `ACCESS_CODES` | `/opt/fact_check/.env` on the VPS | Ulf |
-| GHCR read token (pull), `GITHUB_TOKEN` (push, automatic) | `/root/.docker/config.json`, GitHub Actions | Repo admins |
+| Production keys, `ACCESS_CODES` | `/opt/fact_check/.env` on the VPS | maintainers with production access |
+| GHCR read token (pull), `GITHUB_TOKEN` (push, automatic) | `/root/.docker/config.json`, GitHub Actions | repo admins |
 | Dev keys, R2 read token | each contributor's local `.env` | everyone, their own |
 
 **The trap worth knowing:** neither `deploy.sh` nor the image deploy touches
@@ -220,7 +237,7 @@ require a valid `X-Access-Code` header. Codes live in the `codes` table and are 
 startup from the `ACCESS_CODES` env var **if the table is empty**.
 
 - **Required env** in `/opt/fact_check/.env`:
-  `ACCESS_CODES=ulf:SOME_SECRET,anna:OTHER_SECRET` (comma-separated `name:code` pairs).
+  `ACCESS_CODES=owner:SOME_SECRET,anna:OTHER_SECRET` (comma-separated `name:code` pairs).
 - **Fail-closed:** if `ACCESS_CODES` is unset and the table is empty, every gated endpoint
   rejects all requests. Set it before/at deploy or the live app stops accepting sessions.
 - **Seeding is one-shot** (only when the table is empty). To manage codes on a running DB:
@@ -240,12 +257,12 @@ The quota lives on the `codes` table (`quick_checks_used` / `quick_check_limit`)
 a quick-check fact-check row does **not** refund quota.
 
 **On the VPS:** the existing live code was seeded before this column existed, so after
-deploying it defaults to a cap of 3. To make your owner code unlimited, either update it
+deploying it defaults to a cap of 3. To make the owner code unlimited, either update it
 in place:
 
-    sqlite3 /opt/fact_check/backend/data/factcheck.db "UPDATE codes SET quick_check_limit = NULL WHERE name = 'ulf';"
+    sqlite3 /opt/fact_check/backend/data/factcheck.db "UPDATE codes SET quick_check_limit = NULL WHERE name = '<your-name>';"
 
-or set `ACCESS_CODES=ulf:SOME_SECRET:unlimited` in `/opt/fact_check/.env` before the **first**
+or set `ACCESS_CODES=owner:SOME_SECRET:unlimited` in `/opt/fact_check/.env` before the **first**
 seeding of a fresh codes table (seeding is idempotent and will not re-run on a populated table).
 
 ### Live-Audio-Limit (Phase 3b)
@@ -263,7 +280,7 @@ lifetime cap per code, stored on the `codes` table (`audio_seconds_used` / `audi
   updated to `NULL` by the idempotent `INSERT OR IGNORE` seed and will sit at the 300 s backfill.
   To make it truly unlimited again:
 
-      sqlite3 /opt/fact_check/backend/data/factcheck.db "UPDATE codes SET audio_seconds_limit = NULL WHERE name = 'ulf';"
+      sqlite3 /opt/fact_check/backend/data/factcheck.db "UPDATE codes SET audio_seconds_limit = NULL WHERE name = '<your-name>';"
 
 - Per-code custom cap (e.g. 30 minutes):
 

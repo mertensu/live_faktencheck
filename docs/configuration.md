@@ -38,9 +38,32 @@ covered in the [README](../README.md#installation); this is the full list.
 | `FACT_CHECK_PARALLEL` | Fact-check claims in a batch concurrently | `false` |
 | `FACT_CHECK_MAX_WORKERS` | Concurrent fact-checks within a batch | `5` |
 | `FACT_CHECK_MAX_CONCURRENCY` | Concurrent approval batches | `2` |
-| `TAVILY_SEARCH_DEPTH` | `basic` or `advanced` | `basic` |
+| `TAVILY_SEARCH_DEPTH` | Pins the depth (`fast`/`advanced`), overriding the agent's per-query choice. Leave empty to let the agent decide; set it as a kill-switch or for benchmarks | — |
 | `TAVILY_MAX_RESULTS` | Results per search | `5` |
 | `AUTO_APPROVE` | Fallback auto-approve when a session has no per-session setting | `false` |
+
+## Cross-provider fallback
+
+To survive a full Google outage (downtime, quota, auth) mid-broadcast, `build_model()` in
+`backend/services/llm_base.py` appends a **non-Google** model as the last tier — Claude via
+Requesty, EU-hosted. Both the fact-checker and claim extraction run
+`gemini-2.5-pro → claude-opus-4-8@eu`.
+
+It engages only when `REQUESTY_API_KEY` is set; without it the pipeline runs Google-only
+and stays fully functional. That is why `.env.example` leaves the key commented out — a
+placeholder value would switch the fallback *on* with a key that cannot work, turning a
+Google hiccup into a confusing auth error.
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `REQUESTY_API_KEY` | Enables the fallback when present | — |
+| `PROVIDER_FALLBACK_ENABLED` | `false` disables the tier entirely | `true` |
+| `PROVIDER_FALLBACK_MODEL` | Requesty **router** across EU backends — more redundancy than one pinned provider | `claude-opus-4-8@eu` |
+| `REQUESTY_BASE_URL` | Requesty endpoint | `https://router.requesty.ai/v1` |
+
+Production leaves `GEMINI_MODEL_FACT_CHECKER_FALLBACK` **empty** on purpose: it skips the
+weak Gemini-Flash intermediate step so the fact-checker falls straight through to the
+cross-provider tier.
 
 ## Observability & frontend
 

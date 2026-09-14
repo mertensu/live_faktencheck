@@ -16,7 +16,7 @@ Vier Befunde aus dem laufenden System, die den Plan begründen:
 |---|---|
 | **Keine lokale `.env`, leere `backend/data/`** | Entwickeln geht heute nur per SSH auf die Produktionsmaschine |
 | **93 Backups, alle auf derselben Platte** | 67 MB in `backend/data/`, keine Rotation, nichts außer Haus — teilt jeden Ausfall mit dem Original |
-| **Genau ein Rechner kann deployen** | Ulfs Laptop; die Hostinger-Firewall blockt SSH von GitHub-Runnern |
+| **Genau ein Rechner kann deployen** | Genau ein Laptop; die Firewall blockt SSH von GitHub-Runnern |
 | **11 fremde Container auf der VPS** | Buzz-Stack, Hermes-Agenten, Traefik, dazu private Ablagen in `/root` — SSH dort ist nicht teilbar |
 
 Was bereits steht und hier nicht angefasst wird: 24 Test-Dateien mit Unit/Integration-Trennung,
@@ -47,16 +47,16 @@ SSH-Zugang. Diese Phase schneidet die Abhängigkeit durch und ist Voraussetzung 
   der das System nicht kennt.
 
 - [x] **1.3 Dev-Schlüssel: Selbstbedienung statt Verteilung**
-  Ursprünglich als Ulf-Aufgabe geplant — besser ist, dass **jeder seinen eigenen Key anlegt**.
+  Ursprünglich als Aufgabe des Kontoinhabers geplant — besser ist, dass **jeder seinen eigenen Key anlegt**.
   Google AI Studio, Tavily und AssemblyAI haben Self-Signup mit Gratiskontingent. Damit geht
-  kein Schlüssel durch Ulfs Hände, beim Ausscheiden ist nichts zu widerrufen, und jeder trägt
+  kein Schlüssel durch fremde Hände, beim Ausscheiden ist nichts zu widerrufen, und jeder trägt
   sein eigenes Kontingent. Reduziert sich auf eine Doku-Zeile in `CONTRIBUTING.md`.
   Wichtig dort auch: **die Unit-Tests brauchen gar keine Keys** — nur Integrationstests und
   die echte Pipeline. Ohne diesen Hinweis denkt jeder Neue, er müsse zuerst drei Konten anlegen.
 
 - [x] **1.4 `scripts/pull-db.sh` anlegen**
   Holt einen Datenstand zum lokalen Arbeiten, damit das Frontend echte Fact-Checks zeigt
-  statt einer leeren Seite. Erste Fassung über SSH — **nur für Ulf**. In Phase 2 wird das
+  statt einer leeren Seite. Erste Fassung über SSH — **nur mit Serverzugang**. In Phase 2 wird das
   Skript auf R2 umgestellt und damit teamtauglich.
   Immer die `backup-`Datei ziehen, nie die Live-DB — die wird gerade beschrieben.
 
@@ -66,6 +66,9 @@ SSH-Zugang. Diese Phase schneidet die Abhängigkeit durch und ist Voraussetzung 
   - `docs/onboarding-new-machine.md §4` → beschreibt einen `~/.zshrc`-`git`-Wrapper, der
     nach jedem Push automatisch deployt. **Den gibt es nicht mehr.** Für einen Neuen eine
     Falle: Er verlässt sich darauf, dass gepusht gleich deployt ist.
+    *(Nachtrag Phase 5: Die Datei ist inzwischen ganz entfallen — sie beschrieb den Umzug
+    eines persönlichen Setups auf einen neuen PC. `CONTRIBUTING.md` deckt das Setup ab,
+    der Fallback-Kontext steht jetzt in `docs/configuration.md`.)*
 
 - [ ] **1.6 Optional: `config.py` nach `backend/`**
   Backend-Code importiert heute `from config import ...` aus dem Repo-Root — aus `app.py`,
@@ -86,7 +89,7 @@ SSH-Zugang. Diese Phase schneidet die Abhängigkeit durch und ist Voraussetzung 
 >
 > **Ergebnis (10.09.2026):** Bestanden. Aus einem Baum ohne `.venv` und ohne Datenbank:
 > `uv sync` → `cp .env.example .env` → **260 Tests grün**, `ruff` sauber; `pull-db.sh` holt
-> 319 Fact-Checks und 29 Sessions. Offen bleiben 1.3 (Konten, nur Ulf) und 1.6 (optional).
+> 319 Fact-Checks und 29 Sessions. Offen bleiben 1.3 (Konten) und 1.6 (optional).
 
 ---
 
@@ -95,7 +98,7 @@ SSH-Zugang. Diese Phase schneidet die Abhängigkeit durch und ist Voraussetzung 
 **Warum:** Löst zwei Dinge auf einmal — Schutz vor Plattenausfall, und den Datenpfad fürs
 Team, der ohne Serverzugang auskommt.
 
-- [ ] **2.1 R2-Bucket anlegen, zwei getrennte Tokens** *(nur Ulf — Konten)*
+- [ ] **2.1 R2-Bucket anlegen, zwei getrennte Tokens** *(nur der Kontoinhaber)*
   Cloudflare R2, weil Frontend und Tunnel ohnehin dort liegen; ausgehender Traffic ist
   kostenfrei. Die DB ist ~700 KB und bleibt im Gratiskontingent.
   Ein **Schreibtoken** für die VPS, ein **Lesetoken** fürs Team, beide auf diesen Bucket
@@ -162,7 +165,7 @@ Team, der ohne Serverzugang auskommt.
 
 **Warum:** Der billigste Punkt der Liste — die Arbeit ist bereits getan.
 
-- [ ] **3.1 Mitglieder ins bestehende Projekt einladen** *(nur Ulf — Konten)*
+- [ ] **3.1 Mitglieder ins bestehende Projekt einladen** *(nur der Kontoinhaber)*
   Logfire läuft schon live: `LOGFIRE_TOKEN` ist auf der VPS gesetzt,
   `backend/services/observability.py` instrumentiert PydanticAI, Projekt unter
   `logfire-eu.pydantic.dev/mertensu/fact-check`. Es fehlt nur der Team-Zugang.
@@ -241,7 +244,7 @@ Merge auslöst — ohne Maschinenzugang.
 > existiert `ghcr.io/mertensu/live_faktencheck:latest` schlicht nicht. Eine VPS, die vorher
 > auf Pull umgestellt wird, zieht ins Leere.
 
-- [ ] **5.1 `main` schützen** *(nur Ulf — Repo-Einstellungen)*
+- [ ] **5.1 `main` schützen** *(nur Repo-Admins)*
   PR erforderlich, CI muss grün sein, kein direkter Push. Ohne das ist die vorhandene CI
   Dekoration — jeder kann an ihr vorbei auf `main` pushen. Zehn Minuten in den Repo-Einstellungen.
 
@@ -281,7 +284,7 @@ Merge auslöst — ohne Maschinenzugang.
 
   | Was | Wo | Zugriff |
   |---|---|---|
-  | Produktivschlüssel, `ACCESS_CODES` | `/opt/fact_check/.env` | nur Ulf |
+  | Produktivschlüssel, `ACCESS_CODES` | `/opt/fact_check/.env` | nur mit Produktionszugang |
   | GHCR-Token, Build-Secrets | GitHub Actions Secrets | Repo-Admins |
   | Dev-Schlüssel, R2-Lesetoken | lokale `.env` | jeder, eigene |
 
@@ -318,8 +321,8 @@ Merge auslöst — ohne Maschinenzugang.
 > noch. Es trägt jetzt den Warnhinweis im Kopf und ist als *legacy* markiert; **löschen,
 > sobald der Container ein paar Sendeabende getragen hat.**
 
-> **Abnahme:** Ein Teammitglied merged einen PR, und die Änderung geht live — ohne Ulfs
-> Laptop, ohne SSH-Schlüssel, mit dokumentiertem Rückweg.
+> **Abnahme:** Ein Teammitglied merged einen PR, und die Änderung geht live — ohne einen
+> bestimmten Laptop, ohne SSH-Schlüssel, mit dokumentiertem Rückweg.
 >
 > **Stand (10.09.2026):** Repo-Seite steht (5.2–5.5 als Dateien und Doku). Was noch fehlt,
 > hängt an Konten und an der Maschine und ist nicht delegierbar:
@@ -347,7 +350,7 @@ Entscheidung fällt aus Ruhe statt aus Druck.
   `fly.toml` (Port, RAM, Volume, Region Frankfurt), Secrets per `fly secrets set`, DNS umziehen.
   Das Dockerfile aus Phase 4 wird unverändert übernommen.
   Zwei Nebeneffekte: Der `cloudflared`-Tunnel wird überflüssig — ein bewegliches Teil weniger.
-  Und das Secret-Drift-Problem aus `onboarding-new-machine.md §4` verschwindet, weil es einen
+  Und das Secret-Drift zwischen lokaler und Server-`.env` verschwindet, weil es dann einen
   Ort für Secrets gibt statt zwei.
   **Kritische Einstellung:** `auto_stop_machines = false` und `min_machines_running = 1`.
   Sonst schläft die Maschine bei Leerlauf ein und nimmt die Claim-Queue mit.
@@ -364,7 +367,7 @@ Entscheidung fällt aus Ruhe statt aus Druck.
 
 ---
 
-## Was nur Ulf erledigen kann
+## Was nur der Kontoinhaber erledigen kann
 
 Drei Dinge hängen an Konten und lassen sich nicht delegieren — sie blockieren jeweils eine
 ganze Phase:

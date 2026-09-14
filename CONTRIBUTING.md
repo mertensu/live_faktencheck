@@ -51,8 +51,9 @@ in this document — please open an issue.
    ./scripts/pull-db.sh
    ```
    `backend/data/` is empty in a fresh clone — no snapshot means an empty frontend.
-   This step currently needs VPS access; see `docs/team-setup-plan.md` (Phase 2) for
-   the R2-based replacement.
+   No server access needed: the script restores from the Cloudflare R2 backup using the
+   read-only token. Ask a maintainer for `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY`
+   (the **read** token, never the write one) and put them in your `.env`.
 
 ### Running the Development Servers
 

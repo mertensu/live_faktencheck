@@ -2,7 +2,7 @@
 
 **Status:** Planned / not started. Written 2026-09-09.
 **Goal:** Let new users get access to live-faktencheck.de on their own (self-serve),
-without Ulf manually minting and handing out access codes.
+without a maintainer manually minting and handing out access codes.
 
 ## Core idea
 
@@ -86,7 +86,7 @@ No mail dependency exists today. Use a transactional email API over HTTPS
 
 - `auth.py::require_code` and its use as a dependency on every gated route.
 - Quota columns + `increment_*` methods.
-- `seed_codes_from_env` — keep it; Ulf's own admin/press codes still work.
+- `seed_codes_from_env` — keep it; the existing admin/press codes still work.
   Magic-link codes live alongside seeded ones.
 
 ## Rate limiting (required — closes the one new security hole)
@@ -152,7 +152,7 @@ Storing emails now → obligations:
 
 ## What this buys vs. costs
 
-**Buys:** self-serve onboarding without Ulf in the loop; durable per-email
+**Buys:** self-serve onboarding without a maintainer in the loop; durable per-email
 identity (revoke/re-issue, quotas already exist); clean seam for Stripe/tiers
 later (attach to the email); no passwords to store/reset/leak.
 

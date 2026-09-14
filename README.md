@@ -45,7 +45,7 @@ self-critique agent then flags low confidence without changing the verdict.
 
 → Full pipeline details (models, schemas, prompts): [`docs/llm_pipeline.md`](docs/llm_pipeline.md)
 
-The app is hosted: the backend runs permanently on the Hostinger VPS and the public site
+The app is hosted: the backend runs permanently on the project's VPS and the public site
 reads the live API, so there is nothing to install to *use* it — you open a session
 dashboard, unlock with an access code, and record. New sessions are created through the
 wizard at `/new`; paste a single quote at `/pruefen` for a one-shot **Quick Check**.
