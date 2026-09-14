@@ -334,14 +334,35 @@ Merge auslöst — ohne Maschinenzugang.
 > **Abnahme:** Ein Teammitglied merged einen PR, und die Änderung geht live — ohne einen
 > bestimmten Laptop, ohne SSH-Schlüssel, mit dokumentiertem Rückweg.
 >
-> **Stand (10.09.2026):** Repo-Seite steht (5.2–5.5 als Dateien und Doku). Was noch fehlt,
-> hängt an Konten und an der Maschine und ist nicht delegierbar:
-> 1. **5.1** Ruleset auf `main` setzen, dann `phase-1-team-onboarding` per PR mergen —
->    dieser Merge erzeugt das erste GHCR-Image.
-> 2. Auf der VPS: Docker, `docker login ghcr.io`, Timer, Umschalten vom systemd-Dienst
->    auf den Container.
-> 3. Staging aufsetzen, Rollback einmal üben.
-> Erst danach ist die Abnahme oben tatsächlich fahrbar.
+### Stand und nächste Schritte (14.09.2026)
+
+Die Repo-Seite steht: 5.2–5.6 liegen als Dateien und Doku vor, `main` ist geschützt
+(Ruleset „main protection": PR + 1 Approval + `test`/`image` grün, Force-Push und Löschen
+gesperrt, Bypass nur für Repo-Admins). **Auf dem Server ist noch nichts angefasst** — dort
+läuft weiter `factcheck-backend.service` mit uvicorn aus dem Checkout.
+
+Die Reihenfolge ist bindend, jeder Schritt setzt den vorherigen voraus:
+
+- [ ] **A — PR mergen.** Der CI-Job pusht nur von `main` nach GHCR; vorher existiert
+      `ghcr.io/mertensu/live_faktencheck:latest` nicht. Vorher auf dem Server prüfen, dass
+      `TAVILY_SEARCH_DEPTH=basic` in `/opt/fact_check/.env` steht — die Suchtiefe soll
+      vorerst fest bleiben (die agentengesteuerte Variante liegt auf `tavily-search-depth`).
+- [ ] **B — Image verifizieren.** „Job grün" und „Paket pullbar" sind zwei verschiedene
+      Aussagen. Erst prüfen, dann den Server anfassen.
+- [ ] **C — Cutover auf der VPS** (`docs/deployment.md`, „One-time setup on the VPS"):
+      Docker, `docker login ghcr.io` mit einem PAT, das **nur** `read:packages` kann, Timer
+      installieren, `systemctl disable --now factcheck-backend` (gibt Port 5000 frei),
+      `pull-deploy.sh`, `/api/health` prüfen. Nicht an einem Sendeabend.
+- [ ] **D — Rollback einmal üben.** Voriges SHA pinnen, Health prüfen, entpinnen,
+      prüfen dass der Timer `latest` zurückholt. Ungeübt existiert er im Ernstfall nicht.
+- [ ] **E — Staging hochziehen.** Port 5001, eigene DB, **eigene** `ACCESS_CODES`.
+- [ ] **F — `deploy/deploy.sh` löschen**, sobald der Container ein paar Sendeabende trägt.
+
+**Bis C durch ist, eilt die Doku der Maschine voraus:** `docs/deployment.md` beschreibt den
+Container-Deploy im Präsens. Wer in dem Fenster dazukommt, liest „Merge = Deploy" und wartet
+auf etwas, das nicht kommt. Das Fenster kurz halten.
+
+Erst nach E ist die Abnahme oben tatsächlich fahrbar.
 
 ---
 
