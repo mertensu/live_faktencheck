@@ -38,7 +38,7 @@ covered in the [README](../README.md#installation); this is the full list.
 | `FACT_CHECK_PARALLEL` | Fact-check claims in a batch concurrently | `false` |
 | `FACT_CHECK_MAX_WORKERS` | Concurrent fact-checks within a batch | `5` |
 | `FACT_CHECK_MAX_CONCURRENCY` | Concurrent approval batches | `2` |
-| `TAVILY_SEARCH_DEPTH` | Pins the depth (`fast`/`advanced`), overriding the agent's per-query choice. Leave empty to let the agent decide; set it as a kill-switch or for benchmarks | — |
+| `TAVILY_SEARCH_DEPTH` | `basic` or `advanced`, applied to every search | `basic` |
 | `TAVILY_MAX_RESULTS` | Results per search | `5` |
 | `AUTO_APPROVE` | Fallback auto-approve when a session has no per-session setting | `false` |
 
