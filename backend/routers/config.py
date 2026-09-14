@@ -86,14 +86,13 @@ async def get_trusted_domains():
 async def health():
     """Health check endpoint"""
     db = state.get_db()
-    sessions = await db.list_sessions()
     blocks_processing = sum(
         1 for ev in state.pipeline_events.values()
         if ev.get("status") in ("processing", "slow")
     )
     return HealthResponse(
         status="ok",
-        active_sessions=len([s for s in sessions if s.get("status") == "active"]),
+        active_sessions=await db.count_active_sessions(),
         pending_blocks=await db.count_pending_blocks(),
         fact_checks=await db.count_fact_checks(),
         in_flight=state.claim_queue.qsize() + blocks_processing,

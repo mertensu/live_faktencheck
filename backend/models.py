@@ -115,9 +115,9 @@ class HealthResponse(BaseModel):
     pending_blocks: int
     fact_checks: int
     # Real-time in-flight work that a restart would drop: queued claim batches plus
-    # pipeline blocks still being processed. Distinct from active_sessions, which is a
-    # lifecycle flag that stays set until a session is explicitly ended. The deploy timer
-    # reads this to avoid restarting into live work (see deploy/pull-deploy.sh).
+    # pipeline blocks still being processed. The deploy timer reads this to avoid
+    # restarting into live work (see deploy/pull-deploy.sh). Distinct from
+    # active_sessions, which is a coarse recent-activity count, not a live-work signal.
     in_flight: int = 0
 
 

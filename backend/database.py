@@ -358,6 +358,30 @@ class Database:
         cursor = await self.db.execute("SELECT * FROM sessions ORDER BY created_at DESC")
         return [self._row_to_session(r) for r in await cursor.fetchall()]
 
+    async def count_active_sessions(self, within_minutes: int = 30) -> int:
+        """Count sessions that are actually live: status 'active' AND touched within the
+        window (created just now, or a fact-check produced recently). The bare 'active'
+        flag never clears — nothing calls the end endpoint — so counting it alone reports
+        every session ever started. ISO-8601 timestamps compare lexicographically."""
+        from datetime import datetime, timedelta
+        cutoff = (datetime.now() - timedelta(minutes=within_minutes)).isoformat()
+        cursor = await self.db.execute(
+            """
+            SELECT COUNT(*) FROM sessions s
+            WHERE s.status = 'active'
+              AND (
+                s.created_at >= ?
+                OR EXISTS (
+                    SELECT 1 FROM fact_checks f
+                    WHERE f.session_id = s.session_id AND f.timestamp >= ?
+                )
+              )
+            """,
+            (cutoff, cutoff),
+        )
+        row = await cursor.fetchone()
+        return row[0]
+
     async def end_session(self, session_id: str) -> bool:
         from datetime import datetime
         cursor = await self.db.execute(

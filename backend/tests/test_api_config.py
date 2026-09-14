@@ -21,6 +21,23 @@ async def test_health_reports_active_sessions(client):
     assert "active_sessions" in resp.json()
 
 
+async def test_count_active_sessions_ignores_stale_and_ended(client):
+    # active_sessions must mean "live now", not "ever started": the 'active' flag never
+    # clears on its own, so the count keys off recent activity instead.
+    from datetime import datetime, timedelta
+    db = state.get_db()
+    now = datetime.now()
+    recent = now.isoformat()
+    old = (now - timedelta(hours=2)).isoformat()
+    await db.add_session({"session_id": "live", "status": "active", "created_at": recent})
+    await db.add_session({"session_id": "stale", "status": "active", "created_at": old})
+    await db.add_session({"session_id": "done", "status": "ended", "created_at": recent})
+    # Stale creation but a fresh fact-check → still live, via the EXISTS branch.
+    await db.add_session({"session_id": "revived", "status": "active", "created_at": old})
+    await db.add_fact_check({"timestamp": recent, "session_id": "revived"})
+    assert await db.count_active_sessions(within_minutes=30) == 2
+
+
 async def test_health_in_flight_zero_when_idle(client):
     resp = await client.get("/api/health")
     assert resp.status_code == 200
