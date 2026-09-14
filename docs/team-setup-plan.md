@@ -315,6 +315,16 @@ Merge auslöst — ohne Maschinenzugang.
   Wegwerfware), und es braucht **eigene** `ACCESS_CODES` — sonst frisst jeder Staging-Test
   das Produktivkontingent.
 
+- [x] **5.6 Assistenten-Doku nach Zugang trennen** *(bei der Umstellung aufgefallen)*
+  `CLAUDE.md` wurde für **eine** Person geschrieben und beschrieb selbstverständlich SSH als
+  Arbeitsweg. Jetzt ist sie die gemeinsame Datei: Sie gilt für alle im Team und geht davon
+  aus, dass **kein** Maschinenzugang da ist — der Normalfall, und der Weg, den ein Assistent
+  bei einem neuen Teammitglied einschlagen soll.
+  Was nur für Maintainer gilt (Serverzugang, Betriebsstand, offene Konto-Aufgaben), gehört
+  nicht ins Repo: dafür eine **gitignorierte `CLAUDE.local.md`** neben der gemeinsamen Datei.
+  Claude Code lädt sie automatisch mit, und sie taucht in keinem PR und keinem Klon auf.
+  Die Trennlinie: Was für jeden gilt, ist committet. Was an einem Zugang hängt, bleibt lokal.
+
 > ⚠️ **Entschärft, nicht beseitigt:** `deploy/deploy.sh` führt auf dem Server `git reset
 > --hard origin/main` aus — alles, was dort abweicht, wird kommentarlos gelöscht. Der
 > Image-Deploy braucht den Befehl nicht mehr, aber das Skript liegt noch da und funktioniert
