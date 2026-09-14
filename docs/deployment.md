@@ -57,15 +57,36 @@ machine is involved. Anyone who can merge can deploy.
 ```
 PR merged → CI: test + build → ghcr.io/mertensu/live_faktencheck:latest
                                    ↓ (timer, every 5 min)
-                          VPS: deploy/pull-deploy.sh → docker compose up -d
+                          VPS: deploy/pull-deploy.sh
+                                   ↓ a session live? → defer, retry next tick (up to 1h)
+                                   ↓ docker compose up -d
                                    ↓ health check fails?
                           automatic rollback to the previous digest
 ```
 
+A restart drops only in-memory state — most sharply the queue of approved-but-not-yet-
+checked claims (`backend/state.py`); stored fact-checks live in SQLite and survive. So the
+timer does **not** restart into live work: if `/api/health` reports `in_flight > 0` (queued
+claim batches plus blocks still processing) it defers the new image and tries again next tick,
+landing the deploy in the first real lull. In continuous use there is no single quiet evening
+to aim for, so it waits for a gap instead of a schedule. The wait is capped at
+`DEPLOY_MAX_DEFER` (default 3600s) so a permanently busy system still deploys eventually.
+
+> Note the gate reads `in_flight`, **not** `active_sessions`. A session only leaves the
+> `active` state on an explicit end call, so `active_sessions` stays set for days after a show
+> and would defer every deploy forever — it is a lifecycle flag, not a load signal.
+
 - Watch it land: `ssh <prod> 'journalctl -u factcheck-deploy -n 50'`
 - Deploy now instead of waiting: `ssh <prod> '/opt/fact_check/deploy/pull-deploy.sh'`
-- **Pause deploys** (broadcast evening): `ssh <prod> 'touch /opt/fact_check/deploy-hold'`,
-  resume with `rm`. The timer keeps running and logs that it skipped.
+  (still defers on a live session; set `DEPLOY_MAX_DEFER=0` to force an immediate restart)
+- **Freeze deploys** hard: `ssh <prod> 'touch /opt/fact_check/deploy-hold'`, resume with `rm`.
+  The timer keeps running and logs that it skipped. Use this to pin a build; the live-session
+  deferral above already covers the everyday "don't interrupt what's running" case.
+
+> **The deploy machinery is not self-updating.** `pull-deploy.sh` pulls the app *image*, not
+> the repo. Changes to `deploy/` (this script, the compose files, the systemd units) reach the
+> VPS only via a manual `git pull` in `/opt/fact_check` — a maintainer step, once, after the PR
+> merges. The app itself still deploys automatically.
 
 `deploy/deploy.sh` — the old deploy, which pushed from a maintainer's machine over SSH —
 still works but is legacy, and it is exactly the bottleneck this replaced. It runs
@@ -75,7 +96,10 @@ without asking; see the warning in the file itself.
 ### One-time setup on the VPS
 
 1. `apt-get install -y docker.io docker-compose-plugin`
-2. Log in to GHCR — the package is private, so the pull needs a token:
+2. GHCR login — **not needed as long as the repo is public.** The published package is
+   public too, so `docker pull` works anonymously; the repo source is already on GitHub and
+   `.dockerignore` keeps `.env` and the DB out of the image, so a public image leaks nothing.
+   Only if the repo (and package) are ever made private does the pull need a token:
    ```sh
    echo "$GHCR_READ_TOKEN" | docker login ghcr.io -u <github-user> --password-stdin
    ```

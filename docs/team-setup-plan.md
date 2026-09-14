@@ -343,24 +343,60 @@ läuft weiter `factcheck-backend.service` mit uvicorn aus dem Checkout.
 
 Die Reihenfolge ist bindend, jeder Schritt setzt den vorherigen voraus:
 
-- [ ] **A — PR mergen.** Der CI-Job pusht nur von `main` nach GHCR; vorher existiert
-      `ghcr.io/mertensu/live_faktencheck:latest` nicht. Vorher auf dem Server prüfen, dass
-      `TAVILY_SEARCH_DEPTH=basic` in `/opt/fact_check/.env` steht — die Suchtiefe soll
-      vorerst fest bleiben (die agentengesteuerte Variante liegt auf `tavily-search-depth`).
-- [ ] **B — Image verifizieren.** „Job grün" und „Paket pullbar" sind zwei verschiedene
-      Aussagen. Erst prüfen, dann den Server anfassen.
-- [ ] **C — Cutover auf der VPS** (`docs/deployment.md`, „One-time setup on the VPS"):
-      Docker, `docker login ghcr.io` mit einem PAT, das **nur** `read:packages` kann, Timer
-      installieren, `systemctl disable --now factcheck-backend` (gibt Port 5000 frei),
-      `pull-deploy.sh`, `/api/health` prüfen. Nicht an einem Sendeabend.
+- [x] **A — PR mergen.** *(14.09.2026)* PR #1 als **normaler Merge-Commit** `80f0c78` auf
+      `main` (kein Squash — alle fünf Phase-Commits liegen mit Original-Hash auf `main`, Branch
+      `phase-1-team-onboarding` ist vollständig enthalten und kann weg). Lokaler `main` per
+      Fast-Forward nachgezogen. **Noch offen und nach C zu prüfen:** dass
+      `TAVILY_SEARCH_DEPTH=basic` in `/opt/fact_check/.env` steht (die agentengesteuerte
+      Variante liegt auf `tavily-search-depth`) — der Server-Check steht noch aus.
+- [x] **B — Image verifizieren.** *(14.09.2026)* Beides getrennt geprüft: der `image`-Job der
+      CI ist grün auf `80f0c78` (nicht nur die Gesamt-CI), **und** das GHCR-Paket ist abrufbar —
+      Tags `latest` + voller Merge-SHA `80f0c787…`, Manifest liefert HTTP 200. Nebenbefund:
+      Das Paket ist **öffentlich** (anonymer Manifest-Abruf geht durch). Unkritisch, weil
+      `.dockerignore` `.env` und DB ausschließt, aber notiert.
+- [x] **C — Cutover auf der VPS** *(14.09.2026, 11:18 Uhr, keine Session live)*. Backend
+      läuft jetzt als Container `factcheck-backend`, Digest `sha256:db7c7c1b…`, Docker-Health
+      `healthy`, `/api/health` → 319 Fact-Checks (identisch zur Live-DB). Auto-Deploy-Timer
+      `factcheck-deploy.timer` aktiv; erster Lauf war korrekt ein No-op. `factcheck-backend.service`
+      bleibt als Fallback liegen (nur `disable`d).
+      **Abweichung von der Doku (Schritt 2):** Kein `docker login` gemacht — das GHCR-Paket ist
+      **öffentlich** und das Repo ist public, also gibt ein öffentliches Image nichts preis
+      (`.env`/DB sind per `.dockerignore` ausgeschlossen). Anonymer Pull funktioniert; ein PAT
+      wäre reine Zeremonie. `docs/deployment.md` muss hier nachgezogen werden (Annahme „private").
+      **Operativer Nebenbefund:** Der `/opt/fact_check`-Checkout hing 30 Commits zurück und
+      trug eine untracked `benchmarks/model_ab.py` mit einem lokalen Suchtiefen-Zähler-Block
+      (gehört zu `tavily-search-depth`). Vor dem `git pull` beiseitegesichert als
+      `benchmarks/model_ab.py.server-local-20260914-091715` — nicht gelöscht.
 - [ ] **D — Rollback einmal üben.** Voriges SHA pinnen, Health prüfen, entpinnen,
       prüfen dass der Timer `latest` zurückholt. Ungeübt existiert er im Ernstfall nicht.
+      **Caveat (14.09.2026):** In GHCR liegt bisher nur *ein* Image (`latest` == SHA
+      `80f0c78…`). Ein echter Rollback-Test braucht ein zweites, *anderes* Image — also erst
+      nach dem nächsten Merge auf `main` sinnvoll fahrbar. Vorher würde man denselben Digest
+      auf sich selbst pinnen.
 - [ ] **E — Staging hochziehen.** Port 5001, eigene DB, **eigene** `ACCESS_CODES`.
 - [ ] **F — `deploy/deploy.sh` löschen**, sobald der Container ein paar Sendeabende trägt.
 
-**Bis C durch ist, eilt die Doku der Maschine voraus:** `docs/deployment.md` beschreibt den
-Container-Deploy im Präsens. Wer in dem Fenster dazukommt, liest „Merge = Deploy" und wartet
-auf etwas, das nicht kommt. Das Fenster kurz halten.
+**Nachtrag (14.09.2026) — Deploy aktivitätsbewusst statt kalendergesteuert.** Die Annahme
+„es gibt den einen ruhigen Sendeabend, an dem man deployt" trägt bei Dauerbetrieb nicht: ein
+Restart wirft in-flight State weg (am schärfsten die freigegebene, noch nicht gefactcheckte
+`claim_queue`; gespeicherte Fact-Checks überleben in SQLite). `pull-deploy.sh` bremst deshalb
+jetzt an *echter Aktivität* — verschiebt den Restart, solange `/api/health` `in_flight>0`
+meldet (Queue-Batches + laufende Blöcke), und landet den Deploy in der ersten Lücke (Deckel
+`DEPLOY_MAX_DEFER`, Default 1 h). **Nicht** an `active_sessions`: das bleibt tagelang gesetzt
+(Session endet nur per explizitem Aufruf) und hätte jeden Deploy ewig verschoben — genau
+dieser Stolperstein fiel beim Bauen auf (18 „aktive" Sessions mittags, älteste vom 31.08.).
+`deploy-hold` bleibt als *harter* Freeze. Der eigentliche Fix für „viele Nutzer gleichzeitig"
+bleibt Phase 6: In-Memory-State (`claim_queue`, `pipeline_events`) aus dem Prozess holen, dann
+mehrere Worker/Replicas und rollende Deploys ohne Ausfall. Liegt auf Branch
+`phase-5-activity-aware-deploy`.
+
+Beim Bauen nebenbei aufgefallen und gleich mitgefixt: `active_sessions` in `/api/health` zählte
+jede je gestartete Session (der Status `active` wird nie zurückgesetzt, die End-Route ruft
+niemand auf). Die Metrik ist jetzt aktivitätsbasiert (active **und** im Zeitfenster berührt) —
+rein observability, kein DB-Schreiben, die toten Rows bleiben unangetastet.
+
+Die frühere Warnung „bis C durch ist, eilt die Doku der Maschine voraus" ist mit dem Cutover
+erledigt — `docs/deployment.md` und Maschine stimmen wieder überein.
 
 Erst nach E ist die Abnahme oben tatsächlich fahrbar.
 
