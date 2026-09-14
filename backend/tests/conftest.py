@@ -41,6 +41,8 @@ async def reset_state():
     state.db = db
     state.last_transcript_tails.clear()
     state.pipeline_events.clear()
+    while not state.claim_queue.empty():
+        state.claim_queue.get_nowait()
     reset_services()
     yield
     # Cleanup after test
@@ -48,6 +50,8 @@ async def reset_state():
     state.db = None
     state.last_transcript_tails.clear()
     state.pipeline_events.clear()
+    while not state.claim_queue.empty():
+        state.claim_queue.get_nowait()
     reset_services()
 
 
