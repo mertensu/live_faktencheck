@@ -390,8 +390,13 @@ bleibt Phase 6: In-Memory-State (`claim_queue`, `pipeline_events`) aus dem Proze
 mehrere Worker/Replicas und rollende Deploys ohne Ausfall. Liegt auf Branch
 `phase-5-activity-aware-deploy`.
 
+Beim Bauen nebenbei aufgefallen und gleich mitgefixt: `active_sessions` in `/api/health` zählte
+jede je gestartete Session (der Status `active` wird nie zurückgesetzt, die End-Route ruft
+niemand auf). Die Metrik ist jetzt aktivitätsbasiert (active **und** im Zeitfenster berührt) —
+rein observability, kein DB-Schreiben, die toten Rows bleiben unangetastet.
+
 Die frühere Warnung „bis C durch ist, eilt die Doku der Maschine voraus" ist mit dem Cutover
-am 14.09. erledigt — `docs/deployment.md` und Maschine stimmen wieder überein.
+erledigt — `docs/deployment.md` und Maschine stimmen wieder überein.
 
 Erst nach E ist die Abnahme oben tatsächlich fahrbar.
 
