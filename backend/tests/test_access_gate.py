@@ -136,6 +136,8 @@ def test_all_cost_endpoints_require_code():
         ("POST", "/api/approve-claims"),
         ("POST", "/api/fact-checks/resend"),
         ("PUT", "/api/fact-checks/{fact_check_id}"),
+        # Not a paid call, but destructive and publicly reachable with sequential IDs.
+        ("DELETE", "/api/fact-checks/{fact_check_id}"),
         ("POST", "/api/pipeline-status/{block_id}/retrigger"),
     }
     found = set()
