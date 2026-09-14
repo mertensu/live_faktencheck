@@ -2,7 +2,7 @@
 import pytest
 from backend.database import Database
 from backend.app import seed_legacy_episodes
-from config import EPISODES
+from backend.config import EPISODES
 
 
 @pytest.fixture

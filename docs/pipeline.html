@@ -1,0 +1,474 @@
+<title>Faktencheck-Pipeline</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --paper: #f4f6f5;
+    --card: #ffffff;
+    --ink: #16201e;
+    --ink-soft: #4a5754;
+    --ink-faint: #7c8b87;
+    --line: #dde3e1;
+    --line-soft: #e9edeb;
+    --accent: #1f6f66;
+    --accent-soft: #e2efec;
+    --code-bg: #f0f3f2;
+    --field-key: #1f6f66;
+    --field-type: #9a6a2f;
+    --good: #2f7d54;
+    --good-bg: #e3f0e8;
+    --bad: #b23b3b;
+    --bad-bg: #f5e3e1;
+    --warn: #9a6a2f;
+    --warn-bg: #f3ead9;
+    --none: #6b7671;
+    --none-bg: #e9edeb;
+    --shadow: 0 1px 2px rgba(22,32,30,.04), 0 6px 20px rgba(22,32,30,.05);
+  }
+  :root:not([data-theme="light"]) {
+    @media (prefers-color-scheme: dark) {
+      --paper: #101614;
+      --card: #182220;
+      --ink: #eaf0ee;
+      --ink-soft: #a9b6b2;
+      --ink-faint: #75847f;
+      --line: #2a3833;
+      --line-soft: #212d2a;
+      --accent: #5cbfb2;
+      --accent-soft: #1a2d29;
+      --code-bg: #111a18;
+      --field-key: #5cbfb2;
+      --field-type: #d3a866;
+      --good: #6cc48c;
+      --good-bg: #16281e;
+      --bad: #e07a76;
+      --bad-bg: #2c1917;
+      --warn: #d3a866;
+      --warn-bg: #2a2314;
+      --none: #8b988f;
+      --none-bg: #202a27;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #101614;
+    --card: #182220;
+    --ink: #eaf0ee;
+    --ink-soft: #a9b6b2;
+    --ink-faint: #75847f;
+    --line: #2a3833;
+    --line-soft: #212d2a;
+    --accent: #5cbfb2;
+    --accent-soft: #1a2d29;
+    --code-bg: #111a18;
+    --field-key: #5cbfb2;
+    --field-type: #d3a866;
+    --good: #6cc48c;
+    --good-bg: #16281e;
+    --bad: #e07a76;
+    --bad-bg: #2c1917;
+    --warn: #d3a866;
+    --warn-bg: #2a2314;
+    --none: #8b988f;
+    --none-bg: #202a27;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", system-ui, sans-serif;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 940px; margin: 0 auto; padding: 4rem 1.5rem 6rem; }
+
+  /* Header */
+  header { margin-bottom: 3.5rem; }
+  .eyebrow {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: .72rem; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--accent); margin: 0 0 1rem;
+  }
+  h1 {
+    font-family: "Fraunces", serif;
+    font-weight: 500; font-size: clamp(2.2rem, 5vw, 3.1rem);
+    line-height: 1.05; letter-spacing: -.01em; text-wrap: balance;
+    margin: 0 0 1rem;
+  }
+  .lede {
+    font-size: 1.08rem; color: var(--ink-soft); max-width: 62ch; margin: 0;
+  }
+
+  /* Flow overview strip */
+  .overview {
+    display: flex; flex-wrap: wrap; align-items: center; gap: .4rem;
+    margin: 2.5rem 0 0; padding: 1rem 1.15rem;
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: 12px; box-shadow: var(--shadow);
+  }
+  .ov-node {
+    font-family: "IBM Plex Mono", monospace; font-size: .78rem;
+    color: var(--ink); white-space: nowrap;
+  }
+  .ov-node b { color: var(--accent); font-weight: 500; }
+  .ov-arrow { color: var(--ink-faint); font-size: .85rem; }
+
+  /* Stage card */
+  .stage {
+    position: relative;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 1.6rem 1.75rem 1.75rem;
+    box-shadow: var(--shadow);
+    margin-top: 1.1rem;
+  }
+  .connector {
+    display: flex; justify-content: center; align-items: center;
+    height: 2.2rem; color: var(--ink-faint);
+  }
+  .connector svg { display: block; }
+
+  .stage-head {
+    display: flex; align-items: baseline; gap: .85rem;
+    flex-wrap: wrap; margin-bottom: .35rem;
+  }
+  .num {
+    font-family: "Fraunces", serif; font-weight: 500;
+    font-size: 1.05rem; color: var(--accent);
+    border: 1.5px solid var(--accent); border-radius: 8px;
+    width: 2rem; height: 2rem; display: grid; place-items: center;
+    flex: none; font-variant-numeric: tabular-nums;
+  }
+  .stage-title {
+    font-family: "Fraunces", serif; font-weight: 500;
+    font-size: 1.4rem; letter-spacing: -.01em; margin: 0;
+  }
+  .engine {
+    font-family: "IBM Plex Mono", monospace; font-size: .72rem;
+    color: var(--ink-soft); background: var(--code-bg);
+    border: 1px solid var(--line-soft); border-radius: 999px;
+    padding: .18rem .6rem; align-self: center;
+  }
+  .engine.file { color: var(--accent); }
+  .role {
+    color: var(--ink-soft); margin: .55rem 0 1.25rem;
+    padding-left: calc(2rem + .85rem);
+    font-size: .96rem; max-width: 68ch;
+  }
+  @media (max-width: 560px) { .role { padding-left: 0; } }
+
+  /* IO grid */
+  .io { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  @media (max-width: 620px) { .io { grid-template-columns: 1fr; } }
+  .io-block {
+    background: var(--code-bg); border: 1px solid var(--line-soft);
+    border-radius: 11px; padding: .9rem 1rem 1rem;
+  }
+  .io-label {
+    font-family: "IBM Plex Mono", monospace; font-size: .68rem;
+    letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-faint); margin: 0 0 .7rem;
+    display: flex; align-items: center; gap: .4rem;
+  }
+  .io-label .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex: none; }
+  .io-label.out .dot { background: var(--field-type); }
+
+  .fields { margin: 0; font-family: "IBM Plex Mono", monospace; font-size: .8rem; line-height: 1.5; }
+  .field { display: block; padding: .12rem 0; }
+  .k { color: var(--field-key); }
+  .t { color: var(--field-type); font-size: .74rem; }
+  .c { color: var(--ink-faint); display: block; padding-left: 0; font-size: .74rem; }
+  .opt { color: var(--ink-faint); font-style: italic; font-size: .72rem; }
+  .plain { color: var(--ink-soft); font-family: "IBM Plex Sans", sans-serif; font-size: .86rem; }
+
+  /* code sample line */
+  .sample {
+    margin-top: .7rem; padding-top: .7rem; border-top: 1px dashed var(--line);
+    font-family: "IBM Plex Mono", monospace; font-size: .74rem; color: var(--ink-soft);
+    white-space: pre-wrap; word-break: break-word;
+  }
+  .sample .lbl { color: var(--ink-faint); }
+  .spk { color: var(--accent); }
+
+  /* verdict pills */
+  .verdicts { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .5rem; }
+  .pill {
+    font-family: "IBM Plex Mono", monospace; font-size: .72rem;
+    padding: .16rem .55rem; border-radius: 999px; font-weight: 500;
+  }
+  .pill.good { color: var(--good); background: var(--good-bg); }
+  .pill.bad { color: var(--bad); background: var(--bad-bg); }
+  .pill.warn { color: var(--warn); background: var(--warn-bg); }
+  .pill.none { color: var(--none); background: var(--none-bg); }
+
+  /* branch note */
+  .branch {
+    display: flex; gap: .7rem; align-items: flex-start;
+    margin-top: 1rem; padding: .85rem 1rem;
+    background: var(--accent-soft); border-radius: 10px;
+    font-size: .88rem; color: var(--ink-soft);
+  }
+  .branch b { color: var(--ink); font-weight: 600; }
+  .branch .ic { color: var(--accent); flex: none; margin-top: .1rem; }
+
+  .note { font-size: .82rem; color: var(--ink-faint); margin-top: .9rem; }
+
+  footer {
+    margin-top: 3.5rem; padding-top: 1.5rem; border-top: 1px solid var(--line);
+    font-family: "IBM Plex Mono", monospace; font-size: .74rem;
+    color: var(--ink-faint); line-height: 1.7;
+  }
+  footer b { color: var(--ink-soft); font-weight: 500; }
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Live Faktencheck · Verarbeitungskette</p>
+    <h1>Vom Audio zum Faktencheck</h1>
+    <p class="lede">Jeder Transkript-Block durchläuft sechs Stufen. Fünf davon sind Prompts an ein Sprachmodell — hier steht zu jeder, was reingeht (Input) und was rauskommt (Output).</p>
+
+    <div class="overview" role="list" aria-label="Ablauf in Kurzform">
+      <span class="ov-node" role="listitem">🎙 <b>Audio</b></span>
+      <span class="ov-arrow">→</span>
+      <span class="ov-node" role="listitem">1 Transkript</span>
+      <span class="ov-arrow">→</span>
+      <span class="ov-node" role="listitem">2 <b>Namen</b></span>
+      <span class="ov-arrow">→</span>
+      <span class="ov-node" role="listitem">3 <b>Extraktion</b></span>
+      <span class="ov-arrow">→</span>
+      <span class="ov-node" role="listitem">4 <b>Auswahl</b></span>
+      <span class="ov-arrow">→</span>
+      <span class="ov-node" role="listitem">5 <b>Check</b></span>
+      <span class="ov-arrow">→</span>
+      <span class="ov-node" role="listitem">6 <b>Kritik</b></span>
+    </div>
+  </header>
+
+  <!-- STAGE 1 -->
+  <section class="stage">
+    <div class="stage-head">
+      <span class="num">1</span>
+      <h2 class="stage-title">Transkription</h2>
+      <span class="engine">AssemblyAI · universal-3-pro</span>
+    </div>
+    <p class="role">Wandelt den Audioblock in Text um — mit deutscher Spracherkennung und Sprechertrennung. <b>Kein Prompt</b>, ein Speech-Model. Gäste-Namen werden als <em>keyterms</em> mitgegeben, damit Eigennamen korrekt erkannt werden.</p>
+    <div class="io">
+      <div class="io-block">
+        <p class="io-label"><span class="dot"></span>Input</p>
+        <div class="fields">
+          <span class="field"><span class="k">audio_data</span> <span class="t">bytes</span><span class="c">WebM/Opus, MP4 oder WAV</span></span>
+          <span class="field"><span class="k">keyterms</span> <span class="t">list[str]</span><span class="c">Namen + Partei/Org aus der Gästeliste</span></span>
+        </div>
+      </div>
+      <div class="io-block">
+        <p class="io-label out"><span class="dot"></span>Output</p>
+        <div class="fields">
+          <span class="field"><span class="k">transcript</span> <span class="t">str</span></span>
+          <span class="field"><span class="k">duration</span> <span class="t">float</span> <span class="c">Sekunden</span></span>
+        </div>
+        <div class="sample"><span class="lbl">Format je Redebeitrag:</span>
+<span class="spk">Sprecher A</span>: Die Inflation lag bei acht Prozent.
+<span class="spk">Sprecher B</span>: Das hat die Rente gekostet.</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="connector" aria-hidden="true"><svg width="16" height="26" viewBox="0 0 16 26"><path d="M8 0v20M2 15l6 8 6-8" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></div>
+
+  <!-- STAGE 2 -->
+  <section class="stage">
+    <div class="stage-head">
+      <span class="num">2</span>
+      <h2 class="stage-title">Sprecher-Namen auflösen</h2>
+      <span class="engine">Gemini 2.5 Flash</span>
+      <span class="engine file">speaker_labels.md</span>
+    </div>
+    <p class="role">Ordnet den generischen Labels („Sprecher A") die echten Namen zu. Die zwei Quellen dafür stecken direkt im Input: der <b>Gesprächsverlauf</b> ist das <code>transcript</code>, die <b>Rollen/Parteien</b> stehen im <code>guests</code>-Feld — Gäste sind als <code>„Name (Partei/Org, Rolle)"</code> formatiert. Das Modell gibt nur die Zuordnungstabelle zurück; <b>der Code ersetzt</b> die Labels danach im Transkript (längste zuerst).</p>
+    <div class="io">
+      <div class="io-block">
+        <p class="io-label"><span class="dot"></span>Input <span class="opt">— JSON</span></p>
+        <div class="fields">
+          <span class="field"><span class="k">conversation_type</span> <span class="t">str</span><span class="c">debate · interview · private</span></span>
+          <span class="field"><span class="k">guests</span> <span class="t">list[str]</span><span class="c">„Name (Partei/Org, Rolle)" → liefert die Rollen/Parteien</span></span>
+          <span class="field"><span class="k">transcript</span> <span class="t">str</span> <span class="c">„Sprecher A/B…" → liefert den Gesprächsverlauf</span></span>
+        </div>
+        <div class="sample"><span class="lbl">guests, z. B.:</span>
+[<span class="spk">"Caren Miosga (Moderatorin)"</span>,
+ <span class="spk">"Heidi Reichinnek (Linke)"</span>]</div>
+      </div>
+      <div class="io-block">
+        <p class="io-label out"><span class="dot"></span>Output <span class="opt">— ResolvedTranscript</span></p>
+        <div class="fields">
+          <span class="field"><span class="k">mappings</span> <span class="t">list</span></span>
+          <span class="field" style="padding-left:1rem"><span class="k">label</span> <span class="t">str</span> <span class="c">„Sprecher A"</span></span>
+          <span class="field" style="padding-left:1rem"><span class="k">name</span> <span class="t">str</span> <span class="c">„Julia Berger"</span></span>
+        </div>
+        <div class="sample"><span class="lbl">Ergebnis nach Ersetzung:</span>
+<span class="spk">Julia Berger</span>: Die Inflation lag bei acht Prozent.</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="connector" aria-hidden="true"><svg width="16" height="26" viewBox="0 0 16 26"><path d="M8 0v20M2 15l6 8 6-8" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></div>
+
+  <!-- STAGE 3 -->
+  <section class="stage">
+    <div class="stage-head">
+      <span class="num">3</span>
+      <h2 class="stage-title">Behauptungen extrahieren</h2>
+      <span class="engine">Gemini 2.5 Flash</span>
+      <span class="engine file">claim_extraction.md</span>
+    </div>
+    <p class="role">Zieht überprüfbare Tatsachenbehauptungen aus dem aufgelösten Transkript. Zwei Kernregeln: <b>Dekontextualisierung</b> (Pronomen → volle Namen, damit jede Behauptung allein prüfbar ist) und <b>Zerlegung</b> (gebündelte Fakt+Ursache oder Fakt+Fakt werden getrennt). Aussagen von <em>excluded_speakers</em> (z. B. Moderation) werden ignoriert.</p>
+    <div class="io">
+      <div class="io-block">
+        <p class="io-label"><span class="dot"></span>Input <span class="opt">— JSON</span></p>
+        <div class="fields">
+          <span class="field"><span class="k">conversation_type</span> <span class="t">str</span></span>
+          <span class="field"><span class="k">guests</span> <span class="t">list[str]</span></span>
+          <span class="field"><span class="k">context</span> <span class="t">str</span> <span class="c">Thema der Sendung</span></span>
+          <span class="field"><span class="k">excluded_speakers</span> <span class="t">list[str]</span></span>
+          <span class="field"><span class="k">transcript</span> <span class="t">str</span> <span class="c">aufgelöst (Stufe 2)</span></span>
+          <span class="field"><span class="k">previous_block_ending</span> <span class="t">str?</span><span class="c">nur zur Kontinuität, nicht extrahiert</span></span>
+        </div>
+      </div>
+      <div class="io-block">
+        <p class="io-label out"><span class="dot"></span>Output <span class="opt">— ClaimList</span></p>
+        <div class="fields">
+          <span class="field"><span class="k">claims</span> <span class="t">List[ExtractedClaim]</span></span>
+          <span class="field" style="padding-left:1rem"><span class="opt">ExtractedClaim {</span></span>
+          <span class="field" style="padding-left:2rem"><span class="k">name</span> <span class="t">str</span> <span class="c">Sprecher (Eigenname)</span></span>
+          <span class="field" style="padding-left:2rem"><span class="k">claim</span> <span class="t">str</span> <span class="c">eigenständige Behauptung</span></span>
+          <span class="field" style="padding-left:1rem"><span class="opt">}</span></span>
+        </div>
+        <div class="sample"><span class="lbl">z. B. aus einem Satz → 2 Claims:</span>
+1. <span class="spk">Julia Berger</span>: Die Inflation lag 2023 bei 8 %.
+2. <span class="spk">Julia Berger</span>: Die Inflation verursachte Rentenverluste.</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="connector" aria-hidden="true"><svg width="16" height="26" viewBox="0 0 16 26"><path d="M8 0v20M2 15l6 8 6-8" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></div>
+
+  <!-- STAGE 4 -->
+  <section class="stage">
+    <div class="stage-head">
+      <span class="num">4</span>
+      <h2 class="stage-title">Prüfwürdige auswählen</h2>
+      <span class="engine">Gemini 2.5 Flash</span>
+      <span class="engine file">claim_selection.md</span>
+    </div>
+    <p class="role">Filtert aus der Claim-Liste alle <b>prüfwürdigen</b> Behauptungen — substanziell und öffentlich/politisch relevant; Triviales fällt weg. Keine feste Anzahl (0, 1 oder viele). Gibt die Claims unverändert zurück.</p>
+    <div class="branch">
+      <span class="ic" aria-hidden="true">⑃</span>
+      <span>Diese Stufe läuft nur im <b>Autopilot</b>. Im normalen Betrieb prüft stattdessen die <b>Redaktion in der Admin-UI</b> die Claims aus Stufe 3 manuell und gibt sie frei.</span>
+    </div>
+    <div class="io" style="margin-top:1rem">
+      <div class="io-block">
+        <p class="io-label"><span class="dot"></span>Input <span class="opt">— Klartext-Liste</span></p>
+        <div class="fields">
+          <span class="plain">Nummerierte Liste der extrahierten Claims:</span>
+        </div>
+        <div class="sample">Behauptungen:
+1. [<span class="spk">Julia Berger</span>]: Die Inflation lag 2023 bei 8 %.
+2. [<span class="spk">Max Klein</span>]: Der Himmel ist blau.</div>
+      </div>
+      <div class="io-block">
+        <p class="io-label out"><span class="dot"></span>Output <span class="opt">— ClaimList</span></p>
+        <div class="fields">
+          <span class="plain">Teilmenge derselben Claims (hier fällt #2 als trivial weg).</span>
+        </div>
+        <p class="note" style="margin-top:.7rem">Safety-Cap: max. <b>AUTO_SELECT_MAX = 6</b> Fact-Checks pro Block.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="connector" aria-hidden="true"><svg width="16" height="26" viewBox="0 0 16 26"><path d="M8 0v20M2 15l6 8 6-8" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></div>
+
+  <!-- STAGE 5 -->
+  <section class="stage">
+    <div class="stage-head">
+      <span class="num">5</span>
+      <h2 class="stage-title">Faktencheck</h2>
+      <span class="engine">Gemini 2.5 Pro · ReAct-Agent</span>
+      <span class="engine file">fact_checker.md</span>
+    </div>
+    <p class="role">Prüft jede Behauptung einzeln. Ein <b>ReAct-Agent</b> (denken → suchen → denken → Urteil) mit dem Tool <code>tavily_search</code>, das nur vertrauenswürdige deutsche Domains durchsucht. Der Prompt verlangt Primärquellen, aktive Gegenbeweis-Suche und verbietet absolute Urteile („wahr/falsch"). <code>{current_date}</code> wird pro Lauf eingesetzt.</p>
+    <div class="io">
+      <div class="io-block">
+        <p class="io-label"><span class="dot"></span>Input <span class="opt">— JSON (ClaimInput)</span></p>
+        <div class="fields">
+          <span class="field"><span class="k">context</span> <span class="t">str</span> <span class="c">Thema der Sendung</span></span>
+          <span class="field"><span class="k">sprecher</span> <span class="t">str</span></span>
+          <span class="field"><span class="k">sendedatum</span> <span class="t">str</span> <span class="c">„März 2026"</span></span>
+          <span class="field"><span class="k">behauptung</span> <span class="t">str</span></span>
+        </div>
+        <p class="note">🔧 Tool <b>tavily_search</b>(query, start_date?, end_date?) — wird im Loop mehrfach aufgerufen.</p>
+      </div>
+      <div class="io-block">
+        <p class="io-label out"><span class="dot"></span>Output <span class="opt">— FactCheckResponse</span></p>
+        <div class="fields">
+          <span class="field"><span class="k">speaker</span> <span class="t">str</span></span>
+          <span class="field"><span class="k">original_claim</span> <span class="t">str</span></span>
+          <span class="field"><span class="k">consistency</span> <span class="t">enum</span></span>
+          <span class="field"><span class="k">evidence</span> <span class="t">str</span> <span class="c">strukturierte Begründung</span></span>
+          <span class="field"><span class="k">sources</span> <span class="t">list</span> <span class="c">url + title</span></span>
+        </div>
+        <div class="verdicts">
+          <span class="pill good">hoch</span>
+          <span class="pill bad">niedrig</span>
+          <span class="pill warn">unklar</span>
+          <span class="pill none">keine Datenlage</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="connector" aria-hidden="true"><svg width="16" height="26" viewBox="0 0 16 26"><path d="M8 0v20M2 15l6 8 6-8" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></div>
+
+  <!-- STAGE 6 -->
+  <section class="stage">
+    <div class="stage-head">
+      <span class="num">6</span>
+      <h2 class="stage-title">Selbstkritik</h2>
+      <span class="engine">Gemini 2.5 Flash</span>
+      <span class="engine file">self_critique.md</span>
+    </div>
+    <p class="role">Ein separater Reviewer bewertet, wie <b>robust</b> das Urteil aus Stufe 5 ist — nur anhand der Begründung. Er <b>überschreibt das Urteil nie</b>, sondern markiert es: bei <code>confidence = low</code> setzt der Code <code>double_check = true</code> (Signal für die Redaktion).</p>
+    <div class="io">
+      <div class="io-block">
+        <p class="io-label"><span class="dot"></span>Input <span class="opt">— JSON (SelfCritiqueInput)</span></p>
+        <div class="fields">
+          <span class="field"><span class="k">behauptung</span> <span class="t">str</span></span>
+          <span class="field"><span class="k">urteil</span> <span class="t">enum</span> <span class="c">consistency aus Stufe 5</span></span>
+          <span class="field"><span class="k">begruendung</span> <span class="t">str</span> <span class="c">evidence aus Stufe 5</span></span>
+        </div>
+      </div>
+      <div class="io-block">
+        <p class="io-label out"><span class="dot"></span>Output <span class="opt">— SelfCritiqueResponse</span></p>
+        <div class="fields">
+          <span class="field"><span class="k">confidence</span> <span class="t">enum</span> <span class="c">high · low</span></span>
+          <span class="field"><span class="k">reason</span> <span class="t">str</span> <span class="c">1 Satz: warum (nicht) robust</span></span>
+        </div>
+        <div class="verdicts">
+          <span class="pill good">high → normal</span>
+          <span class="pill warn">low → double_check</span>
+        </div>
+      </div>
+    </div>
+    <div class="branch">
+      <span class="ic" aria-hidden="true">◆</span>
+      <span><b>Ergebnis</b> geht an das Dashboard: Behauptung, Konsistenz-Urteil, Begründung, Quellen und ggf. die „Doppelt prüfen"-Markierung.</span>
+    </div>
+  </section>
+
+  <footer>
+    <b>Modelle konfigurierbar per .env:</b><br>
+    GEMINI_MODEL_CLAIM_EXTRACTION · GEMINI_MODEL_FACT_CHECKER · GEMINI_MODEL_SELF_CRITIQUE<br>
+    <b>Prompts:</b> prompts/*.md &nbsp;·&nbsp; <b>Feld-Beschreibungen (Sprache):</b> backend/lang.py<br>
+    <b>Services:</b> claim_extraction.py (Stufe 2–4) · fact_checker.py (Stufe 5–6) · transcription.py (Stufe 1)
+  </footer>
+</div>

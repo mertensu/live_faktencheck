@@ -6,20 +6,23 @@ Thank you for your interest in contributing! This document provides guidelines f
 
 ### Prerequisites
 
-- Python 3.11+
-- Node.js 18+
+- Python 3.12+
 - [uv](https://github.com/astral-sh/uv) for Python dependency management
 - [bun](https://bun.sh/) for frontend dependency management
+- `sqlite3` (optional, for inspecting the local database)
 
 ### Installation
 
+Budget about 30 minutes. If anything here does not work as written, that is a bug
+in this document — please open an issue.
+
 1. Clone the repository:
    ```bash
-   git clone https://github.com/your-username/fact_check.git
-   cd fact_check
+   git clone https://github.com/mertensu/live_faktencheck.git
+   cd live_faktencheck
    ```
 
-2. Install Python dependencies:
+2. Install Python dependencies (this includes ruff and the test tools):
    ```bash
    uv sync
    ```
@@ -32,17 +35,35 @@ Thank you for your interest in contributing! This document provides guidelines f
 4. Set up environment variables:
    ```bash
    cp .env.example .env
-   # Edit .env with your API keys
    ```
+   `.env.example` documents every variable the code reads, including `ACCESS_CODES`:
+   without it the app starts, but every cost-incurring endpoint rejects all requests.
+
+   **You do not need API keys to start contributing.** The unit tests run without any
+   — only the integration tests and the live pipeline call out to providers. When you
+   do need keys, sign up for your **own** at [Google AI Studio](https://aistudio.google.com/),
+   [Tavily](https://tavily.com/) and [AssemblyAI](https://www.assemblyai.com/); all three
+   offer a free tier. Set a spending limit at each. Never use the production keys: a
+   runaway local test must not be able to exhaust the live budget mid-broadcast.
+
+5. Pull a database snapshot so the app has something to display:
+   ```bash
+   ./scripts/pull-db.sh
+   ```
+   `backend/data/` is empty in a fresh clone — no snapshot means an empty frontend.
+   No server access needed: the script restores from the Cloudflare R2 backup using the
+   read-only token. Ask a maintainer for `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY`
+   (the **read** token, never the write one) and put them in your `.env`.
 
 ### Running the Development Servers
 
 ```bash
-# Backend (port 5000)
-./backend/run.sh
+# Both together (preferred)
+./start_dev.sh <episode-key>
 
-# Frontend (port 3000, in a separate terminal)
-cd frontend && bun run dev
+# Or separately:
+./backend/run.sh                  # backend on port 5000
+cd frontend && bun run dev        # frontend on port 3000
 ```
 
 ## Running Tests

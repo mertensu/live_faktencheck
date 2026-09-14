@@ -13,7 +13,7 @@ from backend.models import (
     ShowsDetailedResponse,
     EpisodesResponse,
 )
-from config import Episode, get_show_name, get_episodes_for_show
+from backend.config import Episode, get_show_name, get_episodes_for_show
 from backend.auth import require_code
 from backend.services.trusted_domains import TRUSTED_DOMAINS_BY_CATEGORY
 import backend.state as state

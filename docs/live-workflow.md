@@ -8,10 +8,10 @@ For VPS deployment and the always-on backend, see [`docs/deployment.md`](deploym
 
 ## Before the show
 
-Add the episode to `config.py`:
+Add the episode to `backend/config.py`:
 
 ```python
-# In config.py — add a new Episode to the EPISODES dict
+# In backend/config.py — add a new Episode to the EPISODES dict
 EPISODES = {
     "maischberger-2026-03-01": Episode(
         key="maischberger-2026-03-01",
@@ -27,7 +27,9 @@ EPISODES = {
 }
 ```
 
-Commit and push — the VPS backend picks up the new episode on the next deploy (`./deploy/deploy.sh`).
+Open a PR and merge it. The deploy follows automatically within a few minutes — see
+[`docs/deployment.md`](deployment.md). Plan for that lag: add the episode well before
+the show, not while the guests are being introduced.
 
 ---
 
@@ -50,9 +52,9 @@ The browser mic captures live speech (in-person conversations or shows playing o
 
 ## Re-run a claim
 
-The production database lives on the VPS, so claim management happens against the live
-backend (the admin UI talks to it directly). `./deploy/deploy.sh` only deploys code — it
-does **not** sync the database.
+The production database lives on the server, so claim management happens against the live
+backend (the admin UI talks to it directly). A deploy ships code only — it never touches
+the database.
 
 To re-run fact-checking on an existing claim (e.g. to overwrite a bad result):
 
@@ -67,9 +69,11 @@ The change is live immediately — the frontend reads fact-checks from the API o
 
 ## Remove a claim
 
-Delete directly from the VPS database (the API reads fact-checks live, so the change
-appears immediately — no restart or deploy needed):
+Through the API — no server access needed. The change appears immediately; the frontend
+reads fact-checks on each poll, so no restart and no deploy.
 
 ```bash
-ssh hostinger "cd /opt/fact_check && sqlite3 backend/data/factcheck.db 'DELETE FROM fact_checks WHERE id = <ID>;'"
+curl -X DELETE https://api.live-faktencheck.de/api/fact-checks/<ID>
 ```
+
+The ID is the one shown on the claim in the admin UI.

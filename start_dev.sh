@@ -48,8 +48,7 @@ print_info()    { echo -e "${BLUE}ℹ️  $1${NC}"; }
 
 uv run python -c "
 import sys
-sys.path.insert(0, '.')
-from config import EPISODES
+from backend.config import EPISODES
 key = '$EPISODE_KEY'
 if key not in EPISODES:
     print(f'Unknown episode key: {key}', file=sys.stderr)

@@ -10,7 +10,7 @@ import os
 from datetime import datetime, timezone
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, UploadFile, File, Form
 
-from config import Episode
+from backend.config import Episode
 from backend.auth import require_code
 from backend.models import ProcessingResponse
 from backend.state import processing_lock

@@ -117,8 +117,16 @@ async def update_fact_check(
 
 
 @router.delete('/fact-checks/{fact_check_id}')
-async def delete_fact_check(fact_check_id: int):
-    """Permanently delete a fact-check by ID."""
+async def delete_fact_check(
+    fact_check_id: int,
+    code: dict = Depends(require_code),
+):
+    """Permanently delete a fact-check by ID.
+
+    Gated like the other write endpoints: the API is publicly reachable, and IDs
+    are sequential, so an ungated delete lets anyone walk the range and erase
+    published results.
+    """
     db = state.get_db()
     deleted = await db.delete_fact_check(fact_check_id)
     if not deleted:
