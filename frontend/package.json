@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "bun scripts/resolve-backend-url.mjs && vite build && bun run copy-404",
+    "build": "vite build && bun run copy-404",
     "copy-404": "cp dist/index.html dist/404.html",
     "preview": "vite preview",
     "test": "vitest run"
