@@ -367,12 +367,15 @@ Die Reihenfolge ist bindend, jeder Schritt setzt den vorherigen voraus:
       trug eine untracked `benchmarks/model_ab.py` mit einem lokalen Suchtiefen-Zähler-Block
       (gehört zu `tavily-search-depth`). Vor dem `git pull` beiseitegesichert als
       `benchmarks/model_ab.py.server-local-20260914-091715` — nicht gelöscht.
-- [ ] **D — Rollback einmal üben.** Voriges SHA pinnen, Health prüfen, entpinnen,
-      prüfen dass der Timer `latest` zurückholt. Ungeübt existiert er im Ernstfall nicht.
-      **Caveat (14.09.2026):** In GHCR liegt bisher nur *ein* Image (`latest` == SHA
-      `80f0c78…`). Ein echter Rollback-Test braucht ein zweites, *anderes* Image — also erst
-      nach dem nächsten Merge auf `main` sinnvoll fahrbar. Vorher würde man denselben Digest
-      auf sich selbst pinnen.
+- [x] **D — Rollback geübt.** Sobald der zweite Merge auf `main` ein zweites Image erzeugt
+      hatte (Image #1 `80f0c78…`/`db7c7c1b`, Image #2 `0310103…`/`9ec5fc45`), einmal echt
+      durchgespielt: `deploy-hold` gesetzt → Image #1 gepinnt (`FACTCHECK_IMAGE=<digest>
+      compose up -d`) → Health kam gesund hoch und lieferte die *alte* Struktur ohne
+      `in_flight` (Beweis eines echten Versionswechsels, nicht nur eines Restarts) → `deploy-hold`
+      entfernt → `pull-deploy.sh` holte `latest` (Image #2) zurück. `previous-image` steht jetzt
+      auf Image #1, der automatische Health-Fail-Rollback hat also erstmals ein Ziel. Timer-Lauf
+      danach sauberer No-op. Der automatische Rollback selbst (kaputtes Image absichtlich
+      deployen) wurde **nicht** provoziert — nur der deliberate Pfad geübt.
 - [ ] **E — Staging hochziehen.** Port 5001, eigene DB, **eigene** `ACCESS_CODES`.
 - [ ] **F — `deploy/deploy.sh` löschen**, sobald der Container ein paar Sendeabende trägt.
 
