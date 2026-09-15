@@ -32,18 +32,14 @@ const backendUrl = isProduction ? PROD_BACKEND : STAGING_BACKEND
 // Overwrite the env var Vite will read, so our choice wins over that build variable.
 process.env.VITE_BACKEND_URL = backendUrl
 
-// Written into the built output so the choice (and the CI env that drove it) can be
-// inspected on the deployed preview via /_preview-info.json.
+// Written into the built output so the resolved choice can be inspected on any
+// deployed build via /_preview-info.json — a small build-provenance marker.
 const previewInfo = {
   backendUrl,
   isProduction,
   inCI,
   ciBranch,
-  gitBranch,
   builtAt: new Date().toISOString(),
-  ciEnvKeys: Object.keys(env)
-    .filter((k) => /CI|BRANCH|WORKER|CF_|PAGES|COMMIT|DEPLOY|GITHUB/i.test(k))
-    .sort(),
 }
 
 export default defineConfig({
