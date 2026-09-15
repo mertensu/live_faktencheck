@@ -10,6 +10,12 @@
 # production database only. Staging data is disposable; refill it with
 # `litestream restore` or scripts/pull-db.sh output.
 
+# Own project name so this never shares Compose identity with production. Both files
+# live in deploy/, so without it they default to the same project ("deploy") and the
+# same service ("backend") — pull-deploy's `compose ps backend` would then find the
+# production container and think staging was already running.
+name: factcheck-staging
+
 services:
   backend:
     image: ${FACTCHECK_IMAGE:-ghcr.io/mertensu/live_faktencheck:latest}
