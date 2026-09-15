@@ -376,7 +376,19 @@ Die Reihenfolge ist bindend, jeder Schritt setzt den vorherigen voraus:
       auf Image #1, der automatische Health-Fail-Rollback hat also erstmals ein Ziel. Timer-Lauf
       danach sauberer No-op. Der automatische Rollback selbst (kaputtes Image absichtlich
       deployen) wurde **nicht** provoziert — nur der deliberate Pfad geübt.
-- [ ] **E — Staging hochziehen.** Port 5001, eigene DB, **eigene** `ACCESS_CODES`.
+- [x] **E — Staging hochgezogen.** Container `factcheck-backend-staging` auf
+      `127.0.0.1:5001`, eigene (leere, disposable) DB unter `/opt/fact_check/staging/data`,
+      eigene `ACCESS_CODES` in `/opt/fact_check/.env.staging`, extern erreichbar unter
+      `https://staging-api.live-faktencheck.de` (HTTP 200). Litestream lässt es in Ruhe.
+      **Zweck geschärft:** Staging ist nicht „isoliertes Prod-Spiegelbild" (gleiche Maschine,
+      gleicher Tunnel), sondern das **API-Ziel für Frontend-Previews** — Cloudflare Workers
+      baut jeden Nicht-`main`-Branch als Preview, und der Build zeigt für Preview-Branches auf
+      `staging-api` (Repo-Switch `frontend/scripts/resolve-backend-url.mjs`). Damit lassen sich
+      Features auf einer echten URL testen, ohne `live-faktencheck.de` anzufassen.
+      Zwei Dinge bewusst offen: Staging nutzt vorerst die **Prod-API-Keys** (schnell, teilt aber
+      die Rechnung — Dev-Keys wären die saubere Trennung), und der `cloudflared`-Neustart für
+      den Ingress berührt kurz auch den Prod-Tunnel (an ruhiger Stelle gemacht). Der beim
+      Hochziehen gefundene Compose-Projektnamen-Bug ist in diesem PR mitgefixt.
 - [ ] **F — `deploy/deploy.sh` löschen**, sobald der Container ein paar Sendeabende trägt.
 
 **Nachtrag (14.09.2026) — Deploy aktivitätsbewusst statt kalendergesteuert.** Die Annahme
