@@ -25,7 +25,12 @@ try { gitBranch = execSync('git rev-parse --abbrev-ref HEAD').toString().trim() 
 const inCI = Boolean(env.WORKERS_CI || env.CF_PAGES || env.CI || ciBranch)
 const branch = ciBranch || gitBranch
 const isProduction = !inCI || branch === 'main' || branch === 'HEAD' || branch === ''
-const backendUrl = env.VITE_BACKEND_URL || (isProduction ? PROD_BACKEND : STAGING_BACKEND)
+// Compute purely from the branch — do NOT honour an incoming VITE_BACKEND_URL. Cloudflare
+// injects a VITE_BACKEND_URL build variable (= production), and in Vite a real process.env
+// VITE_* var outranks .env files, so honouring it forced every preview onto production.
+const backendUrl = isProduction ? PROD_BACKEND : STAGING_BACKEND
+// Overwrite the env var Vite will read, so our choice wins over that build variable.
+process.env.VITE_BACKEND_URL = backendUrl
 
 // Written into the built output so the choice (and the CI env that drove it) can be
 // inspected on the deployed preview via /_preview-info.json.
@@ -53,9 +58,6 @@ export default defineConfig({
       },
     },
   ],
-  define: {
-    'import.meta.env.VITE_BACKEND_URL': JSON.stringify(backendUrl),
-  },
   base: '/',
   server: {
     port: 3000,
