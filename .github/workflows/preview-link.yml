@@ -1,0 +1,51 @@
+name: Preview link
+
+# Posts (and keeps updated) a sticky comment with the Cloudflare Workers preview URL
+# for the PR's branch, so the link is one click away without opening the dashboard.
+# The URL is deterministic from the branch name — no secrets needed. It goes live once
+# the "Workers Builds" check is green.
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+permissions:
+  pull-requests: write
+  issues: write
+
+jobs:
+  comment:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const WORKER = 'live-faktencheck';
+            const SUBDOMAIN = 'mertens-ulf';
+            const raw = context.payload.pull_request.head.ref;
+
+            // Cloudflare's preview alias: lowercase, non-alphanumeric -> '-', collapsed and
+            // trimmed. The whole DNS label "<alias>-<worker>" must stay <= 63 chars.
+            let alias = raw.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+            const maxAlias = 63 - (`-${WORKER}`.length);
+            if (alias.length > maxAlias) alias = alias.slice(0, maxAlias).replace(/-+$/, '');
+            const url = `https://${alias}-${WORKER}.${SUBDOMAIN}.workers.dev`;
+
+            const marker = '<!-- preview-link -->';
+            const body = [
+              marker,
+              `🔎 **Preview:** ${url}`,
+              '',
+              'Zeigt auf das **Staging-Backend**. Live, sobald der `Workers Builds`-Check grün ist.',
+              'Bei ungewöhnlichen Branch-Namen kann der Link leicht abweichen — dann die exakte URL im `Workers Builds`-Check.',
+            ].join('\n');
+
+            const { data: comments } = await github.rest.issues.listComments({
+              ...context.repo, issue_number: context.issue.number,
+            });
+            const existing = comments.find((c) => c.body && c.body.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({ ...context.repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ ...context.repo, issue_number: context.issue.number, body });
+            }
