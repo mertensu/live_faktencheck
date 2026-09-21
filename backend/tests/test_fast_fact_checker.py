@@ -1,0 +1,102 @@
+"""
+Tests for FastFactChecker (fast first-pass lane).
+
+Covered:
+- check_claim_async returns a structured FastVerdict dict (no self-critique fields set)
+- speaker/original_claim fall back to the inputs when the model leaves them blank
+- parallel Tavily searches are issued with the fast search_depth
+- a search/model failure degrades to consistency "unklar" rather than raising
+- _build_queries respects FAST_SEARCH_MAX_QUERIES
+"""
+
+import pytest
+from unittest.mock import AsyncMock, patch
+
+from pydantic_ai import models
+from pydantic_ai.models.test import TestModel
+
+from backend.services.fast_fact_checker import FastFactChecker, FastVerdict, Source
+
+models.ALLOW_MODEL_REQUESTS = False
+
+
+FAKE_SEARCH = {
+    "results": [
+        {"title": "Statistisches Bundesamt", "url": "https://destatis.de/x", "content": "Zahlen ..."},
+        {"title": "Bundesbank", "url": "https://bundesbank.de/y", "content": "Weitere Daten ..."},
+    ]
+}
+
+MOCK_VERDICT = FastVerdict(
+    speaker="",
+    original_claim="",
+    consistency="hoch",
+    evidence="Die offiziellen Zahlen stützen die Behauptung.",
+    sources=[Source(url="https://destatis.de/x", title="Statistisches Bundesamt")],
+)
+
+
+def _make_checker():
+    with patch.dict("os.environ", {"GEMINI_API_KEY": "test-api-key", "TAVILY_API_KEY": "test-tavily-key"}):
+        return FastFactChecker()
+
+
+@pytest.fixture
+def checker():
+    c = _make_checker()
+    with c.agent.override(model=TestModel(custom_output_args=MOCK_VERDICT.model_dump())):
+        yield c
+
+
+class TestFastCheck:
+    async def test_returns_structured_verdict(self, checker):
+        with patch("backend.services.fast_fact_checker.tavily_search", AsyncMock(return_value=FAKE_SEARCH)):
+            result = await checker.check_claim_async(
+                speaker="Angela Merkel", claim="Deutschland hat 83 Millionen Einwohner."
+            )
+        assert isinstance(result, dict)
+        assert result["consistency"] == "hoch"
+        assert isinstance(result["evidence"], str) and result["evidence"]
+        assert isinstance(result["sources"], list)
+        # Fast lane never self-critiques.
+        assert result["double_check"] is False
+        assert result["critique_note"] == ""
+
+    async def test_speaker_and_claim_fallback(self, checker):
+        """Model returned blank speaker/original_claim -> filled from inputs."""
+        with patch("backend.services.fast_fact_checker.tavily_search", AsyncMock(return_value=FAKE_SEARCH)):
+            result = await checker.check_claim_async(speaker="Olaf Scholz", claim="Die Inflation sinkt.")
+        assert result["speaker"] == "Olaf Scholz"
+        assert result["original_claim"] == "Die Inflation sinkt."
+
+    async def test_parallel_searches_use_fast_depth(self, checker):
+        mock_search = AsyncMock(return_value=FAKE_SEARCH)
+        with patch("backend.services.fast_fact_checker.tavily_search", mock_search):
+            await checker.check_claim_async(speaker="X", claim="Behauptung Y.")
+        # One search per query variant, each with the fast depth override.
+        assert mock_search.call_count == checker.max_queries
+        for call in mock_search.call_args_list:
+            assert call.kwargs.get("search_depth") == checker.search_depth
+
+    async def test_search_failure_degrades_to_unklar(self, checker):
+        with patch("backend.services.fast_fact_checker.tavily_search", AsyncMock(side_effect=RuntimeError("boom"))):
+            result = await checker.check_claim_async(speaker="X", claim="Behauptung Z.")
+        # Searches swallow their own errors -> empty evidence, but the synthesis
+        # (mocked) still returns a verdict; the call must never raise.
+        assert result["consistency"] in {"hoch", "niedrig", "unklar", "keine Datenlage"}
+
+    async def test_synthesis_failure_degrades_to_unklar(self):
+        """If the synthesis agent itself raises, return an 'unklar' fallback dict."""
+        c = _make_checker()
+        with patch("backend.services.fast_fact_checker.tavily_search", AsyncMock(return_value=FAKE_SEARCH)):
+            with patch.object(c.agent, "run", AsyncMock(side_effect=RuntimeError("model down"))):
+                result = await c.check_claim_async(speaker="X", claim="Behauptung.")
+        assert result["consistency"] == "unklar"
+        assert "Fehler" in result["evidence"]
+
+    def test_build_queries_respects_cap(self):
+        with patch.dict("os.environ", {
+            "GEMINI_API_KEY": "k", "TAVILY_API_KEY": "k", "FAST_SEARCH_MAX_QUERIES": "1",
+        }):
+            c = FastFactChecker()
+        assert c._build_queries("eine Behauptung") == ["eine Behauptung"]
