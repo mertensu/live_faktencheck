@@ -28,6 +28,14 @@ WINDOW_MAX_TURNS = int(os.getenv("STREAM_WINDOW_MAX_TURNS", "3"))
 # Sample rate the browser must send (PCM16 mono). 16 kHz is AssemblyAI's expected rate.
 STREAM_SAMPLE_RATE = int(os.getenv("STREAM_SAMPLE_RATE", "16000"))
 
+# Speaker label->name resolution (live lane): labels (A/B/…) are stable within a session,
+# so resolve once enough transcript has accrued and cache the mapping — then re-resolve
+# every N further turns to catch speakers who only appear later. It runs in the background
+# off the hot path, so it never adds latency to a fact-check.
+SPEAKER_RESOLVE_MIN_TURNS = int(os.getenv("STREAM_SPEAKER_RESOLVE_MIN_TURNS", "6"))
+SPEAKER_RESOLVE_EVERY_TURNS = int(os.getenv("STREAM_SPEAKER_RESOLVE_EVERY_TURNS", "20"))
+SPEAKER_RESOLVE_MAX_LINES = int(os.getenv("STREAM_SPEAKER_RESOLVE_MAX_LINES", "60"))
+
 
 def _count_sentences(text: str) -> int:
     return sum(text.count(m) for m in (".", "!", "?"))
@@ -49,6 +57,7 @@ class StreamingSession:
         excluded_speakers: list[str] | None = None,
         episode_date: str | None = None,
         on_event=None,
+        resolve_speakers=None,
     ):
         self.session_id = session_id
         self.gate = gate
@@ -60,12 +69,19 @@ class StreamingSession:
         self.excluded_speakers = excluded_speakers or []
         self.episode_date = episode_date
         self.on_event = on_event  # optional async callable(dict) -> pushes JSON to browser
+        # optional async callable(transcript, guests, conversation_type) -> {label: name}
+        self._resolve_speakers_fn = resolve_speakers
 
         self._buffer: list[str] = []          # finalized turn texts, current window
         self._sentence_count = 0
         self._previous_context: str | None = None
         self._tasks: set[asyncio.Task] = set()
         self._client = None                   # AssemblyAI AsyncStreamingClient (set in start)
+
+        self._transcript_log: list[str] = []  # all finalized "label: text" lines (for resolution)
+        self._speaker_map: dict[str, str] = {}  # label -> real name, filled in the background
+        self._turns_since_resolve = 0
+        self._resolving = False
 
     # ---- event emission -----------------------------------------------------
     async def _emit(self, event: dict) -> None:
@@ -82,19 +98,54 @@ class StreamingSession:
         self._tasks.add(task)
         task.add_done_callback(self._tasks.discard)
 
+    # ---- speaker label -> name resolution (background, cached) ---------------
+    def _maybe_resolve_speakers(self) -> None:
+        """Kick off a background label->name resolution when it's due.
+
+        First pass once ``SPEAKER_RESOLVE_MIN_TURNS`` turns exist, then every
+        ``SPEAKER_RESOLVE_EVERY_TURNS`` turns. No-op without a resolver or guests (the
+        resolver needs candidate names), or while one is already running.
+        """
+        if self._resolve_speakers_fn is None or not self.guests or self._resolving:
+            return
+        turns = len(self._transcript_log)
+        due = (not self._speaker_map and turns >= SPEAKER_RESOLVE_MIN_TURNS) \
+            or (self._turns_since_resolve >= SPEAKER_RESOLVE_EVERY_TURNS)
+        if due:
+            self._track(self._resolve_speakers())
+
+    async def _resolve_speakers(self) -> None:
+        self._resolving = True
+        self._turns_since_resolve = 0
+        try:
+            transcript = "\n".join(self._transcript_log[-SPEAKER_RESOLVE_MAX_LINES:])
+            mapping = await self._resolve_speakers_fn(transcript, self.guests, self.conversation_type)
+            if mapping:
+                self._speaker_map.update(mapping)
+                logger.info(f"[stream:{self.session_id}] speaker map: {self._speaker_map}")
+        except Exception:
+            logger.exception("Speaker resolution failed")
+        finally:
+            self._resolving = False
+
     # ---- windowing (unit-testable) ------------------------------------------
     async def handle_turn(self, transcript: str, end_of_turn: bool, speaker_label: str | None = None) -> None:
         """Feed one turn event. Buffers finalized turns; flushes a full window."""
         text = (transcript or "").strip()
         if not text:
             return
+        # Show the resolved name in the live UI once we know it; fall back to the label.
+        display_speaker = self._speaker_map.get(speaker_label, speaker_label) if speaker_label else speaker_label
         # Live partial for the UI; only finalized turns enter the buffer.
-        await self._emit({"type": "partial" if not end_of_turn else "turn", "text": text, "speaker": speaker_label})
+        await self._emit({"type": "partial" if not end_of_turn else "turn", "text": text, "speaker": display_speaker})
         if not end_of_turn:
             return
         line = f"{speaker_label}: {text}" if speaker_label else text
         self._buffer.append(line)
+        self._transcript_log.append(line)
         self._sentence_count += _count_sentences(text)
+        self._turns_since_resolve += 1
+        self._maybe_resolve_speakers()
         if self._sentence_count >= WINDOW_MIN_SENTENCES or len(self._buffer) >= WINDOW_MAX_TURNS:
             await self._flush_window()
 
@@ -124,6 +175,7 @@ class StreamingSession:
 
         for claim in claims:
             name = getattr(claim, "name", "") or ""
+            name = self._speaker_map.get(name, name)  # label -> real name, if resolved
             text = getattr(claim, "claim", "") or ""
             source = getattr(claim, "source", None)  # original transcript sentence (JevGate)
             if not text:

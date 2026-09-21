@@ -84,6 +84,7 @@ async def stream(websocket: WebSocket):
         excluded_speakers=ep.excluded_speakers if ep else [],
         episode_date=episode_date,
         on_event=on_event,
+        resolve_speakers=get_claim_extractor().resolve_speaker_map_async,
     )
     state.streaming_sessions[session_id] = session
     started = time.monotonic()

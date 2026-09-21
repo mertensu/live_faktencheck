@@ -11,7 +11,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 from backend.database import Database
 from backend.services.claim_extraction import ExtractedClaim
-from backend.services.streaming import StreamingSession
+from backend.services.streaming import StreamingSession, SPEAKER_RESOLVE_MIN_TURNS
 
 
 @pytest.fixture
@@ -86,6 +86,55 @@ class TestWindowing:
         await session.handle_turn("Guten Abend. Schön hier zu sein.", end_of_turn=True, speaker_label="Mod")
         await session.stop()
         assert await db.get_fact_checks(session_id="s1") == []
+
+    async def test_speaker_map_applied_to_claim(self, db):
+        """A resolved label->name mapping is applied to the stored claim's speaker."""
+        async def resolver(transcript, guests, conversation_type=""):
+            return {"A": "Katharina Reiche"}
+
+        gate = _gate([[ExtractedClaim(name="A", claim="Behauptung A.")]])
+        session = StreamingSession("s1", gate, _fast_checker(), db,
+                                   guests=["Katharina Reiche (CDU)"], resolve_speakers=resolver)
+        session._transcript_log = ["A: etwas", "B: anderes"]
+        await session._resolve_speakers()
+        assert session._speaker_map == {"A": "Katharina Reiche"}
+
+        await session.handle_turn("Behauptung A. Noch ein Satz.", end_of_turn=True, speaker_label="A")
+        await session.stop()
+        rows = await db.get_fact_checks(session_id="s1")
+        assert rows[0]["sprecher"] == "Katharina Reiche"
+
+    async def test_resolution_triggers_after_min_turns(self, db):
+        calls = {"n": 0}
+
+        async def resolver(transcript, guests, conversation_type=""):
+            calls["n"] += 1
+            return {"A": "Reiche"}
+
+        gate = _gate([[]] * 20)
+        session = StreamingSession("s1", gate, _fast_checker(), db,
+                                   guests=["Reiche"], resolve_speakers=resolver)
+        for i in range(SPEAKER_RESOLVE_MIN_TURNS):
+            await session.handle_turn("Satz eins. Satz zwei.", end_of_turn=True, speaker_label="A")
+        await session.stop()
+        assert calls["n"] >= 1
+        assert session._speaker_map.get("A") == "Reiche"
+
+    async def test_no_resolution_without_guests(self, db):
+        """The resolver needs candidate names; with no guests it must never run."""
+        calls = {"n": 0}
+
+        async def resolver(transcript, guests, conversation_type=""):
+            calls["n"] += 1
+            return {}
+
+        gate = _gate([[]] * 20)
+        session = StreamingSession("s1", gate, _fast_checker(), db,
+                                   guests=[], resolve_speakers=resolver)
+        for i in range(SPEAKER_RESOLVE_MIN_TURNS + 2):
+            await session.handle_turn("Satz eins. Satz zwei.", end_of_turn=True, speaker_label="A")
+        await session.stop()
+        assert calls["n"] == 0
 
     async def test_events_emitted(self, db):
         events = []
