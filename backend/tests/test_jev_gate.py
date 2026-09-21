@@ -22,6 +22,7 @@ from backend.services.gate import (
     ClaimGate,
     ExtractorGate,
     JevGate,
+    JevScore,
     JevScorer,
     build_gate,
 )
@@ -35,19 +36,21 @@ def _make_extractor():
 
 
 class FakeScorer:
-    """A JevScorer stub returning a canned probability per sentence text."""
+    """A JevScorer stub returning canned check/importance probs per sentence text."""
 
-    def __init__(self, scores: dict[str, float], default: float = 0.0):
+    def __init__(self, scores: dict[str, float], default: float = 0.0,
+                 importance: dict[str, float] | None = None, default_importance: float = 1.0):
         self._scores = scores
         self._default = default
+        self._importance = importance or {}
+        self._default_importance = default_importance
         self.calls: list[str] = []
 
-    async def score(self, sentence: str) -> float | None:
+    async def score(self, sentence: str) -> JevScore:
         self.calls.append(sentence)
-        for key, val in self._scores.items():
-            if key in sentence:
-                return val
-        return self._default
+        check = next((v for k, v in self._scores.items() if k in sentence), self._default)
+        imp = next((v for k, v in self._importance.items() if k in sentence), self._default_importance)
+        return JevScore(check=check, important=imp)
 
 
 class TestJevGate:
@@ -75,6 +78,17 @@ class TestJevGate:
         # The original transcript sentence is preserved as the UI highlight anchor,
         # even though `claim` is the reformulated text.
         assert out[0].source == "Deutschland ist Mitglied der NATO."
+
+    async def test_unimportant_hit_is_dropped_before_llm(self):
+        """A checkable-but-trivial sentence scores high on Jev's check question but low on
+        importance, so it is dropped before the reformulator LLM ever runs."""
+        ex = _make_extractor()
+        scorer = FakeScorer({"vorgestellt": 0.91}, importance={"vorgestellt": 0.20})
+        gate = JevGate(ex, scorer)
+        # No reformulator override + ALLOW_MODEL_REQUESTS=False => an LLM call would raise.
+        out = await gate.gate("A: Am Montag hat sie das Monitoring vorgestellt.", guests=[])
+        assert out == []
+        assert scorer.calls == ["Am Montag hat sie das Monitoring vorgestellt."]
 
     async def test_no_hits_yields_empty_without_llm(self):
         ex = _make_extractor()

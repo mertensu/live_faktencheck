@@ -228,8 +228,9 @@ class ClaimExtractor:
     ) -> ExtractedClaim | None:
         """Rewrite one already-gated sentence into a standalone, decontextualized claim.
 
-        This does NOT decide check-worthiness (the Jev gate already did); it only resolves
-        pronouns/references and assigns the speaker. Returns ``None`` for empty input.
+        This does NOT decide check-worthiness or importance (the Jev gate did both); it
+        only resolves pronouns/references and assigns/corrects the speaker name against
+        ``guests``. Returns ``None`` for empty input.
         """
         if not sentence or not sentence.strip():
             return None

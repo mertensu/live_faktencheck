@@ -85,9 +85,11 @@ class ExtractorGate:
 
 # --- Jev per-sentence scorer -------------------------------------------------
 
-# Jev's yes/no ("noul") question: does this sentence hold a verifiable factual claim?
-# The sentence itself is the "state" (message content); Jev returns a calibrated prob.
-_JEV_QUESTION = {
+# Jev answers TWO yes/no ("noul") questions in a single per-sentence call: is the sentence
+# checkable, and is it important enough to check on air. The sentence is the "state"
+# (message content); Jev returns a calibrated probability per question. Two questions in
+# one call means the importance judgment costs no extra round-trip.
+_JEV_QUESTIONS = {
     "claim": {
         "type": "noul",
         "instructions": "Enthält dieser Satz eine überprüfbare Tatsachenbehauptung, die man faktenchecken könnte?",
@@ -95,8 +97,23 @@ _JEV_QUESTION = {
             "true": "Überprüfbarer Tatsachenkern: Zahl, Statistik, Datum, historisches oder aktuelles Faktum, konkrete Aussage über die Realität (wer/was/wann).",
             "false": "Reine Meinung, Wertung, Absicht, Forderung, Frage, Begrüßung oder Floskel ohne überprüfbaren Tatsachenkern.",
         },
-    }
+    },
+    "important": {
+        "type": "noul",
+        "instructions": "Ist diese Behauptung inhaltlich bedeutsam bzw. interessant genug, um sie in einer Live-Sendung zu faktenchecken?",
+        "criteria": {
+            "true": "Inhaltlich bedeutsame, strittige oder überraschende Tatsachenbehauptung, die eine Debatte trägt (Zahl, Statistik, Kausalbehauptung, historisches/aktuelles Faktum).",
+            "false": "Belanglos oder prozedural: reine Termin-/Ablaufankündigung (z. B. 'am Montag wurde X vorgestellt'), Trivialität, Selbstverständlichkeit oder Randnotiz ohne Aussagekraft.",
+        },
+    },
 }
+
+
+@dataclass
+class JevScore:
+    """Jev's two per-sentence probabilities (either may be ``None`` on a parse/call error)."""
+    check: float | None       # is it a checkable factual claim?
+    important: float | None    # is it worth checking on air?
 
 
 def _extract_prob(value) -> float | None:
@@ -113,9 +130,9 @@ def _extract_prob(value) -> float | None:
 class JevScorer:
     """Thin async wrapper over Jev (Requesty, OpenAI-compatible).
 
-    ``score`` returns a calibrated yes-probability in [0, 1] that the sentence contains a
-    verifiable factual claim, or ``None`` if the call fails or the answer can't be parsed.
-    The client is built lazily so importing this module never requires a key or network.
+    ``score`` returns a ``JevScore`` with the checkable and importance probabilities in
+    [0, 1] (each ``None`` if the call fails or the answer can't be parsed). The client is
+    built lazily so importing this module never requires a key or network.
     """
 
     def __init__(self, model: str | None = None):
@@ -136,18 +153,21 @@ class JevScorer:
             )
         return self._client
 
-    async def score(self, sentence: str) -> float | None:
+    async def score(self, sentence: str) -> JevScore:
         try:
             resp = await self._get_client().chat.completions.create(
                 model=self.model,
                 messages=[{"role": "user", "content": sentence}],
-                response_format={"type": "questions", "questions": _JEV_QUESTION},
+                response_format={"type": "questions", "questions": _JEV_QUESTIONS},
             )
-            raw = resp.choices[0].message.content or ""
-            return _extract_prob(json.loads(raw).get("claim"))
+            data = json.loads(resp.choices[0].message.content or "")
+            return JevScore(
+                check=_extract_prob(data.get("claim")),
+                important=_extract_prob(data.get("important")),
+            )
         except Exception:
             logger.exception("Jev scoring failed for sentence; treating as skip")
-            return None
+            return JevScore(None, None)
 
 
 # --- Jev gate ----------------------------------------------------------------
@@ -188,6 +208,10 @@ class JevGate:
         self._scorer = scorer or JevScorer()
         self.check_hi = float(os.getenv("JEV_CHECK_THRESHOLD", "0.85"))
         self.skip_lo = float(os.getenv("JEV_SKIP_THRESHOLD", "0.30"))
+        # A checkable sentence still needs this importance prob to be worth checking on air
+        # (filters trivial/procedural facts). Fail-open: a missing importance score never
+        # drops an otherwise-good claim.
+        self.imp_hi = float(os.getenv("JEV_IMPORTANCE_THRESHOLD", "0.60"))
         # Opt-in per-sentence trace (sentence, p, band) — for reviewing a live run, since
         # the DB keeps only the claims that passed, not scores or skipped sentences.
         self._debug = os.getenv("JEV_GATE_DEBUG", "").strip().lower() in ("1", "true", "yes")
@@ -233,11 +257,19 @@ class JevGate:
 
         claims: List[GatedClaim] = []
         rolling = previous_context  # last sentence(s) seen, for pronoun resolution
-        for (speaker, sentence), p in zip(pairs, scores):
+        for (speaker, sentence), sc in zip(pairs, scores):
             if self._debug:
-                p_str = "  ? " if p is None else f"{p:.2f}"
-                logger.info(f"JevGate[{self._band(p):5} p={p_str}] {speaker or '—'}: {sentence}")
-            if p is not None and p >= self.check_hi:
+                c_str = "  ? " if sc.check is None else f"{sc.check:.2f}"
+                i_str = " ? " if sc.important is None else f"{sc.important:.2f}"
+                logger.info(f"JevGate[{self._band(sc.check):5} p={c_str} imp={i_str}] {speaker or '—'}: {sentence}")
+            rolling_next = f"{speaker}: {sentence}" if speaker else sentence
+            if sc.check is not None and sc.check >= self.check_hi:
+                # Checkable — but skip if Jev judged it not important enough (fail-open on None).
+                if sc.important is not None and sc.important < self.imp_hi:
+                    if self._debug:
+                        logger.info(f"JevGate[drop  unwichtig imp={sc.important:.2f}] {sentence}")
+                    rolling = rolling_next
+                    continue
                 try:
                     claim = await self._extractor.reformulate_claim_async(
                         sentence,
@@ -253,7 +285,7 @@ class JevGate:
                     # Keep the original sentence as the highlight anchor for the UI.
                     claims.append(GatedClaim(name=claim.name or speaker, claim=claim.claim, source=sentence))
             # Every sentence (hit or not) extends the rolling context for the next one.
-            rolling = f"{speaker}: {sentence}" if speaker else sentence
+            rolling = rolling_next
 
         logger.info(
             f"JevGate: {len(claims)} claim(s) from {len(pairs)} sentence(s) "
