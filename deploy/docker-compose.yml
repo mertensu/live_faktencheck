@@ -7,6 +7,11 @@
 # FACTCHECK_IMAGE defaults to :latest but pull-deploy.sh always resolves it to a
 # digest first, so a rollback can name the exact image that was running before.
 
+# Explicit project name so this file can never share a Compose project with
+# docker-compose.staging.yml in the same directory. Without it both default to the
+# directory name ("deploy") and a `staging up -d` adopts and replaces this container.
+name: factcheck
+
 services:
   backend:
     image: ${FACTCHECK_IMAGE:-ghcr.io/mertensu/live_faktencheck:latest}
