@@ -22,7 +22,8 @@ const MSG = {
 export function useAudioStream(sessionId, { deviceId = '' } = {}) {
   const [status, setStatus] = useState('idle')   // idle | connecting | streaming | error
   const [error, setError] = useState(null)
-  const [partial, setPartial] = useState('')      // latest partial/interim transcript
+  const [partial, setPartial] = useState('')      // current interim (not-yet-final) turn
+  const [transcript, setTranscript] = useState([]) // finalized turns [{ speaker, text }]
   const [events, setEvents] = useState([])        // last few backend events (for debug/UI)
 
   const wsRef = useRef(null)
@@ -58,6 +59,7 @@ export function useAudioStream(sessionId, { deviceId = '' } = {}) {
       setStatus('error'); setError(MSG.unsupported); return
     }
     setStatus('connecting'); setError(null); stoppingRef.current = false
+    setTranscript([]); setPartial('')
 
     // 1. Mic
     try {
@@ -100,7 +102,13 @@ export function useAudioStream(sessionId, { deviceId = '' } = {}) {
       let msg
       try { msg = JSON.parse(evt.data) } catch { return }
       setEvents((prev) => [...prev.slice(-19), msg])
-      if (msg.type === 'partial' || msg.type === 'turn') setPartial(msg.text || '')
+      if (msg.type === 'turn') {
+        // Finalized turn: append to the transcript and clear the interim line.
+        if (msg.text) setTranscript((prev) => [...prev, { speaker: msg.speaker || null, text: msg.text }])
+        setPartial('')
+      } else if (msg.type === 'partial') {
+        setPartial(msg.text || '')
+      }
     }
     ws.onerror = () => { if (!stoppingRef.current) { setStatus('error'); setError(MSG.connectFailed) } }
     ws.onclose = (evt) => {
@@ -114,5 +122,5 @@ export function useAudioStream(sessionId, { deviceId = '' } = {}) {
   // Release everything on unmount.
   useEffect(() => () => { stoppingRef.current = true; cleanup() }, [cleanup])
 
-  return { status, error, partial, events, start, stop }
+  return { status, error, partial, transcript, events, start, stop }
 }

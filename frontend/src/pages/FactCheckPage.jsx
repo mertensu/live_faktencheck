@@ -4,6 +4,7 @@ import { AdminView } from '../components/AdminView'
 import { BackendErrorDisplay } from '../components/BackendErrorDisplay'
 import { ClaimDetailOverlay } from '../components/ClaimDetailOverlay'
 import { RecordingBar, formatElapsed } from '../components/RecordingBar'
+import { LiveTranscript } from '../components/LiveTranscript'
 import { ReviewView } from '../components/ReviewView'
 import { useAudioRecorder } from '../hooks/useAudioRecorder'
 import { useAudioStream } from '../hooks/useAudioStream'
@@ -714,6 +715,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
       </header>
 
       <main className="main-content">
+        {!isViewer && <LiveTranscript live={liveStream} />}
         {isAdminMode ? (
           <>
             <RecordingBar recorder={recorder} live={liveStream} />
