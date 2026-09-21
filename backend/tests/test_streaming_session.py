@@ -6,11 +6,14 @@ drive handle_turn() directly with synthetic turns and mocked gate + fast_checker
 against a real in-memory DB, and assert the placeholder-then-update row sequence.
 """
 
+import asyncio
+
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 
 from backend.database import Database
 from backend.services.claim_extraction import ExtractedClaim
+from backend.services.gate import GatedClaim
 from backend.services.streaming import StreamingSession, SPEAKER_RESOLVE_MIN_TURNS
 
 
@@ -135,6 +138,58 @@ class TestWindowing:
             await session.handle_turn("Satz eins. Satz zwei.", end_of_turn=True, speaker_label="A")
         await session.stop()
         assert calls["n"] == 0
+
+    async def test_speaker_revision_rewrites_stored_claim(self, db):
+        """A SpeakerRevision for a claim's turn rewrites its stored speaker + emits an event."""
+        events = []
+
+        async def on_event(e):
+            events.append(e)
+
+        gate = _gate([[GatedClaim(name="A", claim="Behauptung A.", source="Behauptung A.")]])
+        session = StreamingSession("s1", gate, _fast_checker(), db, on_event=on_event)
+        # Turn 0 gates a claim; its source sentence ties it back to the turn.
+        await session.handle_turn("Behauptung A. Noch ein Satz.", end_of_turn=True,
+                                  speaker_label="A", turn_order=0)
+        # Drain the background check task so the row exists and is tied to its turn.
+        await asyncio.gather(*list(session._tasks))
+        rows = await db.get_fact_checks(session_id="s1")
+        assert rows[0]["sprecher"] == "A"
+
+        # Reclustering corrects turn 0's speaker A -> B.
+        await session.handle_speaker_revision([{"turn_order": 0, "speaker_label": "B"}])
+        await session.stop()
+
+        rows = await db.get_fact_checks(session_id="s1")
+        assert rows[0]["sprecher"] == "B"
+        assert any(e["type"] == "claim_speaker_update" and e["speaker"] == "B" for e in events)
+
+    async def test_speaker_revision_uses_resolved_name(self, db):
+        """When a name is already resolved, a revision rewrites to the real name, not the label."""
+        gate = _gate([[GatedClaim(name="A", claim="Behauptung A.", source="Behauptung A.")]])
+        session = StreamingSession("s1", gate, _fast_checker(), db)
+        session._speaker_map = {"B": "Katharina Reiche"}
+        await session.handle_turn("Behauptung A. Noch ein Satz.", end_of_turn=True,
+                                  speaker_label="A", turn_order=0)
+        await asyncio.gather(*list(session._tasks))
+        await session.handle_speaker_revision([{"turn_order": 0, "speaker_label": "B"}])
+        await session.stop()
+        rows = await db.get_fact_checks(session_id="s1")
+        assert rows[0]["sprecher"] == "Katharina Reiche"
+
+    async def test_revision_for_unknown_turn_is_noop(self, db):
+        gate = _gate([[]])
+        session = StreamingSession("s1", gate, _fast_checker(), db)
+        await session.handle_speaker_revision([{"turn_order": 99, "speaker_label": "B"}])
+        await session.stop()
+        assert await db.get_fact_checks(session_id="s1") == []
+
+    async def test_max_speakers_derives_from_guests(self, db):
+        session = StreamingSession("s1", _gate([[]]), _fast_checker(), db,
+                                   guests=["Reiche", "Dröge"])
+        assert session._max_speakers() == 3  # 2 guests + moderator
+        no_guests = StreamingSession("s2", _gate([[]]), _fast_checker(), db, guests=[])
+        assert no_guests._max_speakers() is None
 
     async def test_events_emitted(self, db):
         events = []

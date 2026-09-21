@@ -122,6 +122,10 @@ export function useAudioStream(sessionId, { deviceId = '' } = {}) {
       } else if (msg.type === 'claim_error') {
         setClaims((prev) => prev.map((c) =>
           c.id === msg.id ? { ...c, status: 'error' } : c))
+      } else if (msg.type === 'claim_speaker_update') {
+        // Diarization was reclustered: rewrite this claim's speaker retroactively.
+        setClaims((prev) => prev.map((c) =>
+          c.id === msg.id ? { ...c, speaker: msg.speaker } : c))
       }
     }
     ws.onerror = () => { if (!stoppingRef.current) { setStatus('error'); setError(MSG.connectFailed) } }
