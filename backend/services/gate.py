@@ -173,6 +173,18 @@ class JevGate:
         self._scorer = scorer or JevScorer()
         self.check_hi = float(os.getenv("JEV_CHECK_THRESHOLD", "0.85"))
         self.skip_lo = float(os.getenv("JEV_SKIP_THRESHOLD", "0.30"))
+        # Opt-in per-sentence trace (sentence, p, band) — for reviewing a live run, since
+        # the DB keeps only the claims that passed, not scores or skipped sentences.
+        self._debug = os.getenv("JEV_GATE_DEBUG", "").strip().lower() in ("1", "true", "yes")
+
+    def _band(self, p: float | None) -> str:
+        if p is None:
+            return "err"
+        if p >= self.check_hi:
+            return "CHECK"
+        if p <= self.skip_lo:
+            return "skip"
+        return "grey"
 
     async def gate(
         self,
@@ -207,6 +219,9 @@ class JevGate:
         claims: List[ExtractedClaim] = []
         rolling = previous_context  # last sentence(s) seen, for pronoun resolution
         for (speaker, sentence), p in zip(pairs, scores):
+            if self._debug:
+                p_str = "  ? " if p is None else f"{p:.2f}"
+                logger.info(f"JevGate[{self._band(p):5} p={p_str}] {speaker or '—'}: {sentence}")
             if p is not None and p >= self.check_hi:
                 try:
                     claim = await self._extractor.reformulate_claim_async(
