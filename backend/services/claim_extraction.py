@@ -103,7 +103,24 @@ class ClaimExtractor:
         except FileNotFoundError:
             self.speaker_resolver = None
 
-        logger.info(f"ClaimExtractor initialized with model: {self.model_name}")
+        # Window gate agent (live streaming lane): a separate, faster/cheaper model
+        # that decides per small window whether there is a check-worthy claim and
+        # extracts it. Kept independent so the batch extractor above is untouched.
+        self.window_model_name = os.getenv("GEMINI_MODEL_WINDOW_GATE", "gemini-3.5-flash-lite")
+        self.window_gate = Agent(
+            build_model(self.window_model_name),
+            output_type=ClaimList,
+            instructions=load_prompt(
+                "claim_extraction_streaming.md",
+                fallback=load_prompt("claim_extraction.md"),
+            ),
+            model_settings=MODEL_SETTINGS,
+        )
+
+        logger.info(
+            f"ClaimExtractor initialized (extraction={self.model_name}, "
+            f"window_gate={self.window_model_name})"
+        )
 
     async def _resolve_speaker_labels_async(self, transcript: str, guests: list[str], conversation_type: str = "") -> str:
         """Step 1: Identify speaker label->name mappings and apply them to the transcript."""
@@ -149,6 +166,32 @@ class ClaimExtractor:
     def extract(self, transcript: str, guests: list[str], context: str = "", previous_context: str | None = None, conversation_type: str = "", excluded_speakers: list[str] | None = None) -> List[ExtractedClaim]:
         """Sync wrapper for extract_async()."""
         return asyncio.run(self.extract_async(transcript, guests, context=context, previous_context=previous_context, conversation_type=conversation_type, excluded_speakers=excluded_speakers))
+
+    async def extract_window_async(
+        self,
+        window_text: str,
+        guests: list[str],
+        context: str = "",
+        conversation_type: str = "",
+        excluded_speakers: list[str] | None = None,
+        previous_context: str | None = None,
+    ) -> List[ExtractedClaim]:
+        """Live gate: extract check-worthy claims from a *small* window (1–3 sentences).
+
+        Returns an empty list when the window holds nothing check-worthy. Uses the
+        fast/cheap window-gate agent, not the batch extractor. Speaker labels are
+        assumed already resolved by the streaming layer (no resolve step here).
+        """
+        if not window_text or not window_text.strip():
+            return []
+        user_message = ClaimExtractionInput(
+            conversation_type=conversation_type, guests=guests, context=context,
+            excluded_speakers=excluded_speakers or [],
+            transcript=window_text, previous_block_ending=previous_context,
+        ).model_dump_json(indent=2)
+        result = await self.window_gate.run(user_message)
+        logger.info(f"Window gate: {len(result.output.claims)} claim(s) in window ({len(window_text)} chars)")
+        return result.output.claims
 
     async def select_async(self, claims: List[dict], max_claims: int = AUTO_SELECT_MAX) -> List[dict]:
         """Select all check-worthy claims (autopilot mode).
