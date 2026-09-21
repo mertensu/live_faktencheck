@@ -2254,6 +2254,19 @@
   line-height: 1;
 }
 
+/* Live fast lane: preliminary verdict badge. */
+.fast-check-flag {
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #1d4ed8;
+  background: #dbeafe;
+  border-radius: var(--radius-sm, 6px);
+  padding: 0.12rem 0.4rem;
+  line-height: 1.2;
+}
+
 .critique-note {
   display: flex;
   align-items: flex-start;
