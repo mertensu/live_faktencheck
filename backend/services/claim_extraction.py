@@ -57,6 +57,15 @@ class SpeakerLabelsInput(BaseModel):
     transcript: str = Field(description="Transkript mit generischen Sprecherbezeichnungen")
 
 
+class ReformulationInput(BaseModel):
+    """Input for reformulating a single, already-gated sentence into a standalone claim."""
+    sentence: str = Field(description="Der bereits als prüfwürdig erkannte Satz, der umformuliert werden soll.")
+    speaker: str = Field(default="", description="Sprecher des Satzes (Label oder Eigenname), sofern bekannt.")
+    guests: list[str] = Field(default_factory=list, description="Teilnehmer des Gesprächs")
+    context: str = Field(default="", description="Thematischer Hintergrund des Gesprächs")
+    previous_context: str | None = Field(default=None, description="Vorheriger Gesprächsverlauf zur Auflösung von Pronomen/Bezügen")
+
+
 class ClaimExtractionInput(BaseModel):
     """Input for claim extraction from a transcript."""
     conversation_type: str = Field(default="", description="Art des Gesprächs: 'debate' (öffentliche Debatte/Talkshow), 'interview' oder 'private' (privates Gespräch).")
@@ -117,9 +126,25 @@ class ClaimExtractor:
             model_settings=MODEL_SETTINGS,
         )
 
+        # Reformulation agent (live streaming lane, Jev gate): a cheap model that does
+        # NOT judge check-worthiness (the Jev gate already did) — it only rewrites a
+        # single gated sentence into a standalone, decontextualized claim and assigns the
+        # speaker. Used by ``JevGate`` in services/gate.py.
+        self.reformulate_model_name = os.getenv("GEMINI_MODEL_REFORMULATE", "gemini-3.5-flash-lite")
+        self.reformulator = Agent(
+            build_model(self.reformulate_model_name),
+            output_type=ExtractedClaim,
+            instructions=load_prompt(
+                "claim_reformulation.md",
+                fallback=load_prompt("claim_extraction_streaming.md",
+                                     fallback=load_prompt("claim_extraction.md")),
+            ),
+            model_settings=MODEL_SETTINGS,
+        )
+
         logger.info(
             f"ClaimExtractor initialized (extraction={self.model_name}, "
-            f"window_gate={self.window_model_name})"
+            f"window_gate={self.window_model_name}, reformulate={self.reformulate_model_name})"
         )
 
     async def _resolve_speaker_labels_async(self, transcript: str, guests: list[str], conversation_type: str = "") -> str:
@@ -192,6 +217,28 @@ class ClaimExtractor:
         result = await self.window_gate.run(user_message)
         logger.info(f"Window gate: {len(result.output.claims)} claim(s) in window ({len(window_text)} chars)")
         return result.output.claims
+
+    async def reformulate_claim_async(
+        self,
+        sentence: str,
+        speaker: str = "",
+        guests: list[str] | None = None,
+        context: str = "",
+        previous_context: str | None = None,
+    ) -> ExtractedClaim | None:
+        """Rewrite one already-gated sentence into a standalone, decontextualized claim.
+
+        This does NOT decide check-worthiness (the Jev gate already did); it only resolves
+        pronouns/references and assigns the speaker. Returns ``None`` for empty input.
+        """
+        if not sentence or not sentence.strip():
+            return None
+        user_message = ReformulationInput(
+            sentence=sentence, speaker=speaker, guests=guests or [],
+            context=context, previous_context=previous_context,
+        ).model_dump_json(indent=2)
+        result = await self.reformulator.run(user_message)
+        return result.output
 
     async def select_async(self, claims: List[dict], max_claims: int = AUTO_SELECT_MAX) -> List[dict]:
         """Select all check-worthy claims (autopilot mode).

@@ -19,7 +19,7 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from backend.config import Episode
 from backend.services.registry import get_claim_extractor, get_fast_fact_checker
-from backend.services.gate import ExtractorGate
+from backend.services.gate import build_gate
 from backend.services.streaming import StreamingSession
 import backend.state as state
 
@@ -75,7 +75,7 @@ async def stream(websocket: WebSocket):
 
     session = StreamingSession(
         session_id,
-        ExtractorGate(get_claim_extractor()),
+        build_gate(get_claim_extractor()),
         get_fast_fact_checker(),
         db,
         guests=ep.guests if ep else [],
