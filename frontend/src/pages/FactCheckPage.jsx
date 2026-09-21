@@ -701,6 +701,27 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
                 {isStarting ? 'Mikrofon…' : '⏺ Aufnahme'}
               </button>
             )}
+            {!isAdminMode && (
+              (liveStream.status === 'streaming' || liveStream.status === 'connecting') ? (
+                <button type="button" className="header-rec-stop" onClick={() => liveStream.stop()}>
+                  <span className="header-rec-dot" aria-hidden="true">◉</span>
+                  {liveStream.status === 'connecting' ? 'Live verbindet…' : 'Live stoppen'}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="header-rec-start"
+                  onClick={() => liveStream.start()}
+                  disabled={isRecording || isStarting}
+                  title={isRecording ? 'Erst die Blockaufnahme stoppen' : 'Live-Check starten (Streaming)'}
+                >
+                  ◉ Live-Check
+                </button>
+              )
+            )}
+            {!isAdminMode && liveStream.error && (
+              <span className="header-live-error">{liveStream.error}</span>
+            )}
             {showAdminMode && (
               <button
                 className="admin-toggle"

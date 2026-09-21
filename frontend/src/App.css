@@ -2577,6 +2577,68 @@
 .live-transcript-partial { color: #9ca3af; font-style: italic; }
 .live-transcript-empty { color: #6b7280; font-style: italic; margin: 0; }
 
+/* Highlighted passage in the transcript that was gated as a claim; tinted by verdict. */
+.live-transcript-mark {
+  background: transparent;
+  color: inherit;
+  padding: 0.02em 0.1em;
+  border-radius: 3px;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  border-bottom: 2px solid #60a5fa;
+  cursor: help;
+}
+.live-transcript-mark.verdict-processing { border-bottom-color: #60a5fa; background: rgba(96,165,250,0.12); }
+.live-transcript-mark.verdict-hoch { border-bottom-color: #22c55e; background: rgba(34,197,94,0.14); }
+.live-transcript-mark.verdict-niedrig { border-bottom-color: #ef4444; background: rgba(239,68,68,0.14); }
+.live-transcript-mark.verdict-unklar { border-bottom-color: #f59e0b; background: rgba(245,158,11,0.14); }
+.live-transcript-mark.verdict-keine { border-bottom-color: #9ca3af; background: rgba(156,163,175,0.14); }
+.live-transcript-mark.verdict-error { border-bottom-color: #ef4444; background: rgba(239,68,68,0.10); }
+
+/* Claim list under the transcript. */
+.live-transcript-claims {
+  border-top: 1px solid #262630;
+  padding: 0.6rem 0.9rem 0.75rem;
+}
+.live-transcript-claims-head {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #9ca3af;
+  margin-bottom: 0.5rem;
+}
+.live-claim {
+  display: flex;
+  align-items: baseline;
+  gap: 0.55rem;
+  margin-bottom: 0.4rem;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: #e5e7eb;
+}
+.live-claim-speaker { color: #93c5fd; font-weight: 600; }
+.live-claim-badge {
+  flex: none;
+  min-width: 5.5rem;
+  text-align: center;
+  padding: 0.08rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  border: 1px solid transparent;
+}
+.live-claim-badge.verdict-processing { color: #93c5fd; border-color: #3b5b8c; background: rgba(96,165,250,0.12); }
+.live-claim-badge.verdict-hoch { color: #4ade80; border-color: #2f6f45; background: rgba(34,197,94,0.14); }
+.live-claim-badge.verdict-niedrig { color: #f87171; border-color: #7f3a3a; background: rgba(239,68,68,0.14); }
+.live-claim-badge.verdict-unklar { color: #fbbf24; border-color: #7a5a1e; background: rgba(245,158,11,0.14); }
+.live-claim-badge.verdict-keine { color: #cbd5e1; border-color: #4b5563; background: rgba(156,163,175,0.14); }
+.live-claim-badge.verdict-error { color: #f87171; border-color: #7f3a3a; background: rgba(239,68,68,0.12); }
+
+.header-live-error { color: #f87171; font-size: 0.85rem; align-self: center; }
+
 .recording-bar-interval {
   display: inline-flex;
   align-items: center;

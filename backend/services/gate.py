@@ -21,11 +21,26 @@ import re
 import json
 import asyncio
 import logging
+from dataclasses import dataclass
 from typing import List, Protocol, runtime_checkable
 
 from .claim_extraction import ExtractedClaim, ClaimExtractor
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class GatedClaim:
+    """A gated claim plus the *original* transcript sentence it was extracted from.
+
+    ``JevGate`` returns these instead of bare ``ExtractedClaim`` so the streaming layer
+    can tell the UI which passage to highlight (``claim`` is the reformulated text, which
+    no longer matches the transcript). Duck-compatible with ``ExtractedClaim`` for the
+    ``.name``/``.claim`` access the streaming layer does; ``.source`` is the extra.
+    """
+    name: str
+    claim: str
+    source: str
 
 
 @runtime_checkable
@@ -194,7 +209,7 @@ class JevGate:
         conversation_type: str = "",
         excluded_speakers: list[str] | None = None,
         previous_context: str | None = None,
-    ) -> List[ExtractedClaim]:
+    ) -> List[GatedClaim]:
         if not window_text or not window_text.strip():
             return []
 
@@ -216,7 +231,7 @@ class JevGate:
 
         scores = await asyncio.gather(*(self._scorer.score(s) for _, s in pairs))
 
-        claims: List[ExtractedClaim] = []
+        claims: List[GatedClaim] = []
         rolling = previous_context  # last sentence(s) seen, for pronoun resolution
         for (speaker, sentence), p in zip(pairs, scores):
             if self._debug:
@@ -235,7 +250,8 @@ class JevGate:
                     logger.exception("Reformulation failed for gated sentence")
                     claim = None
                 if claim and (claim.claim or "").strip():
-                    claims.append(claim)
+                    # Keep the original sentence as the highlight anchor for the UI.
+                    claims.append(GatedClaim(name=claim.name or speaker, claim=claim.claim, source=sentence))
             # Every sentence (hit or not) extends the rolling context for the next one.
             rolling = f"{speaker}: {sentence}" if speaker else sentence
 

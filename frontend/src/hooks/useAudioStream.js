@@ -24,6 +24,7 @@ export function useAudioStream(sessionId, { deviceId = '' } = {}) {
   const [error, setError] = useState(null)
   const [partial, setPartial] = useState('')      // current interim (not-yet-final) turn
   const [transcript, setTranscript] = useState([]) // finalized turns [{ speaker, text }]
+  const [claims, setClaims] = useState([])        // gated claims [{ id, speaker, claim, source, consistency, status }]
   const [events, setEvents] = useState([])        // last few backend events (for debug/UI)
 
   const wsRef = useRef(null)
@@ -59,7 +60,7 @@ export function useAudioStream(sessionId, { deviceId = '' } = {}) {
       setStatus('error'); setError(MSG.unsupported); return
     }
     setStatus('connecting'); setError(null); stoppingRef.current = false
-    setTranscript([]); setPartial('')
+    setTranscript([]); setPartial(''); setClaims([])
 
     // 1. Mic
     try {
@@ -108,6 +109,19 @@ export function useAudioStream(sessionId, { deviceId = '' } = {}) {
         setPartial('')
       } else if (msg.type === 'partial') {
         setPartial(msg.text || '')
+      } else if (msg.type === 'claim_processing') {
+        // A gated claim is being checked: show it immediately (spinner) and remember
+        // its source sentence so the transcript can highlight the passage.
+        setClaims((prev) => [...prev, {
+          id: msg.id, speaker: msg.speaker || null, claim: msg.claim || '',
+          source: msg.source || '', consistency: null, status: 'processing',
+        }])
+      } else if (msg.type === 'claim_result') {
+        setClaims((prev) => prev.map((c) =>
+          c.id === msg.id ? { ...c, consistency: msg.consistency, status: 'done' } : c))
+      } else if (msg.type === 'claim_error') {
+        setClaims((prev) => prev.map((c) =>
+          c.id === msg.id ? { ...c, status: 'error' } : c))
       }
     }
     ws.onerror = () => { if (!stoppingRef.current) { setStatus('error'); setError(MSG.connectFailed) } }
@@ -122,5 +136,5 @@ export function useAudioStream(sessionId, { deviceId = '' } = {}) {
   // Release everything on unmount.
   useEffect(() => () => { stoppingRef.current = true; cleanup() }, [cleanup])
 
-  return { status, error, partial, transcript, events, start, stop }
+  return { status, error, partial, transcript, claims, events, start, stop }
 }

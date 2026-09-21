@@ -125,11 +125,12 @@ class StreamingSession:
         for claim in claims:
             name = getattr(claim, "name", "") or ""
             text = getattr(claim, "claim", "") or ""
+            source = getattr(claim, "source", None)  # original transcript sentence (JevGate)
             if not text:
                 continue
-            self._track(self._check_and_store(name, text))
+            self._track(self._check_and_store(name, text, source))
 
-    async def _check_and_store(self, speaker: str, claim: str) -> None:
+    async def _check_and_store(self, speaker: str, claim: str, source: str | None = None) -> None:
         """Insert a spinner placeholder, run the fast check, update in place."""
         now = datetime.now().isoformat()
         placeholder = {
@@ -144,7 +145,7 @@ class StreamingSession:
             "check_depth": "fast",
         }
         pid = await self.db.add_fact_check(placeholder)
-        await self._emit({"type": "claim_processing", "id": pid, "speaker": speaker, "claim": claim})
+        await self._emit({"type": "claim_processing", "id": pid, "speaker": speaker, "claim": claim, "source": source})
 
         try:
             result = await self.fast_checker.check_claim_async(

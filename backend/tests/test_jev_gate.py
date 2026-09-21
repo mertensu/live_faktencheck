@@ -72,6 +72,9 @@ class TestJevGate:
         assert len(scorer.calls) == 3
         assert len(out) == 1
         assert out[0].claim == "Deutschland ist Mitglied der NATO."
+        # The original transcript sentence is preserved as the UI highlight anchor,
+        # even though `claim` is the reformulated text.
+        assert out[0].source == "Deutschland ist Mitglied der NATO."
 
     async def test_no_hits_yields_empty_without_llm(self):
         ex = _make_extractor()
