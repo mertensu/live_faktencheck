@@ -6,6 +6,7 @@ import { ClaimDetailOverlay } from '../components/ClaimDetailOverlay'
 import { RecordingBar, formatElapsed } from '../components/RecordingBar'
 import { ReviewView } from '../components/ReviewView'
 import { useAudioRecorder } from '../hooks/useAudioRecorder'
+import { useAudioStream } from '../hooks/useAudioStream'
 
 // Default speakers as fallback
 const DEFAULT_SPEAKERS = []
@@ -84,6 +85,8 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
 
   // Recorder lives at page level so recording survives switching Review <-> Pro.
   const recorder = useAudioRecorder(episodeKey)
+  // Live streaming fast lane (SG-4). Shares the selected mic with the block recorder.
+  const liveStream = useAudioStream(episodeKey, { deviceId: recorder.deviceId })
   const isRecording = recorder.status === 'recording'
   const isStarting = recorder.status === 'requesting'
   // The full-screen "Aufnahme starten" splash is a one-time onboarding screen:
@@ -713,7 +716,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
       <main className="main-content">
         {isAdminMode ? (
           <>
-            <RecordingBar recorder={recorder} />
+            <RecordingBar recorder={recorder} live={liveStream} />
             <AdminView
               pendingClaims={pendingClaims}
               pendingBlocks={pendingBlocks}

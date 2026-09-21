@@ -2511,6 +2511,34 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Live streaming fast-lane controls */
+.recording-bar-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding-left: 0.75rem;
+  margin-left: 0.25rem;
+  border-left: 1px solid #33333d;
+  color: #cbd5e1;
+  font-size: 0.9rem;
+}
+
+.recording-bar-live-dot {
+  color: #2563eb;
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes pulse { 0%, 100% { opacity: 1 } 50% { opacity: 0.3 } }
+
+.recording-bar-live-partial {
+  max-width: 22ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  opacity: 0.7;
+  font-style: italic;
+}
+
 .recording-bar-interval {
   display: inline-flex;
   align-items: center;
