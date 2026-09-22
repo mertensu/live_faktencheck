@@ -177,6 +177,33 @@ class TestWindowing:
         rows = await db.get_fact_checks(session_id="s1")
         assert rows[0]["sprecher"] == "Katharina Reiche"
 
+    async def test_late_resolution_rewrites_stored_claim(self, db):
+        """A claim stored under a bare label is rewritten when resolution later names it."""
+        events = []
+
+        async def on_event(e):
+            events.append(e)
+
+        async def resolver(transcript, guests, conversation_type=""):
+            return {"B": "Connemann"}
+
+        gate = _gate([[GatedClaim(name="B", claim="Behauptung B.", source="Behauptung B.")]])
+        session = StreamingSession("s1", gate, _fast_checker(), db, on_event=on_event,
+                                   guests=["Connemann"], resolve_speakers=resolver)
+        # Claim gated + stored before any resolution -> speaker is the bare label "B".
+        await session.handle_turn("Behauptung B. Noch ein Satz.", end_of_turn=True,
+                                  speaker_label="B", turn_order=0)
+        await asyncio.gather(*list(session._tasks))
+        rows = await db.get_fact_checks(session_id="s1")
+        assert rows[0]["sprecher"] == "B"
+
+        # Resolution lands -> the stored claim is rewritten to the real name + UI notified.
+        session._transcript_log = ["B: etwas", "A: anderes"]
+        await session._resolve_speakers()
+        rows = await db.get_fact_checks(session_id="s1")
+        assert rows[0]["sprecher"] == "Connemann"
+        assert any(e["type"] == "claim_speaker_update" and e["speaker"] == "Connemann" for e in events)
+
     async def test_revision_for_unknown_turn_is_noop(self, db):
         gate = _gate([[]])
         session = StreamingSession("s1", gate, _fast_checker(), db)

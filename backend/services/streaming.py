@@ -95,6 +95,10 @@ class StreamingSession:
         # revision can rewrite the stored speaker retroactively.
         self._turns: dict[int, dict] = {}            # turn_order -> {"speaker", "text"}
         self._turn_claims: dict[int, list] = {}      # turn_order -> [(fact_check_id, label)]
+        # Claims stored while their label was not yet resolved to a name (resolution needs
+        # ~a minute of transcript; claims flow sooner). Keyed by the bare label so the
+        # background resolution can rewrite them once it learns the name.
+        self._label_claims: dict[str, list[int]] = {}  # label -> [fact_check_id]
 
     # ---- event emission -----------------------------------------------------
     async def _emit(self, event: dict) -> None:
@@ -136,10 +140,22 @@ class StreamingSession:
             if mapping:
                 self._speaker_map.update(mapping)
                 logger.info(f"[stream:{self.session_id}] speaker map: {self._speaker_map}")
+                await self._apply_map_to_pending(mapping)
         except Exception:
             logger.exception("Speaker resolution failed")
         finally:
             self._resolving = False
+
+    async def _apply_map_to_pending(self, mapping: dict) -> None:
+        """Back-fill names onto claims that were stored under a now-resolved bare label.
+
+        Resolution lands after the first claims are already checked and displayed, so
+        those show a label (``B``) until this rewrites them to the real name — in the DB
+        and, via ``claim_speaker_update``, in the live UI.
+        """
+        for label, name in mapping.items():
+            for pid in self._label_claims.pop(label, []):
+                await self._rewrite_speaker(pid, name)
 
     # ---- speaker revisions (unit-testable) ----------------------------------
     async def handle_speaker_revision(self, revisions: list[dict]) -> None:
@@ -298,6 +314,10 @@ class StreamingSession:
         # Remember which turn produced this row so a SpeakerRevision can rewrite it.
         if turn_order is not None:
             self._turn_claims.setdefault(turn_order, []).append((pid, speaker_label))
+        # Stored under a bare label the resolver hasn't named yet? Track it so the
+        # background resolution can rewrite it to the real name once it lands.
+        if speaker_label and self._speaker_map.get(speaker_label) is None:
+            self._label_claims.setdefault(speaker_label, []).append(pid)
         await self._emit({"type": "claim_processing", "id": pid, "speaker": speaker, "claim": claim, "source": source})
 
         try:
