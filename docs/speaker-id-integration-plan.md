@@ -22,10 +22,11 @@ ist auf Ein-Mikro-TV-Audio nicht robust:
 
 - AssemblyAI liefert weiterhin **ASR**: Wörter, Wort-Zeitstempel, Text, Turn-/Satzgrenzen. Das
   ist zuverlässig und bleibt die Quelle für Transkript + Claims.
-- Die **Identität** leiten wir selbst per **Voiceprint** ab: wir puffern das rohe PCM, schneiden
-  pro **Satz** (dem `source`-Satz eines Claims) das Audio anhand der Wort-Zeitstempel heraus,
-  berechnen ein Embedding (sherpa-onnx, CAM++/ECAPA) und klassifizieren es per Cosinus gegen die
-  **enrollten Gäste der Episode** (Closed-Set-Argmax).
+- Die **Identität** leiten wir selbst per **Voiceprint** ab: kontinuierlicher PCM-Ringpuffer, ein
+  Hintergrund-Sliding-Window klassifiziert laufend gegen die **enrollten Gäste der Episode**
+  (Closed-Set-Argmax, sherpa-onnx CAM++/ECAPA) → **eigener Sprecher-über-Zeit-Track**. Pro Claim
+  lesen wir den dominanten Sprecher über die (per Wort-Zeitstempel bekannte) Zeitspanne des Satzes
+  aus diesem Track. **Nicht** an AssemblyAI-Turns/Labels gebunden.
 - AssemblyAIs `speaker_label` / `SpeakerRevisionEvent` werden zu **Fallback** degradiert: nur
   benutzt, wenn der Voiceprint unsicher ist (unbekannter Sprecher, zu kurz/leise, Überlappung).
 
@@ -36,43 +37,55 @@ Embedding → niedrige Confidence → Fallback (kein selbstbewusster Falsch-Name
 
 ## 3. Datenfluss (Ziel)
 
+Wichtig: Ein AssemblyAI-**„Turn" ist eine VAD-/Stille-basierte Äußerungsgrenze**, kein sauberes
+Sprecher-Segment — eine Unterbrechung ohne Pause packt zwei Sprecher in *einen* Turn, und das
+`speaker_label` daran ist die unzuverlässige, verzögerte Diarisierung. Wir hängen die Identität
+deshalb **nicht** an Turns, sondern bauen einen **eigenen Sprecher-über-Zeit-Track**.
+
 ```
 Browser PCM16 16k ──▶ StreamingSession.feed()
-                        ├─▶ AssemblyAI (ASR: Turns, Wörter+Zeitstempel, Text)   [unverändert]
-                        └─▶ PCM-Ringpuffer (letzte ~90 s, sample-genaue Zeitachse) [NEU]
+                        ├─▶ AssemblyAI (ASR: Wörter+Zeitstempel+Text)   [nur ASR nötig]
+                        └─▶ kontinuierlicher PCM-Ringpuffer (~10–15 s)   [NEU]
 
-finalisierter Turn ──▶ handle_turn(..., words=[...])  [words NEU durchgereicht]
-                        └─ Fenster-Puffer-Einträge tragen jetzt die Wörter (Zeitstempel)
+Hintergrund-Task ──▶ Sliding-Window über den Puffer (z. B. 3-s-Fenster, 1-s-Hop)
+   pro Fenster: Embedding → Argmax gegen enrollte Gäste → (name|unknown, score)
+   └─▶ kompakter SPRECHER-TRACK: ein Eintrag pro ~Sekunde (name|unknown), Session-lang
+       (winzig). Audio wird nach Klassifikation verworfen — nur der Track bleibt.
 
 _flush_window() ──▶ Gate liefert Claims mit .source (Original-Satz)
-   pro Claim:  Satz → Wort-Span → [start_ms,end_ms] → PCM-Slice
-               └─▶ SpeakerIdentifier.identify(slice) → (name|None, score)   [off hot path]
-                     name gesetzt → Claim-Sprecher; None → Fallback (Label/LLM)
-                     Ergebnis kommt evtl. nach dem Claim → Rewrite-Plumbing (s. u.)
+   pro Claim: Satz → Wort-Zeitspanne [start_ms,end_ms]  (aus reliab. ASR-Zeitstempeln)
+              └─▶ dominanten Sprecher über die Spanne aus dem TRACK lesen (Mehrheit)
+                    eindeutig+confident → Claim-Sprecher; gemischt/unknown → Fallback
+                    landet evtl. nach dem Claim → Rewrite-Plumbing (s. u.)
 ```
 
-## 4. Granularität
+## 4. Granularität & Unabhängigkeit von AssemblyAI-Turns
 
-- **v1: pro Claim-`source`-Satz.** Wir identifizieren nur Sätze, die zu Claims wurden (wenige
-  Embeddings, on-demand). Der Claim ist das, was gespeichert und gefaktcheckt wird — genau da
-  zählt der Sprecher.
-- **Upgrade (später): kontinuierliche Sliding-Window-Klassifikation** über den Puffer (z. B.
-  3-s-Fenster, 1-s-Hop) → per-Zeit-Sprecher-Track, unabhängig von Satzgrenzen; robuster bei
-  Sprecherwechsel mitten im Turn. Für v1 nicht nötig.
+- **Empfohlene v1: eigener Sprecher-Track per Sliding-Window** (oben). Vollständig unabhängig von
+  AssemblyAIs Turn-/Label-Konzept; von AssemblyAI nur **Wort-Zeitstempel** (zuverlässige ASR), um
+  zu wissen *wann* ein Satz gesprochen wurde. Erkennt Sprecherwechsel mitten im Turn, statt ihn
+  wegzumitteln. Kosten: ~1 Embedding/Sekunde, ~zig ms CPU, im Hintergrund → über 90 min
+  vernachlässigbar.
+- **Einfachere Fallback-Variante: pro Claim-`source`-Satz slicen** (Satz → Wort-Span → PCM-Slice →
+  `identify`). Weniger Embeddings, aber pro Satz *ein* gepooltes Embedding → sieht einen
+  Sprecherwechsel innerhalb der Spanne nicht. Als Zwischenschritt ok; hinter derselben Schnittstelle
+  austauschbar.
+- **Unknown/Überlappung**: fällt in beiden Varianten unter das Cosinus-Gate → Fallback (kein
+  selbstbewusster Falsch-Name).
 
-### 4.1 Satz→Wort-Span-Mapping (das fiddly-Stück) mit sicherem Fallback
-`source` ist ein Satz-String aus dem **formatierten** Turn-Text; Zeitstempel hängen an den
-**Wörtern** (`words[].start/end`, rohe ASR-Tokens). Beides passt nicht 1:1 (Groß/Klein,
-Satzzeichen, Zahlen, mehrere Sätze pro Turn). Das Mapping = die Wort-Teilfolge des Turns finden,
-deren normalisierte Konkatenation dem Satz entspricht → `start = words[i].start`,
-`end = words[j].end`. Fallback-Kette (den Turn kennen wir schon über `_match_turn`):
+### 4.1 Satz → Wort-Zeitspanne
+Beide Varianten brauchen die **Zeitspanne** eines Satzes, nicht seine Turn-Zugehörigkeit. `source`
+ist ein Satz-String aus dem **formatierten** Text; Zeitstempel hängen an den **Wörtern**
+(`words[].start/end`, rohe ASR-Tokens) — passt nicht 1:1 (Groß/Klein, Satzzeichen, Zahlen). Mapping
+= die Wort-Teilfolge finden, deren normalisierte Konkatenation dem Satz entspricht →
+`start = words[i].start`, `end = words[j].end`. Fallback-Kette:
 1. Normalisieren (lowercase, Satzzeichen weg, Whitespace glätten) → Satz als Teilstring der
-   normalisierten Wortfolge suchen → erstes/letztes Wort.
-2. Sonst **Anker-Match** über die ersten/letzten paar Tokens des Satzes.
-3. Sonst **das ganze Turn-Audio** nehmen — ein Turn ist meist *ein* Sprecher, reicht zur ID.
+   normalisierten Wortfolge → erstes/letztes Wort.
+2. Sonst **Anker-Match** über die ersten/letzten Tokens.
+3. Sonst grobe Zeit-Näherung (Fenster um die geschätzte Position) → Track abfragen.
 4. Sonst ID skippen → Label behalten.
-**Daher kann v1 auf Turn-Granularität starten** (Turn-Audio klassifizieren); die satz-genaue
-Ausrichtung ist eine Präzisions-Verfeinerung, kein Blocker.
+Im Track-Ansatz ist das unkritisch: wir brauchen nur eine ungefähre Spanne, um den dominanten
+Sprecher abzulesen — nicht sample-genaue Satzgrenzen.
 
 ## 5. Neue Komponenten
 
@@ -87,12 +100,18 @@ Ausrichtung ist eine Präzisions-Verfeinerung, kein Blocker.
 - **Kein `soundfile` im Prod-Pfad**: das Live-Audio ist bereits PCM (PCM16→float32 per numpy);
   `soundfile` bleibt bench-only (WAV-Lesen).
 
-### 5.2 PCM-Ringpuffer in `StreamingSession`
-- In `feed(audio)`: PCM16-Bytes → float32, an einen bounded Puffer anhängen; laufenden
-  Sample-Offset mitführen. Fenster auf ~90 s begrenzen (Speicher deckeln).
+### 5.2 Kontinuierlicher PCM-Ringpuffer + Sprecher-Track in `StreamingSession`
+- In `feed(audio)`: PCM16-Bytes → float32, an einen **bounded, kontinuierlichen** Puffer anhängen;
+  laufenden Sample-Offset mitführen. Puffer nur **~10–15 s** (genug für Sliding-Window + Slack) —
+  Audio wird nach Klassifikation verworfen, **nicht pro Turn gespeichert**.
 - Zeitachse: Wort-Zeitstempel (ms ab Session-Start) ↔ Sample-Index = `ms/1000*16000`. Wir
-  kontrollieren die Sample-Zählung selbst, daher direkt slicebar.
-- `_slice(start_ms, end_ms) -> np.ndarray`.
+  kontrollieren die Sample-Zählung selbst.
+- **Hintergrund-Klassifikator** (eigener Task): alle ~1 s das letzte 3-s-Fenster embedden →
+  `identify` → Eintrag in den **Sprecher-Track** `self._spk_track: list[(t_sec, name|None, score)]`
+  (winzig, Session-lang, Audio danach freigeben).
+- `dominant_speaker(start_ms, end_ms) -> str|None`: Mehrheits-/gewichteter Vote der Track-Einträge
+  in der Spanne; uneindeutig/leer → `None`.
+- Fallback-Variante ohne Track: `_slice(start_ms,end_ms)` + einmal `identify` pro Claim-Satz.
 
 ### 5.3 Voiceprint-Store + Enrollment (offline)
 - Store: `backend/data/voiceprints/<Name>.npy` (Unit-Vektor) **oder** eine kleine JSON/SQLite
@@ -109,13 +128,13 @@ Ausrichtung ist eine Präzisions-Verfeinerung, kein Blocker.
 
 1. `start()`: nichts an der ASR-Config nötig (Wörter+Zeitstempel liegen in `TurnEvent.words`,
    `Word.start/end`). `speaker_labels`/`max_speakers` können bleiben (Fallback-Pfad).
-2. `_on_turn` → `handle_turn(...)`: `words` (Liste mit Zeitstempeln) mit durchreichen.
-3. `handle_turn`: Fenster-Puffer-Einträge zusätzlich mit `words` versehen (für Satz→Span-Mapping).
-4. `feed`: PCM-Ringpuffer füttern (5.2).
-5. `_flush_window`: pro Claim den `source`-Satz auf die Wörter des Fensters mappen →
-   `[start_ms,end_ms]` → `_slice` → **async** `SpeakerIdentifier.identify` (nicht auf dem Hot
-   Path). Solange kein Ergebnis: Claim mit best-bekanntem Sprecher speichern (Label/LLM), dann
-   nach der ID via Rewrite umschreiben.
+2. `_on_turn` → `handle_turn(...)`: `words` (Liste mit Zeitstempeln) mit durchreichen; an den
+   Fenster-Puffer-Einträgen mitführen (für die Satz→Zeitspanne).
+3. `feed`: kontinuierlichen PCM-Ringpuffer füttern; Hintergrund-Klassifikator baut den
+   Sprecher-Track (5.2).
+4. `_flush_window`: pro Claim `source`-Satz → Wort-Zeitspanne `[start_ms,end_ms]` (4.1) →
+   `dominant_speaker(span)` aus dem Track lesen. Claim sofort mit best-bekanntem Sprecher
+   speichern (Label/LLM), Track-Ergebnis kommt ggf. gleich/kurz danach → via Rewrite setzen.
 6. **Rewrite-Plumbing wiederverwenden** (existiert bereits): `_turn_claims`/`_label_claims`,
    `_rewrite_speaker(pid, name)`, Event `claim_speaker_update` (Frontend `useAudioStream.js`
    behandelt es schon). Die Voiceprint-ID hängt sich in denselben nachträglichen Umschreibe-Pfad.
@@ -181,7 +200,8 @@ Ausrichtung ist eine Präzisions-Verfeinerung, kein Blocker.
 - **Threshold-Kalibrierung** auf gepoolten Satz-Embeddings vs. Bench-Fixfenster.
 - **Enrollment-Domänenlücke** (öffentliche Clips vs. Studio) — im Spike als Cross-Recording schon
   teilvalidiert (Marge schrumpft mit ähnlichen Stimmen), auf echten Daten weiter beobachten.
-- **Puffer-Speicher**: auf ~90 s begrenzen.
+- **Puffer-Speicher**: Audio-Ringpuffer nur ~10–15 s (nach Klassifikation freigeben); der
+  Sprecher-Track selbst ist winzig (ein Eintrag/Sekunde) und darf Session-lang bleiben.
 - **Satz→Span-Alignment**: robuste Textausrichtung nötig (Reformulierer ändert den Claim-Text,
   aber `source` ist der Originalsatz → gegen `words` matchbar).
 
