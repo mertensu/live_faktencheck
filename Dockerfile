@@ -12,8 +12,11 @@ ENV UV_COMPILE_BYTECODE=1 \
 WORKDIR /app
 
 # Dependencies in their own layer: they change rarely and stay cached across code edits.
+# --extra speakerid pulls sherpa-onnx (voiceprint speaker ID for the live fast lane);
+# the code path stays dark until SPEAKER_ID_ENABLED is set. The Linux wheel bundles
+# onnxruntime, so no dylib workaround is needed here (unlike macOS dev).
 COPY pyproject.toml uv.lock ./
-RUN uv sync --locked --no-dev
+RUN uv sync --locked --no-dev --extra speakerid
 
 # pyproject.toml has no [build-system], so uv treats this as a virtual project: it
 # installs the dependencies but not the code. The code is just copied in and imported

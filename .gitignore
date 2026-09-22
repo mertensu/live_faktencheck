@@ -81,6 +81,10 @@ backend/data/factcheck.db-wal
 backend/data/*.bak
 backend/data/backup-*.db
 
+# Voiceprints (per-episode speaker enrollment): produced offline by
+# benchmarks/enroll_voiceprints.py, live in the mounted data volume, not git.
+backend/data/voiceprints/*.npy
+
 # Claude Code session memory
 memory.md
 handover/

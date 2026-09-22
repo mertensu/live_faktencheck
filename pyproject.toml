@@ -33,6 +33,17 @@ test = [
     "pytest-asyncio>=0.23.0",
     "pytest-cov>=4.1.0",
     "httpx>=0.27.0",
+    # Unit tests build fake voiceprints as numpy arrays; sherpa-onnx is NOT needed
+    # (the speaker-id embed path is lazy-imported and stubbed in tests).
+    "numpy>=1.26.0",
+]
+# Speaker identification prod runtime (live fast lane, behind SPEAKER_ID_ENABLED).
+# The Dockerfile installs this via `uv sync --no-dev --extra speakerid`; a plain
+# `uv sync` leaves it out. The Linux sherpa-onnx wheel bundles onnxruntime, so no
+# separate onnxruntime/dylib workaround is needed in the image.
+speakerid = [
+    "sherpa-onnx>=1.10.0",
+    "numpy>=1.26.0",
 ]
 
 [tool.pytest.ini_options]
@@ -54,6 +65,8 @@ dev = [
     "pytest-cov>=4.1.0",
     "httpx>=0.27.0",
     "nest-asyncio>=1.6.0",
+    # Mirrors the `test` extra: speaker-id unit tests need numpy on a plain `uv sync`.
+    "numpy>=1.26.0",
 ]
 test = [
     "nest-asyncio>=1.6.0",
