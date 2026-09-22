@@ -1,220 +1,223 @@
-# Speaker-Identifikation — Integrationsplan (Live Fast Lane)
+# Speaker Identification — Integration Plan (Live Fast Lane)
 
-Status: geplant, noch nicht implementiert. Dieses Dokument ist so geschrieben, dass die
-Implementierung in einem frischen Kontext starten kann. Vorarbeit: Offline-Spike abgeschlossen
-(`benchmarks/speaker_id_bench.py`), Ergebnis positiv — siehe Abschnitt „Spike-Belege".
+Status: planned, not yet implemented. This document is written so implementation can start
+cold in a fresh context. Prior work: offline spike done (`benchmarks/speaker_id_bench.py`),
+result positive — see "Spike evidence".
 
-## 1. Warum
+## 1. Why
 
-Die Sprecherzuweisung im Live-Fast-Lane (`backend/services/streaming.py`) stützt sich auf
-AssemblyAIs Streaming-**Diarisierung** (Labels A/B/…) plus eine LLM-Auflösung Label→Name. Das
-ist auf Ein-Mikro-TV-Audio nicht robust:
+Speaker assignment in the live fast lane (`backend/services/streaming.py`) relies on
+AssemblyAI streaming **diarization** (labels A/B/…) plus an LLM label→name pass. That is not
+robust on single-mic TV audio:
 
-- AssemblyAI v3 diarisiert per **Online-Reclustering**: Labels sind vorläufig und werden erst
-  **nachträglich** per `SpeakerRevisionEvent` korrigiert (verzögert).
-- Ein echter Lauf hatte alle Turns als Label „A" → alle Claims demselben Sprecher zugeordnet.
-- Selbst mit korrektem Reclustering (`max_speakers` gesetzt, `SpeakerRevision` verarbeitet, LLM-
-  Auflösung) bleibt die Kette fragil und zeitkritisch.
+- AssemblyAI v3 diarizes by **online reclustering**: labels are provisional and only get
+  corrected **retroactively** via `SpeakerRevisionEvent` (delayed).
+- A real run had every turn labelled "A" → all claims assigned to the same speaker.
+- Even with correct reclustering (`max_speakers` set, `SpeakerRevision` handled, LLM
+  resolution) the chain stays fragile and timing-sensitive.
 
-## 2. Kernentscheidung
+## 2. Core decision
 
-**Die Sprecher-Identität wird unabhängig von AssemblyAIs Diarisierung bestimmt.**
+**Speaker identity is determined independently of AssemblyAI's diarization.**
 
-- AssemblyAI liefert weiterhin **ASR**: Wörter, Wort-Zeitstempel, Text, Turn-/Satzgrenzen. Das
-  ist zuverlässig und bleibt die Quelle für Transkript + Claims.
-- Die **Identität** leiten wir selbst per **Voiceprint** ab: kontinuierlicher PCM-Ringpuffer, ein
-  Hintergrund-Sliding-Window klassifiziert laufend gegen die **enrollten Gäste der Episode**
-  (Closed-Set-Argmax, sherpa-onnx CAM++/ECAPA) → **eigener Sprecher-über-Zeit-Track**. Pro Claim
-  lesen wir den dominanten Sprecher über die (per Wort-Zeitstempel bekannte) Zeitspanne des Satzes
-  aus diesem Track. **Nicht** an AssemblyAI-Turns/Labels gebunden.
-- AssemblyAIs `speaker_label` / `SpeakerRevisionEvent` werden zu **Fallback** degradiert: nur
-  benutzt, wenn der Voiceprint unsicher ist (unbekannter Sprecher, zu kurz/leise, Überlappung).
+- AssemblyAI still provides **ASR**: words, word timestamps, text, turn/sentence boundaries.
+  That is reliable and remains the source for transcript + claims.
+- We derive **identity** ourselves via **voiceprints**: a continuous PCM ring buffer, a
+  background sliding window classifies continuously against the **episode's enrolled guests**
+  (closed-set argmax, sherpa-onnx CAM++/ECAPA) → **our own speaker-over-time track**. Per claim
+  we read the dominant speaker over the sentence's time span (known from word timestamps) from
+  that track. **Not** tied to AssemblyAI turns/labels.
+- AssemblyAI's `speaker_label` / `SpeakerRevisionEvent` are demoted to **fallback**: used only
+  when the voiceprint is not confident (unknown speaker, too short/quiet, overlap).
 
-Damit ist die Identität robust gegen falsche Diarisierungs-Labels *und* falsches Turn-Clustering:
-selbst wenn AssemblyAI alles „A" nennt oder zwei Sprecher in einen Turn klebt, klassifizieren wir
-das Satz-Audio direkt. Verbleibender harter Fall: echte Überlappung im selben Satz → gemischtes
-Embedding → niedrige Confidence → Fallback (kein selbstbewusster Falsch-Name).
+This makes identity robust against both wrong diarization labels *and* wrong turn clustering:
+even if AssemblyAI calls everything "A" or glues two speakers into one turn, we classify the
+audio directly. Remaining hard case: genuine overlap in the same sentence → mixed embedding →
+low confidence → fallback (never a confident wrong name).
 
-## 3. Datenfluss (Ziel)
+## 3. Data flow (target)
 
-Wichtig: Ein AssemblyAI-**„Turn" ist eine VAD-/Stille-basierte Äußerungsgrenze**, kein sauberes
-Sprecher-Segment — eine Unterbrechung ohne Pause packt zwei Sprecher in *einen* Turn, und das
-`speaker_label` daran ist die unzuverlässige, verzögerte Diarisierung. Wir hängen die Identität
-deshalb **nicht** an Turns, sondern bauen einen **eigenen Sprecher-über-Zeit-Track**.
+Important: an AssemblyAI **"turn" is a VAD/silence-based utterance boundary**, not a clean
+speaker segment — an interruption without a pause puts two speakers in *one* turn, and the
+`speaker_label` on it is the unreliable, delayed diarization. So we do **not** anchor identity
+to turns; we build our **own speaker-over-time track**.
 
 ```
 Browser PCM16 16k ──▶ StreamingSession.feed()
-                        ├─▶ AssemblyAI (ASR: Wörter+Zeitstempel+Text)   [nur ASR nötig]
-                        └─▶ kontinuierlicher PCM-Ringpuffer (~10–15 s)   [NEU]
+                        ├─▶ AssemblyAI (ASR: words + timestamps + text)   [ASR only]
+                        └─▶ continuous PCM ring buffer (~10–15 s)          [NEW]
 
-Hintergrund-Task ──▶ Sliding-Window über den Puffer (z. B. 3-s-Fenster, 1-s-Hop)
-   pro Fenster: Embedding → Argmax gegen enrollte Gäste → (name|unknown, score)
-   └─▶ kompakter SPRECHER-TRACK: ein Eintrag pro ~Sekunde (name|unknown), Session-lang
-       (winzig). Audio wird nach Klassifikation verworfen — nur der Track bleibt.
+background task ──▶ sliding window over the buffer (e.g. 3 s window, 1 s hop)
+   per window: embedding → argmax vs enrolled guests → (name|unknown, score)
+   └─▶ compact SPEAKER TRACK: one entry per ~second (name|unknown), whole session
+       (tiny). Audio is discarded after classification — only the track persists.
 
-_flush_window() ──▶ Gate liefert Claims mit .source (Original-Satz)
-   pro Claim: Satz → Wort-Zeitspanne [start_ms,end_ms]  (aus reliab. ASR-Zeitstempeln)
-              └─▶ dominanten Sprecher über die Spanne aus dem TRACK lesen (Mehrheit)
-                    eindeutig+confident → Claim-Sprecher; gemischt/unknown → Fallback
-                    landet evtl. nach dem Claim → Rewrite-Plumbing (s. u.)
+_flush_window() ──▶ gate returns claims with .source (original sentence)
+   per claim: sentence → word time span [start_ms,end_ms]  (from reliable ASR timestamps)
+              └─▶ read dominant speaker over the span from the TRACK (majority vote)
+                    clear + confident → claim speaker; mixed/unknown → fallback
+                    may land after the claim → rewrite plumbing (below)
 ```
 
-## 4. Granularität & Unabhängigkeit von AssemblyAI-Turns
+## 4. Granularity & independence from AssemblyAI turns
 
-- **Empfohlene v1: eigener Sprecher-Track per Sliding-Window** (oben). Vollständig unabhängig von
-  AssemblyAIs Turn-/Label-Konzept; von AssemblyAI nur **Wort-Zeitstempel** (zuverlässige ASR), um
-  zu wissen *wann* ein Satz gesprochen wurde. Erkennt Sprecherwechsel mitten im Turn, statt ihn
-  wegzumitteln. Kosten: ~1 Embedding/Sekunde, ~zig ms CPU, im Hintergrund → über 90 min
-  vernachlässigbar.
-- **Einfachere Fallback-Variante: pro Claim-`source`-Satz slicen** (Satz → Wort-Span → PCM-Slice →
-  `identify`). Weniger Embeddings, aber pro Satz *ein* gepooltes Embedding → sieht einen
-  Sprecherwechsel innerhalb der Spanne nicht. Als Zwischenschritt ok; hinter derselben Schnittstelle
-  austauschbar.
-- **Unknown/Überlappung**: fällt in beiden Varianten unter das Cosinus-Gate → Fallback (kein
-  selbstbewusster Falsch-Name).
+- **Recommended v1: our own speaker track via sliding window** (above). Fully independent of
+  AssemblyAI's turn/label concept; from AssemblyAI we take only **word timestamps** (reliable
+  ASR) to know *when* a sentence was spoken. Detects a speaker change mid-turn instead of
+  averaging it away. Cost: ~1 embedding/second, ~tens of ms CPU, in the background →
+  negligible over 90 min.
+- **Simpler fallback variant: slice per claim `source` sentence** (sentence → word span → PCM
+  slice → `identify`). Fewer embeddings, but *one* pooled embedding per sentence → won't see a
+  speaker change within the span. Fine as an intermediate step; swappable behind the same
+  interface.
+- **Unknown/overlap**: in both variants falls below the cosine gate → fallback (never a
+  confident wrong name).
 
-### 4.1 Satz → Wort-Zeitspanne
-Beide Varianten brauchen die **Zeitspanne** eines Satzes, nicht seine Turn-Zugehörigkeit. `source`
-ist ein Satz-String aus dem **formatierten** Text; Zeitstempel hängen an den **Wörtern**
-(`words[].start/end`, rohe ASR-Tokens) — passt nicht 1:1 (Groß/Klein, Satzzeichen, Zahlen). Mapping
-= die Wort-Teilfolge finden, deren normalisierte Konkatenation dem Satz entspricht →
-`start = words[i].start`, `end = words[j].end`. Fallback-Kette:
-1. Normalisieren (lowercase, Satzzeichen weg, Whitespace glätten) → Satz als Teilstring der
-   normalisierten Wortfolge → erstes/letztes Wort.
-2. Sonst **Anker-Match** über die ersten/letzten Tokens.
-3. Sonst grobe Zeit-Näherung (Fenster um die geschätzte Position) → Track abfragen.
-4. Sonst ID skippen → Label behalten.
-Im Track-Ansatz ist das unkritisch: wir brauchen nur eine ungefähre Spanne, um den dominanten
-Sprecher abzulesen — nicht sample-genaue Satzgrenzen.
+### 4.1 Sentence → word time span
+Both variants need a sentence's **time span**, not its turn membership. `source` is a sentence
+string from the **formatted** text; timestamps hang on the **words** (`words[].start/end`, raw
+ASR tokens) — not a 1:1 match (case, punctuation, numbers). Mapping = find the word subsequence
+whose normalized concatenation matches the sentence → `start = words[i].start`,
+`end = words[j].end`. Fallback chain:
+1. Normalize (lowercase, strip punctuation, collapse whitespace) → find the sentence as a
+   substring of the normalized word stream → first/last word.
+2. Else **anchor match** on the first/last few tokens.
+3. Else a rough time estimate (window around the estimated position) → query the track.
+4. Else skip ID → keep the label.
+In the track approach this is uncritical: we only need an approximate span to read the
+dominant speaker — not sample-accurate sentence boundaries.
 
-## 5. Neue Komponenten
+## 5. New components
 
-### 5.1 `backend/services/speaker_id.py` (neu)
-`SpeakerIdentifier`, lazy-loaded wie die anderen AI-Services (`services/registry.py`):
+### 5.1 `backend/services/speaker_id.py` (new)
+`SpeakerIdentifier`, lazy-loaded like the other AI services (`services/registry.py`):
 - `__init__(model_path, voiceprints: dict[str, np.ndarray], threshold, min_seconds)`
 - `identify(pcm_float32: np.ndarray, sr=16000) -> tuple[str|None, float]`:
-  Embedding berechnen (sherpa-onnx `SpeakerEmbeddingExtractor`), L2-normalisieren, Cosinus gegen
-  alle Voiceprints, **Argmax**. Gibt `(name, top1)` zurück, wenn `top1 >= threshold` und
-  Audiodauer `>= min_seconds`, sonst `(None, top1)`.
-- ONNX-Extractor einmal bauen (num_threads aus Env), `provider="cpu"`.
-- **Kein `soundfile` im Prod-Pfad**: das Live-Audio ist bereits PCM (PCM16→float32 per numpy);
-  `soundfile` bleibt bench-only (WAV-Lesen).
+  compute embedding (sherpa-onnx `SpeakerEmbeddingExtractor`), L2-normalize, cosine against all
+  voiceprints, **argmax**. Returns `(name, top1)` if `top1 >= threshold` and audio duration
+  `>= min_seconds`, else `(None, top1)`.
+- Build the ONNX extractor once (num_threads from env), `provider="cpu"`.
+- **No `soundfile` in the prod path**: live audio is already PCM (PCM16→float32 via numpy);
+  `soundfile` stays bench-only (reading WAVs).
 
-### 5.2 Kontinuierlicher PCM-Ringpuffer + Sprecher-Track in `StreamingSession`
-- In `feed(audio)`: PCM16-Bytes → float32, an einen **bounded, kontinuierlichen** Puffer anhängen;
-  laufenden Sample-Offset mitführen. Puffer nur **~10–15 s** (genug für Sliding-Window + Slack) —
-  Audio wird nach Klassifikation verworfen, **nicht pro Turn gespeichert**.
-- Zeitachse: Wort-Zeitstempel (ms ab Session-Start) ↔ Sample-Index = `ms/1000*16000`. Wir
-  kontrollieren die Sample-Zählung selbst.
-- **Hintergrund-Klassifikator** (eigener Task): alle ~1 s das letzte 3-s-Fenster embedden →
-  `identify` → Eintrag in den **Sprecher-Track** `self._spk_track: list[(t_sec, name|None, score)]`
-  (winzig, Session-lang, Audio danach freigeben).
-- `dominant_speaker(start_ms, end_ms) -> str|None`: Mehrheits-/gewichteter Vote der Track-Einträge
-  in der Spanne; uneindeutig/leer → `None`.
-- Fallback-Variante ohne Track: `_slice(start_ms,end_ms)` + einmal `identify` pro Claim-Satz.
+### 5.2 Continuous PCM ring buffer + speaker track in `StreamingSession`
+- In `feed(audio)`: PCM16 bytes → float32, append to a **bounded, continuous** buffer; keep a
+  running sample offset. Buffer only **~10–15 s** (enough for the sliding window + slack) —
+  audio is discarded after classification, **not stored per turn**.
+- Time axis: word timestamps (ms from session start) ↔ sample index = `ms/1000*16000`. We
+  control the sample count ourselves.
+- **Background classifier** (own task): every ~1 s embed the last 3 s window → `identify` →
+  append to the **speaker track** `self._spk_track: list[(t_sec, name|None, score)]` (tiny,
+  session-long; release audio afterwards).
+- `dominant_speaker(start_ms, end_ms) -> str|None`: majority/weighted vote of the track entries
+  in the span; ambiguous/empty → `None`.
+- Fallback variant without a track: `_slice(start_ms,end_ms)` + a single `identify` per claim
+  sentence.
 
-### 5.3 Voiceprint-Store + Enrollment (offline)
-- Store: `backend/data/voiceprints/<Name>.npy` (Unit-Vektor) **oder** eine kleine JSON/SQLite
-  `{name: [floats]}`. Beim Sessionstart geladen, **gefiltert auf `episode.guests`** (+ optional
-  Moderator). Closed-Set = die Gäste dieser Episode → wenige Verwechslungen, Nicht-Gäste fallen
-  korrekt durchs Gate.
-- Enrollment: **offline**, per erweitertem Bench (`benchmarks/enroll_voiceprints.py`, neu):
-  liest `enroll/<Name>/*.wav`, mittelt Embeddings, schreibt den Store. Kein Enrollment im
-  Live-Pfad.
-- Pre-Show-Enrollment (kurzer Live-Clip pro Gast) ist ein späterer Zusatz; v1 = Store aus
-  öffentlichen Clips.
+### 5.3 Voiceprint store + enrollment (offline)
+- Store: `backend/data/voiceprints/<Name>.npy` (unit vector) **or** a small JSON/SQLite
+  `{name: [floats]}`. Loaded at session start, **filtered to `episode.guests`** (+ optionally
+  the moderator). Closed set = this episode's guests → few confusions, non-guests fall through
+  the gate correctly.
+- Enrollment: **offline**, via an extended bench (`benchmarks/enroll_voiceprints.py`, new):
+  reads `enroll/<Name>/*.wav`, averages embeddings, writes the store. No enrollment in the live
+  path.
+- Pre-show enrollment (a short live clip per guest) is a later addition; v1 = store from public
+  clips.
 
-## 6. Änderungen in `streaming.py` (konkrete Touchpoints)
+## 6. Changes in `streaming.py` (concrete touch points)
 
-1. `start()`: nichts an der ASR-Config nötig (Wörter+Zeitstempel liegen in `TurnEvent.words`,
-   `Word.start/end`). `speaker_labels`/`max_speakers` können bleiben (Fallback-Pfad).
-2. `_on_turn` → `handle_turn(...)`: `words` (Liste mit Zeitstempeln) mit durchreichen; an den
-   Fenster-Puffer-Einträgen mitführen (für die Satz→Zeitspanne).
-3. `feed`: kontinuierlichen PCM-Ringpuffer füttern; Hintergrund-Klassifikator baut den
-   Sprecher-Track (5.2).
-4. `_flush_window`: pro Claim `source`-Satz → Wort-Zeitspanne `[start_ms,end_ms]` (4.1) →
-   `dominant_speaker(span)` aus dem Track lesen. Claim sofort mit best-bekanntem Sprecher
-   speichern (Label/LLM), Track-Ergebnis kommt ggf. gleich/kurz danach → via Rewrite setzen.
-6. **Rewrite-Plumbing wiederverwenden** (existiert bereits): `_turn_claims`/`_label_claims`,
-   `_rewrite_speaker(pid, name)`, Event `claim_speaker_update` (Frontend `useAudioStream.js`
-   behandelt es schon). Die Voiceprint-ID hängt sich in denselben nachträglichen Umschreibe-Pfad.
-7. **Fallback-Kette pro Claim-Sprecher**: Voiceprint (falls confident) → LLM-Auflösung
-   `speaker_map[label]` → rohes Diarisierungs-Label.
+1. `start()`: no ASR config change needed (words + timestamps are in `TurnEvent.words`,
+   `Word.start/end`). `speaker_labels`/`max_speakers` can stay (fallback path).
+2. `_on_turn` → `handle_turn(...)`: pass `words` (list with timestamps) through; carry them on
+   the window buffer entries (for the sentence → time span).
+3. `feed`: feed the continuous PCM ring buffer; the background classifier builds the speaker
+   track (5.2).
+4. `_flush_window`: per claim, `source` sentence → word time span `[start_ms,end_ms]` (4.1) →
+   read `dominant_speaker(span)` from the track. Store the claim immediately with the
+   best-known speaker (label/LLM); the track result arrives at the same time or shortly after →
+   set it via rewrite.
+5. **Reuse the rewrite plumbing** (already exists): `_turn_claims`/`_label_claims`,
+   `_rewrite_speaker(pid, name)`, event `claim_speaker_update` (frontend `useAudioStream.js`
+   already handles it). Voiceprint ID hooks into the same retroactive-rewrite path.
+6. **Per-claim speaker fallback chain**: voiceprint (if confident) → LLM resolution
+   `speaker_map[label]` → raw diarization label.
 
-## 7. Gate / Schwellwerte (aus dem Spike, kalibrierbar)
+## 7. Gate / thresholds (from the spike, calibratable)
 
-- **Primär-Gate: absoluter Cosinus `top1 >= ~0.55–0.60`.** Im Spike trennte das unbekannte
-  Sprecher sauber (0 % Unknown akzeptiert) von enrollten (Known-top1 ≥ 0.68).
-- Argmax-Klassifikation war auch bei 3 ähnlichen Stimmen und 2-s-Segmenten 100 % korrekt.
-- **Top1–Top2-Marge** als sekundäres Confidence-Signal (optional): große Marge = eindeutig. Im
-  Spike war der absolute Cosinus der zuverlässigere Unknown-Filter; Marge nur ergänzend.
-- `min_seconds` (~1.5 s): kürzere/leisere Sätze überspringen → Fallback.
-- **Schwellwert auf echten Daten nachkalibrieren**: die Verteilung pro Satz (gepoolt) weicht von
-  den Bench-Fixfenstern ab.
+- **Primary gate: absolute cosine `top1 >= ~0.55–0.60`.** In the spike this cleanly separated
+  unknown speakers (0% unknown accepted) from enrolled ones (known top1 ≥ 0.68).
+- Argmax classification was 100% correct even with 3 similar voices and 2 s segments.
+- **Top1–Top2 margin** as a secondary confidence signal (optional): large margin = unambiguous.
+  In the spike the absolute cosine was the more reliable unknown filter; margin is complementary.
+- `min_seconds` (~1.5 s): skip shorter/quieter sentences → fallback.
+- **Recalibrate the threshold on real data**: the per-sentence (pooled) distribution differs
+  from the bench's fixed windows.
 
-## 8. Konfiguration (Env, Feature-Flag)
+## 8. Configuration (env, feature flag)
 
-- `SPEAKER_ID_ENABLED` (default `false`) — schaltet den ganzen Pfad; merkt sich dark deploybar.
-- `SPEAKER_ID_MODEL` — Pfad zur .onnx (ins Image gebacken, s. u.).
+- `SPEAKER_ID_ENABLED` (default `false`) — gates the whole path; ships dark.
+- `SPEAKER_ID_MODEL` — path to the .onnx (baked into the image, see below).
 - `SPEAKER_ID_THRESHOLD` (default ~0.55).
 - `SPEAKER_ID_MIN_SECONDS` (default 1.5).
 - `SPEAKER_ID_NUM_THREADS` (default 1).
 - `SPEAKER_ID_VOICEPRINTS_DIR` (default `backend/data/voiceprints`).
-- Import von sherpa-onnx **lazy** in `speaker_id.py`, damit ein deaktiviertes Flag den ONNX-Stack
-  gar nicht erst lädt.
+- Import sherpa-onnx **lazily** in `speaker_id.py`, so a disabled flag never loads the ONNX
+  stack.
 
-## 9. Deployment-Entscheidung
+## 9. Deployment decision
 
-**Empfehlung: In-Process** (Embedding im Backend-Container), nicht Sidecar.
-- Last ist klein: ein Embedding pro Claim-Satz, ~zig ms CPU, off hot path. Kein IPC/Extra-Ops.
-- Prod-Dependencies: `sherpa-onnx`, `onnxruntime`, `numpy` aus der `bench`-Gruppe in die
-  **Haupt-Dependencies** (oder ein `speakerid`-Extra, das der Dockerfile installiert). `soundfile`
-  bleibt bench-only. Image wächst ~200 MB (onnxruntime); akzeptabel.
-- **Modell-Datei** (~27 MB) ins Image `COPY`-en (reproduzierbar) statt zur Laufzeit ziehen.
-- macOS-Dev-Hinweis (nur lokal): sherpa-onnx-Wheel findet `libonnxruntime.dylib` nicht — Symlink
-  nötig (im `speaker_id_bench.py`-Header dokumentiert). Auf Linux/CI/VPS kein Thema.
-- Sidecar nur erwägen, falls CPU-Kontention mit den Fact-Checkern real wird.
+**Recommendation: in-process** (embedding inside the backend container), not a sidecar.
+- Load is small: one embedding per second (track) or per claim sentence, ~tens of ms CPU, off
+  the hot path. No IPC / extra ops.
+- Prod dependencies: move `sherpa-onnx`, `onnxruntime`, `numpy` from the `bench` group into the
+  **main dependencies** (or a `speakerid` extra that the Dockerfile installs). `soundfile` stays
+  bench-only. Image grows ~200 MB (onnxruntime); acceptable.
+- **Model file** (~27 MB) `COPY`-ed into the image (reproducible) rather than fetched at runtime.
+- macOS dev note (local only): the sherpa-onnx wheel doesn't find `libonnxruntime.dylib` —
+  needs a symlink (documented in the `speaker_id_bench.py` header). No issue on Linux/CI/VPS.
+- Consider a sidecar only if CPU contention with the fact-checkers becomes real.
 
 ## 10. Tests
 
-- Unit: `SpeakerIdentifier` per Stub in `StreamingSession` injizieren (wie `gate`/`fast_checker`):
-  `identify(pcm)->(name,score)`. Fälle: confident → Label überschrieben; unknown/None → Label
-  bleibt; async ID landet nach dem Claim → `claim_speaker_update` + DB-`sprecher` umgeschrieben.
-  **Kein onnxruntime in Unit-Tests** (Stub).
-- Satz→Wort-Span-Mapping separat testen (Textausrichtung auf `words`).
-- Genauigkeit bleibt im **Offline-Bench** (`benchmarks/`, echtes Audio), nicht in Unit-Tests.
+- Unit: inject `SpeakerIdentifier` as a stub into `StreamingSession` (like `gate`/`fast_checker`):
+  `identify(pcm)->(name,score)`. Cases: confident → label overridden; unknown/None → label kept;
+  async ID lands after the claim → `claim_speaker_update` + DB `sprecher` rewritten. **No
+  onnxruntime in unit tests** (stub).
+- Test sentence → word span mapping separately (text alignment against `words`).
+- Accuracy stays in the **offline bench** (`benchmarks/`, real audio), not in unit tests.
 
 ## 11. Rollout
 
-1. Hinter `SPEAKER_ID_ENABLED=false` mergen (dark).
-2. Wiederkehrende Gäste enrollen (Store bauen), Modell ins Image.
-3. Auf **Staging** aktivieren (Branch-Auto-Deploy ist scharf), echte Session mitschneiden,
-   Voiceprint-IDs gegen die Realität prüfen, Threshold nachkalibrieren.
-4. Erst dann Prod aktivieren.
+1. Merge behind `SPEAKER_ID_ENABLED=false` (dark).
+2. Enroll recurring guests (build the store), bake the model into the image.
+3. Enable on **staging** (branch auto-deploy is live), record a real session, check voiceprint
+   IDs against reality, recalibrate the threshold.
+4. Only then enable on prod.
 
-## 12. Offene Risiken
+## 12. Open risks
 
-- **Echte Überlappung/Crosstalk** im selben Satz → gemischtes Embedding → niedrige Confidence →
-  Fallback. Sichere Degradation, aber im Live-Betrieb beobachten (offline mit sauberen Clips nicht
-  messbar).
-- **Threshold-Kalibrierung** auf gepoolten Satz-Embeddings vs. Bench-Fixfenster.
-- **Enrollment-Domänenlücke** (öffentliche Clips vs. Studio) — im Spike als Cross-Recording schon
-  teilvalidiert (Marge schrumpft mit ähnlichen Stimmen), auf echten Daten weiter beobachten.
-- **Puffer-Speicher**: Audio-Ringpuffer nur ~10–15 s (nach Klassifikation freigeben); der
-  Sprecher-Track selbst ist winzig (ein Eintrag/Sekunde) und darf Session-lang bleiben.
-- **Satz→Span-Alignment**: robuste Textausrichtung nötig (Reformulierer ändert den Claim-Text,
-  aber `source` ist der Originalsatz → gegen `words` matchbar).
+- **Genuine overlap/crosstalk** in the same sentence → mixed embedding → low confidence →
+  fallback. Safe degradation, but watch it in live operation (not measurable offline with clean
+  clips).
+- **Threshold calibration** on pooled per-sentence embeddings vs. the bench's fixed windows.
+- **Enrollment domain gap** (public clips vs. studio) — partly validated in the spike as
+  cross-recording (margin shrinks with similar voices); keep watching on real data.
+- **Buffer memory**: audio ring buffer only ~10–15 s (release after classification); the speaker
+  track itself is tiny (one entry/second) and may stay session-long.
+- **Sentence → span alignment**: needs robust text alignment (the reformulator changes the claim
+  text, but `source` is the original sentence → matchable against `words`).
 
-## 13. Spike-Belege (Kontext für die Umsetzung)
+## 13. Spike evidence (context for implementation)
 
-- Modell: `3dspeaker_speech_campplus_sv_zh_en_16k-common_advanced.onnx` (CAM++, dim=192), aus dem
-  k2-fsa-Release-Tag `speaker-recongition-models` (Tippfehler im Tag ist echt).
-- Bench: `benchmarks/speaker_id_bench.py`, Daten (git-ignoriert) unter
+- Model: `3dspeaker_speech_campplus_sv_zh_en_16k-common_advanced.onnx` (CAM++, dim=192), from the
+  k2-fsa release tag `speaker-recongition-models` (the typo in the tag is real).
+- Bench: `benchmarks/speaker_id_bench.py`, data (git-ignored) under
   `benchmarks/data/speaker_id/{enroll,eval}/<Name>/*.wav` (16k mono).
-- Ergebnisse (Connemann/Dröge/Maischberger, je 1 Enroll-Clip, versch. YouTube-Aufnahmen):
-  - 3 Sprecher: Argmax-Accuracy **100 %**; Impostor-Cosinus steigt mit ähnlichen (weibl.) Stimmen
-    (max 0.55), Marge schrumpft auf ~0.13, bleibt aber getrennt.
-  - Kurzsegment 2/3/5 s: Accuracy **100 %**, Top1–Top2-Marge stabil ≥ 0.13.
-  - Unknown-Rejection (Eindringling nicht enrollt): Gate `cos>=0.55` → **0 % Unknown**, 83 % Known
-    akzeptiert (Rest fällt auf Label zurück).
-- Bewertung: grünes Licht; harter ungetesteter Rest = echter Crosstalk.
+- Results (Connemann/Dröge/Maischberger, 1 enroll clip each, different YouTube recordings):
+  - 3 speakers: argmax accuracy **100%**; impostor cosine rises with similar (female) voices
+    (max 0.55), margin shrinks to ~0.13 but stays separated.
+  - Short segments 2/3/5 s: accuracy **100%**, top1–top2 margin stable ≥ 0.13.
+  - Unknown rejection (intruder not enrolled): gate `cos>=0.55` → **0% unknown**, 83% known
+    accepted (rest falls back to the label).
+- Verdict: green light; the hard untested remainder is genuine crosstalk.
