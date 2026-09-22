@@ -1,0 +1,12 @@
+[Unit]
+Description=Check GHCR for a new staging branch image every 5 minutes
+
+[Timer]
+# Offset from the production timer (OnBootSec=2min) so the two pulls don't collide.
+OnBootSec=3min
+OnUnitActiveSec=5min
+RandomizedDelaySec=30s
+Unit=factcheck-deploy-staging.service
+
+[Install]
+WantedBy=timers.target
