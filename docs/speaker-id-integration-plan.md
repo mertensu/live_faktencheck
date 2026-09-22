@@ -60,6 +60,20 @@ _flush_window() ──▶ Gate liefert Claims mit .source (Original-Satz)
   3-s-Fenster, 1-s-Hop) → per-Zeit-Sprecher-Track, unabhängig von Satzgrenzen; robuster bei
   Sprecherwechsel mitten im Turn. Für v1 nicht nötig.
 
+### 4.1 Satz→Wort-Span-Mapping (das fiddly-Stück) mit sicherem Fallback
+`source` ist ein Satz-String aus dem **formatierten** Turn-Text; Zeitstempel hängen an den
+**Wörtern** (`words[].start/end`, rohe ASR-Tokens). Beides passt nicht 1:1 (Groß/Klein,
+Satzzeichen, Zahlen, mehrere Sätze pro Turn). Das Mapping = die Wort-Teilfolge des Turns finden,
+deren normalisierte Konkatenation dem Satz entspricht → `start = words[i].start`,
+`end = words[j].end`. Fallback-Kette (den Turn kennen wir schon über `_match_turn`):
+1. Normalisieren (lowercase, Satzzeichen weg, Whitespace glätten) → Satz als Teilstring der
+   normalisierten Wortfolge suchen → erstes/letztes Wort.
+2. Sonst **Anker-Match** über die ersten/letzten paar Tokens des Satzes.
+3. Sonst **das ganze Turn-Audio** nehmen — ein Turn ist meist *ein* Sprecher, reicht zur ID.
+4. Sonst ID skippen → Label behalten.
+**Daher kann v1 auf Turn-Granularität starten** (Turn-Audio klassifizieren); die satz-genaue
+Ausrichtung ist eine Präzisions-Verfeinerung, kein Blocker.
+
 ## 5. Neue Komponenten
 
 ### 5.1 `backend/services/speaker_id.py` (neu)
