@@ -23,6 +23,11 @@ SETUP
 
 1. Install the opt-in bench deps (kept out of the prod image):
      uv sync --group bench
+   macOS only: the sherpa-onnx wheel doesn't bundle libonnxruntime.dylib, so link it in
+   (Linux/CI is fine as-is):
+     uv pip install onnxruntime
+     ln -sf "$(python -c 'import onnxruntime,glob,os;print(glob.glob(os.path.dirname(onnxruntime.__file__)+"/capi/libonnxruntime*.dylib")[0])')" \
+        .venv/lib/python3.12/site-packages/sherpa_onnx/lib/libonnxruntime.dylib
 
 2. Download a sherpa-onnx speaker-embedding model (CPU, ~10-30 MB), e.g. one of:
      - 3dspeaker_speech_campplus_sv_zh_en_16k-common   (CAM++, zh+en, generalises to DE)
