@@ -28,11 +28,16 @@ jobs:
         run: uv run pytest backend/tests -m "not integration" -q
 
   # Builds on every PR so a broken Dockerfile fails review, not main.
-  # Pushes to GHCR only from main, tagged with the commit SHA for rollbacks.
+  # Publishes to GHCR in two cases:
+  #   - main: tagged with the commit SHA (rollback target) and :latest (the prod deploy
+  #     trigger — the VPS pulls :latest via deploy/pull-deploy.sh every 5 min).
+  #   - a same-repo PR: tagged :branch-<slug>, so the staging box can pull the branch
+  #     under review (deploy/factcheck-deploy-staging.timer) instead of building on the VPS.
+  # Fork PRs get the build (broken Dockerfile still fails review) but no push — their
+  # GITHUB_TOKEN is read-only, so login/push are skipped.
   #
   # Note: no deploy job here, by design. The Hostinger firewall blocks inbound SSH from
-  # GitHub runners, so the deploy runs the other way round: publishing :latest here IS
-  # the deploy trigger — the VPS pulls it (deploy/pull-deploy.sh, every 5 min).
+  # GitHub runners, so the deploy runs the other way round: the VPS pulls what we publish.
   image:
     needs: test
     runs-on: ubuntu-latest
@@ -44,8 +49,29 @@ jobs:
 
       - uses: docker/setup-buildx-action@v3
 
+      # Decide what (if anything) to publish. main -> sha + latest; a same-repo PR ->
+      # branch-<slug> (branch name lowercased, '/' and other tag-illegal chars stripped).
+      - name: Resolve publish target
+        id: meta
+        env:
+          REPO: ${{ github.repository }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            echo "push=true" >> "$GITHUB_OUTPUT"
+            printf 'tags=ghcr.io/%s:%s,ghcr.io/%s:latest\n' "$REPO" "${{ github.sha }}" "$REPO" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event_name }}" = "pull_request" ] && [ "$HEAD_REPO" = "$REPO" ]; then
+            slug=$(printf '%s' "$HEAD_REF" | tr '[:upper:]' '[:lower:]' | tr '/' '-' | tr -cd 'a-z0-9._-')
+            echo "push=true" >> "$GITHUB_OUTPUT"
+            printf 'tags=ghcr.io/%s:branch-%s\n' "$REPO" "$slug" >> "$GITHUB_OUTPUT"
+          else
+            echo "push=false" >> "$GITHUB_OUTPUT"
+            printf 'tags=ghcr.io/%s:pr\n' "$REPO" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Log in to GHCR
-        if: github.ref == 'refs/heads/main'
+        if: steps.meta.outputs.push == 'true'
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
@@ -56,9 +82,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          push: ${{ github.ref == 'refs/heads/main' }}
-          tags: |
-            ghcr.io/${{ github.repository }}:${{ github.sha }}
-            ghcr.io/${{ github.repository }}:latest
+          push: ${{ steps.meta.outputs.push }}
+          tags: ${{ steps.meta.outputs.tags }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

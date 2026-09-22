@@ -1,0 +1,20 @@
+[Unit]
+Description=Pull the tracked branch image from GHCR and restart staging if it changed
+After=network-online.target docker.service
+Wants=network-online.target
+Requires=docker.service
+
+[Service]
+Type=oneshot
+# Which branch tag staging follows lives here as IMAGE=ghcr.io/...:branch-<slug>.
+# Switch branches with deploy/staging-track.sh (or edit this file). The optional '-'
+# prefix means a missing file falls back to pull-deploy's default rather than failing
+# the unit. staging gets its own hold file so a production deploy-hold never freezes it.
+EnvironmentFile=-/opt/fact_check/staging/deploy.env
+Environment=COMPOSE_FILE=/opt/fact_check/deploy/docker-compose.staging.yml
+Environment=HEALTH_URL=http://127.0.0.1:5001/api/health
+Environment=HOLD_FILE=/opt/fact_check/staging/deploy-hold
+ExecStart=/opt/fact_check/deploy/pull-deploy.sh
+# A failed deploy rolls itself back; the non-zero exit is there to be visible in
+# `systemctl status factcheck-deploy-staging` and the journal, not to stop the timer.
+SuccessExitStatus=0
