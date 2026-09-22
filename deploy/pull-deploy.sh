@@ -72,7 +72,10 @@ fi
 mkdir -p "$STATE_DIR"
 
 log "pulling $IMAGE"
-compose pull --quiet
+# Pull exactly the ref $IMAGE names, not the compose file's default: staging tracks a
+# per-branch tag (see factcheck-deploy-staging.service), and $IMAGE is the single source
+# of truth for what to deploy. For prod, $IMAGE is :latest — identical to before.
+FACTCHECK_IMAGE="$IMAGE" compose pull --quiet
 target=$(digest_of "$IMAGE")
 running=$(running_digest)
 

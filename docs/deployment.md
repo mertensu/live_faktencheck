@@ -175,6 +175,36 @@ Two things to keep straight: staging is **not** replicated by Litestream (its da
 disposable, refill it with the restore above), and it needs its **own** `ACCESS_CODES` —
 copying the production code means staging traffic burns the production quota.
 
+### Auto-deploying the branch under review
+
+Production deploys when CI publishes `:latest` from `main` and the VPS pulls it. Staging
+does the same for **a PR branch**, so a backend change can be tried on the real staging box
+without building an image by hand on the VPS:
+
+- CI publishes `ghcr.io/mertensu/live_faktencheck:branch-<slug>` on every push to a
+  same-repo PR (`.github/workflows/ci.yml`; `<slug>` is the branch, lowercased, `/`→`-`).
+- `factcheck-deploy-staging.timer` runs `pull-deploy.sh` against the staging compose file
+  every 5 min, pulling whatever tag `staging/deploy.env` names — same rollback/health/
+  in-flight-defer machinery as production, keyed on its own state files.
+
+There is one staging box, so it follows **one branch at a time**. Point it at a branch
+(the branch's image must already be built by CI) and deploy immediately:
+
+```sh
+/opt/fact_check/deploy/staging-track.sh live-fast-lane   # writes staging/deploy.env, deploys now
+```
+
+Every later push to that PR then lands on staging within ~5 min automatically. Switch
+branches by re-running the script; freeze staging with `touch /opt/fact_check/staging/deploy-hold`.
+
+One-time install of the units (copied into place, same as the production units):
+
+```sh
+cp /opt/fact_check/deploy/factcheck-deploy-staging.service /etc/systemd/system/
+cp /opt/fact_check/deploy/factcheck-deploy-staging.timer   /etc/systemd/system/
+systemctl daemon-reload && systemctl enable --now factcheck-deploy-staging.timer
+```
+
 ## Secrets — three places, three owners
 
 | What | Where | Who has it |
