@@ -88,3 +88,9 @@ handover/
 
 # Visual companion (brainstorming) artifacts
 .superpowers/
+
+# Speaker-ID spike (benchmarks/data/speaker_id): downloaded models + any audio formats
+*.onnx
+*.mp3
+*.m4a
+*.flac

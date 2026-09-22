@@ -58,3 +58,11 @@ dev = [
 test = [
     "nest-asyncio>=1.6.0",
 ]
+# Opt-in only (`uv sync --group bench`); never pulled by a plain sync or the Docker
+# build, so the production image stays free of onnxruntime/audio deps. For the offline
+# speaker-identification spike in benchmarks/speaker_id_bench.py.
+bench = [
+    "sherpa-onnx>=1.10.0",
+    "numpy>=1.26.0",
+    "soundfile>=0.12.1",
+]
