@@ -88,6 +88,11 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
   const recorder = useAudioRecorder(episodeKey)
   // Live streaming fast lane (SG-4). Shares the selected mic with the block recorder.
   const liveStream = useAudioStream(episodeKey, { deviceId: recorder.deviceId })
+  // Mirrors LiveTranscript's own visibility: a live session is running or left a transcript.
+  const showLiveTranscript = !isViewer && (
+    liveStream.status === 'connecting' || liveStream.status === 'streaming' ||
+    liveStream.transcript.length > 0 || liveStream.claims.length > 0
+  )
   const isRecording = recorder.status === 'recording'
   const isStarting = recorder.status === 'requesting'
   // The full-screen "Aufnahme starten" splash is a one-time onboarding screen:
@@ -736,7 +741,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
       </header>
 
       <main className="main-content">
-        {!isViewer && <LiveTranscript live={liveStream} />}
+        {showLiveTranscript && <LiveTranscript live={liveStream} />}
         {isAdminMode ? (
           <>
             <RecordingBar recorder={recorder} live={liveStream} />
@@ -761,7 +766,8 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
         ) : (
           <>
             <BackendErrorDisplay error={backendError} />
-            <ReviewView
+            {/* In the live view, results open from the transcript marks, not as a list below. */}
+            {!showLiveTranscript && <ReviewView
               sessionId={episodeKey}
               initialAutoCheck={initialAutoCheck}
               onSelect={setSelectedClaim}
@@ -771,7 +777,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
               onStartRecording={() => recorder.start(60)}
               recordingError={recorder.error}
               recorder={recorder}
-            />
+            />}
             {selectedClaim && (
               <ClaimDetailOverlay
                 claim={selectedClaim}
