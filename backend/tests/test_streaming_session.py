@@ -549,6 +549,7 @@ class TestVoiceprintClaims:
     async def test_unknown_voice(self, db):
         events = []
         session, checker = _vp_session(db, events=events)
+        session._spk_track.unknown_min_ms = 500  # the test sentence spans 750 ms
         session._spk_track.add(0, 3000, None, 0.2)
         session._spk_track.add(500, 3500, None, 0.25)
         await _turn(session)

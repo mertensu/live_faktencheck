@@ -123,9 +123,13 @@ class TrackVerdict:
 class SpeakerTrack:
     """Session-long list of classified windows; tiny (one entry per hop)."""
 
-    def __init__(self, *, majority: float = 0.6, unknown_threshold: float = 0.35):
+    def __init__(self, *, majority: float = 0.6, unknown_threshold: float = 0.35,
+                 unknown_min_ms: int = 0):
         self.majority = majority
         self.unknown_threshold = unknown_threshold
+        # Spans shorter than this are never "unknown": their windows mix in neighbouring
+        # speakers, so low scores there mean "unsure", not "foreign voice".
+        self.unknown_min_ms = unknown_min_ms
         # (win_start_ms, win_end_ms, name|None, score|None); score None = energy-gated.
         self.entries: list[tuple[int, int, str | None, float | None]] = []
         self.covered_ms = 0  # end of the newest classified window
@@ -159,7 +163,8 @@ class SpeakerTrack:
 
         all_scores = [s for s in overlapping if s is not None]
         mean = (sum(all_scores) / len(all_scores)) if all_scores else None
-        if all(s is not None and s < self.unknown_threshold for s in overlapping):
+        if end_ms - start_ms >= self.unknown_min_ms and all(
+                s is not None and s < self.unknown_threshold for s in overlapping):
             return TrackVerdict(score=mean, unknown=True)
 
         total = sum(weights.values())

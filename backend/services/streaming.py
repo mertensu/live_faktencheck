@@ -169,7 +169,8 @@ class StreamingSession:
         self._pcm = bytearray()
         self._samples = 0
         self._spk_track = SpeakerTrack(
-            majority=SPEAKER_ID_MAJORITY, unknown_threshold=SPEAKER_ID_UNKNOWN_THRESHOLD
+            majority=SPEAKER_ID_MAJORITY, unknown_threshold=SPEAKER_ID_UNKNOWN_THRESHOLD,
+            unknown_min_ms=SPEAKER_ID_WINDOW_MS,
         )
         self._track_updated = asyncio.Event()  # set (and replaced) after each classifier step
         self._classifying = False

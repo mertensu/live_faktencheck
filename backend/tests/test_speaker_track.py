@@ -111,3 +111,8 @@ class TestSpeakerTrack:
                         (0, 3000, "Alice", 0.6))
         v = t.dominant(0, 3000)
         assert v.name is None and v.plurality == "Alice"
+
+    def test_short_span_is_never_unknown(self):
+        t = self._track((0, 3000, None, 0.2), (1000, 4000, None, 0.25), unknown_min_ms=3000)
+        assert not t.dominant(1000, 2000).unknown  # 1 s sentence: unsure, not foreign
+        assert t.dominant(0, 4000).unknown
