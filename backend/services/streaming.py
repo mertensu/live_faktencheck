@@ -16,8 +16,11 @@ import asyncio
 import logging
 from datetime import datetime
 
+import logfire
+
+from backend.lang import UNKNOWN_SPEAKER
 from backend.utils import build_fact_check_dict
-from .speaker_track import SpeakerTrack
+from .speaker_track import SpeakerTrack, sentence_span
 from .transcription import keyterms_from_guests
 
 logger = logging.getLogger(__name__)
@@ -56,6 +59,9 @@ SPEAKER_ID_MIN_RMS = float(os.getenv("SPEAKER_ID_MIN_RMS", "0.01"))
 SPEAKER_ID_MAJORITY = float(os.getenv("SPEAKER_ID_MAJORITY", "0.6"))
 # Every overlapping window below this cosine → a clearly foreign voice (§6.9).
 SPEAKER_ID_UNKNOWN_THRESHOLD = float(os.getenv("SPEAKER_ID_UNKNOWN_THRESHOLD", "0.35"))
+# How long a claim waits for the track to cover its sentence before it is checked with the
+# fallback speaker (and rewritten later when coverage lands).
+SPEAKER_ID_WAIT_MS = int(os.getenv("SPEAKER_ID_WAIT_MS", "1000"))
 
 
 def _count_sentences(text: str) -> int:
@@ -132,6 +138,14 @@ class StreamingSession:
         self._track_updated = asyncio.Event()  # set (and replaced) after each classifier step
         self._classifying = False
         self._classifier_task: asyncio.Task | None = None
+        # Claims checked before the track covered their span: (pid, span, t0, label),
+        # resolved after each classifier step via _apply_voiceprint.
+        self._pending_spk: list[tuple[int, tuple[int, int], float, str | None]] = []
+        # Claims named (or marked unknown) by voiceprint. They are never registered on the
+        # label paths, and both label rewrites skip them — the voiceprint name wins.
+        self._voiceprint_pids: set[int] = set()
+        self._claim_speakers: dict[int, str] = {}  # pid -> current speaker (survives the check)
+        self._map_source: dict[str, str] = {}  # label -> "label_vote" | "llm"
 
     # ---- event emission -----------------------------------------------------
     async def _emit(self, event: dict) -> None:
@@ -172,6 +186,7 @@ class StreamingSession:
             mapping = await self._resolve_speakers_fn(transcript, self.guests, self.conversation_type)
             if mapping:
                 self._speaker_map.update(mapping)
+                self._map_source.update({label: "llm" for label in mapping})
                 logger.info(f"[stream:{self.session_id}] speaker map: {self._speaker_map}")
                 await self._apply_map_to_pending(mapping)
         except Exception:
@@ -188,7 +203,8 @@ class StreamingSession:
         """
         for label, name in mapping.items():
             for pid in self._label_claims.pop(label, []):
-                await self._rewrite_speaker(pid, name)
+                if pid not in self._voiceprint_pids:
+                    await self._rewrite_speaker(pid, name)
 
     # ---- speaker revisions (unit-testable) ----------------------------------
     async def handle_speaker_revision(self, revisions: list[dict]) -> None:
@@ -208,6 +224,8 @@ class StreamingSession:
             new_name = self._speaker_map.get(new_label, new_label)
             updated = []
             for pid, _old_label in self._turn_claims.get(turn_order, []):
+                if pid in self._voiceprint_pids:
+                    continue
                 await self._rewrite_speaker(pid, new_name)
                 updated.append((pid, new_label))  # keep base label current for next revision
             if turn_order in self._turn_claims:
@@ -215,6 +233,7 @@ class StreamingSession:
 
     async def _rewrite_speaker(self, pid: int, name: str) -> None:
         """Update a stored claim's speaker in place and notify the UI."""
+        self._claim_speakers[pid] = name
         try:
             row = await self.db.get_fact_check_by_id(pid)
             if row and row.get("sprecher") != name:
@@ -310,7 +329,8 @@ class StreamingSession:
             if label:
                 name = label
             name = self._speaker_map.get(name, name)  # label -> real name, if resolved
-            self._track(self._check_and_store(name, text, source, turn_order, label))
+            span = self._claim_span(source, entries) if self.speaker_identifier is not None else None
+            self._track(self._check_and_store(name, text, source, turn_order, label, span))
 
     def _match_turn(self, source: str | None, entries: list[dict]) -> tuple[int | None, str | None]:
         """Find the buffered turn a claim's source sentence came from.
@@ -330,6 +350,89 @@ class StreamingSession:
                 return e.get("turn_order"), e.get("speaker")
         return None, None
 
+    def _claim_span(self, source: str | None, entries: list[dict]) -> tuple[int, int] | None:
+        """Time span of a claim's source sentence: its own turn first, else the window."""
+        if not source or not source.strip():
+            return None
+        needle = source.strip()
+        for e in entries:
+            hay = e["text"] or ""
+            if needle in hay or hay in needle:
+                span = sentence_span(needle, e.get("words"), hay)
+                if span:
+                    return span
+        words = [w for e in entries for w in e.get("words") or []]
+        return sentence_span(needle, words, " ".join(e["text"] for e in entries))
+
+    async def _await_coverage(self, end_ms: int) -> None:
+        """Wait (bounded by SPEAKER_ID_WAIT_MS) until the track covers ``end_ms``."""
+        loop = asyncio.get_running_loop()
+        deadline = loop.time() + SPEAKER_ID_WAIT_MS / 1000
+        while not self._spk_track.covers(end_ms):
+            remaining = deadline - loop.time()
+            if remaining <= 0:
+                return
+            try:
+                await asyncio.wait_for(self._track_updated.wait(), remaining)
+            except TimeoutError:
+                return
+
+    def _fallback_source(self, speaker_label: str | None) -> str:
+        if speaker_label and speaker_label in self._speaker_map:
+            return self._map_source.get(speaker_label, "llm")
+        return "label"
+
+    def _log_speaker(self, pid, speaker, source, verdict, span, t0) -> None:
+        """One Logfire record per claim — calibration data for thresholds and wait (§11)."""
+        waited_ms = int((asyncio.get_running_loop().time() - t0) * 1000)
+        fields = dict(
+            session_id=self.session_id, claim_id=pid, speaker=speaker, source=source,
+            voiceprint_name=verdict.name if verdict else None,
+            score=round(verdict.score, 3) if verdict and verdict.score is not None else None,
+            span=list(span) if span else None, waited_ms=waited_ms,
+        )
+        logger.info("[stream:%s] speaker_id %s", self.session_id, fields)
+        logfire.info("speaker_id claim {speaker} via {source}", **fields)
+
+    async def _apply_voiceprint(self, pid: int, verdict) -> str | None:
+        """Late voiceprint result: rewrite the claim's speaker and lock it against labels.
+
+        Returns the applied speaker, or None when the verdict has no name (the claim stays
+        on the label paths).
+        """
+        name = verdict.name or (UNKNOWN_SPEAKER if verdict.unknown else None)
+        if name is None:
+            return None
+        self._voiceprint_pids.add(pid)
+        for turn_order, items in self._turn_claims.items():
+            self._turn_claims[turn_order] = [it for it in items if it[0] != pid]
+        for label, pids in self._label_claims.items():
+            self._label_claims[label] = [p for p in pids if p != pid]
+        await self._rewrite_speaker(pid, name)
+        return name
+
+    async def _resolve_pending_spk(self) -> None:
+        """Resolve claims whose span the track now covers (after each classifier step)."""
+        due = [p for p in self._pending_spk if self._spk_track.covers(p[1][1])]
+        if not due:
+            return
+        self._pending_spk = [p for p in self._pending_spk if not self._spk_track.covers(p[1][1])]
+        for pid, span, t0, label in due:
+            verdict = self._spk_track.dominant(*span)
+            applied = await self._apply_voiceprint(pid, verdict)
+            if applied:
+                self._log_speaker(pid, applied, "unknown" if verdict.unknown else "span", verdict, span, t0)
+            else:
+                self._log_speaker(pid, self._claim_speakers.get(pid), self._fallback_source(label),
+                                  verdict, span, t0)
+
+    def _give_up_pending_spk(self) -> None:
+        """At stop: claims the track never covered keep their fallback speaker."""
+        for pid, span, t0, label in self._pending_spk:
+            self._log_speaker(pid, self._claim_speakers.get(pid), self._fallback_source(label),
+                              None, span, t0)
+        self._pending_spk = []
+
     async def _check_and_store(
         self,
         speaker: str,
@@ -337,9 +440,27 @@ class StreamingSession:
         source: str | None = None,
         turn_order: int | None = None,
         speaker_label: str | None = None,
+        span: tuple[int, int] | None = None,
     ) -> None:
-        """Insert a spinner placeholder, run the fast check, update in place."""
+        """Insert a spinner placeholder, run the fast check, update in place.
+
+        With voiceprint speaker ID and a known sentence span, the speaker is resolved
+        *before* the check (the name feeds into the reasoning): read the track now, or wait
+        briefly for it to cover the span; on timeout check with the fallback speaker and
+        rewrite it once the track catches up.
+        """
         now = datetime.now().isoformat()
+        t0 = asyncio.get_running_loop().time()
+        verdict = None
+        if span is not None:
+            await self._await_coverage(span[1])
+            if self._spk_track.covers(span[1]):
+                verdict = self._spk_track.dominant(*span)
+        vp_name = None
+        if verdict is not None:
+            vp_name = verdict.name or (UNKNOWN_SPEAKER if verdict.unknown else None)
+        if vp_name:
+            speaker = vp_name
         placeholder = {
             "sprecher": speaker,
             "behauptung": claim,
@@ -352,27 +473,44 @@ class StreamingSession:
             "check_depth": "fast",
         }
         pid = await self.db.add_fact_check(placeholder)
-        # Remember which turn produced this row so a SpeakerRevision can rewrite it.
-        if turn_order is not None:
-            self._turn_claims.setdefault(turn_order, []).append((pid, speaker_label))
-        # Stored under a bare label the resolver hasn't named yet? Track it so the
-        # background resolution can rewrite it to the real name once it lands.
-        if speaker_label and self._speaker_map.get(speaker_label) is None:
-            self._label_claims.setdefault(speaker_label, []).append(pid)
-        await self._emit({"type": "claim_processing", "id": pid, "speaker": speaker, "claim": claim, "source": source})
+        self._claim_speakers[pid] = speaker
+        if vp_name:
+            # Voiceprint name wins: not registered on the label paths at all.
+            self._voiceprint_pids.add(pid)
+        else:
+            # Remember which turn produced this row so a SpeakerRevision can rewrite it.
+            if turn_order is not None:
+                self._turn_claims.setdefault(turn_order, []).append((pid, speaker_label))
+            # Stored under a bare label the resolver hasn't named yet? Track it so the
+            # background resolution can rewrite it to the real name once it lands.
+            if speaker_label and self._speaker_map.get(speaker_label) is None:
+                self._label_claims.setdefault(speaker_label, []).append(pid)
+        if span is not None and verdict is None:
+            self._pending_spk.append((pid, span, t0, speaker_label))
+            await self._resolve_pending_spk()  # coverage may have landed during the insert
+        elif self.speaker_identifier is not None:
+            src = ("unknown" if verdict.unknown else "span") if vp_name else self._fallback_source(speaker_label)
+            self._log_speaker(pid, speaker, src, verdict, span, t0)
+        event = {"type": "claim_processing", "id": pid, "speaker": speaker, "claim": claim, "source": source}
+        if verdict is not None and verdict.unknown:
+            event["unknown_voice"] = True
+        await self._emit(event)
 
         try:
             result = await self.fast_checker.check_claim_async(
                 speaker=speaker, claim=claim, context=self.context, episode_date=self.episode_date
             )
             fc = build_fact_check_dict(result, self.session_id, speaker_fallback=speaker, claim_fallback=claim)
+            # A rewrite (revision, label naming, late voiceprint) may have landed during
+            # the check; don't let the checker's echo of the old speaker clobber it.
+            fc["sprecher"] = self._claim_speakers.get(pid, fc["sprecher"])
             fc["check_depth"] = "fast"
             await self.db.update_fact_check(pid, fc)
             await self._emit({"type": "claim_result", "id": pid, "consistency": fc["consistency"]})
         except Exception:
             logger.exception("Fast check failed for streamed claim")
             await self.db.update_fact_check(pid, {
-                "sprecher": speaker, "behauptung": claim, "consistency": "",
+                "sprecher": self._claim_speakers.get(pid, speaker), "behauptung": claim, "consistency": "",
                 "begruendung": "Fehler bei der Schnellprüfung", "quellen": [],
                 "timestamp": now, "session_id": self.session_id, "status": "error",
                 "check_depth": "fast",
@@ -424,6 +562,7 @@ class StreamingSession:
             self._spk_track.add(self._ms(start_sample), self._ms(end_sample), name, score)
             updated, self._track_updated = self._track_updated, asyncio.Event()
             updated.set()
+            await self._resolve_pending_spk()
         except Exception:
             logger.exception("Speaker classification step failed")
         finally:
@@ -522,4 +661,5 @@ class StreamingSession:
                 self._classifier_task = None
             if self._tasks:
                 await asyncio.gather(*list(self._tasks), return_exceptions=True)
+            self._give_up_pending_spk()
         logger.info(f"[stream:{self.session_id}] session stopped")

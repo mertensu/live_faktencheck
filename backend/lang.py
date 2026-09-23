@@ -28,3 +28,8 @@ CRITIQUE_CONFIDENCE_DESCRIPTION = (
 CRITIQUE_REASON_DESCRIPTION = (
     "Kurze und prägnante deutschsprachige Erklärung, warum das Urteil (nicht) robust ist. Immer ausfüllen."
 )
+
+# --- Live speaker identification ---
+# Shown as the speaker when the voiceprint track hears a clearly foreign voice (clip,
+# caller, audience) rather than one of the episode's enrolled speakers.
+UNKNOWN_SPEAKER = "Unbekannte Stimme"

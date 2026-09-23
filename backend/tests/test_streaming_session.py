@@ -362,3 +362,207 @@ class TestClassifier:
         assert ident.identify.call_count == 1
         assert session._classify_tick()  # free again, new audio available
         await session.stop()
+
+
+TURN = "Behauptung A. Noch ein Satz."
+TURN_WORDS = [{"text": w, "start": i * 400, "end": i * 400 + 350}
+              for i, w in enumerate(["behauptung", "a", "noch", "ein", "satz"])]  # 0..1950 ms
+
+
+@pytest.fixture
+def logfire_calls(monkeypatch):
+    fake = MagicMock()
+    monkeypatch.setattr(streaming_mod, "logfire", fake)
+    return fake.info
+
+
+def _vp_session(db, ident=None, events=None, **kw):
+    async def on_event(e):
+        events.append(e)
+
+    gate = _gate([[GatedClaim(name="A", claim="Behauptung A.", source="Behauptung A.")]])
+    checker = _fast_checker()
+    session = StreamingSession("s1", gate, checker, db, speaker_identifier=ident or _ident(),
+                               on_event=on_event if events is not None else None, **kw)
+    return session, checker
+
+
+async def _turn(session, label="A", turn_order=0):
+    await session.handle_turn(TURN, end_of_turn=True, speaker_label=label,
+                              turn_order=turn_order, words=TURN_WORDS)
+
+
+@pytest.mark.usefixtures("logfire_calls")
+class TestVoiceprintClaims:
+    async def test_covered_span_names_claim_before_check(self, db):
+        session, checker = _vp_session(db)
+        session._spk_track.add(0, 3000, "Alice", 0.8)
+        await _turn(session)
+        await _drain(session)
+        assert checker.check_claim_async.await_args.kwargs["speaker"] == "Alice"
+        rows = await db.get_fact_checks(session_id="s1")
+        assert rows[0]["sprecher"] == "Alice"
+        assert session._turn_claims == {} and session._label_claims == {}
+        await session.stop()
+
+    async def test_no_voiceprint_verdict_keeps_label(self, db):
+        session, checker = _vp_session(db)
+        session._spk_track.add(0, 3000, "Alice", 0.8)
+        session._spk_track.add(0, 3000, "Bob", 0.8)  # mixed -> no clear majority
+        await _turn(session)
+        await _drain(session)
+        assert checker.check_claim_async.await_args.kwargs["speaker"] == "A"
+        pid = (await db.get_fact_checks(session_id="s1"))[0]["id"]
+        assert session._label_claims == {"A": [pid]}
+        assert session._turn_claims == {0: [(pid, "A")]}
+        await session.stop()
+
+    async def test_coverage_within_timeout(self, db):
+        session, checker = _vp_session(db)
+        session._client = _FakeClient()
+        await session.feed(_pcm_bytes(2500))  # < one window: nothing to classify yet
+        await _turn(session)
+
+        async def later():
+            await asyncio.sleep(0.05)
+            await session.feed(_pcm_bytes(1000))
+            session._classify_tick()
+
+        await asyncio.gather(later(), _drain(session))
+        await _drain(session)
+        assert checker.check_claim_async.await_args.kwargs["speaker"] == "Alice"
+        await session.stop()
+
+    async def test_timeout_falls_back_then_late_rewrite(self, db, monkeypatch):
+        monkeypatch.setattr(streaming_mod, "SPEAKER_ID_WAIT_MS", 20)
+        events = []
+        session, checker = _vp_session(db, events=events)
+        session._client = _FakeClient()
+        await _turn(session)
+        await _drain(session)
+        assert checker.check_claim_async.await_args.kwargs["speaker"] == "A"
+        rows = await db.get_fact_checks(session_id="s1")
+        assert rows[0]["sprecher"] == "A" and len(session._pending_spk) == 1
+
+        await session.feed(_pcm_bytes(3000))
+        session._classify_tick()
+        await _drain(session)
+        rows = await db.get_fact_checks(session_id="s1")
+        assert rows[0]["sprecher"] == "Alice"
+        assert {"type": "claim_speaker_update", "id": rows[0]["id"], "speaker": "Alice"} in events
+        assert session._pending_spk == []
+        # Locked: no longer on the label paths.
+        assert session._label_claims == {"A": []}
+        await session.stop()
+
+    async def test_late_rewrite_survives_running_check(self, db, monkeypatch):
+        """A rewrite during the check is not clobbered by the checker's echoed speaker."""
+        monkeypatch.setattr(streaming_mod, "SPEAKER_ID_WAIT_MS", 0)
+        session, checker = _vp_session(db)
+        gate_open = asyncio.Event()
+        orig = checker.check_claim_async.side_effect
+
+        async def slow_check(**kw):
+            await gate_open.wait()
+            return await orig(**kw)
+
+        checker.check_claim_async.side_effect = slow_check
+        await _turn(session)
+        await asyncio.sleep(0.01)  # placeholder stored, check pending
+        session._spk_track.add(0, 3000, "Alice", 0.8)
+        await session._resolve_pending_spk()
+        gate_open.set()
+        await _drain(session)
+        rows = await db.get_fact_checks(session_id="s1")
+        assert rows[0]["sprecher"] == "Alice" and rows[0]["status"] == ""
+        await session.stop()
+
+    async def test_revision_does_not_overwrite_voiceprint_name(self, db):
+        session, _ = _vp_session(db)
+        session._spk_track.add(0, 3000, "Alice", 0.8)
+        await _turn(session)
+        await _drain(session)
+        await session.handle_speaker_revision([{"turn_order": 0, "speaker_label": "B"}])
+        await session._apply_map_to_pending({"A": "Bob"})
+        rows = await db.get_fact_checks(session_id="s1")
+        assert rows[0]["sprecher"] == "Alice"
+        await session.stop()
+
+    async def test_second_guard_skips_voiceprint_pids(self, db):
+        """Even if a locked pid sits on a label path, both rewrites skip it."""
+        session, _ = _vp_session(db)
+        session._spk_track.add(0, 3000, "Alice", 0.8)
+        await _turn(session)
+        await _drain(session)
+        pid = (await db.get_fact_checks(session_id="s1"))[0]["id"]
+        session._turn_claims[0] = [(pid, "A")]
+        session._label_claims["A"] = [pid]
+        await session.handle_speaker_revision([{"turn_order": 0, "speaker_label": "B"}])
+        await session._apply_map_to_pending({"A": "Bob"})
+        assert (await db.get_fact_checks(session_id="s1"))[0]["sprecher"] == "Alice"
+        await session.stop()
+
+    async def test_no_voiceprint_verdict_label_paths_still_rewrite(self, db):
+        session, _ = _vp_session(db)
+        session._spk_track.add(0, 3000, None, 0.45)  # unsure, not unknown
+        await _turn(session)
+        await _drain(session)
+        await session.handle_speaker_revision([{"turn_order": 0, "speaker_label": "B"}])
+        assert (await db.get_fact_checks(session_id="s1"))[0]["sprecher"] == "B"
+        await session.stop()
+
+    async def test_unknown_voice(self, db):
+        events = []
+        session, checker = _vp_session(db, events=events)
+        session._spk_track.add(0, 3000, None, 0.2)
+        session._spk_track.add(500, 3500, None, 0.25)
+        await _turn(session)
+        await _drain(session)
+        assert checker.check_claim_async.await_args.kwargs["speaker"] == streaming_mod.UNKNOWN_SPEAKER
+        rows = await db.get_fact_checks(session_id="s1")
+        assert rows[0]["sprecher"] == streaming_mod.UNKNOWN_SPEAKER
+        proc = next(e for e in events if e["type"] == "claim_processing")
+        assert proc["unknown_voice"] is True
+        # No label fallback, and label paths cannot pull it back to a guest.
+        await session.handle_speaker_revision([{"turn_order": 0, "speaker_label": "B"}])
+        assert (await db.get_fact_checks(session_id="s1"))[0]["sprecher"] == streaming_mod.UNKNOWN_SPEAKER
+        await session.stop()
+
+    async def test_between_thresholds_uses_fallback(self, db):
+        session, checker = _vp_session(db)
+        session._spk_track.add(0, 3000, None, 0.2)
+        session._spk_track.add(500, 3500, None, 0.45)  # overlaps the 0–750 ms span
+        await _turn(session)
+        await _drain(session)
+        assert checker.check_claim_async.await_args.kwargs["speaker"] == "A"
+        await session.stop()
+
+    async def test_one_logfire_record_per_claim(self, db, logfire_calls):
+        session, _ = _vp_session(db)
+        session._spk_track.add(0, 3000, "Alice", 0.8)
+        await _turn(session)
+        await _drain(session)
+        await session.stop()
+        assert logfire_calls.call_count == 1
+        kw = logfire_calls.call_args.kwargs
+        assert kw["speaker"] == "Alice" and kw["source"] == "span"
+        assert kw["voiceprint_name"] == "Alice" and kw["score"] == 0.8
+        assert kw["span"] == [0, 750] and kw["session_id"] == "s1"
+        assert "waited_ms" in kw
+
+    async def test_pending_claim_logged_once_on_give_up(self, db, logfire_calls, monkeypatch):
+        monkeypatch.setattr(streaming_mod, "SPEAKER_ID_WAIT_MS", 0)
+        session, _ = _vp_session(db)
+        await _turn(session)
+        await _drain(session)
+        assert logfire_calls.call_count == 0  # still pending
+        await session.stop()  # no audio ever arrives -> give up
+        assert logfire_calls.call_count == 1
+        assert logfire_calls.call_args.kwargs["source"] == "label"
+
+    async def test_disabled_speaker_id_logs_nothing(self, db, logfire_calls):
+        gate = _gate([[GatedClaim(name="A", claim="Behauptung A.", source="Behauptung A.")]])
+        session = StreamingSession("s1", gate, _fast_checker(), db)
+        await _turn(session)
+        await session.stop()
+        logfire_calls.assert_not_called()
