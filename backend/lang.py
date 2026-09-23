@@ -33,3 +33,5 @@ CRITIQUE_REASON_DESCRIPTION = (
 # Shown as the speaker when the voiceprint track hears a clearly foreign voice (clip,
 # caller, audience) rather than one of the episode's enrolled speakers.
 UNKNOWN_SPEAKER = "Unbekannte Stimme"
+# Shown when the voice could not confirm who spoke — preferred over a possibly wrong name.
+UNCLEAR_SPEAKER = "Unklar"

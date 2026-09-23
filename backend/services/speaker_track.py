@@ -109,12 +109,15 @@ class TrackVerdict:
     ``name`` is set only for a clear, confident majority. ``unknown`` means every
     overlapping window was loud and scored below the unknown threshold — a clearly foreign
     voice (clip, caller, audience), not just an unsure one. ``score`` is the mean score of
-    the winning name's windows (or of all scored windows for unknown/None).
+    the winning name's windows (or of all scored windows for unknown/None). ``plurality``
+    is the strongest name even without a clear majority — too weak on its own, but usable
+    to confirm an independent signal (the diarization label's name).
     """
 
     name: str | None = None
     score: float | None = None
     unknown: bool = False
+    plurality: str | None = None
 
 
 class SpeakerTrack:
@@ -165,5 +168,6 @@ class SpeakerTrack:
             best = max(named, key=named.get)
             if named[best] / total >= self.majority:
                 s = scores[best]
-                return TrackVerdict(name=best, score=sum(s) / len(s) if s else None)
+                return TrackVerdict(name=best, score=sum(s) / len(s) if s else None, plurality=best)
+            return TrackVerdict(score=mean, plurality=best)
         return TrackVerdict(score=mean)

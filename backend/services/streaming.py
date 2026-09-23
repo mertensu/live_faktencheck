@@ -20,10 +20,10 @@ from difflib import SequenceMatcher
 
 import logfire
 
-from backend.lang import UNKNOWN_SPEAKER
+from backend.lang import UNCLEAR_SPEAKER, UNKNOWN_SPEAKER
 from backend.utils import build_fact_check_dict
 from .gate import split_sentences
-from .speaker_track import SpeakerTrack, sentence_span
+from .speaker_track import SpeakerTrack, TrackVerdict, sentence_span
 from .transcription import keyterms_from_guests
 
 logger = logging.getLogger(__name__)
@@ -530,22 +530,44 @@ class StreamingSession:
         logger.info("[stream:%s] speaker_id %s", self.session_id, fields)
         logfire.info("speaker_id claim {speaker} via {source}", **fields)
 
-    async def _apply_voiceprint(self, pid: int, verdict) -> str | None:
+    def _voiceprint_speaker(self, verdict, label: str | None) -> tuple[str | None, str]:
+        """Speaker for a span the track covers — an unclear speaker beats a wrong one.
+
+        Returns ``(name, source)``: a confident voiceprint name; the unknown-voice string;
+        the label's voiceprint-derived name only when the voice at least leans the same way
+        (two independent signals agree); else ``Unklar``. ``(None, source)`` keeps the
+        claim on the label paths — only while unenrolled speakers exist, since then the
+        label (named by the LLM) is the one signal that can name them.
+        """
+        if verdict.name:
+            return verdict.name, "span"
+        if verdict.unknown:
+            return UNKNOWN_SPEAKER, "unknown"
+        mapped = self._speaker_map.get(label) if label else None
+        if mapped and self._map_source.get(label) == "label_vote":
+            if verdict.plurality == mapped:
+                return mapped, "label_confirmed"
+            return UNCLEAR_SPEAKER, "unclear"
+        if self._missing:
+            return None, self._fallback_source(label)
+        return UNCLEAR_SPEAKER, "unclear"
+
+    async def _apply_voiceprint(self, pid: int, verdict, label: str | None = None) -> tuple[str | None, str]:
         """Late voiceprint result: rewrite the claim's speaker and lock it against labels.
 
-        Returns the applied speaker, or None when the verdict has no name (the claim stays
-        on the label paths).
+        Returns ``(applied speaker, source)``; the speaker is None when the claim stays on
+        the label paths.
         """
-        name = verdict.name or (UNKNOWN_SPEAKER if verdict.unknown else None)
+        name, src = self._voiceprint_speaker(verdict, label)
         if name is None:
-            return None
+            return None, src
         self._voiceprint_pids.add(pid)
         for turn_order, items in self._turn_claims.items():
             self._turn_claims[turn_order] = [it for it in items if it[0] != pid]
         for label, pids in self._label_claims.items():
             self._label_claims[label] = [p for p in pids if p != pid]
         await self._rewrite_speaker(pid, name)
-        return name
+        return name, src
 
     async def _resolve_pending_spk(self) -> None:
         """Resolve claims whose span the track now covers (after each classifier step)."""
@@ -555,12 +577,8 @@ class StreamingSession:
         self._pending_spk = [p for p in self._pending_spk if not self._spk_track.covers(p[1][1])]
         for pid, span, t0, label in due:
             verdict = self._spk_track.dominant(*span)
-            applied = await self._apply_voiceprint(pid, verdict)
-            if applied:
-                self._log_speaker(pid, applied, "unknown" if verdict.unknown else "span", verdict, span, t0)
-            else:
-                self._log_speaker(pid, self._claim_speakers.get(pid), self._fallback_source(label),
-                                  verdict, span, t0)
+            applied, src = await self._apply_voiceprint(pid, verdict, label)
+            self._log_speaker(pid, applied or self._claim_speakers.get(pid), src, verdict, span, t0)
 
     async def _resolve_pending_votes(self) -> None:
         """Record a voiceprint vote for each finalized turn the track now covers."""
@@ -581,28 +599,29 @@ class StreamingSession:
         AssemblyAI glues speakers into one turn when there is no pause between them (a
         moderator's question + the guest's answer), so each sentence gets its own speaker
         from the track; a turn with several speakers is sent as segments the UI shows as
-        separate lines. Unsure sentences take the turn's name (or the most frequent one).
+        separate lines. Sentences follow the same rule as claims (``_voiceprint_speaker``):
+        a name only with voice support, otherwise ``Unklar`` — never the label's name alone.
         """
         turn = self._turns.get(turn_order) or {}
         text, words = turn.get("text", ""), turn.get("words") or []
+        label = turn.get("speaker")
+        label_display = self._speaker_map.get(label, label) if label else None
         names = []
         for sentence in split_sentences(text):
             span = sentence_span(sentence, words, text)
-            names.append((self._spk_track.dominant(*span).name if span else None, sentence))
-        named = [n for n, _ in names if n]
-        fill = verdict.name or (max(set(named), key=named.count) if named else None)
+            v = self._spk_track.dominant(*span) if span else TrackVerdict()
+            names.append((self._voiceprint_speaker(v, label)[0] or label_display, sentence))
         logger.info(f"[stream:{self.session_id}] turn {turn_order} speaker: {verdict.name} "
                     f"(score {verdict.score}) sentences={[n for n, _ in names]}")
-        if fill is None:
+        if not names or all(n is None for n, _ in names):
             return
         segments: list[dict] = []
         for n, sentence in names:
-            n = n or fill
             if segments and segments[-1]["speaker"] == n:
                 segments[-1]["text"] += " " + sentence
             else:
                 segments.append({"speaker": n, "text": sentence})
-        event = {"type": "turn_speaker_update", "turn_order": turn_order, "speaker": fill}
+        event = {"type": "turn_speaker_update", "turn_order": turn_order, "speaker": verdict.name or segments[0]["speaker"]}
         if len(segments) > 1:
             event["segments"] = segments
         await self._emit(event)
@@ -659,9 +678,9 @@ class StreamingSession:
             await self._await_coverage(span[1])
             if self._spk_track.covers(span[1]):
                 verdict = self._spk_track.dominant(*span)
-        vp_name = None
+        vp_name, vp_src = None, None
         if verdict is not None:
-            vp_name = verdict.name or (UNKNOWN_SPEAKER if verdict.unknown else None)
+            vp_name, vp_src = self._voiceprint_speaker(verdict, speaker_label)
         if vp_name:
             speaker = vp_name
         elif speaker_label and speaker_label in self._speaker_map:
@@ -680,7 +699,7 @@ class StreamingSession:
         pid = await self.db.add_fact_check(placeholder)
         self._claim_speakers[pid] = speaker
         if vp_name:
-            # Voiceprint name wins: not registered on the label paths at all.
+            # Voiceprint decision (name, unknown or unclear) wins: never on the label paths.
             self._voiceprint_pids.add(pid)
         else:
             # Remember which turn produced this row so a SpeakerRevision can rewrite it.
@@ -694,7 +713,7 @@ class StreamingSession:
             self._pending_spk.append((pid, span, t0, speaker_label))
             await self._resolve_pending_spk()  # coverage may have landed during the insert
         elif self.speaker_identifier is not None:
-            src = ("unknown" if verdict.unknown else "span") if vp_name else self._fallback_source(speaker_label)
+            src = vp_src or self._fallback_source(speaker_label)
             self._log_speaker(pid, speaker, src, verdict, span, t0)
         event = {"type": "claim_processing", "id": pid, "speaker": speaker, "claim": claim, "source": source}
         if verdict is not None and verdict.unknown:

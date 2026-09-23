@@ -105,3 +105,9 @@ class TestSpeakerTrack:
         t = self._track((0, 3000, "Alice", 0.8))
         assert t.dominant(5000, 6000).name is None
         assert t.covers(3000) and not t.covers(3001)
+
+    def test_plurality_without_majority(self):
+        t = self._track((0, 3000, "Alice", 0.6), (0, 3000, None, 0.5), (0, 3000, "Bob", 0.6),
+                        (0, 3000, "Alice", 0.6))
+        v = t.dominant(0, 3000)
+        assert v.name is None and v.plurality == "Alice"

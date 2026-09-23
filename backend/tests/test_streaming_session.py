@@ -405,16 +405,51 @@ class TestVoiceprintClaims:
         assert session._turn_claims == {} and session._label_claims == {}
         await session.stop()
 
-    async def test_no_voiceprint_verdict_keeps_label(self, db):
+    async def test_no_voiceprint_verdict_is_unclear_not_label(self, db):
+        """Unclear beats wrong: without voice support the claim is 'Unklar', locked."""
         session, checker = _vp_session(db)
         session._spk_track.add(0, 3000, "Alice", 0.8)
         session._spk_track.add(0, 3000, "Bob", 0.8)  # mixed -> no clear majority
         await _turn(session)
         await _drain(session)
+        assert checker.check_claim_async.await_args.kwargs["speaker"] == streaming_mod.UNCLEAR_SPEAKER
+        assert session._label_claims == {} and session._turn_claims == {}
+        await session.stop()
+
+    async def test_label_name_needs_voice_support(self, db):
+        """A voiceprint-named label names an unsure claim only if the voice leans that way."""
+        session, checker = _vp_session(db)
+        session._speaker_map["A"] = "Alice"
+        session._map_source["A"] = "label_vote"
+        session._spk_track.add(0, 3000, "Alice", 0.8)
+        session._spk_track.add(0, 3000, None, 0.5)
+        session._spk_track.add(0, 3000, "Bob", 0.6)  # Alice leads but no majority
+        await _turn(session)
+        await _drain(session)
+        assert checker.check_claim_async.await_args.kwargs["speaker"] == "Alice"
+        await session.stop()
+
+    async def test_label_name_contradicted_by_voice_is_unclear(self, db):
+        """The Maischberger case: label B = Connemann, but the voice leans elsewhere."""
+        session, checker = _vp_session(db)
+        session._speaker_map["A"] = "Connemann"
+        session._map_source["A"] = "label_vote"
+        session._spk_track.add(0, 3000, "Maischberger", 0.6)
+        session._spk_track.add(0, 3000, None, 0.5)
+        await _turn(session)
+        await _drain(session)
+        assert checker.check_claim_async.await_args.kwargs["speaker"] == streaming_mod.UNCLEAR_SPEAKER
+        await session.stop()
+
+    async def test_unenrolled_speakers_keep_label_path(self, db):
+        """With speakers lacking a voiceprint, an unsure span stays on the label path."""
+        session, checker = _vp_session(db, speakers=["Alice", "Bob", "Carol"])  # Carol unenrolled
+        session._spk_track.add(0, 3000, None, 0.45)
+        await _turn(session)
+        await _drain(session)
         assert checker.check_claim_async.await_args.kwargs["speaker"] == "A"
         pid = (await db.get_fact_checks(session_id="s1"))[0]["id"]
         assert session._label_claims == {"A": [pid]}
-        assert session._turn_claims == {0: [(pid, "A")]}
         await session.stop()
 
     async def test_coverage_within_timeout(self, db):
@@ -503,7 +538,7 @@ class TestVoiceprintClaims:
         await session.stop()
 
     async def test_no_voiceprint_verdict_label_paths_still_rewrite(self, db):
-        session, _ = _vp_session(db)
+        session, _ = _vp_session(db, speakers=["Alice", "Bob", "Carol"])  # Carol unenrolled
         session._spk_track.add(0, 3000, None, 0.45)  # unsure, not unknown
         await _turn(session)
         await _drain(session)
@@ -529,7 +564,7 @@ class TestVoiceprintClaims:
         await session.stop()
 
     async def test_between_thresholds_uses_fallback(self, db):
-        session, checker = _vp_session(db)
+        session, checker = _vp_session(db, speakers=["Alice", "Bob", "Carol"])  # Carol unenrolled
         session._spk_track.add(0, 3000, None, 0.2)
         session._spk_track.add(500, 3500, None, 0.45)  # overlaps the 0–750 ms span
         await _turn(session)
@@ -827,4 +862,23 @@ class TestTranscriptFixes:
                                   end_of_turn=True, turn_order=5)
         assert {"type": "claim_source_update", "old": "hat die Industrie Strompreise hochgebracht.",
                 "source": "Hat die Industrie Strompreise hochgebracht."} in events
+        await session.stop()
+
+    async def test_unsure_line_under_named_label_shows_unclear(self, db):
+        """'Was ist Ihre Antwort?' (Maischberger) under label B = Connemann → 'Unklar'."""
+        events = []
+
+        async def on_event(e):
+            events.append(e)
+
+        session = StreamingSession("s1", _gate([]), _fast_checker(), db, on_event=on_event,
+                                   speaker_identifier=_ident())
+        session._speaker_map["B"] = "Connemann"
+        session._map_source["B"] = "label_vote"
+        session._spk_track.add(0, 3000, None, 0.28)
+        session._spk_track.add(0, 3000, None, 0.45)
+        await session.handle_turn("Was ist Ihre Antwort?", end_of_turn=True, speaker_label="B",
+                                  turn_order=6, words=_words_at(0))
+        upd = next(e for e in events if e["type"] == "turn_speaker_update")
+        assert upd["speaker"] == streaming_mod.UNCLEAR_SPEAKER
         await session.stop()
