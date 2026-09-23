@@ -14,6 +14,7 @@ import os
 import asyncio
 import logging
 from typing import List, Dict, Any, Literal
+from urllib.parse import urlparse
 
 from pydantic import BaseModel, Field
 
@@ -32,6 +33,17 @@ from pydantic_ai import Agent
 logger = logging.getLogger(__name__)
 
 DEFAULT_MODEL = "gemini-3.6-flash"
+
+
+def _url_key(url: str) -> str:
+    """Dedup key: the same page often comes back as http/https, with/without www,
+    .htm/.html or with tracking query params (e.g. Destatis' ``?nn=2110``)."""
+    u = urlparse(url.strip())
+    host = u.netloc.lower().removeprefix("www.")
+    path = u.path.rstrip("/")
+    if path.endswith(".htm"):
+        path += "l"
+    return f"{host}{path}" if host else url.strip()
 
 
 class Source(BaseModel):
@@ -126,11 +138,11 @@ class FastFactChecker:
         merged: List[dict] = []
         for res in raw:
             for item in res.get("results", []) or []:
-                url = item.get("url")
-                if url and url in seen_urls:
+                key = _url_key(item.get("url") or "")
+                if key and key in seen_urls:
                     continue
-                if url:
-                    seen_urls.add(url)
+                if key:
+                    seen_urls.add(key)
                 merged.append(item)
         # Primary sources first (stable within a tier, so Tavily's relevance order holds):
         # the model reads top-down and should reach for official data before the press.

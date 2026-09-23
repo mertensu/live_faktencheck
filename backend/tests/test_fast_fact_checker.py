@@ -158,3 +158,14 @@ class TestSourceTier:
         assert source_tier("https://afd.de/x") == (3, "Partei")
         assert source_tier("https://example.org/x")[0] == 2
         assert source_tier("")[0] == 2
+
+    async def test_duplicate_pages_collapse(self, checker):
+        dupes = {"results": [
+            {"title": "A", "url": "https://www.destatis.de/DE/PD25_183.htm", "content": "x"},
+            {"title": "B", "url": "https://www.destatis.de/DE/PD25_183.html", "content": "x"},
+            {"title": "C", "url": "http://destatis.de/DE/PD25_183.html?nn=2110", "content": "x"},
+            {"title": "D", "url": "https://www.destatis.de/DE/andere.html", "content": "x"},
+        ]}
+        with patch("backend.services.fast_fact_checker.tavily_search", AsyncMock(return_value=dupes)):
+            results = await checker._gather_evidence("claim", ["q"])
+        assert [r["title"] for r in results] == ["A", "D"]
