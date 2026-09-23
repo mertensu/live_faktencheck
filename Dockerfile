@@ -13,8 +13,7 @@ WORKDIR /app
 
 # Dependencies in their own layer: they change rarely and stay cached across code edits.
 # --extra speakerid pulls sherpa-onnx (voiceprint speaker ID for the live fast lane);
-# the code path stays dark until SPEAKER_ID_ENABLED is set. The Linux wheel bundles
-# onnxruntime, so no dylib workaround is needed here (unlike macOS dev).
+# the code path stays dark until SPEAKER_ID_ENABLED is set.
 COPY pyproject.toml uv.lock ./
 RUN uv sync --locked --no-dev --extra speakerid
 

@@ -39,10 +39,13 @@ test = [
 ]
 # Speaker identification prod runtime (live fast lane, behind SPEAKER_ID_ENABLED).
 # The Dockerfile installs this via `uv sync --no-dev --extra speakerid`; a plain
-# `uv sync` leaves it out. The Linux sherpa-onnx wheel bundles onnxruntime, so no
-# separate onnxruntime/dylib workaround is needed in the image.
+# `uv sync` leaves it out. The native libs (libonnxruntime) live in sherpa-onnx-core;
+# sherpa-onnx declares it, but uv.lock records sherpa-onnx without dependencies, so it
+# must be listed explicitly — else `import sherpa_onnx` fails on libonnxruntime.so.
+# Keep both on the same version.
 speakerid = [
-    "sherpa-onnx>=1.10.0",
+    "sherpa-onnx>=1.13.8",
+    "sherpa-onnx-core>=1.13.8",
     "numpy>=1.26.0",
 ]
 
@@ -75,7 +78,8 @@ test = [
 # build, so the production image stays free of onnxruntime/audio deps. For the offline
 # speaker-identification spike in benchmarks/speaker_id_bench.py.
 bench = [
-    "sherpa-onnx>=1.10.0",
+    "sherpa-onnx>=1.13.8",
+    "sherpa-onnx-core>=1.13.8",  # native libs, see the speakerid extra
     "numpy>=1.26.0",
     "soundfile>=0.12.1",
 ]
