@@ -82,7 +82,7 @@ function ClaimPopover({ claim, anchor, onEnter, onLeave }) {
   const ref = useRef(null)
   const [pos, setPos] = useState(null)
 
-  // Fixed positioning so the transcript's scroll box doesn't clip the card; follow the
+  // Fixed positioning so the card floats above the page; follow the
   // mark on scroll/resize and flip above it when there is more room there.
   useLayoutEffect(() => {
     const place = () => {
@@ -145,14 +145,15 @@ function ClaimPopover({ claim, anchor, onEnter, onLeave }) {
   )
 }
 
-// Live transcript panel for the streaming fast lane. Finalized turns from AssemblyAI
-// appear as chat bubbles, one colour per speaker, plus the current interim line. Passages
-// gated as claims are marked by verdict; hover or click a mark to see the result.
+// Live transcript for the streaming fast lane, laid out on the page itself (no panel).
+// Finalized turns from AssemblyAI appear as chat bubbles, one colour per speaker, plus
+// the current interim line. Passages gated as claims are marked by verdict; hover or
+// click a mark to see the result.
 export function LiveTranscript({ live }) {
   const { status, transcript = [], partial = '', claims = [] } = live || {}
   const rootRef = useRef(null)
-  const bodyRef = useRef(null)
-  const stickRef = useRef(true) // follow new lines only while the user is at the bottom
+  const endRef = useRef(null)
+  const stickRef = useRef(true) // follow new lines only while the newest one is in view
   const colorsRef = useRef(new Map()) // speaker name → palette slot, sticky per session
   const closeTimer = useRef(null)
   const [open, setOpen] = useState(null) // { id, pinned }
@@ -160,16 +161,20 @@ export function LiveTranscript({ live }) {
   const active = status === 'connecting' || status === 'streaming'
   const hasContent = transcript.length > 0 || partial || claims.length > 0
 
+  // The page is the window: keep the newest line in view, but only while the user hasn't
+  // scrolled up to reread, and not while a result is being read.
   useEffect(() => {
-    const body = bodyRef.current
-    // Don't pull the passage away while a result is being read.
-    if (body && stickRef.current && !open) body.scrollTop = body.scrollHeight
-  }, [transcript, partial, claims, open])
+    const onScroll = () => {
+      const end = endRef.current
+      if (end) stickRef.current = end.getBoundingClientRect().top <= window.innerHeight + 80
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
 
-  const onScroll = () => {
-    const b = bodyRef.current
-    stickRef.current = b.scrollHeight - b.scrollTop - b.clientHeight < 40
-  }
+  useEffect(() => {
+    if (stickRef.current && !open) endRef.current?.scrollIntoView?.({ block: 'end' })
+  }, [transcript, partial, claims, open])
 
   const cancelClose = () => clearTimeout(closeTimer.current)
   const scheduleClose = () => {
@@ -258,7 +263,7 @@ export function LiveTranscript({ live }) {
           <span className="live-transcript-count">{Object.keys(claimsBySource).length} Behauptungen</span>
         )}
       </div>
-      <div className="live-transcript-body" ref={bodyRef} onScroll={onScroll}>
+      <div className="live-transcript-body">
         {bubbles}
         {partialBubble}
         {!hasContent && <p className="live-transcript-empty">Warte auf Ton…</p>}
@@ -277,6 +282,8 @@ export function LiveTranscript({ live }) {
           })}
         </div>
       )}
+
+      <div ref={endRef} />
 
       {openClaim && (
         <ClaimPopover
