@@ -1,6 +1,9 @@
 # Speaker Identification — Integration Plan (Live Fast Lane)
 
-Status: planned, not yet implemented. This document is written so implementation can start
+Status: **foundation done** (commit d62f1c4, dark behind `SPEAKER_ID_ENABLED`):
+`services/speaker_id.py` (`SpeakerIdentifier.identify`, `load_voiceprints`, `pcm16_to_float32`),
+`registry.get_speaker_identifier(guests)`, `benchmarks/enroll_voiceprints.py`, tests.
+**Open: streaming wiring** (§5.2, §6). This document is written so implementation can start
 cold in a fresh context. Prior work: offline spike done (`benchmarks/speaker_id_bench.py`),
 result positive — see "Spike evidence".
 
@@ -84,6 +87,12 @@ whose normalized concatenation matches the sentence → `start = words[i].start`
 2. Else **anchor match** on the first/last few tokens.
 3. Else a rough time estimate (window around the estimated position) → query the track.
 4. Else skip ID → keep the label.
+
+Expect step 1 to fail often on numbers: with `format_turns=True` the sentence reads "20 %"
+while the words read "zwanzig Prozent" (same for dates, abbreviations). Claims are
+disproportionately numeric, so step 2 (anchor match) is the **workhorse** — test it explicitly
+with number-heavy sentences.
+
 In the track approach this is uncritical: we only need an approximate span to read the
 dominant speaker — not sample-accurate sentence boundaries.
 
@@ -105,19 +114,44 @@ dominant speaker — not sample-accurate sentence boundaries.
   running sample offset. Buffer only **~10–15 s** (enough for the sliding window + slack) —
   audio is discarded after classification, **not stored per turn**.
 - Time axis: word timestamps (ms from session start) ↔ sample index = `ms/1000*16000`. We
-  control the sample count ourselves.
-- **Background classifier** (own task): every ~1 s embed the last 3 s window → `identify` →
-  append to the **speaker track** `self._spk_track: list[(t_sec, name|None, score)]` (tiny,
-  session-long; release audio afterwards).
-- `dominant_speaker(start_ms, end_ms) -> str|None`: majority/weighted vote of the track entries
-  in the span; ambiguous/empty → `None`.
+  control the sample count ourselves. **Alignment invariant:** count samples in `feed` right
+  next to `_client.stream(audio)` — only bytes actually sent to AssemblyAI advance the counter
+  (if `_client is None` the audio is dropped for both). A reconnect resets AssemblyAI's clock →
+  reset counter + buffer (track entries before the reset stay but are no longer addressable).
+- **Background classifier** (own task): every ~1 s take the last 3 s window →
+  - **Energy gate first:** RMS (or simple VAD) below a threshold → record the window as
+    `None` without embedding. `min_seconds` only checks length, and 3 s of applause/room noise
+    passes it.
+  - Embed **off the event loop**: `await asyncio.to_thread(identifier.identify, pcm)`. The
+    embedding is tens of ms of CPU; inline it would stall audio forwarding and WS events.
+  - **Skip, don't queue:** if the previous step is still running, drop this tick (the next
+    window overlaps anyway).
+  - Append to the **speaker track** `self._spk_track: list[(win_start_ms, win_end_ms,
+    name|None, score)]` — store the window's **span**, not a single timestamp (tiny,
+    session-long; release audio afterwards). Maintain `self._track_covered_ms` = end of the
+    newest classified window.
+- `dominant_speaker(start_ms, end_ms) -> str|None`: vote over all track entries whose window
+  **overlaps** the span (weight by overlap, optionally by score); `None` entries count against
+  a clear majority; ambiguous/empty → `None`. Sentences shorter than the 3 s window still get
+  every overlapping window, so they don't come out shifted by up to a second.
+- **Pending lookups:** if `end_ms > _track_covered_ms` at query time, the answer isn't known
+  yet. Keep `self._pending_spk: list[(pid, start_ms, end_ms)]`; after each classifier step,
+  resolve every entry now covered → `_apply_voiceprint(pid, name)` (§6.5). Drain/give up on
+  remaining entries at `stop()`.
 - Fallback variant without a track: `_slice(start_ms,end_ms)` + a single `identify` per claim
   sentence.
 
 ### 5.3 Voiceprint store + enrollment (offline)
 - Store: `backend/data/voiceprints/<Name>.npy` (unit vector) **or** a small JSON/SQLite
-  `{name: [floats]}`. Loaded at session start, **filtered to `episode.guests`** (+ optionally
-  the moderator). Closed set = this episode's guests → few confusions, non-guests fall through
+  `{name: [floats]}`. Loaded at session start, **filtered to the episode's speakers**.
+  - **Pass `ep.speakers`, not `ep.guests`.** `guests` entries carry roles
+    (`"Sandra Maischberger (Moderatorin)"`), while `load_voiceprints` compares against the file
+    stem (`Sandra Maischberger.npy`) → with raw `guests` nothing matches and
+    `get_speaker_identifier` silently returns `None`. `routers/stream.py:81` currently passes
+    `ep.guests` to the session, so strip roles when calling the factory.
+  - The moderator is already in `guests` (listed first) → **enroll moderators** as a matter
+    of course: recurring, trivially enrolled once, and otherwise all moderator speech falls
+    back to the weak label path. Closed set = this episode's guests → few confusions, non-guests fall through
   the gate correctly.
 - Enrollment: **offline**, via an extended bench (`benchmarks/enroll_voiceprints.py`, new):
   reads `enroll/<Name>/*.wav`, averages embeddings, writes the store. No enrollment in the live
@@ -130,18 +164,40 @@ dominant speaker — not sample-accurate sentence boundaries.
 1. `start()`: no ASR config change needed (words + timestamps are in `TurnEvent.words`,
    `Word.start/end`). `speaker_labels`/`max_speakers` can stay (fallback path).
 2. `_on_turn` → `handle_turn(...)`: pass `words` (list with timestamps) through; carry them on
-   the window buffer entries (for the sentence → time span).
-3. `feed`: feed the continuous PCM ring buffer; the background classifier builds the speaker
-   track (5.2).
-4. `_flush_window`: per claim, `source` sentence → word time span `[start_ms,end_ms]` (4.1) →
-   read `dominant_speaker(span)` from the track. Store the claim immediately with the
-   best-known speaker (label/LLM); the track result arrives at the same time or shortly after →
-   set it via rewrite.
-5. **Reuse the rewrite plumbing** (already exists): `_turn_claims`/`_label_claims`,
-   `_rewrite_speaker(pid, name)`, event `claim_speaker_update` (frontend `useAudioStream.js`
-   already handles it). Voiceprint ID hooks into the same retroactive-rewrite path.
+   the window buffer entries (for the sentence → time span). **Prerequisite for everything
+   else** — today `_on_turn` forwards only transcript/end_of_turn/speaker_label/turn_order.
+   Also update `words` in the **re-emission branch** (a repeated final for a known
+   `turn_order` replaces `text` in `_turns` and the buffer entry — `words` must be replaced
+   alongside, or the span mapping aligns new text against stale words).
+3. `feed`: feed the continuous PCM ring buffer and advance the sample counter next to
+   `_client.stream` (alignment invariant, 5.2); the background classifier builds the speaker
+   track. Start the classifier task in `start()`, cancel it in `stop()`.
+4. `_flush_window`: per claim, `source` sentence → word time span `[start_ms,end_ms]` (4.1).
+   **Resolve the speaker before the fast check, not after:** `check_claim_async(speaker=...)`
+   feeds the name into the check, so a wrong name ends up in the *reasoning* (`begruendung`),
+   and a later rewrite only fixes `sprecher`. A claim reaches the flush seconds after it was
+   spoken (window of 2 sentences / 3 turns + gate), so the track normally already covers it.
+   Hence, inside the per-claim task (`_check_and_store`, already off the flush path):
+   - if `end_ms <= _track_covered_ms` → `dominant_speaker(span)` now;
+   - else wait for coverage with a **bounded** timeout (~1.5 s, env-tunable; an
+     `asyncio.Event`/condition set by the classifier after each step), then query;
+   - on timeout → store with the best-known fallback speaker and register the claim in
+     `_pending_spk` (5.2) → resolved later via rewrite (point 5).
+5. **Rewrite plumbing** (already exists): `_rewrite_speaker(pid, name)` + event
+   `claim_speaker_update` (frontend `useAudioStream.js` already handles it). Late voiceprint
+   results go through a thin `_apply_voiceprint(pid, name)` that rewrites and **locks** the
+   claim (below).
 6. **Per-claim speaker fallback chain**: voiceprint (if confident) → LLM resolution
-   `speaker_map[label]` → raw diarization label.
+   `speaker_map[label]` → raw diarization label. **This precedence must be enforced**, because
+   two existing paths rewrite speakers on their own and would clobber a voiceprint name:
+   - `handle_speaker_revision` rewrites every pid in `_turn_claims[turn_order]`;
+   - `_apply_map_to_pending` rewrites every pid in `_label_claims[label]`.
+   Rule: a claim with a confident voiceprint name is **not registered** in `_turn_claims` /
+   `_label_claims` (and is removed from them when a late voiceprint result arrives). Keep a
+   `self._voiceprint_pids: set[int]` and have both paths skip members as a second guard. A
+   voiceprint `None` (unknown/overlap/too quiet) leaves the claim on the label paths as today.
+7. `_match_turn` stays: it still provides `(turn_order, label)` for the fallback chain. It
+   is also the natural place to pick up the matched entry's `words` for the span mapping.
 
 ## 7. Gate / thresholds (from the spike, calibratable)
 
@@ -184,7 +240,19 @@ dominant speaker — not sample-accurate sentence boundaries.
   `identify(pcm)->(name,score)`. Cases: confident → label overridden; unknown/None → label kept;
   async ID lands after the claim → `claim_speaker_update` + DB `sprecher` rewritten. **No
   onnxruntime in unit tests** (stub).
-- Test sentence → word span mapping separately (text alignment against `words`).
+- **Precedence:** voiceprint-named claim + later `handle_speaker_revision` / speaker-map
+  resolution → name is **not** overwritten; voiceprint `None` → label paths still rewrite.
+- **Resolve-before-check:** track already covers the span → `fast_checker` is called with the
+  voiceprint name (assert on the stub's `speaker` arg); coverage arrives within the timeout →
+  same; timeout → fallback name, then late rewrite via `_pending_spk`.
+- Classifier: silent window (energy gate) → `None` without calling `identify`; overlapping
+  windows vote correctly for a sentence shorter than the window; a slow `identify` makes the
+  next tick skip rather than queue.
+- Re-emitted final with changed text → buffer entry carries the new `words`.
+- Factory filter: `get_speaker_identifier(ep.speakers)` matches `<Name>.npy`; role-annotated
+  names do not (guards against the `ep.guests` pitfall, §5.3).
+- Test sentence → word span mapping separately (text alignment against `words`), including
+  number-heavy sentences where only the anchor match succeeds (§4.1).
 - Accuracy stays in the **offline bench** (`benchmarks/`, real audio), not in unit tests.
 
 ## 11. Rollout
