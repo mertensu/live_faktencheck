@@ -155,6 +155,12 @@ dominant speaker — not sample-accurate sentence boundaries.
     of course: recurring, trivially enrolled once, and otherwise all moderator speech falls
     back to the weak label path.
   - Closed set = this episode's speakers → few confusions; non-guests fall through the gate.
+- **Where they live: the server's data dir, never git.** The repo is public and voiceprints are
+  biometric data of real people. `backend/data/voiceprints/*.npy` stays git-ignored; on the
+  VPS they live in `/opt/fact_check/backend/data/voiceprints` (prod) and
+  `/opt/fact_check/staging/data/voiceprints` (staging), which the containers already mount as
+  `/app/backend/data`, so the default `SPEAKER_ID_VOICEPRINTS_DIR` resolves there. The
+  maintainer copies new prints there during show prep.
 - Enrollment: **offline**, via an extended bench (`benchmarks/enroll_voiceprints.py`, new):
   reads `enroll/<Name>/*.wav`, averages embeddings, writes the store. No enrollment in the live
   path.
@@ -263,7 +269,10 @@ dominant speaker — not sample-accurate sentence boundaries.
 - Prod dependencies: move `sherpa-onnx`, `onnxruntime`, `numpy` from the `bench` group into the
   **main dependencies** (or a `speakerid` extra that the Dockerfile installs). `soundfile` stays
   bench-only. Image grows ~200 MB (onnxruntime); acceptable.
-- **Model file** (~27 MB) `COPY`-ed into the image (reproducible) rather than fetched at runtime.
+- **Model file** (~27 MB) baked into the image (reproducible) rather than fetched at runtime:
+  download it in the Dockerfile from the pinned k2-fsa release URL with a sha256 check (keeps
+  27 MB out of git), to e.g. `/app/models/`. **Not** under `backend/data/` (hidden by the data
+  bind mount). Set `SPEAKER_ID_MODEL` to that path.
 - macOS dev note (local only): the sherpa-onnx wheel doesn't find `libonnxruntime.dylib` —
   needs a symlink (documented in the `speaker_id_bench.py` header). No issue on Linux/CI/VPS.
 - Consider a sidecar only if CPU contention with the fact-checkers becomes real.
@@ -299,15 +308,24 @@ dominant speaker — not sample-accurate sentence boundaries.
 
 1. Merge behind `SPEAKER_ID_ENABLED=false` (dark).
 2. Enroll moderators + recurring guests (build the store), bake the model into the image.
-3. **Calibrate locally with recorded episodes** (the project has no live users yet, so no
-   shadow mode and no staging run is needed). `./start_dev.sh <episode>` with
-   `SPEAKER_ID_ENABLED=true`, then play 2–3 recorded episodes (Mediathek) through the normal
-   browser audio path, ideally ones with crosstalk and clips of other people (Einspieler).
-   One plain `logger.info` line per claim (no Logfire needed):
-   `speaker=… source=span|label_vote|llm|label|unknown vp=… score=… span=… waited_ms=…`.
+3. **Calibrate through the PR preview link** (the project has no live users yet, so no shadow
+   mode; no local `start_dev.sh` either). PR #9 (`live-fast-lane`) → CI pushes
+   `:branch-live-fast-lane` → staging must track that branch
+   (`deploy/staging-track.sh live-fast-lane`, maintainer, once) → the preview link on the PR
+   talks to staging. Prerequisites on staging:
+   - `SPEAKER_ID_ENABLED=true` and `SPEAKER_ID_MODEL` in `/opt/fact_check/.env.staging`;
+   - the model in the image (§9), **not** under `backend/data/`: staging bind-mounts its data
+     dir over `/app/backend/data`, which hides anything baked there;
+   - voiceprints in `/opt/fact_check/staging/data/voiceprints/` (§5.3).
+   Play 2–3 recorded episodes (Mediathek) into the preview's live audio input, ideally ones
+   with crosstalk and clips of other people (Einspieler).
+   **Reading results needs Logfire:** staging logs are otherwise only reachable over SSH, and
+   plain `logger.info` does **not** reach Logfire (no logging handler is installed). So emit
+   one `logfire.info` per claim: `speaker, source (span|label_vote|llm|label|unknown),
+   voiceprint_name, score, span, waited_ms, session_id`. Logfire is already a dependency and
+   configured; confirm `LOGFIRE_TOKEN` is set in `.env.staging` (it was copied from prod).
    Compare against the actual speakers and set the accept threshold, the unknown threshold and
-   `SPEAKER_ID_WAIT_MS`. Also check CPU cost and that the event loop doesn't stall. Then a
-   short smoke test on staging (image with model + voiceprints).
+   `SPEAKER_ID_WAIT_MS`. Also check CPU cost and that the event loop doesn't stall.
 4. Enable on prod.
 
 ## 12. Open risks
