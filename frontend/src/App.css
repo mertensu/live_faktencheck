@@ -2540,9 +2540,14 @@
 }
 
 /* Live transcript (streaming fast lane): no panel, the page itself is the window.
-   Breaks out of .main-content's 70% so the chat can use the full width. */
+   Breaks out of .main-content's 70%; the chat itself is a centred column. */
 .live-transcript {
   margin: 0 calc(50% - min(50vw - 1.5rem, 720px)) 1.5rem;
+}
+.live-transcript > * {
+  max-width: 64rem;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .live-transcript-head {
