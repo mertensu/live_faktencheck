@@ -24,7 +24,7 @@ export function useAudioStream(sessionId, { deviceId = '' } = {}) {
   const [error, setError] = useState(null)
   const [partial, setPartial] = useState('')      // current interim (not-yet-final) turn
   const [transcript, setTranscript] = useState([]) // finalized turns [{ speaker, text }]
-  const [claims, setClaims] = useState([])        // gated claims [{ id, speaker, claim, source, consistency, status }]
+  const [claims, setClaims] = useState([])        // gated claims [{ id, speaker, claim, source, consistency, status, begruendung, quellen }]
   const [events, setEvents] = useState([])        // last few backend events (for debug/UI)
 
   const wsRef = useRef(null)
@@ -138,7 +138,10 @@ export function useAudioStream(sessionId, { deviceId = '' } = {}) {
         }])
       } else if (msg.type === 'claim_result') {
         setClaims((prev) => prev.map((c) =>
-          c.id === msg.id ? { ...c, consistency: msg.consistency, status: 'done' } : c))
+          c.id === msg.id ? {
+            ...c, consistency: msg.consistency, status: 'done',
+            begruendung: msg.begruendung || '', quellen: msg.quellen || [],
+          } : c))
       } else if (msg.type === 'claim_error') {
         setClaims((prev) => prev.map((c) =>
           c.id === msg.id ? { ...c, status: 'error' } : c))

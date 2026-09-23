@@ -729,7 +729,10 @@ class StreamingSession:
             fc["sprecher"] = self._claim_speakers.get(pid, fc["sprecher"])
             fc["check_depth"] = "fast"
             await self.db.update_fact_check(pid, fc)
-            await self._emit({"type": "claim_result", "id": pid, "consistency": fc["consistency"]})
+            await self._emit({
+                "type": "claim_result", "id": pid, "consistency": fc["consistency"],
+                "begruendung": fc["begruendung"], "quellen": fc["quellen"],
+            })
         except Exception:
             logger.exception("Fast check failed for streamed claim")
             await self.db.update_fact_check(pid, {
