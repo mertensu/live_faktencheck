@@ -416,8 +416,8 @@ class TestVoiceprintClaims:
         assert session._label_claims == {} and session._turn_claims == {}
         await session.stop()
 
-    async def test_label_name_needs_voice_support(self, db):
-        """A voiceprint-named label names an unsure claim only if the voice leans that way."""
+    async def test_label_name_alone_never_names_guest(self, db):
+        """Even if the voice leans towards the label's name, no clear voice → 'Unklar'."""
         session, checker = _vp_session(db)
         session._speaker_map["A"] = "Alice"
         session._map_source["A"] = "label_vote"
@@ -426,7 +426,7 @@ class TestVoiceprintClaims:
         session._spk_track.add(0, 3000, "Bob", 0.6)  # Alice leads but no majority
         await _turn(session)
         await _drain(session)
-        assert checker.check_claim_async.await_args.kwargs["speaker"] == "Alice"
+        assert checker.check_claim_async.await_args.kwargs["speaker"] == streaming_mod.UNCLEAR_SPEAKER
         await session.stop()
 
     async def test_label_name_contradicted_by_voice_is_unclear(self, db):

@@ -535,19 +535,17 @@ class StreamingSession:
         """Speaker for a span the track covers — an unclear speaker beats a wrong one.
 
         Returns ``(name, source)``: a confident voiceprint name; the unknown-voice string;
-        the label's voiceprint-derived name only when the voice at least leans the same way
-        (two independent signals agree); else ``Unklar``. ``(None, source)`` keeps the
-        claim on the label paths — only while unenrolled speakers exist, since then the
-        label (named by the LLM) is the one signal that can name them.
+        else ``Unklar`` — a guest is named only when their own voice is clearly recognised,
+        never from the diarization label alone (a wrong guest is the worst outcome).
+        ``(None, source)`` keeps the claim on the label paths — only while unenrolled
+        speakers exist, since then the label (named by the LLM) is the one signal that can
+        name them.
         """
         if verdict.name:
             return verdict.name, "span"
         if verdict.unknown:
             return UNKNOWN_SPEAKER, "unknown"
-        mapped = self._speaker_map.get(label) if label else None
-        if mapped and self._map_source.get(label) == "label_vote":
-            if verdict.plurality == mapped:
-                return mapped, "label_confirmed"
+        if label and self._map_source.get(label) == "label_vote":
             return UNCLEAR_SPEAKER, "unclear"
         if self._missing:
             return None, self._fallback_source(label)
