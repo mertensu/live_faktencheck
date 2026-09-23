@@ -64,16 +64,7 @@ export function useAudioStream(sessionId, { deviceId = '' } = {}) {
 
     // 1. Mic
     try {
-      // Raw signal: the browser's call-oriented processing (echo/noise suppression, auto
-      // gain) colours the voice enough to push voiceprint matches onto the wrong guest.
-      const constraints = {
-        audio: {
-          ...(deviceId ? { deviceId: { exact: deviceId } } : {}),
-          echoCancellation: false,
-          noiseSuppression: false,
-          autoGainControl: false,
-        },
-      }
+      const constraints = { audio: deviceId ? { deviceId: { exact: deviceId } } : true }
       streamRef.current = await navigator.mediaDevices.getUserMedia(constraints)
     } catch (e) {
       setStatus('error')
