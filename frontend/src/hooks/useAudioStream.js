@@ -112,9 +112,17 @@ export function useAudioStream(sessionId, { deviceId = '' } = {}) {
         }])
         setPartial('')
       } else if (msg.type === 'turn_speaker_update') {
-        // Voiceprint identified who spoke this turn: name the line directly.
-        setTranscript((prev) => prev.map((t) =>
-          t.turnOrder === msg.turn_order ? { ...t, speaker: msg.speaker, named: true } : t))
+        // Voiceprint identified who spoke this turn: name the line directly. A turn with
+        // several speakers (no pause between them) arrives as segments → one line each.
+        setTranscript((prev) => prev.flatMap((t) => {
+          if (t.turnOrder !== msg.turn_order) return [t]
+          if (msg.segments) return msg.segments.map((s) => ({ ...t, speaker: s.speaker, text: s.text, named: true }))
+          return [{ ...t, speaker: msg.speaker, named: true }]
+        }))
+      } else if (msg.type === 'claim_source_update') {
+        // An early claim's sentence got re-formatted in the final turn: keep the mark matching.
+        setClaims((prev) => prev.map((c) =>
+          c.source === msg.old ? { ...c, source: msg.source } : c))
       } else if (msg.type === 'speaker_map_update') {
         // A diarization label got its name: rename lines still showing the bare label.
         setTranscript((prev) => prev.map((t) =>

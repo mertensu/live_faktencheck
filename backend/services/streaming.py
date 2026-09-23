@@ -88,7 +88,7 @@ SPEAKER_ID_UNKNOWN_THRESHOLD = float(os.getenv("SPEAKER_ID_UNKNOWN_THRESHOLD", "
 SPEAKER_ID_WAIT_MS = int(os.getenv("SPEAKER_ID_WAIT_MS", "1000"))
 # Voiceprint label naming (replaces the LLM resolver): a diarization label is named once
 # this many of its turns were confidently identified, with this share agreeing.
-SPEAKER_ID_LABEL_MIN_VOTES = int(os.getenv("SPEAKER_ID_LABEL_MIN_VOTES", "3"))
+SPEAKER_ID_LABEL_MIN_VOTES = int(os.getenv("SPEAKER_ID_LABEL_MIN_VOTES", "2"))
 SPEAKER_ID_LABEL_MAJORITY = float(os.getenv("SPEAKER_ID_LABEL_MAJORITY", "0.8"))
 
 
@@ -160,6 +160,9 @@ class StreamingSession:
         self._early: dict[int, list[str]] = {}
         # Normalized source sentences of recent claims — the same sentence is checked once.
         self._checked_sources: list[str] = []
+        # Early claims' source sentences per turn, re-sent in their final wording once the
+        # turn is finalized (the UI marks claims by exact text; the final may be re-formatted).
+        self._early_sources: dict[int, list[str]] = {}
 
         # Voiceprint speaker ID: a bounded ring buffer of the PCM16 actually sent to
         # AssemblyAI, and a sample counter on the same clock as its word timestamps.
@@ -341,6 +344,8 @@ class StreamingSession:
         if turn_order is not None:
             self._turns[turn_order] = {"speaker": speaker_label, "text": text, "words": words or []}
         line = f"{speaker_label}: {text}" if speaker_label else text
+        for old in self._early_sources.pop(turn_order, []):
+            await self._resend_source(old, self._final_source(turn_order, old))
         # Sentences already taken early from partials are not gated a second time.
         rest = self._untaken(turn_order, text)
         if rest:
@@ -379,6 +384,23 @@ class StreamingSession:
             return text
         return " ".join(s for s in split_sentences(text)
                         if not any(_same_sentence(_norm(s), t) for t in taken))
+
+    def _final_source(self, turn_order: int | None, source: str) -> str | None:
+        """The finalized turn's sentence matching an early ``source``, if its wording changed."""
+        turn = self._turns.get(turn_order) if turn_order is not None else None
+        if not turn or source in turn["text"]:
+            return None
+        key = _norm(source)
+        best, ratio = None, 0.0
+        for sentence in split_sentences(turn["text"]):
+            r = SequenceMatcher(None, key, _norm(sentence)).ratio()
+            if r > ratio:
+                best, ratio = sentence, r
+        return best if ratio >= 0.6 else None
+
+    async def _resend_source(self, old: str, new: str | None) -> None:
+        if new:
+            await self._emit({"type": "claim_source_update", "old": old, "source": new})
 
     def _already_checked(self, source: str | None) -> bool:
         """True if this source sentence was checked recently; records it otherwise."""
@@ -435,6 +457,15 @@ class StreamingSession:
                 name = label
             name = self._speaker_map.get(name, name)  # label -> real name, if resolved
             span = self._claim_span(source, entries) if self.speaker_identifier is not None else None
+            # A claim from an early sentence: its turn may be re-formatted when finalized.
+            # Already final → show the final wording now; else re-send it on finalization.
+            if source and turn_order is not None and any(
+                    e.get("early") and e["turn_order"] == turn_order and source.strip() in e["text"]
+                    for e in entries):
+                if turn_order in self._turns:
+                    source = self._final_source(turn_order, source) or source
+                else:
+                    self._early_sources.setdefault(turn_order, []).append(source)
             self._track(self._check_and_store(name, text, source, turn_order, label, span))
 
     def _match_turn(self, source: str | None, entries: list[dict]) -> tuple[int | None, str | None]:
@@ -538,12 +569,43 @@ class StreamingSession:
             return
         self._pending_votes = [v for v in self._pending_votes if not self._spk_track.covers(v[1][1])]
         for turn_order, span in due:
-            name = self._spk_track.dominant(*span).name
-            if name:
-                self._turn_votes[turn_order] = name
-                # Name this transcript line directly — no need to wait for label votes.
-                await self._emit({"type": "turn_speaker_update", "turn_order": turn_order, "speaker": name})
+            verdict = self._spk_track.dominant(*span)
+            if verdict.name:
+                self._turn_votes[turn_order] = verdict.name
+            await self._name_turn_line(turn_order, verdict)
         await self._update_label_map()
+
+    async def _name_turn_line(self, turn_order: int, verdict) -> None:
+        """Name a transcript line by voiceprint, sentence by sentence.
+
+        AssemblyAI glues speakers into one turn when there is no pause between them (a
+        moderator's question + the guest's answer), so each sentence gets its own speaker
+        from the track; a turn with several speakers is sent as segments the UI shows as
+        separate lines. Unsure sentences take the turn's name (or the most frequent one).
+        """
+        turn = self._turns.get(turn_order) or {}
+        text, words = turn.get("text", ""), turn.get("words") or []
+        names = []
+        for sentence in split_sentences(text):
+            span = sentence_span(sentence, words, text)
+            names.append((self._spk_track.dominant(*span).name if span else None, sentence))
+        named = [n for n, _ in names if n]
+        fill = verdict.name or (max(set(named), key=named.count) if named else None)
+        logger.info(f"[stream:{self.session_id}] turn {turn_order} speaker: {verdict.name} "
+                    f"(score {verdict.score}) sentences={[n for n, _ in names]}")
+        if fill is None:
+            return
+        segments: list[dict] = []
+        for n, sentence in names:
+            n = n or fill
+            if segments and segments[-1]["speaker"] == n:
+                segments[-1]["text"] += " " + sentence
+            else:
+                segments.append({"speaker": n, "text": sentence})
+        event = {"type": "turn_speaker_update", "turn_order": turn_order, "speaker": fill}
+        if len(segments) > 1:
+            event["segments"] = segments
+        await self._emit(event)
 
     async def _update_label_map(self) -> None:
         """Name each label by its turns' voiceprint votes (§6.8); follows reclustering."""

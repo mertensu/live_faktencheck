@@ -770,3 +770,61 @@ class TestEarlySentences:
         await session.stop()
         assert checker.check_claim_async.await_count == 1
         assert len(await db.get_fact_checks(session_id="s1")) == 1
+
+
+class TestTranscriptFixes:
+    async def test_turn_with_two_speakers_is_split_into_segments(self, db):
+        events = []
+
+        async def on_event(e):
+            events.append(e)
+
+        session = StreamingSession("s1", _gate([]), _fast_checker(), db, on_event=on_event,
+                                   speaker_identifier=_ident())
+        # Moderator question (0–2 s) glued to the guest's answer (2–8 s) in one turn.
+        words = [{"text": w, "start": i * 500, "end": i * 500 + 450}
+                 for i, w in enumerate("ist das falsch frau dröge nein das ist richtig so "
+                                       "und zwar schon lange".split())]
+        session._spk_track.add(0, 2000, "Maischberger", 0.8)
+        for t in range(2000, 7000, 1000):
+            session._spk_track.add(t, t + 3000, "Dröge", 0.8)
+        await session.handle_turn("Ist das falsch, Frau Dröge? Nein, das ist richtig so und zwar schon lange.",
+                                  end_of_turn=True, speaker_label="C", turn_order=0, words=words)
+        upd = next(e for e in events if e["type"] == "turn_speaker_update")
+        assert upd["speaker"] == "Dröge"
+        assert upd["segments"] == [
+            {"speaker": "Maischberger", "text": "Ist das falsch, Frau Dröge?"},
+            {"speaker": "Dröge", "text": "Nein, das ist richtig so und zwar schon lange."},
+        ]
+        await session.stop()
+
+    async def test_single_speaker_turn_has_no_segments(self, db):
+        events = []
+
+        async def on_event(e):
+            events.append(e)
+
+        session = StreamingSession("s1", _gate([]), _fast_checker(), db, on_event=on_event,
+                                   speaker_identifier=_ident())
+        await _voted_turn(session, 0, "A", "Connemann")
+        upd = next(e for e in events if e["type"] == "turn_speaker_update")
+        assert upd == {"type": "turn_speaker_update", "turn_order": 0, "speaker": "Connemann"}
+        await session.stop()
+
+    async def test_early_claim_source_resent_in_final_wording(self, db):
+        events = []
+
+        async def on_event(e):
+            events.append(e)
+
+        claim = GatedClaim(name="", claim="Die Industrie hat die Strompreise hochgebracht.",
+                           source="hat die Industrie Strompreise hochgebracht.")
+        session = StreamingSession("s1", _gate([[claim]]), _fast_checker(), db, on_event=on_event)
+        await session.handle_turn("hat die Industrie Strompreise hochgebracht. Und viertens, der Ausbau. Und",
+                                  end_of_turn=False, turn_order=5)
+        await _drain(session)
+        await session.handle_turn("Hat die Industrie Strompreise hochgebracht. Und viertens, der Ausbau.",
+                                  end_of_turn=True, turn_order=5)
+        assert {"type": "claim_source_update", "old": "hat die Industrie Strompreise hochgebracht.",
+                "source": "Hat die Industrie Strompreise hochgebracht."} in events
+        await session.stop()
