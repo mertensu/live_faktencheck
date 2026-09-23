@@ -1,5 +1,8 @@
 """Whitelisted domains for Tavily fact-checking searches."""
 
+from urllib.parse import urlparse
+
+
 TRUSTED_DOMAINS_BY_CATEGORY = {
     "Behörden & Offizielle Statistiken": [
         "destatis.de",
@@ -74,3 +77,28 @@ TRUSTED_DOMAINS = [
     for domains in TRUSTED_DOMAINS_BY_CATEGORY.values()
     for domain in domains
 ]
+
+
+# Source tiers for ranking search hits (lower = more authoritative). Primary data first,
+# press only as a fallback; party sites are statements, not evidence, so they come last.
+SOURCE_TIERS = {
+    "Behörden & Offizielle Statistiken": (0, "amtlich"),
+    "EU-Quellen": (0, "amtlich"),
+    "Forschungsinstitute": (1, "Forschung"),
+    "Think Tanks & Stiftungen": (1, "Forschung"),
+    "Faktenchecks": (1, "Forschung"),
+    "Qualitätsjournalismus": (2, "Presse"),
+    "Parteien": (3, "Partei"),
+}
+_UNKNOWN_TIER = (2, "Sonstige")
+
+
+def source_tier(url: str) -> tuple[int, str]:
+    """(rank, label) of a URL's trusted-domain category; unknown hosts rank with the press."""
+    host = urlparse(url or "").netloc.lower().removeprefix("www.")
+    for category, domains in TRUSTED_DOMAINS_BY_CATEGORY.items():
+        for d in domains:
+            d_host = d.split("/")[0]
+            if host == d_host or host.endswith("." + d_host):
+                return SOURCE_TIERS.get(category, _UNKNOWN_TIER)
+    return _UNKNOWN_TIER

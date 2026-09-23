@@ -26,6 +26,7 @@ from backend.lang import (
 )
 from .llm_base import build_model, settings_with_thinking
 from .search import tavily_search
+from .trusted_domains import source_tier
 from pydantic_ai import Agent
 
 logger = logging.getLogger(__name__)
@@ -131,6 +132,13 @@ class FastFactChecker:
                 if url:
                     seen_urls.add(url)
                 merged.append(item)
+        # Primary sources first (stable within a tier, so Tavily's relevance order holds):
+        # the model reads top-down and should reach for official data before the press.
+        merged.sort(key=lambda r: source_tier(r.get("url", ""))[0])
+        logger.info(
+            "Fast search results: %s",
+            [f"[{source_tier(r.get('url', ''))[1]}] {r.get('url', '')}" for r in merged],
+        )
         return merged
 
     def _format_evidence(self, results: List[dict]) -> str:
@@ -141,7 +149,7 @@ class FastFactChecker:
             title = r.get("title", "")
             url = r.get("url", "")
             content = (r.get("content", "") or "")[: self.snippet_chars]
-            lines.append(f"- {title} ({url}): {content}")
+            lines.append(f"- [{source_tier(url)[1]}] {title} ({url}): {content}")
         return "\n".join(lines)
 
     async def check_claim_async(
@@ -169,6 +177,9 @@ class FastFactChecker:
             )
             result = await self.agent.run(user_message)
             parsed = result.output.model_dump()
+            # Only links the model actually saw: drops invented or mangled URLs.
+            found = {r.get("url") for r in results}
+            parsed["sources"] = [src for src in parsed.get("sources", []) if src.get("url") in found]
             if not parsed.get("speaker"):
                 parsed["speaker"] = speaker
             if not parsed.get("original_claim"):

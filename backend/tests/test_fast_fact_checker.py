@@ -122,3 +122,39 @@ class TestFastCheck:
             await checker.check_claim_async(speaker="X", claim="Behauptung Y.", queries=["q1", "q2"])
         searched = [c.args[0] for c in mock_search.call_args_list]
         assert searched == ["q1", "q2", "Behauptung Y."]
+
+    async def test_results_sorted_official_first_and_labelled(self, checker):
+        mixed = {"results": [
+            {"title": "Handelsblatt", "url": "https://www.handelsblatt.com/a", "content": "x"},
+            {"title": "Linke", "url": "https://www.die-linke.de/b", "content": "x"},
+            {"title": "DIW", "url": "https://www.diw.de/c", "content": "x"},
+            {"title": "Destatis", "url": "https://www.destatis.de/d", "content": "x"},
+        ]}
+        with patch("backend.services.fast_fact_checker.tavily_search", AsyncMock(return_value=mixed)):
+            results = await checker._gather_evidence("claim", ["q"])
+        assert [r["title"] for r in results] == ["Destatis", "DIW", "Handelsblatt", "Linke"]
+        text = checker._format_evidence(results)
+        assert "[amtlich] Destatis" in text and "[Presse] Handelsblatt" in text and "[Partei] Linke" in text
+
+    async def test_sources_not_in_results_are_dropped(self):
+        c = _make_checker()
+        verdict = MOCK_VERDICT.model_copy(update={"sources": [
+            Source(url="https://destatis.de/x", title="Statistisches Bundesamt"),
+            Source(url="https://destatis.de/erfunden", title="Erfunden"),
+        ]})
+        with c.agent.override(model=TestModel(custom_output_args=verdict.model_dump())):
+            with patch("backend.services.fast_fact_checker.tavily_search", AsyncMock(return_value=FAKE_SEARCH)):
+                result = await c.check_claim_async(speaker="X", claim="Behauptung.")
+        assert [s["url"] for s in result["sources"]] == ["https://destatis.de/x"]
+
+
+class TestSourceTier:
+    def test_tiers(self):
+        from backend.services.trusted_domains import source_tier
+        assert source_tier("https://www.destatis.de/DE/x.html") == (0, "amtlich")
+        assert source_tier("https://ec.europa.eu/eurostat/web/x") == (0, "amtlich")
+        assert source_tier("https://www.iwkoeln.de/x") == (1, "Forschung")
+        assert source_tier("https://www.zeit.de/x") == (2, "Presse")
+        assert source_tier("https://afd.de/x") == (3, "Partei")
+        assert source_tier("https://example.org/x")[0] == 2
+        assert source_tier("")[0] == 2

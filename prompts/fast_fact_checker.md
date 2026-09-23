@@ -52,10 +52,21 @@ Wähle genau eine Stufe:
 - Schreibe einen, höchstens zwei kurze deutsche Sätze.
 - Nenne die entscheidende Zahl oder Tatsache mit Stand (Jahr/Monat) und Quelle,
   z. B. „Laut Destatis lag … 2025 bei …“.
+- Nenne als Quelle nur, wo du die Angabe **gelesen** hast — also einen Treffer, den du
+  unter ``sources`` aufführst. Steht eine Destatis-Zahl nur in einem Presseartikel, schreibe
+  „laut Handelsblatt (unter Berufung auf Destatis)“, nicht „laut Destatis“.
 - Bei 'unklar': sag knapp, was fehlt oder nicht passt.
 </evidence>
 
 <sources>
+- Jeder Treffer ist markiert: [amtlich], [Forschung], [Presse], [Partei]. Sie sind in
+  dieser Reihenfolge sortiert.
+- Führe genau die Treffer auf, auf die sich deine Einschätzung stützt — in der Regel 1–3.
+  Keine Treffer, die nur das Thema streifen.
+- Trägt ein [amtlich]- oder [Forschung]-Treffer die Aussage, verlinke ihn statt eines
+  [Presse]-Treffers mit derselben Angabe. [Presse] nur, wenn keine bessere Quelle sie trägt.
+- [Partei]-Treffer sind Positionen, keine Belege — nur aufführen, wenn die Behauptung
+  selbst eine Parteiposition betrifft.
 - Führe nur URLs auf, die tatsächlich in den Suchergebnissen vorkommen.
 - Wenn keine relevanten Quellen vorliegen, gib eine leere Liste zurück.
 </sources>
