@@ -128,3 +128,18 @@ class TestRegistryFactory:
         assert ident is not None
         assert ident.threshold == 0.6
         assert set(ident.voiceprints) == {"Alice"}
+
+    def test_episode_speakers_match_but_role_annotated_guests_do_not(self, monkeypatch, tmp_path):
+        """Guards the ep.guests pitfall (§5.3): prints are matched by bare name."""
+        from backend.config import Episode
+        from backend.services.registry import get_speaker_identifier
+        np.save(tmp_path / "Sandra Maischberger.npy", np.array([1.0, 0.0], np.float32))
+        np.save(tmp_path / "Julia Klöckner.npy", np.array([0.0, 1.0], np.float32))
+        monkeypatch.setenv("SPEAKER_ID_ENABLED", "true")
+        monkeypatch.setenv("SPEAKER_ID_MODEL", "/some/model.onnx")
+        monkeypatch.setenv("SPEAKER_ID_VOICEPRINTS_DIR", str(tmp_path))
+        ep = Episode(key="k", show="s", date="d", guests=[
+            "Sandra Maischberger (Moderatorin)", "Julia Klöckner (CDU)", "Gregor Gysi (Linke)"])
+        ident = get_speaker_identifier(ep.speakers)
+        assert set(ident.voiceprints) == {"Sandra Maischberger", "Julia Klöckner"}
+        assert get_speaker_identifier(ep.guests) is None

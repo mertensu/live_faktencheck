@@ -62,6 +62,10 @@ SPEAKER_ID_UNKNOWN_THRESHOLD = float(os.getenv("SPEAKER_ID_UNKNOWN_THRESHOLD", "
 # How long a claim waits for the track to cover its sentence before it is checked with the
 # fallback speaker (and rewritten later when coverage lands).
 SPEAKER_ID_WAIT_MS = int(os.getenv("SPEAKER_ID_WAIT_MS", "1000"))
+# Voiceprint label naming (replaces the LLM resolver): a diarization label is named once
+# this many of its turns were confidently identified, with this share agreeing.
+SPEAKER_ID_LABEL_MIN_VOTES = int(os.getenv("SPEAKER_ID_LABEL_MIN_VOTES", "3"))
+SPEAKER_ID_LABEL_MAJORITY = float(os.getenv("SPEAKER_ID_LABEL_MAJORITY", "0.8"))
 
 
 def _count_sentences(text: str) -> int:
@@ -146,6 +150,15 @@ class StreamingSession:
         self._voiceprint_pids: set[int] = set()
         self._claim_speakers: dict[int, str] = {}  # pid -> current speaker (survives the check)
         self._map_source: dict[str, str] = {}  # label -> "label_vote" | "llm"
+        # Label naming: finalized turns awaiting track coverage, and each turn's voiceprint
+        # name. Votes are keyed by turn, so a reclustered turn moves its vote to the new label.
+        self._pending_votes: list[tuple[int, tuple[int, int]]] = []
+        self._turn_votes: dict[int, str] = {}
+        # Episode speakers without a voiceprint. Only they need the LLM resolver.
+        self._missing: list[str] = []
+        if speaker_identifier is not None:
+            enrolled = {n.casefold() for n in speaker_identifier.voiceprints}
+            self._missing = [n for n in self.speakers if n.casefold() not in enrolled]
 
     # ---- event emission -----------------------------------------------------
     async def _emit(self, event: dict) -> None:
@@ -172,8 +185,14 @@ class StreamingSession:
         """
         if self._resolve_speakers_fn is None or not self.guests or self._resolving:
             return
+        # Every speaker enrolled → voiceprints name the labels; no LLM call at all.
+        if self.speaker_identifier is not None and not self._missing:
+            return
         turns = len(self._transcript_log)
-        due = (not self._speaker_map and turns >= SPEAKER_RESOLVE_MIN_TURNS) \
+        # First pass keys on "no LLM mapping yet": voiceprint-named labels must not
+        # suppress it while unenrolled speakers still need a name.
+        llm_mapped = any(self._map_source.get(k) == "llm" for k in self._speaker_map)
+        due = (not llm_mapped and turns >= SPEAKER_RESOLVE_MIN_TURNS) \
             or (self._turns_since_resolve >= SPEAKER_RESOLVE_EVERY_TURNS)
         if due:
             self._track(self._resolve_speakers())
@@ -184,6 +203,9 @@ class StreamingSession:
         try:
             transcript = "\n".join(self._transcript_log[-SPEAKER_RESOLVE_MAX_LINES:])
             mapping = await self._resolve_speakers_fn(transcript, self.guests, self.conversation_type)
+            # Voiceprint-named labels are authoritative; the LLM only fills the rest.
+            mapping = {k: v for k, v in (mapping or {}).items()
+                       if self._map_source.get(k) != "label_vote"}
             if mapping:
                 self._speaker_map.update(mapping)
                 self._map_source.update({label: "llm" for label in mapping})
@@ -230,6 +252,7 @@ class StreamingSession:
                 updated.append((pid, new_label))  # keep base label current for next revision
             if turn_order in self._turn_claims:
                 self._turn_claims[turn_order] = updated
+        await self._update_label_map()  # the moved votes may change a label's name
 
     async def _rewrite_speaker(self, pid: int, name: str) -> None:
         """Update a stored claim's speaker in place and notify the UI."""
@@ -286,6 +309,9 @@ class StreamingSession:
         self._transcript_log.append(line)
         self._sentence_count += _count_sentences(text)
         self._turns_since_resolve += 1
+        if self.speaker_identifier is not None and turn_order is not None and words:
+            self._pending_votes.append((turn_order, (words[0]["start"], words[-1]["end"])))
+            await self._resolve_pending_votes()
         self._maybe_resolve_speakers()
         if self._sentence_count >= WINDOW_MIN_SENTENCES or len(self._buffer) >= WINDOW_MAX_TURNS:
             await self._flush_window()
@@ -426,6 +452,38 @@ class StreamingSession:
                 self._log_speaker(pid, self._claim_speakers.get(pid), self._fallback_source(label),
                                   verdict, span, t0)
 
+    async def _resolve_pending_votes(self) -> None:
+        """Record a voiceprint vote for each finalized turn the track now covers."""
+        due = [v for v in self._pending_votes if self._spk_track.covers(v[1][1])]
+        if not due:
+            return
+        self._pending_votes = [v for v in self._pending_votes if not self._spk_track.covers(v[1][1])]
+        for turn_order, span in due:
+            name = self._spk_track.dominant(*span).name
+            if name:
+                self._turn_votes[turn_order] = name
+        await self._update_label_map()
+
+    async def _update_label_map(self) -> None:
+        """Name each label by its turns' voiceprint votes (§6.8); follows reclustering."""
+        votes: dict[str, dict[str, int]] = {}
+        for turn_order, name in self._turn_votes.items():
+            label = self._turns.get(turn_order, {}).get("speaker")
+            if label:
+                counts = votes.setdefault(label, {})
+                counts[name] = counts.get(name, 0) + 1
+        for label, counts in votes.items():
+            total = sum(counts.values())
+            best = max(counts, key=counts.get)
+            if total < SPEAKER_ID_LABEL_MIN_VOTES or counts[best] / total < SPEAKER_ID_LABEL_MAJORITY:
+                continue
+            if self._speaker_map.get(label) == best and self._map_source.get(label) == "label_vote":
+                continue
+            self._speaker_map[label] = best
+            self._map_source[label] = "label_vote"
+            logger.info(f"[stream:{self.session_id}] voiceprint label naming: {label} -> {best} {counts}")
+            await self._apply_map_to_pending({label: best})
+
     def _give_up_pending_spk(self) -> None:
         """At stop: claims the track never covered keep their fallback speaker."""
         for pid, span, t0, label in self._pending_spk:
@@ -563,6 +621,7 @@ class StreamingSession:
             updated, self._track_updated = self._track_updated, asyncio.Event()
             updated.set()
             await self._resolve_pending_spk()
+            await self._resolve_pending_votes()
         except Exception:
             logger.exception("Speaker classification step failed")
         finally:
@@ -631,6 +690,15 @@ class StreamingSession:
         logger.info(f"[stream:{self.session_id}] AssemblyAI streaming connected")
         if self.speaker_identifier is not None:
             self._classifier_task = asyncio.create_task(self._classifier_loop())
+            await self._announce_speaker_id()
+
+    async def _announce_speaker_id(self) -> None:
+        """Enrollment check (§5.3): tell the admin UI which speakers lack a voiceprint."""
+        enrolled = [n for n in self.speakers if n not in self._missing]
+        logger.info(f"[stream:{self.session_id}] speaker ID: enrolled={enrolled} missing={self._missing}")
+        logfire.info("speaker_id status", session_id=self.session_id,
+                     enrolled=enrolled, missing=self._missing)
+        await self._emit({"type": "speaker_id_status", "enrolled": enrolled, "missing": self._missing})
 
     async def feed(self, audio: bytes) -> None:
         if self._client is not None:

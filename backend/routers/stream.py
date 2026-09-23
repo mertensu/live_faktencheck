@@ -18,7 +18,9 @@ import logging
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from backend.config import Episode
-from backend.services.registry import get_claim_extractor, get_fast_fact_checker
+from backend.services.registry import (
+    get_claim_extractor, get_fast_fact_checker, get_speaker_identifier,
+)
 from backend.services.gate import build_gate
 from backend.services.streaming import StreamingSession
 import backend.state as state
@@ -73,6 +75,9 @@ async def stream(websocket: WebSocket):
         except Exception:
             pass  # client gone; the receive loop will exit and clean up
 
+    # Voiceprints are matched by bare name (<Name>.npy): pass ep.speakers, not the
+    # role-annotated ep.guests. None unless SPEAKER_ID_ENABLED (and model + prints exist).
+    speakers = ep.speakers if ep else []
     session = StreamingSession(
         session_id,
         build_gate(get_claim_extractor()),
@@ -85,6 +90,8 @@ async def stream(websocket: WebSocket):
         episode_date=episode_date,
         on_event=on_event,
         resolve_speakers=get_claim_extractor().resolve_speaker_map_async,
+        speaker_identifier=get_speaker_identifier(speakers),
+        speakers=speakers,
     )
     state.streaming_sessions[session_id] = session
     started = time.monotonic()

@@ -566,3 +566,109 @@ class TestVoiceprintClaims:
         await _turn(session)
         await session.stop()
         logfire_calls.assert_not_called()
+
+
+def _words_at(start_ms):
+    return [{"text": "satz", "start": start_ms, "end": start_ms + 1000},
+            {"text": "eins", "start": start_ms + 1000, "end": start_ms + 2000}]
+
+
+async def _voted_turn(session, turn_order, label, name):
+    """A finalized turn at its own time slot, with the track naming it ``name``."""
+    t = turn_order * 5000
+    session._spk_track.add(t, t + 3000, name, 0.8)
+    await session.handle_turn(f"Satz {turn_order}.", end_of_turn=True, speaker_label=label,
+                              turn_order=turn_order, words=_words_at(t))
+
+
+@pytest.mark.usefixtures("logfire_calls")
+class TestLabelNaming:
+    async def test_consistent_votes_name_label_and_rewrite_pending(self, db):
+        events = []
+
+        async def on_event(e):
+            events.append(e)
+
+        gate = _gate([[GatedClaim(name="A", claim="Behauptung A.", source="Behauptung A.")]])
+        session = StreamingSession("s1", gate, _fast_checker(), db, on_event=on_event,
+                                   speaker_identifier=_ident())
+        # A claim with no word timestamps -> no span -> stored under the bare label.
+        await session.handle_turn("Behauptung A. Noch ein Satz.", end_of_turn=True,
+                                  speaker_label="A", turn_order=0)
+        await _drain(session)
+        assert (await db.get_fact_checks(session_id="s1"))[0]["sprecher"] == "A"
+
+        for i in range(1, 1 + streaming_mod.SPEAKER_ID_LABEL_MIN_VOTES):
+            await _voted_turn(session, i, "A", "Alice")
+        assert session._speaker_map == {"A": "Alice"}
+        assert session._map_source == {"A": "label_vote"}
+        assert (await db.get_fact_checks(session_id="s1"))[0]["sprecher"] == "Alice"
+        assert any(e["type"] == "claim_speaker_update" and e["speaker"] == "Alice" for e in events)
+        await session.stop()
+
+    async def test_mixed_votes_no_mapping(self, db):
+        session = StreamingSession("s1", _gate([]), _fast_checker(), db, speaker_identifier=_ident())
+        for i, name in enumerate(["Alice", "Bob", "Alice", "Bob"]):
+            await _voted_turn(session, i, "A", name)
+        assert "A" not in session._speaker_map
+        await session.stop()
+
+    async def test_mapping_follows_reclustering(self, db):
+        session = StreamingSession("s1", _gate([]), _fast_checker(), db, speaker_identifier=_ident())
+        for i in range(3):
+            await _voted_turn(session, i, "A", "Alice")
+        for i in range(3, 7):
+            await _voted_turn(session, i, "A", "Bob")
+        assert session._speaker_map.get("A") != "Bob"  # 3 Alice / 4 Bob: no 80 % majority
+        # AssemblyAI reclusters the Alice turns to B: A is now all Bob, B all Alice.
+        await session.handle_speaker_revision(
+            [{"turn_order": i, "speaker_label": "B"} for i in range(3)])
+        assert session._speaker_map == {"A": "Bob", "B": "Alice"}
+        await session.stop()
+
+
+@pytest.mark.usefixtures("logfire_calls")
+class TestLlmGating:
+    async def _run(self, db, ident, speakers, preset=None):
+        calls = []
+
+        async def resolver(transcript, guests, conversation_type=""):
+            calls.append(transcript)
+            return {"A": "LLM-Name", "B": "Bob"}
+
+        session = StreamingSession("s1", _gate([[]] * 20), _fast_checker(), db,
+                                   guests=speakers, speakers=speakers,
+                                   resolve_speakers=resolver, speaker_identifier=ident)
+        if preset:
+            session._speaker_map.update(preset)
+            session._map_source.update({k: "label_vote" for k in preset})
+        for i in range(SPEAKER_RESOLVE_MIN_TURNS):
+            await session.handle_turn("Satz eins. Satz zwei.", end_of_turn=True, speaker_label="A")
+        await session.stop()
+        return session, calls
+
+    async def test_all_enrolled_never_calls_llm(self, db):
+        _, calls = await self._run(db, _ident(voiceprints=("Alice", "Bob")), ["Alice", "Bob"])
+        assert calls == []
+
+    async def test_missing_speaker_calls_llm_without_overwriting_voiceprint_labels(self, db):
+        session, calls = await self._run(db, _ident(voiceprints=("Alice",)), ["Alice", "Bob"],
+                                         preset={"A": "Alice"})
+        assert session._missing == ["Bob"]
+        assert len(calls) >= 1
+        assert session._speaker_map == {"A": "Alice", "B": "Bob"}
+
+    async def test_speaker_id_off_keeps_llm(self, db):
+        _, calls = await self._run(db, None, ["Alice", "Bob"])
+        assert len(calls) >= 1
+
+    async def test_status_event_lists_enrolled_and_missing(self, db):
+        events = []
+
+        async def on_event(e):
+            events.append(e)
+
+        session = StreamingSession("s1", _gate([]), _fast_checker(), db, on_event=on_event,
+                                   speakers=["Alice", "Bob"], speaker_identifier=_ident(voiceprints=("alice",)))
+        await session._announce_speaker_id()
+        assert events == [{"type": "speaker_id_status", "enrolled": ["Alice"], "missing": ["Bob"]}]
