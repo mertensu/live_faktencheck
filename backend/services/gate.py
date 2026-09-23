@@ -175,7 +175,7 @@ class JevScorer:
 _SENTENCE_SPLIT = re.compile(r"(?<=[.!?])\s+")
 
 
-def _split_sentences(text: str) -> list[str]:
+def split_sentences(text: str) -> list[str]:
     return [s.strip() for s in _SENTENCE_SPLIT.split(text) if s.strip()]
 
 
@@ -247,7 +247,7 @@ class JevGate:
             speaker, text = _split_speaker(line)
             if speaker and speaker.casefold() in excluded:
                 continue
-            for sentence in _split_sentences(text):
+            for sentence in split_sentences(text):
                 pairs.append((speaker, sentence))
 
         if not pairs:

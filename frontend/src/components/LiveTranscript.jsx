@@ -76,7 +76,8 @@ export function LiveTranscript({ live }) {
             {renderLine(t.text, claimsBySource)}
           </p>
         ))}
-        {partial && <p className="live-transcript-line live-transcript-partial">{partial}</p>}
+        {/* Claims can be found before the turn ends (early sentences), so mark the interim line too. */}
+        {partial && <p className="live-transcript-line live-transcript-partial">{renderLine(partial, claimsBySource)}</p>}
         {!hasContent && <p className="live-transcript-empty">Warte auf Ton…</p>}
         <div ref={endRef} />
       </div>

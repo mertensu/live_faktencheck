@@ -12,14 +12,17 @@ wiring (``start`` / ``feed`` / ``stop``) is a thin layer on top.
 """
 
 import os
+import re
 import asyncio
 import logging
 from datetime import datetime
+from difflib import SequenceMatcher
 
 import logfire
 
 from backend.lang import UNKNOWN_SPEAKER
 from backend.utils import build_fact_check_dict
+from .gate import split_sentences
 from .speaker_track import SpeakerTrack, sentence_span
 from .transcription import keyterms_from_guests
 
@@ -31,6 +34,27 @@ WINDOW_MIN_SENTENCES = int(os.getenv("STREAM_WINDOW_MIN_SENTENCES", "2"))
 WINDOW_MAX_TURNS = int(os.getenv("STREAM_WINDOW_MAX_TURNS", "3"))
 # Sample rate the browser must send (PCM16 mono). 16 kHz is AssemblyAI's expected rate.
 STREAM_SAMPLE_RATE = int(os.getenv("STREAM_SAMPLE_RATE", "16000"))
+
+# Early sentences: AssemblyAI punctuates in-progress (partial) turns, and only a partial's
+# last sentence is still being revised. So a sentence enters the window as soon as the next
+# one has started, instead of waiting for the end of the turn — on monologues that is
+# several seconds sooner. The finalized turn then only contributes what wasn't taken yet.
+STREAM_EARLY_SENTENCES = os.getenv("STREAM_EARLY_SENTENCES", "true").lower() in ("1", "true", "yes")
+# Two renderings of a sentence (partial vs. final, or a repeated source) count as the same
+# above this similarity of their normalized text.
+SAME_SENTENCE_RATIO = 0.85
+# How many recently checked source sentences to remember for duplicate suppression.
+CHECKED_SOURCES_MEMORY = 50
+
+
+def _norm(text: str) -> str:
+    return " ".join(re.findall(r"\w+", (text or "").casefold()))
+
+
+def _same_sentence(a: str, b: str) -> bool:
+    """Compare two already-normalized sentences."""
+    return a == b or SequenceMatcher(None, a, b).ratio() >= SAME_SENTENCE_RATIO
+
 
 # Speaker label->name resolution (live lane): labels (A/B/…) are stable within a session,
 # so resolve once enough transcript has accrued and cache the mapping — then re-resolve
@@ -131,6 +155,11 @@ class StreamingSession:
         # ~a minute of transcript; claims flow sooner). Keyed by the bare label so the
         # background resolution can rewrite them once it learns the name.
         self._label_claims: dict[str, list[int]] = {}  # label -> [fact_check_id]
+
+        # Early sentences: per turn, the normalized sentences already taken from partials.
+        self._early: dict[int, list[str]] = {}
+        # Normalized source sentences of recent claims — the same sentence is checked once.
+        self._checked_sources: list[str] = []
 
         # Voiceprint speaker ID: a bounded ring buffer of the PCM16 actually sent to
         # AssemblyAI, and a sample counter on the same clock as its word timestamps.
@@ -286,9 +315,11 @@ class StreamingSession:
             return
         # Show the resolved name in the live UI once we know it; fall back to the label.
         display_speaker = self._speaker_map.get(speaker_label, speaker_label) if speaker_label else speaker_label
-        # Live partial for the UI; only finalized turns enter the buffer.
+        # Live partial for the UI; its settled sentences may enter the window early.
         if not end_of_turn:
             await self._emit({"type": "partial", "text": text, "speaker": display_speaker})
+            if STREAM_EARLY_SENTENCES and turn_order is not None and turn_order not in self._turns:
+                await self._take_early_sentences(text, speaker_label, turn_order, words)
             return
         # turn_order + label let the UI rename this line later (turn_speaker_update /
         # speaker_map_update) once the voiceprint track knows who spoke.
@@ -301,18 +332,22 @@ class StreamingSession:
             # Words go along with the text, or the span mapping would align new text
             # against stale words.
             self._turns[turn_order].update(speaker=speaker_label, text=text, words=words or [])
+            rest = self._untaken(turn_order, text)
             for entry in self._buffer:
-                if entry.get("turn_order") == turn_order:
-                    entry["speaker"], entry["text"], entry["words"] = speaker_label, text, words or []
+                if entry.get("turn_order") == turn_order and not entry.get("early"):
+                    entry["speaker"], entry["text"], entry["words"] = speaker_label, rest, words or []
             return
 
         if turn_order is not None:
             self._turns[turn_order] = {"speaker": speaker_label, "text": text, "words": words or []}
         line = f"{speaker_label}: {text}" if speaker_label else text
-        self._buffer.append({"turn_order": turn_order, "speaker": speaker_label, "text": text,
-                             "words": words or []})
+        # Sentences already taken early from partials are not gated a second time.
+        rest = self._untaken(turn_order, text)
+        if rest:
+            self._buffer.append({"turn_order": turn_order, "speaker": speaker_label, "text": rest,
+                                 "words": words or []})
+            self._sentence_count += _count_sentences(rest)
         self._transcript_log.append(line)
-        self._sentence_count += _count_sentences(text)
         self._turns_since_resolve += 1
         if self.speaker_identifier is not None and turn_order is not None and words:
             self._pending_votes.append((turn_order, (words[0]["start"], words[-1]["end"])))
@@ -320,6 +355,40 @@ class StreamingSession:
         self._maybe_resolve_speakers()
         if self._sentence_count >= WINDOW_MIN_SENTENCES or len(self._buffer) >= WINDOW_MAX_TURNS:
             await self._flush_window()
+
+    async def _take_early_sentences(self, text, speaker_label, turn_order, words) -> None:
+        """Buffer a partial's settled sentences (all but its last) not taken yet."""
+        taken = self._early.setdefault(turn_order, [])
+        added = False
+        for sentence in split_sentences(text)[:-1]:
+            key = _norm(sentence)
+            if not key or any(_same_sentence(key, t) for t in taken):
+                continue
+            taken.append(key)
+            self._buffer.append({"turn_order": turn_order, "speaker": speaker_label, "text": sentence,
+                                 "words": words or [], "early": True})
+            self._sentence_count += 1
+            added = True
+        if added and (self._sentence_count >= WINDOW_MIN_SENTENCES or len(self._buffer) >= WINDOW_MAX_TURNS):
+            await self._flush_window()
+
+    def _untaken(self, turn_order: int | None, text: str) -> str:
+        """The part of a finalized turn not already taken early from its partials."""
+        taken = self._early.get(turn_order) if turn_order is not None else None
+        if not taken:
+            return text
+        return " ".join(s for s in split_sentences(text)
+                        if not any(_same_sentence(_norm(s), t) for t in taken))
+
+    def _already_checked(self, source: str | None) -> bool:
+        """True if this source sentence was checked recently; records it otherwise."""
+        key = _norm(source or "")
+        if not key:
+            return False
+        if any(_same_sentence(key, c) for c in self._checked_sources):
+            return True
+        self._checked_sources = (self._checked_sources + [key])[-CHECKED_SOURCES_MEMORY:]
+        return False
 
     async def _flush_window(self) -> None:
         """Gate the current window and fast-check any check-worthy claims."""
@@ -353,6 +422,11 @@ class StreamingSession:
             text = getattr(claim, "claim", "") or ""
             source = getattr(claim, "source", None)  # original transcript sentence (JevGate)
             if not text:
+                continue
+            # Safety net for early sentences: a sentence taken from a partial and again,
+            # slightly re-rendered, from the final turn must not be checked twice.
+            if self._already_checked(source):
+                logger.info(f"[stream:{self.session_id}] skip duplicate claim source: {source!r}")
                 continue
             # Tie the claim back to the turn it came from, so a later speaker revision can
             # rewrite its speaker. Prefer the turn's own label over the gate's guessed name.

@@ -689,3 +689,84 @@ class TestLlmGating:
                                    speakers=["Alice", "Bob"], speaker_identifier=_ident(voiceprints=("alice",)))
         await session._announce_speaker_id()
         assert events == [{"type": "speaker_id_status", "enrolled": ["Alice"], "missing": ["Bob"]}]
+
+
+def _recording_gate():
+    """A gate stub that records each window text and returns no claims."""
+    windows = []
+
+    async def gate(window_text, guests, **kw):
+        windows.append(window_text)
+        return []
+
+    stub = MagicMock()
+    stub.gate = AsyncMock(side_effect=gate)
+    return stub, windows
+
+
+class TestEarlySentences:
+    async def test_settled_sentences_gate_before_end_of_turn(self, db):
+        gate, windows = _recording_gate()
+        session = StreamingSession("s1", gate, _fast_checker(), db)
+        await session.handle_turn("Der Strom ist teuer. Die Preise steigen. Und dann", end_of_turn=False,
+                                  speaker_label="B", turn_order=0)
+        assert windows == ["B: Der Strom ist teuer.\nB: Die Preise steigen."]
+        await session.stop()
+
+    async def test_last_partial_sentence_is_not_taken(self, db):
+        """Only a sentence followed by another one is settled; the last may still grow."""
+        gate, windows = _recording_gate()
+        session = StreamingSession("s1", gate, _fast_checker(), db)
+        await session.handle_turn("Immer eine Überraschung.", end_of_turn=False, turn_order=0)
+        assert session._buffer == []
+        await session.stop()
+
+    async def test_repeated_partial_does_not_retake(self, db):
+        session = StreamingSession("s1", _recording_gate()[0], _fast_checker(), db)
+        for _ in range(3):
+            await session.handle_turn("Erster Satz hier. Zwei", end_of_turn=False, turn_order=0)
+        assert [e["text"] for e in session._buffer] == ["Erster Satz hier."]
+        await session.stop()
+
+    async def test_final_turn_only_gates_untaken_rest(self, db):
+        gate, windows = _recording_gate()
+        session = StreamingSession("s1", gate, _fast_checker(), db)
+        await session.handle_turn("Der Strom ist teuer. Die Preise steigen. Und", end_of_turn=False,
+                                  speaker_label="B", turn_order=0)
+        # Final re-renders the settled sentences slightly and completes the last one.
+        await session.handle_turn("Der Strom ist teuer! Die Preise steigen. Und das seit Jahren. Punkt.",
+                                  end_of_turn=True, speaker_label="B", turn_order=0)
+        assert windows[-1] == "B: Und das seit Jahren. Punkt."
+        # The transcript keeps the whole turn.
+        assert session._turns[0]["text"].startswith("Der Strom ist teuer!")
+        await session.stop()
+
+    async def test_reemitted_final_keeps_early_entries(self, db, monkeypatch):
+        monkeypatch.setattr(streaming_mod, "WINDOW_MIN_SENTENCES", 10)  # keep the window open
+        monkeypatch.setattr(streaming_mod, "WINDOW_MAX_TURNS", 10)
+        session = StreamingSession("s1", _recording_gate()[0], _fast_checker(), db)
+        await session.handle_turn("Erster Satz hier. Zwei", end_of_turn=False, turn_order=0)
+        await session.handle_turn("Erster Satz hier. Zweiter.", end_of_turn=True, turn_order=0)
+        await session.handle_turn("Erster Satz hier. Zweiter Satz.", end_of_turn=True, turn_order=0)
+        assert [e["text"] for e in session._buffer] == ["Erster Satz hier.", "Zweiter Satz."]
+        await session.stop()
+
+    async def test_disabled_flag_keeps_old_behaviour(self, db, monkeypatch):
+        monkeypatch.setattr(streaming_mod, "STREAM_EARLY_SENTENCES", False)
+        gate, windows = _recording_gate()
+        session = StreamingSession("s1", gate, _fast_checker(), db)
+        await session.handle_turn("Eins zwei. Drei vier. Fünf", end_of_turn=False, turn_order=0)
+        assert windows == [] and session._buffer == []
+        await session.stop()
+
+    async def test_duplicate_claim_source_checked_once(self, db):
+        claim = GatedClaim(name="A", claim="Der Strom ist teuer.", source="Der Strom ist teuer.")
+        again = GatedClaim(name="A", claim="Strom ist teuer.", source="Der Strom ist teuer!")
+        gate = _gate([[claim], [again]])
+        checker = _fast_checker()
+        session = StreamingSession("s1", gate, checker, db)
+        await session.handle_turn("Der Strom ist teuer. Satz.", end_of_turn=True, speaker_label="A", turn_order=0)
+        await session.handle_turn("Der Strom ist teuer! Satz.", end_of_turn=True, speaker_label="A", turn_order=1)
+        await session.stop()
+        assert checker.check_claim_async.await_count == 1
+        assert len(await db.get_fact_checks(session_id="s1")) == 1
