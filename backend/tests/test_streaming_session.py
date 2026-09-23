@@ -233,3 +233,29 @@ class TestWindowing:
         assert "turn" in types
         assert "claim_processing" in types
         assert "claim_result" in types
+
+
+class TestTurnWords:
+    async def test_words_carried_on_buffer_and_turn(self, db):
+        session = StreamingSession("s1", _gate([[]]), _fast_checker(), db)
+        words = [{"text": "Hallo", "start": 0, "end": 400}]
+        await session.handle_turn("Hallo", end_of_turn=True, speaker_label="A",
+                                  turn_order=0, words=words)
+        assert session._buffer[0]["words"] == words
+        assert session._turns[0]["words"] == words
+        await session.stop()
+
+    async def test_reemitted_final_replaces_words(self, db):
+        """A repeated final with changed text carries the new words, not stale ones."""
+        session = StreamingSession("s1", _gate([[]]), _fast_checker(), db)
+        await session.handle_turn("Hallo", end_of_turn=True, speaker_label="A", turn_order=0,
+                                  words=[{"text": "Hallo", "start": 0, "end": 400}])
+        new_words = [{"text": "Hallo", "start": 0, "end": 400},
+                     {"text": "Welt", "start": 450, "end": 800}]
+        await session.handle_turn("Hallo Welt", end_of_turn=True, speaker_label="A",
+                                  turn_order=0, words=new_words)
+        assert len(session._buffer) == 1
+        assert session._buffer[0]["text"] == "Hallo Welt"
+        assert session._buffer[0]["words"] == new_words
+        assert session._turns[0]["words"] == new_words
+        await session.stop()

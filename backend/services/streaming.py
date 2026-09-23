@@ -77,7 +77,8 @@ class StreamingSession:
         # optional async callable(transcript, guests, conversation_type) -> {label: name}
         self._resolve_speakers_fn = resolve_speakers
 
-        # Current window: finalized turns as {"turn_order", "speaker" (label), "text"}.
+        # Current window: finalized turns as {"turn_order", "speaker" (label), "text",
+        # "words"} — words are [{"text", "start", "end"}] (ms from stream start).
         self._buffer: list[dict] = []
         self._sentence_count = 0
         self._previous_context: str | None = None
@@ -198,8 +199,13 @@ class StreamingSession:
         end_of_turn: bool,
         speaker_label: str | None = None,
         turn_order: int | None = None,
+        words: list[dict] | None = None,
     ) -> None:
-        """Feed one turn event. Buffers finalized turns; flushes a full window."""
+        """Feed one turn event. Buffers finalized turns; flushes a full window.
+
+        ``words`` are the turn's ASR words with timestamps (``{"text", "start", "end"}``,
+        ms from stream start); they map a claim's sentence to a time span (speaker ID).
+        """
         text = (transcript or "").strip()
         if not text:
             return
@@ -213,16 +219,19 @@ class StreamingSession:
         # A repeated final for a turn we already recorded is a re-emission, not a new turn:
         # update the kept text but don't double-count it into the window or the transcript.
         if turn_order is not None and turn_order in self._turns:
-            self._turns[turn_order].update(speaker=speaker_label, text=text)
+            # Words go along with the text, or the span mapping would align new text
+            # against stale words.
+            self._turns[turn_order].update(speaker=speaker_label, text=text, words=words or [])
             for entry in self._buffer:
                 if entry.get("turn_order") == turn_order:
-                    entry["speaker"], entry["text"] = speaker_label, text
+                    entry["speaker"], entry["text"], entry["words"] = speaker_label, text, words or []
             return
 
         if turn_order is not None:
-            self._turns[turn_order] = {"speaker": speaker_label, "text": text}
+            self._turns[turn_order] = {"speaker": speaker_label, "text": text, "words": words or []}
         line = f"{speaker_label}: {text}" if speaker_label else text
-        self._buffer.append({"turn_order": turn_order, "speaker": speaker_label, "text": text})
+        self._buffer.append({"turn_order": turn_order, "speaker": speaker_label, "text": text,
+                             "words": words or []})
         self._transcript_log.append(line)
         self._sentence_count += _count_sentences(text)
         self._turns_since_resolve += 1
@@ -366,6 +375,8 @@ class StreamingSession:
                     bool(getattr(event, "end_of_turn", False)),
                     getattr(event, "speaker_label", None),
                     getattr(event, "turn_order", None),
+                    [{"text": w.text, "start": w.start, "end": w.end}
+                     for w in getattr(event, "words", None) or []],
                 ),
                 loop,
             )
