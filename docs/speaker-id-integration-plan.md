@@ -3,7 +3,7 @@
 Status: **foundation done** (commit d62f1c4, dark behind `SPEAKER_ID_ENABLED`):
 `services/speaker_id.py` (`SpeakerIdentifier.identify`, `load_voiceprints`, `pcm16_to_float32`),
 `registry.get_speaker_identifier(guests)`, `benchmarks/enroll_voiceprints.py`, tests.
-**Open: streaming wiring** (§5.2, §6), rolled out via prod shadow mode (§11). This document is written so implementation can start
+**Open: streaming wiring** (§5.2, §6), calibrated on recorded episodes (§11). This document is written so implementation can start
 cold in a fresh context. Prior work: offline spike done (`benchmarks/speaker_id_bench.py`),
 result positive — see "Spike evidence".
 
@@ -189,7 +189,7 @@ dominant speaker — not sample-accurate sentence boundaries.
    spoken (window of 2 sentences / 3 turns + gate), so the track normally already covers it.
    Hence, inside the per-claim task (`_check_and_store`, already off the flush path):
    - if `end_ms <= _track_covered_ms` → `dominant_speaker(span)` now;
-   - else wait for coverage with a **bounded** timeout (~1 s, env-tunable `SPEAKER_ID_WAIT_MS`, tune from shadow data; an
+   - else wait for coverage with a **bounded** timeout (~1 s, env-tunable `SPEAKER_ID_WAIT_MS`, tune on recorded episodes; an
      `asyncio.Event`/condition set by the classifier after each step), then query;
    - on timeout → store with the best-known fallback speaker and register the claim in
      `_pending_spk` (5.2) → resolved later via rewrite (point 5).
@@ -223,8 +223,8 @@ dominant speaker — not sample-accurate sentence boundaries.
      (today's behaviour) or `missing` (§5.3) is non-empty; then only labels without a
      voiceprint mapping are taken from its result. All speakers enrolled → **no LLM call**.
 9. **Unknown voice as a signal.** Loud enough, span covered, and **every** overlapping window
-   below a low `SPEAKER_ID_UNKNOWN_THRESHOLD` (well under the accept threshold; calibrate in
-   shadow) → a clearly foreign voice: clip (Einspieler), caller, audience. Set `sprecher` to
+   below a low `SPEAKER_ID_UNKNOWN_THRESHOLD` (well under the accept threshold; calibrate on
+   recorded episodes) → a clearly foreign voice: clip (Einspieler), caller, audience. Set `sprecher` to
    the German "unknown speaker" string (in `backend/lang.py`, per convention), don't fall back
    to a guest label, and mark the claim so the admin UI can flag it. The claim is still
    checked. Between the two thresholds ("unsure", e.g. overlap) → normal fallback chain.
@@ -245,12 +245,8 @@ dominant speaker — not sample-accurate sentence boundaries.
 ## 8. Configuration (env, feature flag)
 
 - `SPEAKER_ID_ENABLED` (default `false`) — gates the whole path; ships dark.
-- `SPEAKER_ID_SHADOW` (default `true`) — with speaker ID enabled, compute track, label votes
-  and unknown detection, but **change nothing**: no `sprecher` override, `_speaker_map` stays
-  LLM-fed, resolver runs as today. Log only (§11). Flip to `false` to go live. Defaulting to
-  shadow means enabling can never change output by accident.
 - `SPEAKER_ID_WAIT_MS` (default ~1000) — bounded wait for track coverage (§6.4).
-- `SPEAKER_ID_UNKNOWN_THRESHOLD` — "clearly foreign voice" cutoff (§6.9), from shadow data.
+- `SPEAKER_ID_UNKNOWN_THRESHOLD` — "clearly foreign voice" cutoff (§6.9), calibrated on recorded episodes.
 - `SPEAKER_ID_MODEL` — path to the .onnx (baked into the image, see below).
 - `SPEAKER_ID_THRESHOLD` (default ~0.55).
 - `SPEAKER_ID_MIN_SECONDS` (default 1.5).
@@ -295,8 +291,6 @@ dominant speaker — not sample-accurate sentence boundaries.
   but voiceprint-mapped labels are not overwritten.
 - **Unknown voice:** all windows below the unknown threshold → unknown string + flag, no label
   fallback; between thresholds → normal fallback.
-- **Shadow:** `SPEAKER_ID_SHADOW=true` → `sprecher`, `_speaker_map` and emitted events identical
-  to speaker ID off; the log row is written at `stop()`.
 - Test sentence → word span mapping separately (text alignment against `words`), including
   number-heavy sentences where only the anchor match succeeds (§4.1).
 - Accuracy stays in the **offline bench** (`benchmarks/`, real audio), not in unit tests.
@@ -305,16 +299,15 @@ dominant speaker — not sample-accurate sentence boundaries.
 
 1. Merge behind `SPEAKER_ID_ENABLED=false` (dark).
 2. Enroll moderators + recurring guests (build the store), bake the model into the image.
-3. **Staging smoke test**: enabled, shadow. Does it run, CPU cost, no event-loop stalls.
-4. **Prod shadow for 1–2 show nights** (`SPEAKER_ID_ENABLED=true`, `SPEAKER_ID_SHADOW=true`).
-   Staging can't reproduce studio audio, crosstalk or clips. Shadow output is persisted so it
-   can be evaluated without server access:
-   - per claim: `{pid, used_speaker, voiceprint_name, score, span, unknown}` → Logfire;
-   - at `stop()`: the whole speaker track + label votes as **one row per session** in a small
-     `speaker_id_log` table (session_id, json). Tiny, and it arrives via `./scripts/pull-db.sh`.
-   Evaluate: agreement with the corrected/actual speaker, accept threshold, unknown threshold,
-   wait timeout, how often the wait times out.
-5. Flip `SPEAKER_ID_SHADOW=false` on prod once the numbers hold.
+3. **Calibrate on staging with recorded episodes** (the project has no live users yet, so no
+   shadow mode is needed; staging with `SPEAKER_ID_ENABLED=true` is the test bed). Play 2–3
+   recorded episodes (Mediathek) through the normal browser audio path, ideally ones with
+   crosstalk and clips of other people (Einspieler). Log per claim to Logfire:
+   `{pid, speaker, name_source (span|label_vote|llm|label|unknown), voiceprint_name, score,
+   span, waited_ms}`. Compare against the actual speakers and set the accept threshold, the
+   unknown threshold and `SPEAKER_ID_WAIT_MS`. Also check CPU cost and that the event loop
+   doesn't stall.
+4. Enable on prod.
 
 ## 12. Open risks
 
