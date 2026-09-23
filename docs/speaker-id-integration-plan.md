@@ -341,6 +341,16 @@ dominant speaker — not sample-accurate sentence boundaries.
 - **Sentence → span alignment**: needs robust text alignment (the reformulator changes the claim
   text, but `source` is the original sentence → matchable against `words`).
 
+## 12a. Future: moderator enrollment (not now)
+
+For now only the maintainer creates voiceprints (offline, §5.3). Later, moderators may need to
+add guests without a voiceprint. Decided scope for that: **before the show only**, never live
+(checking starts immediately, there is no time to enroll mid-show). Shape: an admin-UI upload
+of a clean clip per guest; the browser decodes it to 16 kHz PCM (same as the live stream), the
+backend embeds it with the existing extractor and writes `<Name>.npy` to the data dir. Sessions
+load prints at start, so no mid-session hot-add or retroactive re-scoring is needed. Before
+building it: legal basis for storing biometric data (GDPR Art. 9), deletion, per-show storage.
+
 ## 13. Spike evidence (context for implementation)
 
 - Model: `3dspeaker_speech_campplus_sv_zh_en_16k-common_advanced.onnx` (CAM++, dim=192), from the
