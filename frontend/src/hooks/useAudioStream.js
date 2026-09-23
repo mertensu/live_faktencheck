@@ -105,8 +105,20 @@ export function useAudioStream(sessionId, { deviceId = '' } = {}) {
       setEvents((prev) => [...prev.slice(-19), msg])
       if (msg.type === 'turn') {
         // Finalized turn: append to the transcript and clear the interim line.
-        if (msg.text) setTranscript((prev) => [...prev, { speaker: msg.speaker || null, text: msg.text }])
+        // turnOrder/label let later speaker events rename this line.
+        if (msg.text) setTranscript((prev) => [...prev, {
+          speaker: msg.speaker || null, text: msg.text,
+          turnOrder: msg.turn_order ?? null, label: msg.label || null, named: false,
+        }])
         setPartial('')
+      } else if (msg.type === 'turn_speaker_update') {
+        // Voiceprint identified who spoke this turn: name the line directly.
+        setTranscript((prev) => prev.map((t) =>
+          t.turnOrder === msg.turn_order ? { ...t, speaker: msg.speaker, named: true } : t))
+      } else if (msg.type === 'speaker_map_update') {
+        // A diarization label got its name: rename lines still showing the bare label.
+        setTranscript((prev) => prev.map((t) =>
+          !t.named && t.label === msg.label ? { ...t, speaker: msg.speaker } : t))
       } else if (msg.type === 'partial') {
         setPartial(msg.text || '')
       } else if (msg.type === 'claim_processing') {

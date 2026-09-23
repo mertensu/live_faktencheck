@@ -287,9 +287,13 @@ class StreamingSession:
         # Show the resolved name in the live UI once we know it; fall back to the label.
         display_speaker = self._speaker_map.get(speaker_label, speaker_label) if speaker_label else speaker_label
         # Live partial for the UI; only finalized turns enter the buffer.
-        await self._emit({"type": "partial" if not end_of_turn else "turn", "text": text, "speaker": display_speaker})
         if not end_of_turn:
+            await self._emit({"type": "partial", "text": text, "speaker": display_speaker})
             return
+        # turn_order + label let the UI rename this line later (turn_speaker_update /
+        # speaker_map_update) once the voiceprint track knows who spoke.
+        await self._emit({"type": "turn", "text": text, "speaker": display_speaker,
+                          "turn_order": turn_order, "label": speaker_label})
 
         # A repeated final for a turn we already recorded is a re-emission, not a new turn:
         # update the kept text but don't double-count it into the window or the transcript.
@@ -463,6 +467,8 @@ class StreamingSession:
             name = self._spk_track.dominant(*span).name
             if name:
                 self._turn_votes[turn_order] = name
+                # Name this transcript line directly — no need to wait for label votes.
+                await self._emit({"type": "turn_speaker_update", "turn_order": turn_order, "speaker": name})
         await self._update_label_map()
 
     async def _update_label_map(self) -> None:
@@ -483,6 +489,8 @@ class StreamingSession:
             self._speaker_map[label] = best
             self._map_source[label] = "label_vote"
             logger.info(f"[stream:{self.session_id}] voiceprint label naming: {label} -> {best} {counts}")
+            # Rename earlier transcript lines still showing the bare label.
+            await self._emit({"type": "speaker_map_update", "label": label, "speaker": best})
             await self._apply_map_to_pending({label: best})
 
     def _give_up_pending_spk(self) -> None:

@@ -606,6 +606,23 @@ class TestLabelNaming:
         assert any(e["type"] == "claim_speaker_update" and e["speaker"] == "Alice" for e in events)
         await session.stop()
 
+    async def test_turn_named_by_voiceprint_and_label_renamed(self, db):
+        events = []
+
+        async def on_event(e):
+            events.append(e)
+
+        session = StreamingSession("s1", _gate([]), _fast_checker(), db, on_event=on_event,
+                                   speaker_identifier=_ident())
+        await _voted_turn(session, 0, "B", "Connemann")
+        turn = next(e for e in events if e["type"] == "turn")
+        assert turn["turn_order"] == 0 and turn["label"] == "B"
+        assert {"type": "turn_speaker_update", "turn_order": 0, "speaker": "Connemann"} in events
+        for i in range(1, streaming_mod.SPEAKER_ID_LABEL_MIN_VOTES):
+            await _voted_turn(session, i, "B", "Connemann")
+        assert {"type": "speaker_map_update", "label": "B", "speaker": "Connemann"} in events
+        await session.stop()
+
     async def test_mixed_votes_no_mapping(self, db):
         session = StreamingSession("s1", _gate([]), _fast_checker(), db, speaker_identifier=_ident())
         for i, name in enumerate(["Alice", "Bob", "Alice", "Bob"]):
