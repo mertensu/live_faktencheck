@@ -2,9 +2,10 @@
 Fast Fact Checker — first-pass verdict for the live streaming lane.
 
 Unlike ``FactChecker`` (a ReAct agent that loops search→reason up to ~35 times and
-then self-critiques), this service is built for latency: it fires a few low-latency
-Tavily searches *in parallel*, then makes a single synthesis call that returns only a
-``consistency`` level (Vertrauenslevel) and one short sentence. No agent loop, no
+then self-critiques), this service is built for latency: it fires a few Tavily
+searches *in parallel* (queries written by the reformulator, else heuristic variants),
+then makes a single synthesis call that returns only a ``consistency`` level
+(Vertrauenslevel) and one or two short sentences. No agent loop, no
 self-critique. A claim can later be upgraded to a full verdict by the deep
 ``FactChecker`` (see check_depth="fast" rows).
 """
@@ -23,7 +24,7 @@ from backend.lang import (
     CONSISTENCY_DESCRIPTION,
     SOURCES_DESCRIPTION,
 )
-from .llm_base import build_model, MODEL_SETTINGS
+from .llm_base import build_model, settings_with_thinking
 from .search import tavily_search
 from pydantic_ai import Agent
 
@@ -42,11 +43,14 @@ class FastVerdict(BaseModel):
     same ``build_fact_check_dict`` mapping stores it unchanged."""
     speaker: str = ""
     original_claim: str = ""
+    # evidence before consistency: the model writes the finding first and derives the
+    # level from it, instead of committing to a level and justifying it afterwards.
+    evidence: str = Field(
+        description="Kurze deutschsprachige Einschätzung (ein, höchstens zwei Sätze) mit "
+                    "der entscheidenden Zahl und ihrer Quelle."
+    )
     consistency: Literal["hoch", "niedrig", "unklar", "keine Datenlage"] = Field(
         description=CONSISTENCY_DESCRIPTION
-    )
-    evidence: str = Field(
-        description="EINE kurze, prägnante deutschsprachige Einschätzung (ein Satz)."
     )
     sources: List[Source] = Field(default_factory=list, description=SOURCES_DESCRIPTION)
 
@@ -57,10 +61,16 @@ class FastFactChecker:
     def __init__(self):
         self.model_name = os.getenv("GEMINI_MODEL_FAST_CHECK", DEFAULT_MODEL)
         self.fallback_model_name = os.getenv("GEMINI_MODEL_FACT_CHECKER_FALLBACK", "gemini-3-flash-preview")
-        self.max_queries = int(os.getenv("FAST_SEARCH_MAX_QUERIES", "3"))
-        # This path favours latency; keep it on a fast Tavily tier independent of the
-        # deep checker's TAVILY_SEARCH_DEPTH.
-        self.search_depth = os.getenv("FAST_TAVILY_SEARCH_DEPTH", "fast")
+        self.max_queries = int(os.getenv("FAST_SEARCH_MAX_QUERIES", "5"))
+        # Own Tavily tier, independent of the deep checker's TAVILY_SEARCH_DEPTH. The
+        # searches run in parallel, so basic costs ~one search's latency, not five.
+        self.search_depth = os.getenv("FAST_TAVILY_SEARCH_DEPTH", "basic")
+        # The deciding number often sits past the first few hundred characters.
+        self.snippet_chars = int(os.getenv("FAST_SNIPPET_CHARS", "1200"))
+
+        # Thinking dominates the synthesis latency; "low" cut it from ~7.7 s to ~2.8 s
+        # without losing accuracy (benchmarks/fast_check_ab.py).
+        self.thinking_level = os.getenv("GEMINI_THINKING_FAST_CHECK", "low")
 
         self.prompt_template = load_prompt("fast_fact_checker.md")
 
@@ -69,31 +79,39 @@ class FastFactChecker:
             build_model(self.model_name, self.fallback_model_name),
             output_type=FastVerdict,
             instructions=self.prompt_template,
-            model_settings=MODEL_SETTINGS,
+            model_settings=settings_with_thinking(self.thinking_level),
             retries=1,
         )
 
         logger.info(
             f"FastFactChecker initialized (model={self.model_name}, "
-            f"max_queries={self.max_queries}, search_depth={self.search_depth})"
+            f"max_queries={self.max_queries}, search_depth={self.search_depth}, "
+            f"thinking={self.thinking_level or 'default'})"
         )
 
-    def _build_queries(self, claim: str) -> List[str]:
-        """Derive up to ``max_queries`` German search queries from the claim.
+    def _build_queries(self, claim: str, queries: List[str] | None = None) -> List[str]:
+        """Pick up to ``max_queries`` German search queries for the claim.
 
-        Heuristic variants (no extra LLM call to keep latency low): the bare claim,
-        one nudged toward official data, one toward recency. Trimmed to max_queries.
+        Preferred: the keyword queries the reformulator wrote (JevGate path), with the
+        bare claim added as a safety net. Without them, heuristic variants of the claim.
         """
-        variants = [
-            claim,
-            f"{claim} Statistik offizielle Zahlen Studie",
-            f"{claim} aktuell",
-        ]
-        return variants[: max(1, self.max_queries)]
+        picked: List[str] = []
+        for q in [*(queries or []), claim]:
+            q = (q or "").strip()
+            if q and q.casefold() not in {p.casefold() for p in picked}:
+                picked.append(q)
+        if len(picked) < 2:
+            picked = [
+                claim,
+                f"{claim} Statistik offizielle Zahlen Studie",
+                f"{claim} aktuell",
+            ]
+        return picked[: max(1, self.max_queries)]
 
-    async def _gather_evidence(self, claim: str) -> List[dict]:
-        """Run the query variants as parallel Tavily searches; flatten results."""
-        queries = self._build_queries(claim)
+    async def _gather_evidence(self, claim: str, queries: List[str] | None = None) -> List[dict]:
+        """Run the queries as parallel Tavily searches; flatten and de-duplicate results."""
+        queries = self._build_queries(claim, queries)
+        logger.info("Fast search queries: %s", queries)
 
         async def _one(q: str) -> dict:
             try:
@@ -122,7 +140,7 @@ class FastFactChecker:
         for r in results:
             title = r.get("title", "")
             url = r.get("url", "")
-            content = (r.get("content", "") or "")[:500]
+            content = (r.get("content", "") or "")[: self.snippet_chars]
             lines.append(f"- {title} ({url}): {content}")
         return "\n".join(lines)
 
@@ -132,11 +150,16 @@ class FastFactChecker:
         claim: str,
         context: str | None = None,
         episode_date: str | None = None,
+        queries: List[str] | None = None,
     ) -> Dict[str, Any]:
-        """Fast-check a single claim. Never raises; returns 'unklar' on failure."""
+        """Fast-check a single claim. Never raises; returns 'unklar' on failure.
+
+        ``queries``: optional search queries (from the reformulator); falls back to
+        heuristic variants of the claim.
+        """
         logger.info(f"Fast-checking claim from {speaker}: {claim[:100]}...")
         try:
-            results = await self._gather_evidence(claim)
+            results = await self._gather_evidence(claim, queries)
             user_message = (
                 f"Kontext der Sendung: {context or '—'}\n"
                 f"Sendedatum: {episode_date or '—'}\n"

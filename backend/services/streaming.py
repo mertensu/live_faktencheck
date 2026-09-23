@@ -444,6 +444,7 @@ class StreamingSession:
             name = getattr(claim, "name", "") or ""
             text = getattr(claim, "claim", "") or ""
             source = getattr(claim, "source", None)  # original transcript sentence (JevGate)
+            queries = getattr(claim, "search_queries", None) or None  # JevGate only
             if not text:
                 continue
             # Safety net for early sentences: a sentence taken from a partial and again,
@@ -467,7 +468,7 @@ class StreamingSession:
                     source = self._final_source(turn_order, source) or source
                 else:
                     self._early_sources.setdefault(turn_order, []).append(source)
-            self._track(self._check_and_store(name, text, source, turn_order, label, span))
+            self._track(self._check_and_store(name, text, source, turn_order, label, span, queries))
 
     def _match_turn(self, source: str | None, entries: list[dict]) -> tuple[int | None, str | None]:
         """Find the buffered turn a claim's source sentence came from.
@@ -662,6 +663,7 @@ class StreamingSession:
         turn_order: int | None = None,
         speaker_label: str | None = None,
         span: tuple[int, int] | None = None,
+        queries: list[str] | None = None,
     ) -> None:
         """Insert a spinner placeholder, run the fast check, update in place.
 
@@ -721,7 +723,8 @@ class StreamingSession:
 
         try:
             result = await self.fast_checker.check_claim_async(
-                speaker=speaker, claim=claim, context=self.context, episode_date=self.episode_date
+                speaker=speaker, claim=claim, context=self.context, episode_date=self.episode_date,
+                queries=queries,
             )
             fc = build_fact_check_dict(result, self.session_id, speaker_fallback=speaker, claim_fallback=claim)
             # A rewrite (revision, label naming, late voiceprint) may have landed during

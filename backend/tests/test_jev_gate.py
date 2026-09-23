@@ -17,7 +17,7 @@ from unittest.mock import patch
 from pydantic_ai import models
 from pydantic_ai.models.test import TestModel
 
-from backend.services.claim_extraction import ClaimExtractor, ExtractedClaim
+from backend.services.claim_extraction import ClaimExtractor, ExtractedClaim, ReformulatedClaim
 from backend.services.gate import (
     ClaimGate,
     ExtractorGate,
@@ -78,6 +78,17 @@ class TestJevGate:
         # The original transcript sentence is preserved as the UI highlight anchor,
         # even though `claim` is the reformulated text.
         assert out[0].source == "Deutschland ist Mitglied der NATO."
+
+    async def test_search_queries_pass_through(self):
+        ex = _make_extractor()
+        gate = JevGate(ex, FakeScorer({"NATO": 0.97}))
+        reformulated = ReformulatedClaim(
+            name="Anna", claim="Deutschland ist Mitglied der NATO.",
+            search_queries=["NATO Mitgliedstaaten", "Deutschland NATO Beitritt 1955"],
+        )
+        with ex.reformulator.override(model=TestModel(custom_output_args=reformulated.model_dump())):
+            out = await gate.gate("Anna: Deutschland ist Mitglied der NATO.", guests=["Anna"])
+        assert out[0].search_queries == ["NATO Mitgliedstaaten", "Deutschland NATO Beitritt 1955"]
 
     async def test_unimportant_hit_is_dropped_before_llm(self):
         """A checkable-but-trivial sentence scores high on Jev's check question but low on

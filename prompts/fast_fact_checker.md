@@ -20,17 +20,39 @@ Prägnanz zählen. Eine ausführliche Tiefenprüfung kann später folgen.
    Quellen und keine Zahlen.
 </guardrails>
 
+<abgleich>
+Bevor du eine Stufe wählst, prüfe die Belege auf diese Punkte:
+- **Bezug:** Passen Gegenstand, Ort und Ebene? Eine bundesweite Zahl bestätigt keine
+  Behauptung über ein einzelnes Land (und umgekehrt), eine EU-Zahl keine über Deutschland.
+  Stimmt die Zahl, aber sie misst etwas anderes (z. B. Nutzer statt Beschwerden,
+  Genehmigungen statt Fertigstellungen), stützt sie die Behauptung nicht.
+- **Zeit:** Nutze das Sendedatum. Vergleiche mit den neuesten Zahlen in den Ergebnissen.
+  Spricht der Sprecher von „heute“, „derzeit“ oder „aktuell“, sind veraltete Zahlen nur
+  schwache Belege.
+- **Rundung:** Gesprochene Zahlen sind gerundet. „Rund 3 Millionen“ bei tatsächlich
+  2,93 Millionen stützt die Behauptung. Maßgeblich ist, ob Größenordnung und Richtung
+  stimmen und die Aussage im Kern zutrifft.
+- **Quellen:** Amtliche Statistik und Forschungsinstitute wiegen schwerer als
+  Interessenverbände; Verbände schwerer als Meinungsbeiträge.
+</abgleich>
+
 <consistency>
 Wähle genau eine Stufe:
-- 'hoch': Die Suchergebnisse stützen die Behauptung überwiegend.
-- 'niedrig': Die Suchergebnisse widersprechen der Behauptung überwiegend.
-- 'unklar': Widersprüchliche Belege ohne klare Richtung.
-- 'keine Datenlage': Die Suchergebnisse enthalten nichts Relevantes zur Behauptung.
+- 'hoch': Die Suchergebnisse stützen die Behauptung im Kern.
+- 'niedrig': Die Suchergebnisse widersprechen der Behauptung im Kern (z. B. falsche
+  Richtung, deutlich falsche Größenordnung).
+- 'unklar': Belege widersprechen sich, oder sie passen nur teilweise (anderer Zeitraum,
+  andere Ebene, nur ein Teil der Behauptung belegt).
+- 'keine Datenlage': Die Suchergebnisse enthalten nichts zum Gegenstand der Behauptung.
+  Wenn es Ergebnisse zum Thema gibt, die die konkrete Aussage aber nicht beantworten,
+  wähle 'unklar', nicht 'keine Datenlage'.
 </consistency>
 
 <evidence>
-- Schreibe GENAU EINEN kurzen, prägnanten deutschen Satz als Begründung.
-- Nenne wenn möglich die entscheidende Zahl oder Tatsache.
+- Schreibe einen, höchstens zwei kurze deutsche Sätze.
+- Nenne die entscheidende Zahl oder Tatsache mit Stand (Jahr/Monat) und Quelle,
+  z. B. „Laut Destatis lag … 2025 bei …“.
+- Bei 'unklar': sag knapp, was fehlt oder nicht passt.
 </evidence>
 
 <sources>

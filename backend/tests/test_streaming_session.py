@@ -43,7 +43,7 @@ def _gate(claims_per_flush):
 
 
 def _fast_checker(consistency="hoch"):
-    async def check(speaker, claim, context=None, episode_date=None):
+    async def check(speaker, claim, context=None, episode_date=None, queries=None):
         return {
             "speaker": speaker, "original_claim": claim, "consistency": consistency,
             "evidence": "Ein kurzer Satz.", "sources": [],
@@ -85,6 +85,17 @@ class TestWindowing:
         assert row["status"] == ""          # placeholder 'processing' was updated away
         assert row["sprecher"] == "Julia"
         assert row["begruendung"] == "Ein kurzer Satz."
+
+    async def test_gate_search_queries_reach_checker(self, db):
+        claim = GatedClaim(name="Julia", claim="Deutschland hat 83 Mio. Einwohner.",
+                           source="Deutschland hat 83 Millionen Einwohner.",
+                           search_queries=["Einwohnerzahl Deutschland Destatis"])
+        checker = _fast_checker()
+        session = StreamingSession("s1", _gate([[claim]]), checker, db)
+        await session.handle_turn("Deutschland hat 83 Millionen Einwohner. Das ist viel.",
+                                  end_of_turn=True, speaker_label="Julia")
+        await session.stop()
+        assert checker.check_claim_async.await_args.kwargs["queries"] == ["Einwohnerzahl Deutschland Destatis"]
 
     async def test_empty_gate_writes_no_rows(self, db):
         gate = _gate([[]])

@@ -7,6 +7,7 @@ Covered:
 - parallel Tavily searches are issued with the fast search_depth
 - a search/model failure degrades to consistency "unklar" rather than raising
 - _build_queries respects FAST_SEARCH_MAX_QUERIES
+- reformulator queries are preferred over the heuristic variants, claim kept as safety net
 """
 
 import pytest
@@ -73,8 +74,9 @@ class TestFastCheck:
         mock_search = AsyncMock(return_value=FAKE_SEARCH)
         with patch("backend.services.fast_fact_checker.tavily_search", mock_search):
             await checker.check_claim_async(speaker="X", claim="Behauptung Y.")
-        # One search per query variant, each with the fast depth override.
-        assert mock_search.call_count == checker.max_queries
+        # Without reformulator queries: one search per heuristic variant (3), each with
+        # the fast lane's depth override.
+        assert mock_search.call_count == 3
         for call in mock_search.call_args_list:
             assert call.kwargs.get("search_depth") == checker.search_depth
 
@@ -100,3 +102,23 @@ class TestFastCheck:
         }):
             c = FastFactChecker()
         assert c._build_queries("eine Behauptung") == ["eine Behauptung"]
+
+    def test_build_queries_prefers_given_queries(self, checker):
+        qs = checker._build_queries("Die Behauptung.", ["Arbeitslosenquote 2026", "BA Arbeitsmarkt"])
+        assert qs == ["Arbeitslosenquote 2026", "BA Arbeitsmarkt", "Die Behauptung."]
+
+    def test_build_queries_dedupes_and_caps(self, checker):
+        given = ["a b", "A B", "c d", "e f", "g h", "i j", ""]
+        qs = checker._build_queries("claim", given)
+        assert qs == ["a b", "c d", "e f", "g h", "i j"][: checker.max_queries]
+
+    def test_build_queries_falls_back_without_queries(self, checker):
+        assert len(checker._build_queries("claim", [])) == 3
+        assert checker._build_queries("claim", None)[0] == "claim"
+
+    async def test_given_queries_are_searched(self, checker):
+        mock_search = AsyncMock(return_value=FAKE_SEARCH)
+        with patch("backend.services.fast_fact_checker.tavily_search", mock_search):
+            await checker.check_claim_async(speaker="X", claim="Behauptung Y.", queries=["q1", "q2"])
+        searched = [c.args[0] for c in mock_search.call_args_list]
+        assert searched == ["q1", "q2", "Behauptung Y."]

@@ -24,6 +24,18 @@ from pydantic_ai.providers.openai import OpenAIProvider
 MODEL_SETTINGS = GoogleModelSettings(temperature=0)
 
 
+def settings_with_thinking(level: str | None) -> GoogleModelSettings:
+    """``MODEL_SETTINGS`` plus a Gemini thinking level ("minimal"/"low"/"medium"/"high").
+
+    Empty/None keeps the model's default. Latency lever for the live lane: thinking
+    dominates the call time of the flash models. Non-Google fallback layers ignore it.
+    """
+    level = (level or "").strip().lower()
+    if not level:
+        return MODEL_SETTINGS
+    return GoogleModelSettings(temperature=0, google_thinking_config={"thinking_level": level})
+
+
 def _provider() -> GoogleProvider:
     """Build a GoogleProvider from the Gemini/Google API key in the environment."""
     api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")

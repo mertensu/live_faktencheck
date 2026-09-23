@@ -21,7 +21,7 @@ import re
 import json
 import asyncio
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import List, Protocol, runtime_checkable
 
 from .claim_extraction import ExtractedClaim, ClaimExtractor
@@ -41,6 +41,7 @@ class GatedClaim:
     name: str
     claim: str
     source: str
+    search_queries: list[str] = field(default_factory=list)
 
 
 @runtime_checkable
@@ -198,8 +199,9 @@ class JevGate:
       1. Split the window into (speaker, sentence) pairs.
       2. Score every sentence with Jev, concurrently. ``p >= CHECK_HI`` is a hit; the
          grey zone (``SKIP_LO < p < CHECK_HI``) and misses are skipped conservatively.
-      3. For each hit, a cheap flash-lite call reformulates the sentence into a standalone
-         claim (pronouns resolved from rolling context, speaker assigned). Jev already
+      3. For each hit, a flash call reformulates the sentence into a standalone claim
+         (pronouns resolved from rolling context, speaker assigned) and writes search
+         queries for the fast checker. Jev already
          decided check-worthiness — this step does not re-judge it.
     """
 
@@ -283,7 +285,10 @@ class JevGate:
                     claim = None
                 if claim and (claim.claim or "").strip():
                     # Keep the original sentence as the highlight anchor for the UI.
-                    claims.append(GatedClaim(name=claim.name or speaker, claim=claim.claim, source=sentence))
+                    claims.append(GatedClaim(
+                        name=claim.name or speaker, claim=claim.claim, source=sentence,
+                        search_queries=list(getattr(claim, "search_queries", None) or []),
+                    ))
             # Every sentence (hit or not) extends the rolling context for the next one.
             rolling = rolling_next
 
