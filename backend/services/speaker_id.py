@@ -18,6 +18,7 @@ bench-only.
 from __future__ import annotations
 
 import logging
+import unicodedata
 from pathlib import Path
 
 import numpy as np
@@ -63,6 +64,15 @@ def pcm16_to_float32(data: bytes) -> np.ndarray:
     return np.frombuffer(data, dtype="<i2").astype(np.float32) / 32768.0
 
 
+def name_key(name: str) -> str:
+    """Comparison key for speaker names: NFC + casefold.
+
+    macOS may store "Dröge.npy" decomposed (o + combining umlaut) while the guest list is
+    composed — without NFC they would silently never match.
+    """
+    return unicodedata.normalize("NFC", name).casefold()
+
+
 def load_voiceprints(directory, names: list[str] | None = None) -> dict[str, np.ndarray]:
     """Load ``<Name>.npy`` unit voiceprints from ``directory``.
 
@@ -73,11 +83,11 @@ def load_voiceprints(directory, names: list[str] | None = None) -> dict[str, np.
     root = Path(directory)
     if not root.is_dir():
         return {}
-    wanted = {n.casefold() for n in names} if names else None
+    wanted = {name_key(n) for n in names} if names else None
     prints: dict[str, np.ndarray] = {}
     for npy in sorted(root.glob("*.npy")):
-        name = npy.stem
-        if wanted is not None and name.casefold() not in wanted:
+        name = unicodedata.normalize("NFC", npy.stem)
+        if wanted is not None and name_key(name) not in wanted:
             continue
         try:
             prints[name] = _unit(np.load(npy))

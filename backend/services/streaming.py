@@ -157,8 +157,9 @@ class StreamingSession:
         # Episode speakers without a voiceprint. Only they need the LLM resolver.
         self._missing: list[str] = []
         if speaker_identifier is not None:
-            enrolled = {n.casefold() for n in speaker_identifier.voiceprints}
-            self._missing = [n for n in self.speakers if n.casefold() not in enrolled]
+            from backend.services.speaker_id import name_key
+            enrolled = {name_key(n) for n in speaker_identifier.voiceprints}
+            self._missing = [n for n in self.speakers if name_key(n) not in enrolled]
 
     # ---- event emission -----------------------------------------------------
     async def _emit(self, event: dict) -> None:

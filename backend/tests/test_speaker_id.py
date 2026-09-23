@@ -81,6 +81,13 @@ class TestLoadVoiceprints:
         prints = load_voiceprints(tmp_path, names=["alice", "BOB"])
         assert set(prints) == {"Alice", "Bob"}
 
+    def test_umlaut_matches_across_unicode_forms(self, tmp_path):
+        import unicodedata
+        decomposed = unicodedata.normalize("NFD", "Dröge")
+        np.save(tmp_path / f"{decomposed}.npy", np.array([1.0, 0.0], np.float32))
+        prints = load_voiceprints(tmp_path, ["Dröge"])  # composed, as typed in the guest list
+        assert list(prints) == ["Dröge"]
+
     def test_missing_directory_is_empty(self, tmp_path):
         assert load_voiceprints(tmp_path / "nope") == {}
 
