@@ -299,14 +299,15 @@ dominant speaker — not sample-accurate sentence boundaries.
 
 1. Merge behind `SPEAKER_ID_ENABLED=false` (dark).
 2. Enroll moderators + recurring guests (build the store), bake the model into the image.
-3. **Calibrate on staging with recorded episodes** (the project has no live users yet, so no
-   shadow mode is needed; staging with `SPEAKER_ID_ENABLED=true` is the test bed). Play 2–3
-   recorded episodes (Mediathek) through the normal browser audio path, ideally ones with
-   crosstalk and clips of other people (Einspieler). Log per claim to Logfire:
-   `{pid, speaker, name_source (span|label_vote|llm|label|unknown), voiceprint_name, score,
-   span, waited_ms}`. Compare against the actual speakers and set the accept threshold, the
-   unknown threshold and `SPEAKER_ID_WAIT_MS`. Also check CPU cost and that the event loop
-   doesn't stall.
+3. **Calibrate locally with recorded episodes** (the project has no live users yet, so no
+   shadow mode and no staging run is needed). `./start_dev.sh <episode>` with
+   `SPEAKER_ID_ENABLED=true`, then play 2–3 recorded episodes (Mediathek) through the normal
+   browser audio path, ideally ones with crosstalk and clips of other people (Einspieler).
+   One plain `logger.info` line per claim (no Logfire needed):
+   `speaker=… source=span|label_vote|llm|label|unknown vp=… score=… span=… waited_ms=…`.
+   Compare against the actual speakers and set the accept threshold, the unknown threshold and
+   `SPEAKER_ID_WAIT_MS`. Also check CPU cost and that the event loop doesn't stall. Then a
+   short smoke test on staging (image with model + voiceprints).
 4. Enable on prod.
 
 ## 12. Open risks
