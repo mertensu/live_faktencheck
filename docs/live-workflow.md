@@ -31,6 +31,14 @@ Open a PR and merge it. The deploy follows automatically within a few minutes �
 [`docs/deployment.md`](deployment.md). Plan for that lag: add the episode well before
 the show, not while the guests are being introduced.
 
+**Voiceprints (when `SPEAKER_ID_ENABLED`):** every speaker of the episode — moderator
+included — needs a voiceprint `<Name>.npy` whose file name is the guest name *without* the
+role (`Sandra Maischberger.npy`). Enroll new speakers from 1–2 clean public clips with
+`benchmarks/enroll_voiceprints.py` and copy the prints into the server's data dir
+(`backend/data/voiceprints/`, never git — biometric data). At stream start the admin UI
+receives a `speaker_id_status` event listing speakers without a print; those fall back to
+diarization labels plus the LLM name resolver.
+
 ---
 
 ## During the show

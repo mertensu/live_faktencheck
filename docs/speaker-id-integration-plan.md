@@ -3,7 +3,9 @@
 Status: **foundation done** (commit d62f1c4, dark behind `SPEAKER_ID_ENABLED`):
 `services/speaker_id.py` (`SpeakerIdentifier.identify`, `load_voiceprints`, `pcm16_to_float32`),
 `registry.get_speaker_identifier(guests)`, `benchmarks/enroll_voiceprints.py`, tests.
-**Open: streaming wiring** (§5.2, §6), calibrated on recorded episodes (§11). This document is written so implementation can start
+Streaming wiring done on `live-fast-lane` (§5.2, §6; track logic in
+`services/speaker_track.py`), model baked into the image (§9). **Open: calibration** on
+recorded episodes via the PR preview (§11). This document is written so implementation can start
 cold in a fresh context. Prior work: offline spike done (`benchmarks/speaker_id_bench.py`),
 result positive — see "Spike evidence".
 
@@ -258,6 +260,10 @@ dominant speaker — not sample-accurate sentence boundaries.
 - `SPEAKER_ID_MIN_SECONDS` (default 1.5).
 - `SPEAKER_ID_NUM_THREADS` (default 1).
 - `SPEAKER_ID_VOICEPRINTS_DIR` (default `backend/data/voiceprints`).
+- Track tuning (defaults in `streaming.py`): `SPEAKER_ID_WINDOW_MS` (3000), `SPEAKER_ID_HOP_MS`
+  (1000), `SPEAKER_ID_BUFFER_MS` (15000), `SPEAKER_ID_MIN_RMS` (0.01, energy gate),
+  `SPEAKER_ID_MAJORITY` (0.6, span vote), `SPEAKER_ID_UNKNOWN_THRESHOLD` (0.35),
+  `SPEAKER_ID_LABEL_MIN_VOTES` (3), `SPEAKER_ID_LABEL_MAJORITY` (0.8).
 - Import sherpa-onnx **lazily** in `speaker_id.py`, so a disabled flag never loads the ONNX
   stack.
 
