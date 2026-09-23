@@ -7,12 +7,15 @@ against a real in-memory DB, and assert the placeholder-then-update row sequence
 """
 
 import asyncio
+import threading
 
+import numpy as np
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 
 from backend.database import Database
 from backend.services.claim_extraction import ExtractedClaim
+from backend.services import streaming as streaming_mod
 from backend.services.gate import GatedClaim
 from backend.services.streaming import StreamingSession, SPEAKER_RESOLVE_MIN_TURNS
 
@@ -258,4 +261,104 @@ class TestTurnWords:
         assert session._buffer[0]["text"] == "Hallo Welt"
         assert session._buffer[0]["words"] == new_words
         assert session._turns[0]["words"] == new_words
+        await session.stop()
+
+
+# ---- voiceprint speaker ID (docs/speaker-id-integration-plan.md §10) ---------------------
+# The SpeakerIdentifier is a stub (identify(pcm, sr) -> (name, score)); no onnxruntime.
+
+SR = 16000
+
+
+def _ident(result=("Alice", 0.8), voiceprints=("Alice", "Bob")):
+    stub = MagicMock()
+    stub.identify = MagicMock(return_value=result)
+    stub.voiceprints = {n: None for n in voiceprints}
+    return stub
+
+
+def _pcm_bytes(ms, loud=True):
+    n = SR * ms // 1000
+    rng = np.random.default_rng(0)
+    samples = rng.integers(-8000, 8000, n) if loud else np.zeros(n, dtype=np.int64)
+    return samples.astype("<i2").tobytes()
+
+
+class _FakeClient:
+    def __init__(self):
+        self.sent = 0
+
+    async def stream(self, audio):
+        self.sent += len(audio)
+
+    async def disconnect(self):
+        pass
+
+
+async def _drain(session):
+    while session._tasks:
+        await asyncio.gather(*list(session._tasks))
+
+
+class TestClassifier:
+    async def test_feed_advances_clock_only_when_sent(self, db):
+        session = StreamingSession("s1", _gate([]), _fast_checker(), db, speaker_identifier=_ident())
+        await session.feed(_pcm_bytes(1000))  # no client -> dropped for both
+        assert session._samples == 0
+        session._client = _FakeClient()
+        await session.feed(_pcm_bytes(1000))
+        assert session._samples == SR
+        await session.stop()
+
+    async def test_ring_buffer_is_bounded(self, db, monkeypatch):
+        monkeypatch.setattr(streaming_mod, "SPEAKER_ID_BUFFER_MS", 4000)
+        session = StreamingSession("s1", _gate([]), _fast_checker(), db, speaker_identifier=_ident())
+        session._client = _FakeClient()
+        for _ in range(10):
+            await session.feed(_pcm_bytes(1000))
+        assert len(session._pcm) == 4 * SR * 2
+        assert session._samples == 10 * SR
+        await session.stop()
+
+    async def test_loud_window_is_classified_into_track(self, db):
+        ident = _ident(("Alice", 0.8))
+        session = StreamingSession("s1", _gate([]), _fast_checker(), db, speaker_identifier=ident)
+        session._client = _FakeClient()
+        await session.feed(_pcm_bytes(4000))
+        assert session._classify_tick()
+        await _drain(session)
+        assert session._spk_track.entries == [(1000, 4000, "Alice", 0.8)]
+        assert session._spk_track.covered_ms == 4000
+        await session.stop()
+
+    async def test_silent_window_skips_identify(self, db):
+        ident = _ident()
+        session = StreamingSession("s1", _gate([]), _fast_checker(), db, speaker_identifier=ident)
+        session._client = _FakeClient()
+        await session.feed(_pcm_bytes(3000, loud=False))
+        session._classify_tick()
+        await _drain(session)
+        assert session._spk_track.entries == [(0, 3000, None, None)]
+        ident.identify.assert_not_called()
+        await session.stop()
+
+    async def test_slow_identify_makes_next_tick_skip(self, db):
+        release = threading.Event()
+
+        def slow(pcm, sr):
+            release.wait(2)
+            return "Alice", 0.8
+
+        ident = _ident()
+        ident.identify.side_effect = slow
+        session = StreamingSession("s1", _gate([]), _fast_checker(), db, speaker_identifier=ident)
+        session._client = _FakeClient()
+        await session.feed(_pcm_bytes(3000))
+        assert session._classify_tick()
+        await session.feed(_pcm_bytes(1000))
+        assert not session._classify_tick()  # previous step still running -> dropped
+        release.set()
+        await _drain(session)
+        assert ident.identify.call_count == 1
+        assert session._classify_tick()  # free again, new audio available
         await session.stop()

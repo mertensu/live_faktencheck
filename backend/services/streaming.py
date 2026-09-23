@@ -17,6 +17,7 @@ import logging
 from datetime import datetime
 
 from backend.utils import build_fact_check_dict
+from .speaker_track import SpeakerTrack
 from .transcription import keyterms_from_guests
 
 logger = logging.getLogger(__name__)
@@ -41,6 +42,21 @@ SPEAKER_RESOLVE_MAX_LINES = int(os.getenv("STREAM_SPEAKER_RESOLVE_MAX_LINES", "6
 # gives the reclusterer a hint on hard single-mic TV audio. Env overrides the derivation.
 STREAM_MAX_SPEAKERS = os.getenv("STREAM_MAX_SPEAKERS")
 
+# Voiceprint speaker ID (docs/speaker-id-integration-plan.md §5.2, §8). Active only when a
+# SpeakerIdentifier is injected (registry.get_speaker_identifier, SPEAKER_ID_ENABLED). A
+# background classifier embeds the last WINDOW of audio every HOP into a speaker track;
+# claims read the dominant speaker over their sentence's time span from that track.
+SPEAKER_ID_WINDOW_MS = int(os.getenv("SPEAKER_ID_WINDOW_MS", "3000"))
+SPEAKER_ID_HOP_MS = int(os.getenv("SPEAKER_ID_HOP_MS", "1000"))
+SPEAKER_ID_BUFFER_MS = int(os.getenv("SPEAKER_ID_BUFFER_MS", "15000"))  # PCM ring buffer
+# Energy gate: windows quieter than this RMS (float PCM in [-1, 1]) are recorded as None
+# without an embedding — min_seconds only checks length, applause/room noise passes it.
+SPEAKER_ID_MIN_RMS = float(os.getenv("SPEAKER_ID_MIN_RMS", "0.01"))
+# Share of a span's overlap weight a name needs to count as its dominant speaker.
+SPEAKER_ID_MAJORITY = float(os.getenv("SPEAKER_ID_MAJORITY", "0.6"))
+# Every overlapping window below this cosine → a clearly foreign voice (§6.9).
+SPEAKER_ID_UNKNOWN_THRESHOLD = float(os.getenv("SPEAKER_ID_UNKNOWN_THRESHOLD", "0.35"))
+
 
 def _count_sentences(text: str) -> int:
     return sum(text.count(m) for m in (".", "!", "?"))
@@ -63,6 +79,8 @@ class StreamingSession:
         episode_date: str | None = None,
         on_event=None,
         resolve_speakers=None,
+        speaker_identifier=None,
+        speakers: list[str] | None = None,
     ):
         self.session_id = session_id
         self.gate = gate
@@ -76,6 +94,9 @@ class StreamingSession:
         self.on_event = on_event  # optional async callable(dict) -> pushes JSON to browser
         # optional async callable(transcript, guests, conversation_type) -> {label: name}
         self._resolve_speakers_fn = resolve_speakers
+        # optional SpeakerIdentifier (voiceprints); None = speaker ID off, labels only
+        self.speaker_identifier = speaker_identifier
+        self.speakers = speakers or []  # guest names without roles (voiceprint file stems)
 
         # Current window: finalized turns as {"turn_order", "speaker" (label), "text",
         # "words"} — words are [{"text", "start", "end"}] (ms from stream start).
@@ -100,6 +121,17 @@ class StreamingSession:
         # ~a minute of transcript; claims flow sooner). Keyed by the bare label so the
         # background resolution can rewrite them once it learns the name.
         self._label_claims: dict[str, list[int]] = {}  # label -> [fact_check_id]
+
+        # Voiceprint speaker ID: a bounded ring buffer of the PCM16 actually sent to
+        # AssemblyAI, and a sample counter on the same clock as its word timestamps.
+        self._pcm = bytearray()
+        self._samples = 0
+        self._spk_track = SpeakerTrack(
+            majority=SPEAKER_ID_MAJORITY, unknown_threshold=SPEAKER_ID_UNKNOWN_THRESHOLD
+        )
+        self._track_updated = asyncio.Event()  # set (and replaced) after each classifier step
+        self._classifying = False
+        self._classifier_task: asyncio.Task | None = None
 
     # ---- event emission -----------------------------------------------------
     async def _emit(self, event: dict) -> None:
@@ -347,6 +379,61 @@ class StreamingSession:
             })
             await self._emit({"type": "claim_error", "id": pid})
 
+    # ---- voiceprint speaker track (background classifier) --------------------
+    def _ms(self, samples: int) -> int:
+        return samples * 1000 // STREAM_SAMPLE_RATE
+
+    def _buffer_pcm(self, audio: bytes) -> None:
+        """Append sent audio to the ring buffer and advance the stream clock."""
+        self._pcm += audio
+        self._samples += len(audio) // 2
+        max_bytes = SPEAKER_ID_BUFFER_MS * STREAM_SAMPLE_RATE // 1000 * 2
+        if len(self._pcm) > max_bytes:
+            del self._pcm[: len(self._pcm) - max_bytes]
+
+    def _classify_tick(self) -> bool:
+        """Start one classifier step on the newest window; returns False if skipped.
+
+        Skip, don't queue: while the previous step still runs, this tick is dropped — the
+        next window overlaps it anyway. Also skipped until a full window is buffered and
+        when no new audio arrived since the last step.
+        """
+        if self.speaker_identifier is None or self._classifying:
+            return False
+        win = SPEAKER_ID_WINDOW_MS * STREAM_SAMPLE_RATE // 1000
+        if len(self._pcm) // 2 < win or self._ms(self._samples) <= self._spk_track.covered_ms:
+            return False
+        self._classifying = True
+        self._track(self._classify_step(bytes(self._pcm[-win * 2:]), self._samples - win, self._samples))
+        return True
+
+    def _classify_window(self, pcm_bytes: bytes) -> tuple[str | None, float | None]:
+        """Energy gate + embedding for one window (runs in a worker thread)."""
+        import numpy as np
+        from backend.services.speaker_id import pcm16_to_float32
+
+        pcm = pcm16_to_float32(pcm_bytes)
+        if float(np.sqrt(np.mean(pcm * pcm))) < SPEAKER_ID_MIN_RMS:
+            return None, None
+        return self.speaker_identifier.identify(pcm, STREAM_SAMPLE_RATE)
+
+    async def _classify_step(self, pcm_bytes: bytes, start_sample: int, end_sample: int) -> None:
+        try:
+            # Off the event loop: tens of ms of CPU would stall audio forwarding and WS events.
+            name, score = await asyncio.to_thread(self._classify_window, pcm_bytes)
+            self._spk_track.add(self._ms(start_sample), self._ms(end_sample), name, score)
+            updated, self._track_updated = self._track_updated, asyncio.Event()
+            updated.set()
+        except Exception:
+            logger.exception("Speaker classification step failed")
+        finally:
+            self._classifying = False
+
+    async def _classifier_loop(self) -> None:
+        while True:
+            await asyncio.sleep(SPEAKER_ID_HOP_MS / 1000)
+            self._classify_tick()
+
     # ---- AssemblyAI wiring (thin; covered by SG-4 e2e, not unit tests) -------
     def _max_speakers(self) -> int | None:
         """Cluster-count hint for diarization: env override, else guests + moderator."""
@@ -403,10 +490,16 @@ class StreamingSession:
         )
         await self._client.connect(params)
         logger.info(f"[stream:{self.session_id}] AssemblyAI streaming connected")
+        if self.speaker_identifier is not None:
+            self._classifier_task = asyncio.create_task(self._classifier_loop())
 
     async def feed(self, audio: bytes) -> None:
         if self._client is not None:
             await self._client.stream(audio)
+            # Alignment invariant: only audio actually sent to AssemblyAI advances the
+            # sample clock, so track time == word-timestamp time.
+            if self.speaker_identifier is not None:
+                self._buffer_pcm(audio)
 
     async def stop(self) -> None:
         """Flush the tail window, close AssemblyAI, and drain background tasks."""
@@ -419,6 +512,14 @@ class StreamingSession:
                 except Exception:
                     logger.exception("Error disconnecting AssemblyAI stream")
                 self._client = None
+            # Classify the tail and drain claim checks while the classifier still runs, so
+            # claims waiting for track coverage get it; then stop it and drain its last step.
+            self._classify_tick()
+            if self._tasks:
+                await asyncio.gather(*list(self._tasks), return_exceptions=True)
+            if self._classifier_task is not None:
+                self._classifier_task.cancel()
+                self._classifier_task = None
             if self._tasks:
                 await asyncio.gather(*list(self._tasks), return_exceptions=True)
         logger.info(f"[stream:{self.session_id}] session stopped")
