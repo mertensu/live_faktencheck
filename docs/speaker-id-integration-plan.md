@@ -3,7 +3,7 @@
 Status: **foundation done** (commit d62f1c4, dark behind `SPEAKER_ID_ENABLED`):
 `services/speaker_id.py` (`SpeakerIdentifier.identify`, `load_voiceprints`, `pcm16_to_float32`),
 `registry.get_speaker_identifier(guests)`, `benchmarks/enroll_voiceprints.py`, tests.
-**Open: streaming wiring** (§5.2, §6). This document is written so implementation can start
+**Open: streaming wiring** (§5.2, §6), rolled out via prod shadow mode (§11). This document is written so implementation can start
 cold in a fresh context. Prior work: offline spike done (`benchmarks/speaker_id_bench.py`),
 result positive — see "Spike evidence".
 
@@ -32,6 +32,11 @@ robust on single-mic TV audio:
   that track. **Not** tied to AssemblyAI turns/labels.
 - AssemblyAI's `speaker_label` / `SpeakerRevisionEvent` are demoted to **fallback**: used only
   when the voiceprint is not confident (unknown speaker, too short/quiet, overlap).
+- **LLM budget: zero LLM calls for speaker identity** when every episode speaker is enrolled.
+  Voiceprints also name AssemblyAI's labels (§6.8), which replaces the LLM label→name
+  resolver. That resolver runs **only** as a stopgap when the enrollment check (§5.3) finds
+  speakers without a voiceprint. The only LLM call left in the fast lane is the fast check
+  itself.
 
 This makes identity robust against both wrong diarization labels *and* wrong turn clustering:
 even if AssemblyAI calls everything "A" or glues two speakers into one turn, we classify the
@@ -69,15 +74,14 @@ _flush_window() ──▶ gate returns claims with .source (original sentence)
   ASR) to know *when* a sentence was spoken. Detects a speaker change mid-turn instead of
   averaging it away. Cost: ~1 embedding/second, ~tens of ms CPU, in the background →
   negligible over 90 min.
-- **Simpler fallback variant: slice per claim `source` sentence** (sentence → word span → PCM
-  slice → `identify`). Fewer embeddings, but *one* pooled embedding per sentence → won't see a
-  speaker change within the span. Fine as an intermediate step; swappable behind the same
-  interface.
-- **Unknown/overlap**: in both variants falls below the cosine gate → fallback (never a
-  confident wrong name).
+- **Out of scope: the per-sentence slice variant** (sentence → PCM slice → one `identify` per
+  claim). It can't see a speaker change within a span and the track costs little more. Build
+  only the track.
+- **Unknown/overlap**: falls below the cosine gate → fallback (never a confident wrong name);
+  a *clearly* foreign voice is named as such (§6.9).
 
 ### 4.1 Sentence → word time span
-Both variants need a sentence's **time span**, not its turn membership. `source` is a sentence
+The track lookup needs a sentence's **time span**, not its turn membership. `source` is a sentence
 string from the **formatted** text; timestamps hang on the **words** (`words[].start/end`, raw
 ASR tokens) — not a 1:1 match (case, punctuation, numbers). Mapping = find the word subsequence
 whose normalized concatenation matches the sentence → `start = words[i].start`,
@@ -138,8 +142,6 @@ dominant speaker — not sample-accurate sentence boundaries.
   yet. Keep `self._pending_spk: list[(pid, start_ms, end_ms)]`; after each classifier step,
   resolve every entry now covered → `_apply_voiceprint(pid, name)` (§6.5). Drain/give up on
   remaining entries at `stop()`.
-- Fallback variant without a track: `_slice(start_ms,end_ms)` + a single `identify` per claim
-  sentence.
 
 ### 5.3 Voiceprint store + enrollment (offline)
 - Store: `backend/data/voiceprints/<Name>.npy` (unit vector) **or** a small JSON/SQLite
@@ -151,13 +153,21 @@ dominant speaker — not sample-accurate sentence boundaries.
     `ep.guests` to the session, so strip roles when calling the factory.
   - The moderator is already in `guests` (listed first) → **enroll moderators** as a matter
     of course: recurring, trivially enrolled once, and otherwise all moderator speech falls
-    back to the weak label path. Closed set = this episode's guests → few confusions, non-guests fall through
-  the gate correctly.
+    back to the weak label path.
+  - Closed set = this episode's speakers → few confusions; non-guests fall through the gate.
 - Enrollment: **offline**, via an extended bench (`benchmarks/enroll_voiceprints.py`, new):
   reads `enroll/<Name>/*.wav`, averages embeddings, writes the store. No enrollment in the live
   path.
 - Pre-show enrollment (a short live clip per guest) is a later addition; v1 = store from public
   clips.
+- **Enrollment is show prep, checked automatically.** A guest without a voiceprint silently
+  falls back to the weak path, so coverage must be visible:
+  - Adding an episode to `EPISODES` includes enrolling any new speaker from 1–2 public clips
+    (`enroll_voiceprints.py`); note this in the episode-config docs.
+  - At session start, compute `missing = ep.speakers − voiceprints`. Log it and emit a
+    `speaker_id_status` event `{enrolled: [...], missing: [...]}` so the admin UI shows
+    "no voiceprint for X" before the show starts.
+  - `missing` also decides whether the LLM resolver runs at all (§6.8).
 
 ## 6. Changes in `streaming.py` (concrete touch points)
 
@@ -179,7 +189,7 @@ dominant speaker — not sample-accurate sentence boundaries.
    spoken (window of 2 sentences / 3 turns + gate), so the track normally already covers it.
    Hence, inside the per-claim task (`_check_and_store`, already off the flush path):
    - if `end_ms <= _track_covered_ms` → `dominant_speaker(span)` now;
-   - else wait for coverage with a **bounded** timeout (~1.5 s, env-tunable; an
+   - else wait for coverage with a **bounded** timeout (~1 s, env-tunable `SPEAKER_ID_WAIT_MS`, tune from shadow data; an
      `asyncio.Event`/condition set by the classifier after each step), then query;
    - on timeout → store with the best-known fallback speaker and register the claim in
      `_pending_spk` (5.2) → resolved later via rewrite (point 5).
@@ -187,8 +197,9 @@ dominant speaker — not sample-accurate sentence boundaries.
    `claim_speaker_update` (frontend `useAudioStream.js` already handles it). Late voiceprint
    results go through a thin `_apply_voiceprint(pid, name)` that rewrites and **locks** the
    claim (below).
-6. **Per-claim speaker fallback chain**: voiceprint (if confident) → LLM resolution
-   `speaker_map[label]` → raw diarization label. **This precedence must be enforced**, because
+6. **Per-claim speaker fallback chain**: voiceprint over the sentence span (if confident) →
+   `_speaker_map[label]` (filled by voiceprint label votes, §6.8; by the LLM only for
+   unenrolled speakers) → raw diarization label. **This precedence must be enforced**, because
    two existing paths rewrite speakers on their own and would clobber a voiceprint name:
    - `handle_speaker_revision` rewrites every pid in `_turn_claims[turn_order]`;
    - `_apply_map_to_pending` rewrites every pid in `_label_claims[label]`.
@@ -198,6 +209,27 @@ dominant speaker — not sample-accurate sentence boundaries.
    voiceprint `None` (unknown/overlap/too quiet) leaves the claim on the label paths as today.
 7. `_match_turn` stays: it still provides `(turn_order, label)` for the fallback chain. It
    is also the natural place to pick up the matched entry's `words` for the span mapping.
+8. **Voiceprint label naming (replaces the LLM resolver).** For each finalized turn, read
+   `dominant_speaker(turn span)` from the track and count a vote `label → name`
+   (`self._label_votes[label][name]`). When a label has ≥ N confident votes (~3) with a clear
+   majority (~80 %), set `_speaker_map[label] = name` and call the existing
+   `_apply_map_to_pending`. Re-evaluate on every vote, so AssemblyAI reclustering is followed.
+   No new plumbing: `_speaker_map`, `_label_claims`, `handle_speaker_revision` and the live
+   `display_speaker` all keep working, now fed by voiceprints instead of an LLM. Names within
+   seconds instead of after ~1 min of transcript. If labels are garbage (everything "A"),
+   votes are mixed → no mapping → the per-sentence span (point 6, first link) still names
+   most claims.
+   - **LLM resolver gating:** `_maybe_resolve_speakers` runs only when speaker ID is off
+     (today's behaviour) or `missing` (§5.3) is non-empty; then only labels without a
+     voiceprint mapping are taken from its result. All speakers enrolled → **no LLM call**.
+9. **Unknown voice as a signal.** Loud enough, span covered, and **every** overlapping window
+   below a low `SPEAKER_ID_UNKNOWN_THRESHOLD` (well under the accept threshold; calibrate in
+   shadow) → a clearly foreign voice: clip (Einspieler), caller, audience. Set `sprecher` to
+   the German "unknown speaker" string (in `backend/lang.py`, per convention), don't fall back
+   to a guest label, and mark the claim so the admin UI can flag it. The claim is still
+   checked. Between the two thresholds ("unsure", e.g. overlap) → normal fallback chain.
+   Wrongly crediting a clip's statement to a guest is the most damaging mistake here, and this
+   costs nothing extra.
 
 ## 7. Gate / thresholds (from the spike, calibratable)
 
@@ -213,6 +245,12 @@ dominant speaker — not sample-accurate sentence boundaries.
 ## 8. Configuration (env, feature flag)
 
 - `SPEAKER_ID_ENABLED` (default `false`) — gates the whole path; ships dark.
+- `SPEAKER_ID_SHADOW` (default `true`) — with speaker ID enabled, compute track, label votes
+  and unknown detection, but **change nothing**: no `sprecher` override, `_speaker_map` stays
+  LLM-fed, resolver runs as today. Log only (§11). Flip to `false` to go live. Defaulting to
+  shadow means enabling can never change output by accident.
+- `SPEAKER_ID_WAIT_MS` (default ~1000) — bounded wait for track coverage (§6.4).
+- `SPEAKER_ID_UNKNOWN_THRESHOLD` — "clearly foreign voice" cutoff (§6.9), from shadow data.
 - `SPEAKER_ID_MODEL` — path to the .onnx (baked into the image, see below).
 - `SPEAKER_ID_THRESHOLD` (default ~0.55).
 - `SPEAKER_ID_MIN_SECONDS` (default 1.5).
@@ -224,7 +262,7 @@ dominant speaker — not sample-accurate sentence boundaries.
 ## 9. Deployment decision
 
 **Recommendation: in-process** (embedding inside the backend container), not a sidecar.
-- Load is small: one embedding per second (track) or per claim sentence, ~tens of ms CPU, off
+- Load is small: one embedding per second (track), ~tens of ms CPU, off
   the hot path. No IPC / extra ops.
 - Prod dependencies: move `sherpa-onnx`, `onnxruntime`, `numpy` from the `bench` group into the
   **main dependencies** (or a `speakerid` extra that the Dockerfile installs). `soundfile` stays
@@ -251,6 +289,14 @@ dominant speaker — not sample-accurate sentence boundaries.
 - Re-emitted final with changed text → buffer entry carries the new `words`.
 - Factory filter: `get_speaker_identifier(ep.speakers)` matches `<Name>.npy`; role-annotated
   names do not (guards against the `ep.guests` pitfall, §5.3).
+- **Label naming:** consistent votes → `_speaker_map[label]` set + pending claims rewritten;
+  mixed votes → no mapping; majority flips after reclustering → mapping follows.
+- **LLM gating:** all speakers enrolled → resolver stub never called; one missing → called,
+  but voiceprint-mapped labels are not overwritten.
+- **Unknown voice:** all windows below the unknown threshold → unknown string + flag, no label
+  fallback; between thresholds → normal fallback.
+- **Shadow:** `SPEAKER_ID_SHADOW=true` → `sprecher`, `_speaker_map` and emitted events identical
+  to speaker ID off; the log row is written at `stop()`.
 - Test sentence → word span mapping separately (text alignment against `words`), including
   number-heavy sentences where only the anchor match succeeds (§4.1).
 - Accuracy stays in the **offline bench** (`benchmarks/`, real audio), not in unit tests.
@@ -258,10 +304,17 @@ dominant speaker — not sample-accurate sentence boundaries.
 ## 11. Rollout
 
 1. Merge behind `SPEAKER_ID_ENABLED=false` (dark).
-2. Enroll recurring guests (build the store), bake the model into the image.
-3. Enable on **staging** (branch auto-deploy is live), record a real session, check voiceprint
-   IDs against reality, recalibrate the threshold.
-4. Only then enable on prod.
+2. Enroll moderators + recurring guests (build the store), bake the model into the image.
+3. **Staging smoke test**: enabled, shadow. Does it run, CPU cost, no event-loop stalls.
+4. **Prod shadow for 1–2 show nights** (`SPEAKER_ID_ENABLED=true`, `SPEAKER_ID_SHADOW=true`).
+   Staging can't reproduce studio audio, crosstalk or clips. Shadow output is persisted so it
+   can be evaluated without server access:
+   - per claim: `{pid, used_speaker, voiceprint_name, score, span, unknown}` → Logfire;
+   - at `stop()`: the whole speaker track + label votes as **one row per session** in a small
+     `speaker_id_log` table (session_id, json). Tiny, and it arrives via `./scripts/pull-db.sh`.
+   Evaluate: agreement with the corrected/actual speaker, accept threshold, unknown threshold,
+   wait timeout, how often the wait times out.
+5. Flip `SPEAKER_ID_SHADOW=false` on prod once the numbers hold.
 
 ## 12. Open risks
 
