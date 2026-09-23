@@ -519,6 +519,8 @@ class StreamingSession:
             vp_name = verdict.name or (UNKNOWN_SPEAKER if verdict.unknown else None)
         if vp_name:
             speaker = vp_name
+        elif speaker_label and speaker_label in self._speaker_map:
+            speaker = self._speaker_map[speaker_label]  # label may have been named while waiting
         placeholder = {
             "sprecher": speaker,
             "behauptung": claim,
