@@ -11,6 +11,7 @@ self-critique. A claim can later be upgraded to a full verdict by the deep
 """
 
 import os
+import re
 import asyncio
 import logging
 from typing import List, Dict, Any, Literal
@@ -44,6 +45,18 @@ def _url_key(url: str) -> str:
     if path.endswith(".htm"):
         path += "l"
     return f"{host}{path}" if host else url.strip()
+
+
+# Plenary transcripts (Bundestag /btp/, Landtage) are speeches, not evidence.
+_PLENARY_RE = re.compile(r"plenarprotokoll|/protocols/|/btp/|plpr|transcript", re.IGNORECASE)
+
+
+def _is_noise(url: str) -> bool:
+    """Hits that carry no checkable content: bare homepages and plenary transcripts."""
+    u = urlparse(url.strip())
+    if u.netloc and u.path.strip("/") == "" and not u.query:
+        return True
+    return bool(_PLENARY_RE.search(f"{u.path}?{u.query}"))
 
 
 class Source(BaseModel):
@@ -138,6 +151,8 @@ class FastFactChecker:
         merged: List[dict] = []
         for res in raw:
             for item in res.get("results", []) or []:
+                if _is_noise(item.get("url") or ""):
+                    continue
                 key = _url_key(item.get("url") or "")
                 if key and key in seen_urls:
                     continue

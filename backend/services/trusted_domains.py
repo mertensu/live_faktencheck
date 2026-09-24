@@ -149,18 +149,20 @@ TRUSTED_DOMAINS = [
 
 # Source tiers for ranking search hits (lower = more authoritative). Primary data first,
 # press only as a fallback; party sites are statements, not evidence, so they come last.
+# State sources get their own label below research: most claims are about the Bund, and
+# ranked as "amtlich" a state ministry page beat the press on federal questions.
 SOURCE_TIERS = {
     "Behörden & Offizielle Statistiken": (0, "amtlich"),
     "EU-Quellen": (0, "amtlich"),
-    "Länder: Statistische Ämter": (0, "amtlich"),
-    "Länder: Regierungen & Parlamente": (0, "amtlich"),
     "Forschungsinstitute": (1, "Forschung"),
     "Think Tanks & Stiftungen": (1, "Forschung"),
     "Faktenchecks": (1, "Forschung"),
-    "Qualitätsjournalismus": (2, "Presse"),
-    "Parteien": (3, "Partei"),
+    "Länder: Statistische Ämter": (2, "Land"),
+    "Länder: Regierungen & Parlamente": (2, "Land"),
+    "Qualitätsjournalismus": (3, "Presse"),
+    "Parteien": (4, "Partei"),
 }
-_UNKNOWN_TIER = (2, "Sonstige")
+_UNKNOWN_TIER = (3, "Sonstige")
 
 
 def source_tier(url: str) -> tuple[int, str]:

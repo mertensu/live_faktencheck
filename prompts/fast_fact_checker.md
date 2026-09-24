@@ -59,12 +59,15 @@ Wähle genau eine Stufe:
 </evidence>
 
 <sources>
-- Jeder Treffer ist markiert: [amtlich], [Forschung], [Presse], [Partei]. Sie sind in
-  dieser Reihenfolge sortiert.
+- Jeder Treffer ist markiert: [amtlich], [Forschung], [Land], [Presse], [Partei]. Sie sind
+  in dieser Reihenfolge sortiert.
 - Führe genau die Treffer auf, auf die sich deine Einschätzung stützt — in der Regel 1–3.
   Keine Treffer, die nur das Thema streifen.
 - Trägt ein [amtlich]- oder [Forschung]-Treffer die Aussage, verlinke ihn statt eines
   [Presse]-Treffers mit derselben Angabe. [Presse] nur, wenn keine bessere Quelle sie trägt.
+- [Land] sind Landesbehörden, -statistikämter und Landtage. Betrifft die Behauptung ein
+  bestimmtes Bundesland, sind sie erste Wahl. Betrifft sie Deutschland insgesamt oder die EU,
+  nutze sie nur, wenn kein [amtlich]-, [Forschung]- oder [Presse]-Treffer die Aussage trägt.
 - [Partei]-Treffer sind Positionen, keine Belege — nur aufführen, wenn die Behauptung
   selbst eine Parteiposition betrifft.
 - Führe nur URLs auf, die tatsächlich in den Suchergebnissen vorkommen.

@@ -154,10 +154,28 @@ class TestSourceTier:
         assert source_tier("https://www.destatis.de/DE/x.html") == (0, "amtlich")
         assert source_tier("https://ec.europa.eu/eurostat/web/x") == (0, "amtlich")
         assert source_tier("https://www.iwkoeln.de/x") == (1, "Forschung")
-        assert source_tier("https://www.zeit.de/x") == (2, "Presse")
-        assert source_tier("https://afd.de/x") == (3, "Partei")
-        assert source_tier("https://example.org/x")[0] == 2
-        assert source_tier("")[0] == 2
+        assert source_tier("https://um.baden-wuerttemberg.de/x") == (2, "Land")
+        assert source_tier("https://www.statistik-bw.de/x") == (2, "Land")
+        assert source_tier("https://www.zeit.de/x") == (3, "Presse")
+        assert source_tier("https://afd.de/x") == (4, "Partei")
+        assert source_tier("https://example.org/x")[0] == 3
+        assert source_tier("")[0] == 3
+
+    async def test_homepages_and_plenary_transcripts_dropped(self, checker):
+        hits = {"results": [
+            {"title": "Bremen", "url": "https://umwelt.bremen.de", "content": "x"},
+            {"title": "HB", "url": "https://www.handelsblatt.com/", "content": "x"},
+            {"title": "TH", "url": "https://www.thueringer-landtag.de/uploads/tx_tltcalendar/protocols/A120.pdf", "content": "x"},
+            {"title": "RLP", "url": "https://dokumente.landtag.rlp.de/landtag/plenarprotokolle/24-P-18.pdf", "content": "x"},
+            {"title": "RLP2", "url": "https://dokumente.landtag.rlp.de/x/PLPR-Sitzung-15-039.pdf", "content": "x"},
+            {"title": "BT", "url": "https://dserver.bundestag.de/btp/20/20123.pdf", "content": "x"},
+            {"title": "LSA", "url": "https://www.landtag.sachsen-anhalt.de/50-sitzungsperiode?transcriptSessions=lsaSessionsAjax", "content": "x"},
+            {"title": "Drucksache", "url": "https://dserver.bundestag.de/btd/19/134/1913440.pdf", "content": "x"},
+            {"title": "BW", "url": "https://um.baden-wuerttemberg.de/de/energiepreise", "content": "x"},
+        ]}
+        with patch("backend.services.fast_fact_checker.tavily_search", AsyncMock(return_value=hits)):
+            results = await checker._gather_evidence("claim", ["q"])
+        assert [r["title"] for r in results] == ["Drucksache", "BW"]
 
     async def test_duplicate_pages_collapse(self, checker):
         dupes = {"results": [
