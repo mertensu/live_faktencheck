@@ -741,7 +741,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
       </header>
 
       <main className="main-content">
-        {showLiveTranscript && <LiveTranscript live={liveStream} />}
+        {showLiveTranscript && <LiveTranscript live={liveStream} speakers={speakers} />}
         {isAdminMode ? (
           <>
             <RecordingBar recorder={recorder} live={liveStream} />

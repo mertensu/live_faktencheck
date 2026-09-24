@@ -81,10 +81,6 @@ backend/data/factcheck.db-wal
 backend/data/*.bak
 backend/data/backup-*.db
 
-# Voiceprints (per-episode speaker enrollment): produced offline by
-# benchmarks/enroll_voiceprints.py, live in the mounted data volume, not git.
-backend/data/voiceprints/*.npy
-
 # Claude Code session memory
 memory.md
 handover/
@@ -93,8 +89,7 @@ handover/
 # Visual companion (brainstorming) artifacts
 .superpowers/
 
-# Speaker-ID spike (benchmarks/data/speaker_id): downloaded models + any audio formats
-*.onnx
+# Audio recordings
 *.mp3
 *.m4a
 *.flac

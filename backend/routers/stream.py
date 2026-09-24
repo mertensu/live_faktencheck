@@ -4,7 +4,9 @@ Live streaming WebSocket endpoint (SG-4).
 The browser opens a WebSocket, sends 16 kHz mono PCM16 audio as binary frames, and
 receives JSON status events (partial transcript, claim processing/result). The backend
 relays audio to AssemblyAI Universal-Streaming and drives the fast lane via
-``StreamingSession``.
+``StreamingSession``. Text frames carry control messages: ``stop``, or JSON
+``{"type": "assign_speaker", "label": "A", "speaker": "Name" | null}`` when the operator
+assigns a diarization label to a guest.
 
 Auth: header-based ``require_code`` can't run on a WS handshake, so the access code is
 passed as a query param and validated here against the same ``codes`` table. Audio
@@ -12,15 +14,14 @@ budget is metered by connection wall-clock, mirroring the block pipeline.
 """
 
 import os
+import json
 import time
 import logging
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from backend.config import Episode
-from backend.services.registry import (
-    get_claim_extractor, get_fast_fact_checker, get_speaker_identifier,
-)
+from backend.services.registry import get_claim_extractor, get_fast_fact_checker
 from backend.services.gate import build_gate
 from backend.services.streaming import StreamingSession
 import backend.state as state
@@ -75,9 +76,6 @@ async def stream(websocket: WebSocket):
         except Exception:
             pass  # client gone; the receive loop will exit and clean up
 
-    # Voiceprints are matched by bare name (<Name>.npy): pass ep.speakers, not the
-    # role-annotated ep.guests. None unless SPEAKER_ID_ENABLED (and model + prints exist).
-    speakers = ep.speakers if ep else []
     session = StreamingSession(
         session_id,
         build_gate(get_claim_extractor()),
@@ -89,9 +87,8 @@ async def stream(websocket: WebSocket):
         excluded_speakers=ep.excluded_speakers if ep else [],
         episode_date=episode_date,
         on_event=on_event,
-        resolve_speakers=get_claim_extractor().resolve_speaker_map_async,
-        speaker_identifier=get_speaker_identifier(speakers),
-        speakers=speakers,
+        # Bare names (no roles): what the operator may assign a speaker label to.
+        speakers=ep.speakers if ep else [],
     )
     state.streaming_sessions[session_id] = session
     started = time.monotonic()
@@ -110,6 +107,8 @@ async def stream(websocket: WebSocket):
             text = message.get("text")
             if text == "stop":
                 break
+            if text:
+                await _handle_control(session, text)
     except WebSocketDisconnect:
         pass
     except Exception:
@@ -128,3 +127,16 @@ async def stream(websocket: WebSocket):
             await websocket.close()
         except Exception:
             pass
+
+
+async def _handle_control(session: StreamingSession, text: str) -> None:
+    """Apply a JSON control message from the operator's browser; ignore anything else."""
+    try:
+        msg = json.loads(text)
+    except ValueError:
+        return
+    if not isinstance(msg, dict) or msg.get("type") != "assign_speaker":
+        return
+    label, speaker = msg.get("label"), msg.get("speaker")
+    if isinstance(label, str) and (speaker is None or isinstance(speaker, str)):
+        await session.assign_speaker(label, speaker or None)

@@ -2585,6 +2585,56 @@
 }
 .live-bubble-name { font-size: 0.78rem; font-weight: 700; color: #4b5563; margin-bottom: 0.1rem; }
 .live-bubble-line { margin: 0; }
+
+/* Bubble name as a button (live, operator): assign the diarization label to a guest. */
+.live-speaker-picker { position: relative; display: inline-block; }
+.live-speaker-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.live-speaker-button:hover,
+.live-speaker-button:focus-visible { text-decoration: underline dotted; }
+.live-speaker-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 1000;
+  min-width: 12rem;
+  max-width: calc(100vw - 32px);
+  margin: 0;
+  padding: 0.3rem 0;
+  list-style: none;
+  border: 1px solid var(--border-light);
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  font-style: normal;
+}
+.live-speaker-menu button {
+  display: block;
+  width: 100%;
+  padding: 0.4rem 0.8rem;
+  border: 0;
+  background: none;
+  color: var(--text-main);
+  font: inherit;
+  font-size: 0.88rem;
+  text-align: left;
+  cursor: pointer;
+}
+.live-speaker-menu button:hover,
+.live-speaker-menu button:focus-visible { background: #f3f4f6; }
+.live-speaker-menu button[aria-checked="true"] { font-weight: 700; }
+.live-speaker-menu-clear { border-top: 1px solid var(--border-light); margin-top: 0.3rem; padding-top: 0.3rem; }
+.live-speaker-menu-clear button { color: var(--text-secondary); }
 .live-bubble-line + .live-bubble-line { margin-top: 0.3rem; }
 
 .live-bubble.spk-none { background: #eceff3; }

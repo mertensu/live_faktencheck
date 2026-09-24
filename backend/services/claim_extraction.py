@@ -176,21 +176,6 @@ class ClaimExtractor:
             return await self._resolve_speaker_labels_async(transcript, guests, conversation_type)
         return transcript
 
-    async def resolve_speaker_map_async(self, transcript: str, guests: list[str], conversation_type: str = "") -> dict[str, str]:
-        """Return a ``{label: name}`` mapping for a transcript, without applying it.
-
-        Used by the live streaming lane, which resolves labels once enough transcript has
-        accrued and caches the mapping (labels are stable within a session), rather than
-        rewriting text. Returns an empty dict when no resolver or nothing to map.
-        """
-        if not self.speaker_resolver or not transcript or not transcript.strip():
-            return {}
-        user_message = SpeakerLabelsInput(
-            conversation_type=conversation_type, guests=guests, transcript=transcript
-        ).model_dump_json(indent=2)
-        result = await self.speaker_resolver.run(user_message)
-        return {m.label: m.name for m in result.output.mappings if m.label and m.name}
-
     async def extract_claims_async(self, resolved_transcript: str, guests: list[str], context: str = "", previous_context: str | None = None, conversation_type: str = "", excluded_speakers: list[str] | None = None) -> List[ExtractedClaim]:
         """Extract claims from an already-resolved transcript. Skips speaker label resolution.
 

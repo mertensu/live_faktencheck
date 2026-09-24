@@ -15,33 +15,76 @@ function verdictInfo(c) {
   return VERDICT[c.consistency] || { label: c.consistency || 'unklar', mod: 'unklar' }
 }
 
-// Speakers the backend could not name. They get a neutral grey bubble so no colour
-// suggests an identity that isn't confirmed (a wrong name is worse than "Unklar").
-const UNNAMED = new Set(['Unklar', 'Unbekannte Stimme'])
 const SPEAKER_COLORS = 8 // .live-bubble.spk-0 … spk-7 in App.css
 
-function speakerKey(t) {
-  if (!t.speaker || UNNAMED.has(t.speaker) || t.speaker === t.label) return null
-  return t.speaker
+// A diarization label shows as "Sprecher A" until the operator assigns it to a guest.
+// Lines without a label stay "Unklar" in a neutral bubble: no name is ever guessed.
+function speakerTitle(label, speakerMap) {
+  if (!label) return 'Unklar'
+  return speakerMap[label] || `Sprecher ${label}`
 }
 
-function speakerTitle(t) {
-  if (!t.speaker) return 'Unklar'
-  if (t.speaker === t.label) return `Sprecher ${t.label}`
-  return t.speaker
-}
-
-// Consecutive lines of the same speaker form one bubble, like a chat.
-function groupTurns(transcript) {
+// Consecutive lines of the same label form one bubble, like a chat.
+function groupTurns(transcript, speakerMap) {
   const groups = []
   for (const t of transcript) {
-    const key = speakerKey(t)
-    const title = speakerTitle(t)
+    const label = t.label || null
     const last = groups[groups.length - 1]
-    if (last && last.key === key && last.title === title) last.lines.push(t.text)
-    else groups.push({ key, title, lines: [t.text] })
+    if (last && last.label === label) last.lines.push(t.text)
+    else groups.push({ label, name: label ? speakerMap[label] || null : null, lines: [t.text] })
   }
+  for (const g of groups) g.title = speakerTitle(g.label, speakerMap)
   return groups
+}
+
+// The bubble's name as a button: pick the guest this label belongs to.
+function SpeakerPicker({ label, title, current, speakers, onPick }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+
+  useEffect(() => {
+    if (!open) return
+    const onDown = (e) => { if (!ref.current?.contains(e.target)) setOpen(false) }
+    const onKey = (e) => { if (e.key === 'Escape') setOpen(false) }
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [open])
+
+  const pick = (name) => { onPick(label, name); setOpen(false) }
+  return (
+    <span className="live-speaker-picker" ref={ref}>
+      <button
+        type="button"
+        className="live-bubble-name live-speaker-button"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        title="Sprecher zuordnen"
+        onClick={() => setOpen((o) => !o)}
+      >
+        {title} <span aria-hidden="true">▾</span>
+      </button>
+      {open && (
+        <ul className="live-speaker-menu" role="menu" aria-label={`Sprecher ${label} zuordnen`}>
+          {speakers.map((name) => (
+            <li key={name}>
+              <button type="button" role="menuitemradio" aria-checked={name === current} onClick={() => pick(name)}>
+                {name}
+              </button>
+            </li>
+          ))}
+          {current && (
+            <li className="live-speaker-menu-clear">
+              <button type="button" role="menuitem" onClick={() => pick(null)}>Zuordnung entfernen</button>
+            </li>
+          )}
+        </ul>
+      )}
+    </span>
+  )
 }
 
 // Split one transcript line into plain text + marks for every claim source sentence
@@ -78,7 +121,7 @@ function renderLine(text, claimsBySource, handlers, marked) {
   return out
 }
 
-function ClaimPopover({ claim, anchor, onEnter, onLeave }) {
+function ClaimPopover({ claim, speaker, anchor, onEnter, onLeave }) {
   const ref = useRef(null)
   const [pos, setPos] = useState(null)
 
@@ -120,7 +163,7 @@ function ClaimPopover({ claim, anchor, onEnter, onLeave }) {
     >
       <div className="live-popover-head">
         <span className={`live-claim-badge verdict-${info.mod}`}>{info.label}</span>
-        {claim.speaker && <span className="live-popover-speaker">{claim.speaker}</span>}
+        {speaker && <span className="live-popover-speaker">{speaker}</span>}
       </div>
       <p className="live-popover-claim">{claim.claim}</p>
       {claim.status === 'processing' && <p className="live-popover-note">Wird geprüft…</p>}
@@ -148,9 +191,10 @@ function ClaimPopover({ claim, anchor, onEnter, onLeave }) {
 // Live transcript for the streaming fast lane, laid out on the page itself (no panel).
 // Finalized turns from AssemblyAI appear as chat bubbles, one colour per speaker, plus
 // the current interim line. Passages gated as claims are marked by verdict; hover or
-// click a mark to see the result.
-export function LiveTranscript({ live }) {
-  const { status, transcript = [], partial = '', claims = [] } = live || {}
+// click a mark to see the result. While streaming, a click on a bubble's name assigns
+// that diarization label to one of the episode's `speakers`.
+export function LiveTranscript({ live, speakers = [] }) {
+  const { status, transcript = [], partial = '', claims = [], speakerMap = {}, assignSpeaker } = live || {}
   const rootRef = useRef(null)
   const endRef = useRef(null)
   const stickRef = useRef(true) // follow new lines only while the newest one is in view
@@ -228,17 +272,24 @@ export function LiveTranscript({ live }) {
   const claimsBySource = {}
   for (const c of claims) if (c.source) claimsBySource[c.source] = c
 
-  const colorOf = (key) => {
+  // Colour per speaker, sticky for the session. A label keeps its colour when it gets a
+  // name (the name inherits it), so assigning doesn't repaint the conversation.
+  const colorOf = (g) => {
     const m = colorsRef.current
-    if (!m.has(key)) m.set(key, m.size % SPEAKER_COLORS)
+    const labelKey = `label:${g.label}`
+    const key = g.name || labelKey
+    if (!m.has(key)) m.set(key, m.has(labelKey) ? m.get(labelKey) : m.size % SPEAKER_COLORS)
     return m.get(key)
   }
 
+  const canAssign = status === 'streaming' && speakers.length > 0 && typeof assignSpeaker === 'function'
   const marked = new Set()
-  const groups = groupTurns(transcript)
+  const groups = groupTurns(transcript, speakerMap)
   const bubbles = groups.map((g, gi) => (
-    <div key={gi} className={`live-bubble ${g.key ? `spk-${colorOf(g.key)}` : 'spk-none'}`}>
-      <div className="live-bubble-name">{g.title}</div>
+    <div key={gi} className={`live-bubble ${g.label ? `spk-${colorOf(g)}` : 'spk-none'}`}>
+      {canAssign && g.label
+        ? <SpeakerPicker label={g.label} title={g.title} current={g.name} speakers={speakers} onPick={assignSpeaker} />
+        : <div className="live-bubble-name">{g.title}</div>}
       {g.lines.map((line, li) => (
         <p key={li} className="live-bubble-line">{renderLine(line, claimsBySource, markHandlers, marked)}</p>
       ))}
@@ -288,6 +339,7 @@ export function LiveTranscript({ live }) {
       {openClaim && (
         <ClaimPopover
           claim={openClaim}
+          speaker={openClaim.label ? speakerTitle(openClaim.label, speakerMap) : openClaim.speaker}
           anchor={anchor}
           onEnter={cancelClose}
           onLeave={scheduleClose}
