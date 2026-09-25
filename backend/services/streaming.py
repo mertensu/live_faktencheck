@@ -75,13 +75,18 @@ STREAM_MAX_SPEAKERS = os.getenv("STREAM_MAX_SPEAKERS")
 def speaker_runs(words) -> list[tuple[str | None, str]]:
     """Group a turn's words into consecutive runs of the same per-word speaker.
 
-    AssemblyAI labels every word, not only the turn. More than one run means the turn
-    mixes speakers (a turn ends at a pause, not at a change of speaker).
+    AssemblyAI labels every final word, not only the turn. More than one run means the
+    turn mixes speakers (a turn ends at a pause, not at a change of speaker). A word
+    without a speaker, or ``PENDING`` (not attributable), joins the run it falls in.
     """
     runs: list[tuple[str | None, list[str]]] = []
     for w in words or []:
         spk = getattr(w, "speaker", None)
-        if runs and runs[-1][0] == spk:
+        if spk in (None, "PENDING"):
+            spk = runs[-1][0] if runs else None
+        if runs and runs[-1][0] in (spk, None):
+            if runs[-1][0] is None:
+                runs[-1] = (spk, runs[-1][1])
             runs[-1][1].append(w.text)
         else:
             runs.append((spk, [w.text]))

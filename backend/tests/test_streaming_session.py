@@ -472,8 +472,9 @@ class TestSpeakerRuns:
     def test_groups_consecutive_word_speakers(self):
         from types import SimpleNamespace as W
         words = [W(text="Was", speaker="A"), W(text="sagen", speaker="A"), W(text="Sie?", speaker="A"),
-                 W(text="Das", speaker="B"), W(text="stimmt.", speaker="B"), W(text="Ja.", speaker=None)]
-        assert streaming_mod.speaker_runs(words) == [("A", "Was sagen Sie?"), ("B", "Das stimmt."), (None, "Ja.")]
+                 W(text="Das", speaker="B"), W(text="stimmt.", speaker="PENDING"), W(text="Ja.", speaker=None)]
+        assert streaming_mod.speaker_runs(words) == [("A", "Was sagen Sie?"), ("B", "Das stimmt. Ja.")]
+        assert streaming_mod.speaker_runs([W(text="Hm", speaker="PENDING"), W(text="ja", speaker="A")]) == [("A", "Hm ja")]
         assert streaming_mod.speaker_runs([]) == []
 
 
