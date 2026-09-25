@@ -4,6 +4,17 @@
 
 export const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000'
 
+// WebSocket URL for the live streaming lane (/api/stream). Derives ws(s):// from the
+// backend's http(s):// base and attaches session + access code as query params (the WS
+// handshake can't carry the X-Access-Code header).
+export function openStreamUrl(sessionId) {
+  const wsBase = BACKEND_URL.replace(/^http/, 'ws')
+  const code = getAccessCode()
+  const params = new URLSearchParams({ session_id: sessionId })
+  if (code) params.set('code', code)
+  return `${wsBase}/api/stream?${params.toString()}`
+}
+
 // N8N Webhook URL for verified claims
 export const N8N_VERIFIED_WEBHOOK = import.meta.env.VITE_N8N_WEBHOOK_URL || "http://localhost:5678/webhook/verified-claims"
 

@@ -8,6 +8,7 @@ across different routers.
 _transcription_service = None
 _claim_extractor = None
 _fact_checker = None
+_fast_fact_checker = None
 
 
 def get_transcription_service():
@@ -37,9 +38,19 @@ def get_fact_checker():
     return _fact_checker
 
 
+def get_fast_fact_checker():
+    """Get or create the FastFactChecker singleton (live fast lane)."""
+    global _fast_fact_checker
+    if _fast_fact_checker is None:
+        from backend.services.fast_fact_checker import FastFactChecker
+        _fast_fact_checker = FastFactChecker()
+    return _fast_fact_checker
+
+
 def reset_services():
     """Reset all service instances. Used for test cleanup."""
-    global _transcription_service, _claim_extractor, _fact_checker
+    global _transcription_service, _claim_extractor, _fact_checker, _fast_fact_checker
     _transcription_service = None
     _claim_extractor = None
     _fact_checker = None
+    _fast_fact_checker = None

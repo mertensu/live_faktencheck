@@ -59,7 +59,8 @@ class Database:
                 session_id TEXT,
                 status TEXT NOT NULL DEFAULT '',
                 double_check INTEGER NOT NULL DEFAULT 0,
-                critique_note TEXT NOT NULL DEFAULT ''
+                critique_note TEXT NOT NULL DEFAULT '',
+                check_depth TEXT NOT NULL DEFAULT 'deep'
             );
 
             CREATE INDEX IF NOT EXISTS idx_fact_checks_speaker_claim
@@ -114,6 +115,8 @@ class Database:
             "ALTER TABLE fact_checks ADD COLUMN status TEXT NOT NULL DEFAULT ''",
             "ALTER TABLE fact_checks ADD COLUMN double_check INTEGER NOT NULL DEFAULT 0",
             "ALTER TABLE fact_checks ADD COLUMN critique_note TEXT NOT NULL DEFAULT ''",
+            # Existing rows are full/deep checks; the live fast lane writes 'fast'.
+            "ALTER TABLE fact_checks ADD COLUMN check_depth TEXT NOT NULL DEFAULT 'deep'",
         ]:
             try:
                 await self.db.execute(migration)
@@ -201,6 +204,7 @@ class Database:
             data.get("status", ""),
             int(bool(data.get("double_check", False))),
             data.get("critique_note", ""),
+            data.get("check_depth", "deep"),
         )
 
     async def add_fact_check(self, fact_check: dict) -> int:
@@ -208,8 +212,8 @@ class Database:
         cursor = await self.db.execute(
             """INSERT INTO fact_checks
                (sprecher, behauptung, consistency, begruendung, quellen, timestamp, session_id, status,
-                double_check, critique_note)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                double_check, critique_note, check_depth)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             self._fact_check_params(fact_check),
         )
         await self.db.commit()
@@ -249,7 +253,7 @@ class Database:
             """UPDATE fact_checks
                SET sprecher = ?, behauptung = ?, consistency = ?,
                    begruendung = ?, quellen = ?, timestamp = ?, session_id = ?, status = ?,
-                   double_check = ?, critique_note = ?
+                   double_check = ?, critique_note = ?, check_depth = ?
                WHERE id = ?""",
             (*self._fact_check_params(data), fact_check_id),
         )
@@ -295,6 +299,7 @@ class Database:
             "status": row["status"],
             "double_check": bool(row["double_check"]),
             "critique_note": row["critique_note"],
+            "check_depth": row["check_depth"],
         }
 
     # =========================================================================

@@ -11,7 +11,7 @@ dependencies = [
     "python-multipart>=0.0.20",
     "requests>=2.31.0",
     # AI Services
-    "assemblyai>=0.37.0",
+    "assemblyai>=1.6.1",
     "google-genai>=1.0.0",
     "tavily-python>=0.5.0",
     # PydanticAI + Logfire.
