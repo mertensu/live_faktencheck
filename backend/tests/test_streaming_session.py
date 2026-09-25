@@ -468,6 +468,15 @@ class TestPassageAssignment:
         await session.stop()
 
 
+class TestSpeakerRuns:
+    def test_groups_consecutive_word_speakers(self):
+        from types import SimpleNamespace as W
+        words = [W(text="Was", speaker="A"), W(text="sagen", speaker="A"), W(text="Sie?", speaker="A"),
+                 W(text="Das", speaker="B"), W(text="stimmt.", speaker="B"), W(text="Ja.", speaker=None)]
+        assert streaming_mod.speaker_runs(words) == [("A", "Was sagen Sie?"), ("B", "Das stimmt."), (None, "Ja.")]
+        assert streaming_mod.speaker_runs([]) == []
+
+
 class TestControlMessages:
     async def test_assign_message_reaches_session(self, db):
         session = StreamingSession("s1", _gate([]), _fast_checker(), db, speakers=["Dröge"])

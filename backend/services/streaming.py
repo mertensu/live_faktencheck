@@ -72,6 +72,30 @@ def _in_passage(source: str, passage: str) -> bool:
 STREAM_MAX_SPEAKERS = os.getenv("STREAM_MAX_SPEAKERS")
 
 
+def speaker_runs(words) -> list[tuple[str | None, str]]:
+    """Group a turn's words into consecutive runs of the same per-word speaker.
+
+    AssemblyAI labels every word, not only the turn. More than one run means the turn
+    mixes speakers (a turn ends at a pause, not at a change of speaker).
+    """
+    runs: list[tuple[str | None, list[str]]] = []
+    for w in words or []:
+        spk = getattr(w, "speaker", None)
+        if runs and runs[-1][0] == spk:
+            runs[-1][1].append(w.text)
+        else:
+            runs.append((spk, [w.text]))
+    return [(spk, " ".join(ws)) for spk, ws in runs]
+
+
+def _log_mixed_speakers(session_id: str, kind: str, turn_order, label, words) -> None:
+    """Log a turn whose words carry more than one speaker (diagnostic for word-level splits)."""
+    runs = speaker_runs(words)
+    if len(runs) > 1:
+        detail = " | ".join(f"{spk or '?'}: {text[:60]}" for spk, text in runs)
+        logger.info(f"[stream:{session_id}] mixed-speaker {kind} #{turn_order} label={label}: {detail}")
+
+
 def _count_sentences(text: str) -> int:
     return sum(text.count(m) for m in (".", "!", "?"))
 
@@ -522,6 +546,9 @@ class StreamingSession:
         loop = asyncio.get_running_loop()
 
         def _on_turn(_client, event):
+            if getattr(event, "end_of_turn", False):
+                _log_mixed_speakers(self.session_id, "turn", getattr(event, "turn_order", None),
+                                    getattr(event, "speaker_label", None), getattr(event, "words", None))
             # SDK invokes handlers from its own thread/loop; hop back to ours.
             asyncio.run_coroutine_threadsafe(
                 self.handle_turn(
@@ -534,6 +561,9 @@ class StreamingSession:
             )
 
         def _on_speaker_revision(_client, event):
+            for r in getattr(event, "revisions", []) or []:
+                _log_mixed_speakers(self.session_id, "revision", getattr(r, "turn_order", None),
+                                    getattr(r, "speaker_label", None), getattr(r, "words", None))
             revisions = [
                 {"turn_order": getattr(r, "turn_order", None),
                  "speaker_label": getattr(r, "speaker_label", None)}
