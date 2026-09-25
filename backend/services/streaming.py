@@ -70,6 +70,13 @@ def _in_passage(source: str, passage: str) -> bool:
 # cluster into. Left unset it is derived from the guest list (+1 for the moderator), which
 # gives the reclusterer a hint on hard single-mic TV audio. Env overrides the derivation.
 STREAM_MAX_SPEAKERS = os.getenv("STREAM_MAX_SPEAKERS")
+# AssemblyAI re-clusters speakers and sends SpeakerRevision corrections — by default only
+# once, at the end of the session. Live we want them during the show; the API's minimum
+# interval is 2 minutes (0 = end of session only).
+# Named explicitly: left out, the server picked universal-3-5-pro (seen in the Begin event),
+# not the 3.6 the docs call the default.
+STREAM_SPEECH_MODEL = os.getenv("STREAM_SPEECH_MODEL", "universal-3-6-pro")
+STREAM_SPEAKER_REVISION_MS = int(os.getenv("STREAM_SPEAKER_REVISION_MS", "120000"))
 
 
 def speaker_runs(words) -> list[tuple[str | None, str]]:
@@ -582,10 +589,12 @@ class StreamingSession:
         params = StreamingParameters(
             sample_rate=STREAM_SAMPLE_RATE,
             encoding=Encoding.pcm_s16le,
-            language_code="de",
+            speech_model=STREAM_SPEECH_MODEL,
+            language_codes=["de"],  # a single language: a German-only session
             format_turns=True,
             speaker_labels=True,
             max_speakers=self._max_speakers(),
+            speaker_labels_revision_interval_ms=STREAM_SPEAKER_REVISION_MS or None,
             keyterms_prompt=keyterms_from_guests(self.guests) or None,
         )
         await self._client.connect(params)

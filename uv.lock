@@ -49,7 +49,7 @@ wheels = [
 
 [[package]]
 name = "assemblyai"
-version = "1.5.5"
+version = "1.6.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "httpx" },
@@ -58,9 +58,9 @@ dependencies = [
     { name = "typing-extensions" },
     { name = "websockets" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/35/86/73fdbe18d2060f5d0261679c920aa73940eb8ad49fb7b6a850d9437b5f0d/assemblyai-1.5.5.tar.gz", hash = "sha256:1b494b015399c6f1c7786e0d31c90931b0ff65da51a22f17eb767b76e6a53fe9", size = 144952, upload-time = "2026-09-16T14:30:30.866Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/73/79/fcd95a3c85af3aa66d248efc525032fa6a1d1549916423b330f671c1c7f3/assemblyai-1.6.1.tar.gz", hash = "sha256:32c9db416f26ed1e1f6943797266a5c3596c2f717a82be2aeb6a099050bde305", size = 162471, upload-time = "2026-09-24T17:38:31.886Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/8f/13/66629cd3a4b984ad9ea14fc3e7dc9be88b5bfcdd5d8513adc534a72efa36/assemblyai-1.5.5-py3-none-any.whl", hash = "sha256:389479763b2d16f9824022ce9f7d82cf5ca1e1a94ac8e6fc1bda94f08bcfa3bc", size = 142902, upload-time = "2026-09-16T14:30:29.556Z" },
+    { url = "https://files.pythonhosted.org/packages/d9/be/b7dceb08b36bce8d5468071a9f82b3289fdb7b84bdb1b056dd20b4c0c0ce/assemblyai-1.6.1-py3-none-any.whl", hash = "sha256:ee559454e39d2c443ffce669d01712bbffb37656dbd3d911bc35082e8f49c98b", size = 159496, upload-time = "2026-09-24T17:38:30.167Z" },
 ]
 
 [[package]]
@@ -284,7 +284,7 @@ test = [
 [package.metadata]
 requires-dist = [
     { name = "aiosqlite", specifier = ">=0.20.0" },
-    { name = "assemblyai", specifier = ">=1.5.5" },
+    { name = "assemblyai", specifier = ">=1.6.1" },
     { name = "fastapi", specifier = ">=0.128.0" },
     { name = "google-genai", specifier = ">=1.0.0" },
     { name = "httpx", marker = "extra == 'test'", specifier = ">=0.27.0" },
