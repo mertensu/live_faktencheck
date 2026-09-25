@@ -11,6 +11,25 @@ const MSG = {
   quota: 'Audio-Kontingent für diesen Code aufgebraucht',
 }
 
+// A turn's transcript lines: one per speaker segment. A turn ends at a pause, not at a
+// change of speaker, so the backend splits it where its words' speakers change.
+export function turnLines(msg) {
+  const segments = msg.segments?.length ? msg.segments : [{ label: msg.label, text: msg.text }]
+  return segments
+    .filter((s) => s.text)
+    .map((s) => ({ label: s.label || null, text: s.text, turnOrder: msg.turn_order ?? null }))
+}
+
+// Put a turn's lines in place of its earlier ones (a re-sent final, a reclustering), or
+// append a new turn. A turn the operator split by hand (a passage) keeps its own lines.
+export function placeTurn(prev, turnOrder, lines, append) {
+  const at = turnOrder == null ? -1 : prev.findIndex((t) => t.turnOrder === turnOrder)
+  if (at < 0) return append ? [...prev, ...lines] : prev
+  if (prev.some((t) => t.turnOrder === turnOrder && t.speaker)) return prev
+  const rest = prev.filter((t) => t.turnOrder !== turnOrder)
+  return [...rest.slice(0, at), ...lines, ...rest.slice(at)]
+}
+
 /**
  * Live streaming recorder: captures mic audio as 16 kHz PCM16 via an AudioWorklet and
  * streams it over a WebSocket to the backend (/api/stream), which relays to AssemblyAI
@@ -105,17 +124,19 @@ export function useAudioStream(sessionId, { deviceId = '' } = {}) {
       try { msg = JSON.parse(evt.data) } catch { return }
       setEvents((prev) => [...prev.slice(-19), msg])
       if (msg.type === 'turn') {
-        // Finalized turn: append to the transcript and clear the interim line. The line
-        // keeps its diarization label; the name is looked up in speakerMap when shown.
-        if (msg.text) setTranscript((prev) => [...prev, {
-          label: msg.label || null, text: msg.text, turnOrder: msg.turn_order ?? null,
-        }])
+        // Finalized turn: add its lines to the transcript and clear the interim line. Lines
+        // keep their diarization label; the name is looked up in speakerMap when shown.
+        if (msg.text) setTranscript((prev) => placeTurn(prev, msg.turn_order ?? null, turnLines(msg), true))
         setPartial('')
       } else if (msg.type === 'turn_speaker_update') {
-        // Diarization was reclustered: this turn belongs to another label now.
-        // A passage the operator gave to a guest keeps its name.
-        setTranscript((prev) => prev.map((t) =>
-          t.turnOrder === msg.turn_order && !t.speaker ? { ...t, label: msg.label } : t))
+        // Diarization was reclustered: the turn is split anew. In a turn the operator split
+        // by hand, the passage keeps its name and the rest takes the new label.
+        setTranscript((prev) => {
+          if (msg.segments?.length && !prev.some((t) => t.turnOrder === msg.turn_order && t.speaker)) {
+            return placeTurn(prev, msg.turn_order, turnLines(msg), false)
+          }
+          return prev.map((t) => (t.turnOrder === msg.turn_order && !t.speaker ? { ...t, label: msg.label } : t))
+        })
       } else if (msg.type === 'claim_source_update') {
         // An early claim's sentence got re-formatted in the final turn: keep the mark matching.
         setClaims((prev) => prev.map((c) =>

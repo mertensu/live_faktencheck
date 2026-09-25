@@ -379,7 +379,8 @@ class TestSpeakerAssignment:
         await _drain(session)
         await session.handle_speaker_revision([{"turn_order": 0, "speaker_label": "B"}])
         assert (await db.get_fact_checks(session_id="s1"))[0]["sprecher"] == "Connemann"
-        assert {"type": "turn_speaker_update", "turn_order": 0, "label": "B"} in events
+        assert {"type": "turn_speaker_update", "turn_order": 0, "label": "B",
+                "segments": [{"label": "B", "text": "Behauptung A. Noch ein Satz."}]} in events
         # The claim now follows B: clearing A no longer touches it.
         await session.assign_speaker("A", None)
         assert (await db.get_fact_checks(session_id="s1"))[0]["sprecher"] == "Connemann"
@@ -407,6 +408,132 @@ class TestSpeakerAssignment:
         await session.assign_speaker("A", "Dröge")
         assert (await db.get_fact_checks(session_id="s1"))[0]["sprecher"] == "Dröge"
         await session.stop()
+
+
+def _words(*pairs):
+    """Word stubs from (text, speaker) pairs; a text with spaces is split into words."""
+    from types import SimpleNamespace
+    return [SimpleNamespace(text=w, speaker=spk) for text, spk in pairs for w in text.split()]
+
+
+class TestWordSpeakers:
+    """A turn ends at a pause, not at a change of speaker: split it by its words' speakers."""
+
+    def test_sentence_takes_majority_speaker(self):
+        text = "Ist das völlig falsch, Frau Dröge? Also erstens war das meiste richtig."
+        words = _words(("Ist das völlig falsch, Frau Dröge?", "C"), ("Also", "PENDING"),
+                       ("erstens war das meiste", "A"), ("richtig.", "C"))
+        assert streaming_mod.sentence_speakers(text, words, "A") == [
+            ("Ist das völlig falsch, Frau Dröge?", "C"),
+            ("Also erstens war das meiste richtig.", "A"),
+        ]
+
+    def test_without_words_every_sentence_keeps_the_turn_label(self):
+        assert streaming_mod.sentence_speakers("Eins. Zwei.", None, "B") == [("Eins.", "B"), ("Zwei.", "B")]
+        assert streaming_mod.speaker_segments([("Eins.", "B"), ("Zwei.", "B"), ("Drei.", "A")]) == [
+            ("B", "Eins. Zwei."), ("A", "Drei.")]
+
+    async def test_mixed_turn_splits_window_and_transcript(self, db):
+        events, on_event = _collect()
+        gate, windows = _recording_gate()
+        session = StreamingSession("s1", gate, _fast_checker(), db, on_event=on_event)
+        text = "Ist das falsch, Frau Dröge? Also erstens war das meiste richtig."
+        await session.handle_turn(text, end_of_turn=True, speaker_label="A", turn_order=0,
+                                  words=_words(("Ist das falsch, Frau Dröge?", "C"),
+                                               ("Also erstens war das meiste richtig.", "A")))
+        assert windows == ["C: Ist das falsch, Frau Dröge?\nA: Also erstens war das meiste richtig."]
+        turn = next(e for e in events if e["type"] == "turn")
+        assert turn["segments"] == [{"label": "C", "text": "Ist das falsch, Frau Dröge?"},
+                                    {"label": "A", "text": "Also erstens war das meiste richtig."}]
+        await session.stop()
+
+    async def test_claim_takes_its_sentences_speaker(self, db):
+        claim = GatedClaim(name="A", claim="Strom ist teuer.", source="Der Strom ist teuer.")
+        session = StreamingSession("s1", _gate([[claim]]), _fast_checker(), db, speakers=["Connemann"])
+        await session.assign_speaker("B", "Connemann")
+        await session.handle_turn("Was sagen Sie? Der Strom ist teuer.", end_of_turn=True, speaker_label="A",
+                                  turn_order=0, words=_words(("Was sagen Sie?", "A"), ("Der Strom ist teuer.", "B")))
+        await session.stop()
+        assert (await db.get_fact_checks(session_id="s1"))[0]["sprecher"] == "Connemann"
+
+    async def test_revision_resplits_turn_and_moves_claim_per_sentence(self, db):
+        events, on_event = _collect()
+        claim = GatedClaim(name="A", claim="Strom ist teuer.", source="Der Strom ist teuer.")
+        session = StreamingSession("s1", _gate([[claim]]), _fast_checker(), db, on_event=on_event)
+        await session.handle_turn("Was sagen Sie? Der Strom ist teuer.", end_of_turn=True,
+                                  speaker_label="A", turn_order=0)
+        await _drain(session)
+        assert (await db.get_fact_checks(session_id="s1"))[0]["sprecher"] == "A"
+        await session.handle_speaker_revision([{
+            "turn_order": 0, "speaker_label": "C",
+            "words": _words(("Was sagen Sie?", "C"), ("Der Strom ist teuer.", "B")),
+        }])
+        assert (await db.get_fact_checks(session_id="s1"))[0]["sprecher"] == "B"
+        update = next(e for e in events if e["type"] == "turn_speaker_update")
+        assert update["segments"] == [{"label": "C", "text": "Was sagen Sie?"},
+                                      {"label": "B", "text": "Der Strom ist teuer."}]
+        await session.stop()
+
+
+class TestEarlySentenceSpeakers:
+    """Partials carry no speakers, so an early sentence's claim gets its label from the final turn."""
+
+    async def test_early_claim_labelled_when_turn_is_final(self, db):
+        events, on_event = _collect()
+        claim = GatedClaim(name="", claim="Strom ist teuer.", source="Der Strom ist teuer.")
+        session = StreamingSession("s1", _gate([[claim]]), _fast_checker(), db, on_event=on_event,
+                                   speakers=["Connemann"])
+        await session.handle_turn("Der Strom ist teuer. Die Preise steigen. Und", end_of_turn=False, turn_order=0)
+        await _drain(session)
+        row = (await db.get_fact_checks(session_id="s1"))[0]
+        assert row["sprecher"] == streaming_mod.UNCLEAR_SPEAKER
+
+        await session.handle_turn("Der Strom ist teuer. Die Preise steigen. Und das seit Jahren.",
+                                  end_of_turn=True, speaker_label="A", turn_order=0,
+                                  words=_words(("Der Strom ist teuer.", "B"), ("Die Preise steigen.", "A"),
+                                               ("Und das seit Jahren.", "A")))
+        assert (await db.get_fact_checks(session_id="s1"))[0]["sprecher"] == "B"
+        assert {"type": "claim_speaker_update", "id": row["id"], "speaker": "B", "label": "B"} in events
+        # From now on it follows its label like any other claim.
+        await session.assign_speaker("B", "Connemann")
+        assert (await db.get_fact_checks(session_id="s1"))[0]["sprecher"] == "Connemann"
+        await session.stop()
+
+    async def test_early_claim_stored_after_the_turn_is_final(self, db):
+        """The gate was slower than the end of the turn: the label is there on insert."""
+        claim = GatedClaim(name="", claim="Strom ist teuer.", source="Der Strom ist teuer.")
+        release = asyncio.Event()
+
+        async def slow_gate(window_text, guests, **kw):
+            await release.wait()
+            return [claim]
+
+        gate = MagicMock()
+        gate.gate = AsyncMock(side_effect=slow_gate)
+        checker = _fast_checker()
+        session = StreamingSession("s1", gate, checker, db)
+        early = asyncio.create_task(session.handle_turn("Der Strom ist teuer. Die Preise steigen. Und",
+                                                        end_of_turn=False, turn_order=0))
+        await asyncio.sleep(0.01)
+        final = asyncio.create_task(session.handle_turn(
+            "Der Strom ist teuer. Die Preise steigen. Und das.", end_of_turn=True, speaker_label="A",
+            turn_order=0, words=_words(("Der Strom ist teuer.", "B"), ("Die Preise steigen. Und das.", "A"))))
+        await asyncio.sleep(0.01)
+        release.set()
+        await asyncio.gather(early, final)
+        await session.stop()
+        assert checker.check_claim_async.await_args_list[0].kwargs["speaker"] == "B"
+        assert (await db.get_fact_checks(session_id="s1"))[0]["sprecher"] == "B"
+
+    async def test_unmatched_early_claim_stays_unclear(self, db):
+        """No guessing: a claim whose sentence isn't in the final turn keeps "Unklar"."""
+        claim = GatedClaim(name="", claim="X.", source="Ganz anderer Satz hier.")
+        session = StreamingSession("s1", _gate([[claim]]), _fast_checker(), db)
+        await session.handle_turn("Ganz anderer Satz hier. Zwei. Und", end_of_turn=False, turn_order=0)
+        await _drain(session)
+        await session.handle_turn("Etwas völlig Neues.", end_of_turn=True, speaker_label="A", turn_order=0)
+        await session.stop()
+        assert (await db.get_fact_checks(session_id="s1"))[0]["sprecher"] == streaming_mod.UNCLEAR_SPEAKER
 
 
 class TestPassageAssignment:

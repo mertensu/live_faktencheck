@@ -100,6 +100,56 @@ def speaker_runs(words) -> list[tuple[str | None, str]]:
     return [(spk, " ".join(ws)) for spk, ws in runs]
 
 
+def _sentence_spans(text: str) -> list[tuple[int, int]]:
+    """Character spans of the sentences ``split_sentences`` yields."""
+    spans, start = [], 0
+    for m in re.finditer(r"(?<=[.!?])\s+", text):
+        spans.append((start, m.start()))
+        start = m.end()
+    spans.append((start, len(text)))
+    return [(a, b) for a, b in spans if text[a:b].strip()]
+
+
+def sentence_speakers(text: str, words, fallback: str | None) -> list[tuple[str, str | None]]:
+    """Each sentence of a final turn with the speaker most of its words carry.
+
+    A turn ends at a pause, not at a change of speaker, so one turn can hold a question
+    and its answer. AssemblyAI labels every final word; each word is located in the
+    formatted text, and a sentence takes its majority speaker. Unattributed words
+    (none, ``PENDING``) don't vote; a sentence without votes keeps the turn's label.
+    """
+    spans = _sentence_spans(text)
+    votes: list[dict[str, int]] = [{} for _ in spans]
+    low, cursor = text.casefold(), 0
+    for w in words or []:
+        core = re.sub(r"^\W+|\W+$", "", getattr(w, "text", "") or "").casefold()
+        if not core:
+            continue
+        pos = low.find(core, cursor)
+        if pos < 0:
+            continue
+        cursor = pos + len(core)
+        spk = getattr(w, "speaker", None)
+        if spk in (None, "PENDING"):
+            continue
+        for i, (a, b) in enumerate(spans):
+            if a <= pos < b:
+                votes[i][spk] = votes[i].get(spk, 0) + 1
+                break
+    return [(text[a:b].strip(), max(v, key=v.get) if v else fallback) for (a, b), v in zip(spans, votes)]
+
+
+def speaker_segments(sentences: list[tuple[str, str | None]]) -> list[tuple[str | None, str]]:
+    """Consecutive sentences of one speaker joined into ``(label, text)`` segments."""
+    segments: list[tuple[str | None, list[str]]] = []
+    for sentence, label in sentences:
+        if segments and segments[-1][0] == label:
+            segments[-1][1].append(sentence)
+        else:
+            segments.append((label, [sentence]))
+    return [(label, " ".join(parts)) for label, parts in segments]
+
+
 def _log_mixed_speakers(session_id: str, kind: str, turn_order, label, words) -> None:
     """Log a turn whose words carry more than one speaker (diagnostic for word-level splits)."""
     runs = speaker_runs(words)
@@ -251,21 +301,50 @@ class StreamingSession:
     async def handle_speaker_revision(self, revisions: list[dict]) -> None:
         """Apply an AssemblyAI online-reclustering revision.
 
-        Each item is ``{"turn_order", "speaker_label"}``: the corrected label for a turn
-        we saw earlier. We update the kept turn (and its transcript line in the UI) and
-        move any claim from that turn to the new label.
+        Each item is ``{"turn_order", "speaker_label", "words"}``: the corrected labels for
+        a turn we saw earlier. We re-split the kept turn by its words' speakers (and its
+        transcript lines in the UI) and move each claim from it to its sentence's label.
         """
         for rev in revisions or []:
             turn_order = rev.get("turn_order")
             new_label = rev.get("speaker_label")
             if turn_order is None or new_label is None:
                 continue
-            if turn_order in self._turns:
-                self._turns[turn_order]["speaker"] = new_label
-                await self._emit({"type": "turn_speaker_update", "turn_order": turn_order, "label": new_label})
+            turn = self._turns.get(turn_order)
+            if turn:
+                turn["speaker"] = new_label
+                turn["sentences"] = sentence_speakers(turn["text"], rev.get("words"), new_label)
+                await self._emit({"type": "turn_speaker_update", "turn_order": turn_order, "label": new_label,
+                                  "segments": self._segment_events(turn["sentences"])})
             for pid in self._turn_claims.get(turn_order, []):
-                self._claim_labels[pid] = new_label
-                await self._rewrite_speaker(pid, self._display(new_label))
+                label = self._sentence_label(turn_order, self._claim_sources.get(pid, "")) or new_label
+                self._claim_labels[pid] = label
+                await self._rewrite_speaker(pid, self._display(label))
+
+    def _segment_events(self, sentences) -> list[dict]:
+        return [{"label": label, "text": text} for label, text in speaker_segments(sentences)]
+
+    def _sentence_label(self, turn_order: int | None, key: str) -> str | None:
+        """The label of the final turn's sentence a claim's normalized source sentence is."""
+        turn = self._turns.get(turn_order) if turn_order is not None else None
+        if not turn or not key:
+            return None
+        for sentence, label in turn.get("sentences", []):
+            s = _norm(sentence)
+            if s and (_same_sentence(key, s) or f" {key} " in f" {s} " or f" {s} " in f" {key} "):
+                return label
+        return None
+
+    async def _label_early_claims(self, turn_order: int) -> None:
+        """Claims from a turn's early sentences had no label (partials carry no speakers);
+        now that the turn is final, each takes the label of its sentence's words."""
+        for pid in self._turn_claims.get(turn_order, []):
+            if pid in self._claim_labels:
+                continue
+            label = self._sentence_label(turn_order, self._claim_sources.get(pid, ""))
+            if label:
+                self._claim_labels[pid] = label
+                await self._rewrite_speaker(pid, self._display(label))
 
     async def _rewrite_speaker(self, pid: int, name: str) -> None:
         """Update a stored claim's speaker in place and notify the UI."""
@@ -287,6 +366,7 @@ class StreamingSession:
         end_of_turn: bool,
         speaker_label: str | None = None,
         turn_order: int | None = None,
+        words=None,
     ) -> None:
         """Feed one turn event. Buffers finalized turns; flushes a full window."""
         text = (transcript or "").strip()
@@ -299,32 +379,42 @@ class StreamingSession:
             if STREAM_EARLY_SENTENCES and turn_order is not None and turn_order not in self._turns:
                 await self._take_early_sentences(text, speaker_label, turn_order)
             return
+        # A turn can hold more than one speaker: split it where its words' speakers change.
+        sentences = sentence_speakers(text, words, speaker_label)
         # turn_order + label let the UI follow a later reclustering (turn_speaker_update)
         # and the operator's assignment (speaker_map_update).
         await self._emit({"type": "turn", "text": text, "speaker": display_speaker,
-                          "turn_order": turn_order, "label": speaker_label})
+                          "turn_order": turn_order, "label": speaker_label,
+                          "segments": self._segment_events(sentences)})
 
         # A repeated final for a turn we already recorded is a re-emission, not a new turn:
         # update the kept text but don't double-count it into the window.
         if turn_order is not None and turn_order in self._turns:
-            self._turns[turn_order].update(speaker=speaker_label, text=text)
-            rest = self._untaken(turn_order, text)
-            for entry in self._buffer:
-                if entry.get("turn_order") == turn_order and not entry.get("early"):
-                    entry["speaker"], entry["text"] = speaker_label, rest
+            self._turns[turn_order].update(speaker=speaker_label, text=text, sentences=sentences)
+            stale = [e for e in self._buffer if e.get("turn_order") == turn_order and not e.get("early")]
+            if stale:
+                self._buffer = [e for e in self._buffer if not any(e is x for x in stale)]
+                self._sentence_count -= sum(_count_sentences(e["text"]) for e in stale)
+                self._buffer_segments(turn_order, sentences)
             return
 
         if turn_order is not None:
-            self._turns[turn_order] = {"speaker": speaker_label, "text": text}
+            self._turns[turn_order] = {"speaker": speaker_label, "text": text, "sentences": sentences}
+            await self._label_early_claims(turn_order)
         for old in self._early_sources.pop(turn_order, []):
             await self._resend_source(old, self._final_source(turn_order, old))
-        # Sentences already taken early from partials are not gated a second time.
-        rest = self._untaken(turn_order, text)
-        if rest:
-            self._buffer.append({"turn_order": turn_order, "speaker": speaker_label, "text": rest})
-            self._sentence_count += _count_sentences(rest)
+        self._buffer_segments(turn_order, sentences)
         if self._sentence_count >= WINDOW_MIN_SENTENCES or len(self._buffer) >= WINDOW_MAX_TURNS:
             await self._flush_window()
+
+    def _buffer_segments(self, turn_order: int | None, sentences) -> None:
+        """Add a final turn to the window, one entry per speaker segment. Sentences already
+        taken early from partials are not gated a second time."""
+        for label, seg_text in speaker_segments(sentences):
+            rest = self._untaken(turn_order, seg_text)
+            if rest:
+                self._buffer.append({"turn_order": turn_order, "speaker": label, "text": rest})
+                self._sentence_count += _count_sentences(rest)
 
     async def _take_early_sentences(self, text, speaker_label, turn_order) -> None:
         """Buffer a partial's settled sentences (all but its last) not taken yet."""
@@ -495,11 +585,12 @@ class StreamingSession:
         self._claim_speakers[pid] = speaker
         if source:
             self._claim_sources[pid] = _norm(source)
+        # Tracked so an assignment or a revision can rewrite this row later — also without
+        # a label yet (an early sentence): the final turn will supply it.
         if speaker_label:
-            # Tracked so an assignment or a revision can rewrite this row later.
             self._claim_labels[pid] = speaker_label
-            if turn_order is not None:
-                self._turn_claims.setdefault(turn_order, []).append(pid)
+        if turn_order is not None and not passage_speaker:
+            self._turn_claims.setdefault(turn_order, []).append(pid)
         await self._emit({"type": "claim_processing", "id": pid, "speaker": speaker,
                           "label": speaker_label, "claim": claim, "source": source})
         # An assignment may have landed while the placeholder was being inserted.
@@ -508,9 +599,16 @@ class StreamingSession:
             self._detach_label(pid)
             await self._rewrite_speaker(pid, late_passage)
             speaker = late_passage
-        elif speaker_label and self._display(speaker_label) != speaker:
-            await self._rewrite_speaker(pid, self._display(speaker_label))
-            speaker = self._claim_speakers[pid]
+        else:
+            # An early sentence whose turn became final meanwhile: its words' label.
+            if not passage_speaker and pid not in self._claim_labels and turn_order in self._turns:
+                late_label = self._sentence_label(turn_order, self._claim_sources.get(pid, ""))
+                if late_label:
+                    self._claim_labels[pid] = late_label
+            label = self._claim_labels.get(pid)
+            if label and self._display(label) != speaker:
+                await self._rewrite_speaker(pid, self._display(label))
+                speaker = self._claim_speakers[pid]
 
         try:
             result = await self.fast_checker.check_claim_async(
@@ -568,6 +666,7 @@ class StreamingSession:
                     bool(getattr(event, "end_of_turn", False)),
                     getattr(event, "speaker_label", None),
                     getattr(event, "turn_order", None),
+                    getattr(event, "words", None),
                 ),
                 loop,
             )
@@ -578,7 +677,8 @@ class StreamingSession:
                                     getattr(r, "speaker_label", None), getattr(r, "words", None))
             revisions = [
                 {"turn_order": getattr(r, "turn_order", None),
-                 "speaker_label": getattr(r, "speaker_label", None)}
+                 "speaker_label": getattr(r, "speaker_label", None),
+                 "words": getattr(r, "words", None)}
                 for r in getattr(event, "revisions", []) or []
             ]
             asyncio.run_coroutine_threadsafe(self.handle_speaker_revision(revisions), loop)
