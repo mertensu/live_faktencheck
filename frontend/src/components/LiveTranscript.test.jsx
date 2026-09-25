@@ -50,6 +50,37 @@ describe('LiveTranscript', () => {
     expect(assignSpeaker).toHaveBeenCalledWith('A', null)
   })
 
+  it('gives a marked passage, widened to whole words, to a guest', () => {
+    const assignPassage = vi.fn()
+    const { container } = render(
+      <LiveTranscript live={{ ...live, assignSpeaker: vi.fn(), assignPassage }} speakers={['Connemann', 'Maischberger']} />
+    )
+    const textNode = container.querySelector('.live-bubble-line[data-index="0"]').firstChild
+    const range = document.createRange()
+    range.setStart(textNode, 9) // "hre Antw" of "Was ist Ihre Antwort?"
+    range.setEnd(textNode, 17)
+    window.getSelection().removeAllRanges()
+    window.getSelection().addRange(range)
+    fireEvent.mouseUp(textNode)
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Maischberger' }))
+    expect(assignPassage).toHaveBeenCalledWith(0, 'Was ist Ihre Antwort?', 8, 21, 'Maischberger')
+    expect(screen.queryByRole('menu', { name: 'Textstelle zuordnen' })).toBeNull()
+  })
+
+  it('shows a passage given to a guest as a bubble of that name', () => {
+    const transcript = [
+      { label: 'A', text: 'Strom ist teurer geworden.' },
+      { label: 'A', text: 'Und Ihre Antwort?', speaker: 'Maischberger' },
+      { label: 'A', text: 'Das stimmt.' },
+    ]
+    const { container } = render(<LiveTranscript live={{ ...live, transcript }} />)
+    const bubbles = container.querySelectorAll('.live-bubble')
+    expect(bubbles).toHaveLength(3)
+    expect(bubbles[1].textContent).toContain('Maischberger')
+    expect(bubbles[1].className).not.toMatch(/spk-none/)
+    expect(bubbles[2].textContent).toContain('Connemann')
+  })
+
   it('offers no picker once the stream has stopped', () => {
     render(<LiveTranscript live={{ ...live, status: 'idle', assignSpeaker: vi.fn() }} speakers={['Dröge']} />)
     expect(screen.queryByRole('button', { name: /Sprecher B/ })).toBeNull()

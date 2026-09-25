@@ -53,6 +53,19 @@ def _same_sentence(a: str, b: str) -> bool:
     return a == b or SequenceMatcher(None, a, b).ratio() >= SAME_SENTENCE_RATIO
 
 
+def _in_passage(source: str, passage: str) -> bool:
+    """True if a claim's source sentence lies in a marked passage (both normalized).
+
+    Also when the operator marked most of the sentence but not all of it: at least half
+    of it, and a part of that sentence only.
+    """
+    if not source or not passage:
+        return False
+    if f" {source} " in f" {passage} ":
+        return True
+    return f" {passage} " in f" {source} " and len(passage) * 2 >= len(source)
+
+
 # Optional hard cap on how many distinct speakers AssemblyAI's online diarization may
 # cluster into. Left unset it is derived from the guest list (+1 for the moderator), which
 # gives the reclusterer a hint on hard single-mic TV audio. Env overrides the derivation.
@@ -112,6 +125,10 @@ class StreamingSession:
         self._turn_claims: dict[int, list[int]] = {}   # turn_order -> [fact_check_id]
         self._claim_labels: dict[int, str] = {}        # fact_check_id -> current label
         self._claim_speakers: dict[int, str] = {}      # fact_check_id -> current speaker
+        # Passages the operator marked and gave to a guest, overriding their label (the
+        # diarization folded one speaker's words into another's turn): [(normalized, name)].
+        self._passages: list[tuple[str, str]] = []
+        self._claim_sources: dict[int, str] = {}       # fact_check_id -> normalized source
 
         # Early sentences: per turn, the normalized sentences already taken from partials.
         self._early: dict[int, list[str]] = {}
@@ -162,6 +179,38 @@ class StreamingSession:
         for pid, claim_label in list(self._claim_labels.items()):
             if claim_label == label:
                 await self._rewrite_speaker(pid, self._display(label))
+
+    async def assign_passage(self, text: str, name: str) -> None:
+        """The operator marks a passage of the transcript and gives it to a guest.
+
+        Every claim whose source sentence lies in it takes that name for good: it leaves its
+        label, so later assignments and reclustering no longer touch it. The passage is
+        kept, so a claim from it that is still in the gate gets the name as well.
+        """
+        key = _norm(text)
+        if not key or name not in self.speakers:
+            logger.warning(f"[stream:{self.session_id}] assign passage -> {name!r}; ignored")
+            return
+        self._passages.append((key, name))
+        logger.info(f"[stream:{self.session_id}] passage -> {name}: {text[:80]!r}")
+        for pid, source in list(self._claim_sources.items()):
+            if _in_passage(source, key):
+                self._detach_label(pid)
+                await self._rewrite_speaker(pid, name)
+
+    def _passage_speaker(self, source: str | None) -> str | None:
+        """The name of the latest marked passage this source sentence lies in."""
+        key = _norm(source or "")
+        for passage, name in reversed(self._passages):
+            if _in_passage(key, passage):
+                return name
+        return None
+
+    def _detach_label(self, pid: int) -> None:
+        self._claim_labels.pop(pid, None)
+        for pids in self._turn_claims.values():
+            if pid in pids:
+                pids.remove(pid)
 
     async def handle_speaker_revision(self, revisions: list[dict]) -> None:
         """Apply an AssemblyAI online-reclustering revision.
@@ -390,7 +439,11 @@ class StreamingSession:
     ) -> None:
         """Insert a spinner placeholder, run the fast check, update in place."""
         now = datetime.now().isoformat()
-        speaker = self._display(speaker_label) or UNCLEAR_SPEAKER
+        # A passage the operator gave to a guest outranks the label.
+        passage_speaker = self._passage_speaker(source)
+        if passage_speaker:
+            speaker_label = None
+        speaker = passage_speaker or self._display(speaker_label) or UNCLEAR_SPEAKER
         placeholder = {
             "sprecher": speaker,
             "behauptung": claim,
@@ -404,6 +457,8 @@ class StreamingSession:
         }
         pid = await self.db.add_fact_check(placeholder)
         self._claim_speakers[pid] = speaker
+        if source:
+            self._claim_sources[pid] = _norm(source)
         if speaker_label:
             # Tracked so an assignment or a revision can rewrite this row later.
             self._claim_labels[pid] = speaker_label
@@ -412,7 +467,12 @@ class StreamingSession:
         await self._emit({"type": "claim_processing", "id": pid, "speaker": speaker,
                           "label": speaker_label, "claim": claim, "source": source})
         # An assignment may have landed while the placeholder was being inserted.
-        if speaker_label and self._display(speaker_label) != speaker:
+        late_passage = self._passage_speaker(source)
+        if late_passage and late_passage != speaker:
+            self._detach_label(pid)
+            await self._rewrite_speaker(pid, late_passage)
+            speaker = late_passage
+        elif speaker_label and self._display(speaker_label) != speaker:
             await self._rewrite_speaker(pid, self._display(speaker_label))
             speaker = self._claim_speakers[pid]
 

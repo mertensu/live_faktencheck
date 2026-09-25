@@ -23,7 +23,7 @@ export function useAudioStream(sessionId, { deviceId = '' } = {}) {
   const [status, setStatus] = useState('idle')   // idle | connecting | streaming | error
   const [error, setError] = useState(null)
   const [partial, setPartial] = useState('')      // current interim (not-yet-final) turn
-  const [transcript, setTranscript] = useState([]) // finalized turns [{ label, text, turnOrder }]
+  const [transcript, setTranscript] = useState([]) // finalized turns [{ label, text, turnOrder, speaker? }]
   const [claims, setClaims] = useState([])        // gated claims [{ id, speaker, label, claim, source, consistency, status, begruendung, quellen }]
   const [speakerMap, setSpeakerMap] = useState({}) // diarization label → guest name, assigned by the operator
   const [events, setEvents] = useState([])        // last few backend events (for debug/UI)
@@ -113,8 +113,9 @@ export function useAudioStream(sessionId, { deviceId = '' } = {}) {
         setPartial('')
       } else if (msg.type === 'turn_speaker_update') {
         // Diarization was reclustered: this turn belongs to another label now.
+        // A passage the operator gave to a guest keeps its name.
         setTranscript((prev) => prev.map((t) =>
-          t.turnOrder === msg.turn_order ? { ...t, label: msg.label } : t))
+          t.turnOrder === msg.turn_order && !t.speaker ? { ...t, label: msg.label } : t))
       } else if (msg.type === 'claim_source_update') {
         // An early claim's sentence got re-formatted in the final turn: keep the mark matching.
         setClaims((prev) => prev.map((c) =>
@@ -148,7 +149,7 @@ export function useAudioStream(sessionId, { deviceId = '' } = {}) {
       } else if (msg.type === 'claim_speaker_update') {
         // Label assigned or reclustered: rewrite this claim's speaker retroactively.
         setClaims((prev) => prev.map((c) =>
-          c.id === msg.id ? { ...c, speaker: msg.speaker, label: msg.label ?? c.label } : c))
+          c.id === msg.id ? { ...c, speaker: msg.speaker, label: 'label' in msg ? msg.label : c.label } : c))
       }
     }
     ws.onerror = () => { if (!stoppingRef.current) { setStatus('error'); setError(MSG.connectFailed) } }
@@ -168,8 +169,28 @@ export function useAudioStream(sessionId, { deviceId = '' } = {}) {
     ws.send(JSON.stringify({ type: 'assign_speaker', label, speaker: speaker || null }))
   }, [])
 
+  // Give a marked passage of transcript line `index` (chars start..end of `lineText`) to a
+  // guest: the line splits so the passage shows under that name, and the backend moves any
+  // claim from it (now or later) to the guest, whatever its label says.
+  const assignPassage = useCallback((index, lineText, start, end, speaker) => {
+    const ws = wsRef.current
+    const text = lineText.slice(start, end).trim()
+    if (!ws || ws.readyState !== WebSocket.OPEN || !speaker || !text) return
+    ws.send(JSON.stringify({ type: 'assign_passage', text, speaker }))
+    setTranscript((prev) => {
+      const t = prev[index]
+      if (!t || t.text !== lineText) return prev
+      const parts = [
+        { ...t, text: lineText.slice(0, start).trim() },
+        { ...t, text, speaker },
+        { ...t, text: lineText.slice(end).trim() },
+      ].filter((p) => p.text)
+      return [...prev.slice(0, index), ...parts, ...prev.slice(index + 1)]
+    })
+  }, [])
+
   // Release everything on unmount.
   useEffect(() => () => { stoppingRef.current = true; cleanup() }, [cleanup])
 
-  return { status, error, partial, transcript, claims, speakerMap, events, start, stop, assignSpeaker }
+  return { status, error, partial, transcript, claims, speakerMap, events, start, stop, assignSpeaker, assignPassage }
 }

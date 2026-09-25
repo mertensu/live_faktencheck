@@ -409,6 +409,65 @@ class TestSpeakerAssignment:
         await session.stop()
 
 
+class TestPassageAssignment:
+    """The operator marks a passage that diarization put under the wrong label."""
+
+    async def test_passage_rewrites_claim_and_detaches_it_from_its_label(self, db):
+        events, on_event = _collect()
+        session = StreamingSession("s1", _gate([[CLAIM_A]]), _fast_checker(), db,
+                                   on_event=on_event, speakers=["Dröge", "Maischberger"])
+        await session.assign_speaker("A", "Dröge")
+        await session.handle_turn("Noch ein Satz. Behauptung A.", end_of_turn=True,
+                                  speaker_label="A", turn_order=0)
+        await _drain(session)
+        pid = (await db.get_fact_checks(session_id="s1"))[0]["id"]
+
+        await session.assign_passage("Behauptung A.", "Maischberger")
+        assert (await db.get_fact_checks(session_id="s1"))[0]["sprecher"] == "Maischberger"
+        assert {"type": "claim_speaker_update", "id": pid, "speaker": "Maischberger", "label": None} in events
+        # Neither a new name for A nor a reclustering of its turn takes the claim back.
+        await session.assign_speaker("A", None)
+        await session.handle_speaker_revision([{"turn_order": 0, "speaker_label": "B"}])
+        assert (await db.get_fact_checks(session_id="s1"))[0]["sprecher"] == "Maischberger"
+        await session.stop()
+
+    async def test_passage_leaves_claims_outside_it_alone(self, db):
+        session = StreamingSession("s1", _gate([[CLAIM_A]]), _fast_checker(), db, speakers=["Maischberger"])
+        await session.handle_turn("Behauptung A. Noch ein Satz.", end_of_turn=True,
+                                  speaker_label="A", turn_order=0)
+        await _drain(session)
+        await session.assign_passage("Noch ein Satz.", "Maischberger")
+        assert (await db.get_fact_checks(session_id="s1"))[0]["sprecher"] == "A"
+        await session.stop()
+
+    async def test_passage_covering_most_of_a_sentence_counts(self, db):
+        claim = GatedClaim(name="A", claim="X.", source="Die Inflation lag bei zehn Prozent im Jahr.")
+        session = StreamingSession("s1", _gate([[claim]]), _fast_checker(), db, speakers=["Maischberger"])
+        await session.handle_turn("Die Inflation lag bei zehn Prozent im Jahr. Gut.", end_of_turn=True,
+                                  speaker_label="A", turn_order=0)
+        await _drain(session)
+        await session.assign_passage("Inflation lag bei zehn Prozent", "Maischberger")
+        assert (await db.get_fact_checks(session_id="s1"))[0]["sprecher"] == "Maischberger"
+        await session.assign_passage("zehn", "A")  # not a speaker: ignored
+        await session.stop()
+
+    async def test_passage_marked_before_the_claim_is_found(self, db):
+        checker = _fast_checker()
+        session = StreamingSession("s1", _gate([[CLAIM_A]]), checker, db, speakers=["Maischberger"])
+        await session.assign_passage("Behauptung A.", "Maischberger")
+        await session.handle_turn("Behauptung A. Noch ein Satz.", end_of_turn=True,
+                                  speaker_label="A", turn_order=0)
+        await session.stop()
+        assert checker.check_claim_async.await_args.kwargs["speaker"] == "Maischberger"
+        assert (await db.get_fact_checks(session_id="s1"))[0]["sprecher"] == "Maischberger"
+
+    async def test_unknown_name_is_ignored(self, db):
+        session = StreamingSession("s1", _gate([]), _fast_checker(), db, speakers=["Dröge"])
+        await session.assign_passage("Behauptung A.", "Irgendwer")
+        assert session._passages == []
+        await session.stop()
+
+
 class TestControlMessages:
     async def test_assign_message_reaches_session(self, db):
         session = StreamingSession("s1", _gate([]), _fast_checker(), db, speakers=["Dröge"])
@@ -416,6 +475,13 @@ class TestControlMessages:
         assert session._speaker_map == {"A": "Dröge"}
         await _handle_control(session, json.dumps({"type": "assign_speaker", "label": "A", "speaker": None}))
         assert session._speaker_map == {}
+        await session.stop()
+
+    async def test_passage_message_reaches_session(self, db):
+        session = StreamingSession("s1", _gate([]), _fast_checker(), db, speakers=["Dröge"])
+        await _handle_control(session, json.dumps({"type": "assign_passage", "text": "Ein Satz.", "speaker": "Dröge"}))
+        await _handle_control(session, json.dumps({"type": "assign_passage", "text": "Ein Satz.", "speaker": None}))
+        assert session._passages == [("ein satz", "Dröge")]
         await session.stop()
 
     async def test_garbage_is_ignored(self, db):

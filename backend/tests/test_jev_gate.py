@@ -71,7 +71,7 @@ class TestJevGate:
         reformulated = ExtractedClaim(name="Anna", claim="Deutschland ist Mitglied der NATO.")
         with ex.reformulator.override(model=TestModel(custom_output_args=reformulated.model_dump())):
             out = await gate.gate(window, guests=["Anna"])
-        # 3 sentences scored, only the NATO one (>=0.85) becomes a claim.
+        # 3 sentences scored, only the NATO one (>=0.80) becomes a claim.
         assert len(scorer.calls) == 3
         assert len(out) == 1
         assert out[0].claim == "Deutschland ist Mitglied der NATO."
@@ -112,7 +112,7 @@ class TestJevGate:
 
     async def test_grey_zone_is_skipped(self):
         ex = _make_extractor()
-        scorer = FakeScorer({"innovativste": 0.63})  # grey zone (0.30..0.85)
+        scorer = FakeScorer({"innovativste": 0.63})  # grey zone (0.30..0.80)
         gate = JevGate(ex, scorer)
         out = await gate.gate("Deutschland ist das innovativste Land Europas.", guests=[])
         assert out == []

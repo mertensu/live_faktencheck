@@ -2635,6 +2635,8 @@
 .live-speaker-menu button[aria-checked="true"] { font-weight: 700; }
 .live-speaker-menu-clear { border-top: 1px solid var(--border-light); margin-top: 0.3rem; padding-top: 0.3rem; }
 .live-speaker-menu-clear button { color: var(--text-secondary); }
+.live-passage-menu { position: fixed; }
+.live-passage-menu-head { padding: 0.2rem 0.8rem 0.3rem; color: var(--text-secondary); font-size: 0.75rem; }
 .live-bubble-line + .live-bubble-line { margin-top: 0.3rem; }
 
 .live-bubble.spk-none { background: #eceff3; }

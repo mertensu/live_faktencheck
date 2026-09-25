@@ -6,7 +6,8 @@ receives JSON status events (partial transcript, claim processing/result). The b
 relays audio to AssemblyAI Universal-Streaming and drives the fast lane via
 ``StreamingSession``. Text frames carry control messages: ``stop``, or JSON
 ``{"type": "assign_speaker", "label": "A", "speaker": "Name" | null}`` when the operator
-assigns a diarization label to a guest.
+assigns a diarization label to a guest, or ``{"type": "assign_passage", "text": "…",
+"speaker": "Name"}`` when they mark a passage that belongs to another guest.
 
 Auth: header-based ``require_code`` can't run on a WS handshake, so the access code is
 passed as a query param and validated here against the same ``codes`` table. Audio
@@ -135,8 +136,13 @@ async def _handle_control(session: StreamingSession, text: str) -> None:
         msg = json.loads(text)
     except ValueError:
         return
-    if not isinstance(msg, dict) or msg.get("type") != "assign_speaker":
+    if not isinstance(msg, dict):
         return
-    label, speaker = msg.get("label"), msg.get("speaker")
-    if isinstance(label, str) and (speaker is None or isinstance(speaker, str)):
-        await session.assign_speaker(label, speaker or None)
+    if msg.get("type") == "assign_speaker":
+        label, speaker = msg.get("label"), msg.get("speaker")
+        if isinstance(label, str) and (speaker is None or isinstance(speaker, str)):
+            await session.assign_speaker(label, speaker or None)
+    elif msg.get("type") == "assign_passage":
+        text, speaker = msg.get("text"), msg.get("speaker")
+        if isinstance(text, str) and isinstance(speaker, str):
+            await session.assign_passage(text, speaker)

@@ -148,9 +148,14 @@ class JevScorer:
         if self._client is None:
             from openai import AsyncOpenAI
 
+            # Jev answers in well under a second. Without a short timeout one stalled call
+            # (seen live: minutes) holds its whole window, since the gate awaits every
+            # sentence of it; a timed-out call is retried once, then treated as skip.
             self._client = AsyncOpenAI(
                 api_key=os.getenv("REQUESTY_API_KEY"),
                 base_url=os.getenv("REQUESTY_BASE_URL", "https://router.requesty.ai/v1"),
+                timeout=float(os.getenv("JEV_TIMEOUT_S", "5")),
+                max_retries=1,
             )
         return self._client
 
@@ -208,7 +213,7 @@ class JevGate:
     def __init__(self, extractor: ClaimExtractor, scorer: JevScorer | None = None):
         self._extractor = extractor
         self._scorer = scorer or JevScorer()
-        self.check_hi = float(os.getenv("JEV_CHECK_THRESHOLD", "0.85"))
+        self.check_hi = float(os.getenv("JEV_CHECK_THRESHOLD", "0.80"))
         self.skip_lo = float(os.getenv("JEV_SKIP_THRESHOLD", "0.30"))
         # A checkable sentence still needs this importance prob to be worth checking on air
         # (filters trivial/procedural facts). Fail-open: a missing importance score never
