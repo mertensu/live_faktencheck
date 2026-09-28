@@ -530,6 +530,24 @@ class TestWordSpeakers:
         await session.stop()
 
 
+class TestPendingLabel:
+    """AssemblyAI labels a turn too short to attribute "PENDING": that is no speaker."""
+
+    async def test_pending_turn_has_no_label(self, db):
+        events, on_event = _collect()
+        gate, windows = _recording_gate()
+        session = StreamingSession("s1", gate, _fast_checker(), db, on_event=on_event, speakers=["Dröge"])
+        await session.handle_turn("Was ist Ihre Antwort? Ja.", end_of_turn=True, speaker_label="PENDING", turn_order=0)
+        assert windows == ["Was ist Ihre Antwort? Ja."]
+        turn = next(e for e in events if e["type"] == "turn")
+        assert turn["label"] is None and turn["segments"] == [{"label": None, "text": "Was ist Ihre Antwort? Ja."}]
+        await session.assign_speaker("PENDING", "Dröge")
+        assert session._assignments == {}
+        await session.handle_speaker_revision([{"turn_order": 0, "speaker_label": "PENDING"}])
+        assert session._turns[0]["speaker"] is None
+        await session.stop()
+
+
 class TestEarlySentenceSpeakers:
     """Partials carry no speakers, so an early sentence's claim gets its label from the final turn."""
 

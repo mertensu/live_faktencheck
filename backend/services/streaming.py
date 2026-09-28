@@ -102,6 +102,14 @@ def speaker_runs(words) -> list[tuple[str | None, str]]:
     return [(spk, " ".join(ws)) for spk, ws in runs]
 
 
+# AssemblyAI's label for a turn (or word) too short to attribute (< ~1 s of audio): no speaker.
+PENDING_LABEL = "PENDING"
+
+
+def _label(label: str | None) -> str | None:
+    return None if label == PENDING_LABEL else label
+
+
 def _sentence_spans(text: str) -> list[tuple[int, int]]:
     """Character spans of the sentences ``split_sentences`` yields."""
     spans, start = [], 0
@@ -277,7 +285,7 @@ class StreamingSession:
         mapping, so the UI renames those transcript lines. A name outside the episode's
         speakers is ignored.
         """
-        if not label:
+        if not _label(label):
             return
         if name is not None and name not in self.speakers:
             logger.warning(f"[stream:{self.session_id}] assign {label!r} -> unknown speaker {name!r}; ignored")
@@ -343,7 +351,7 @@ class StreamingSession:
         """
         for rev in revisions or []:
             turn_order = rev.get("turn_order")
-            new_label = rev.get("speaker_label")
+            new_label = _label(rev.get("speaker_label"))
             if turn_order is None or new_label is None:
                 continue
             turn = self._turns.get(turn_order)
@@ -414,6 +422,7 @@ class StreamingSession:
         text = (transcript or "").strip()
         if not text:
             return
+        speaker_label = _label(speaker_label)
         display_speaker = self._display(speaker_label, turn_order)
         # Live partial for the UI; its settled sentences may enter the window early.
         if not end_of_turn:
