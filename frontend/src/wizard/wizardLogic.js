@@ -8,8 +8,11 @@ export const TYPE_LABELS = {
   private: 'Privates Gespräch',
 }
 
-export const STEPS = ['type', 'people', 'topic', 'mode', 'review']
+// People and topic share one page: names (party optional) and what the conversation is about.
+export const STEPS = ['type', 'people', 'mode', 'review']
 
+// `role` has no field any more (it stays empty): live, the operator assigns speakers by click.
+// The party still helps ("meine Partei …" becomes checkable) and is a transcription keyterm.
 const emptyPerson = () => ({ name: '', party: '', role: '', exclude: false })
 
 export function initialWizardState() {

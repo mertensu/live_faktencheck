@@ -42,10 +42,8 @@ function PersonFields({ person, index, type, dispatch, removable }) {
              placeholder={type === 'private' ? 'Name' : `Sprecher ${String.fromCharCode(65 + index)}`} />
       {type !== 'private' && (
         <input className="wizard-input" value={person.party} onChange={upd('party')}
-               placeholder="Partei / Organisation" />
+               placeholder="Partei / Organisation (optional)" />
       )}
-      <input className="wizard-input" value={person.role} onChange={upd('role')}
-             placeholder={type === 'private' ? 'Rolle (optional, z. B. Nachbar)' : 'Rolle / Funktion'} />
       <label className="wizard-exclude">
         <input type="checkbox" checked={!!person.exclude} onChange={toggleExclude} />
         <span>Aussagen nicht prüfen</span>
@@ -118,17 +116,17 @@ export function NewSessionPage() {
 
         {stepName === 'people' && (
           <section className="wizard-step">
-            <h1>Wer spricht?</h1>
+            <h1>Wer spricht und worum geht es?</h1>
             {state.conversationType === 'interview' && (
               <p className="wizard-hint">Meist sollen nur die Aussagen der interviewten Person geprüft werden – bei der interviewenden Person kannst du „Aussagen nicht prüfen“ setzen (Name dafür nötig).</p>
             )}
             {state.conversationType === 'private' && (
-              <p className="wizard-hint">Nur Vornamen/Rollen genügen — keine Partei nötig. Du kannst diesen Schritt auch leer lassen.</p>
+              <p className="wizard-hint">Vornamen genügen. Du kannst die Namen auch leer lassen.</p>
             )}
             {state.conversationType !== 'private' && (
               <p className="wizard-hint">
-                Namen sind optional – ohne Namen bleiben die Sprecher:innen als <strong>Sprecher A/B/C</strong>.
-                Mit Namen ordnet die KI die Aussagen den Personen zu; Partei/Organisation und Rolle helfen zusätzlich, wenn Namen im Gespräch nicht fallen.
+                Namen sind optional – ohne Namen bleiben die Sprecher:innen <strong>Sprecher A/B/C</strong>.
+                Die Partei hilft, Aussagen wie „meine Partei hat …“ richtig einzuordnen.
               </p>
             )}
             {state.people.map((p, i) => (
@@ -140,12 +138,8 @@ export function NewSessionPage() {
               <button type="button" className="wizard-add"
                       onClick={() => dispatch({ type: 'ADD_PERSON' })}>+ weitere Person</button>
             )}
-          </section>
-        )}
 
-        {stepName === 'topic' && (
-          <section className="wizard-step">
-            <h1>Worum geht es? <span className="wizard-optional">(optional)</span></h1>
+            <h2 className="wizard-subhead">Worum geht es? <span className="wizard-optional">(optional)</span></h2>
             <p className="wizard-hint">
               Je konkreter, desto besser prüft die KI: Mit klarem Hintergrund kann sie mehrdeutige
               Bezüge richtig einordnen und passendere Quellen finden. Hilfreich sind – soweit relevant –
