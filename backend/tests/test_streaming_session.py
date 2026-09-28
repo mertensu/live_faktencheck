@@ -623,6 +623,21 @@ class TestPassageAssignment:
         await session.stop()
 
 
+class TestGateContext:
+    async def test_previous_sentences_reach_the_gate_by_name(self, db, monkeypatch):
+        monkeypatch.setattr(streaming_mod, "CONTEXT_SENTENCES", 4)
+        gate, windows = _recording_gate()
+        session = StreamingSession("s1", gate, _fast_checker(), db, speakers=["Dröge"])
+        await session.assign_speaker("C", "Dröge")
+        await session.handle_turn("Eins. Zwei. Drei.", end_of_turn=True, speaker_label="C", turn_order=0)
+        await session.handle_turn("Vier. Fünf.", end_of_turn=True, speaker_label="A", turn_order=1)
+        await session.handle_turn("Sechs. Sieben.", end_of_turn=True, speaker_label="C", turn_order=2)
+        kw = gate.gate.await_args.kwargs
+        assert kw["previous_context"] == "Dröge: Zwei.\nDröge: Drei.\nA: Vier.\nA: Fünf."
+        assert kw["speaker_names"] == {"C": "Dröge"}
+        await session.stop()
+
+
 class TestSpeakerRuns:
     def test_groups_consecutive_word_speakers(self):
         from types import SimpleNamespace as W

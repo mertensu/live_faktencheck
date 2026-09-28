@@ -56,6 +56,7 @@ class ClaimGate(Protocol):
         conversation_type: str = "",
         excluded_speakers: list[str] | None = None,
         previous_context: str | None = None,
+        speaker_names: dict[str, str] | None = None,
     ) -> List[ExtractedClaim]: ...
 
 
@@ -73,6 +74,7 @@ class ExtractorGate:
         conversation_type: str = "",
         excluded_speakers: list[str] | None = None,
         previous_context: str | None = None,
+        speaker_names: dict[str, str] | None = None,  # unused: the window agent names speakers itself
     ) -> List[ExtractedClaim]:
         return await self._extractor.extract_window_async(
             window_text,
@@ -222,6 +224,8 @@ class JevGate:
         # Opt-in per-sentence trace (sentence, p, band) — for reviewing a live run, since
         # the DB keeps only the claims that passed, not scores or skipped sentences.
         self._debug = os.getenv("JEV_GATE_DEBUG", "").strip().lower() in ("1", "true", "yes")
+        # How many preceding sentences the reformulator sees to resolve "er", "das", …
+        self.context_sentences = int(os.getenv("JEV_CONTEXT_SENTENCES", "4"))
 
     def _band(self, p: float | None) -> str:
         if p is None:
@@ -240,6 +244,7 @@ class JevGate:
         conversation_type: str = "",
         excluded_speakers: list[str] | None = None,
         previous_context: str | None = None,
+        speaker_names: dict[str, str] | None = None,
     ) -> List[GatedClaim]:
         if not window_text or not window_text.strip():
             return []
@@ -262,28 +267,34 @@ class JevGate:
 
         scores = await asyncio.gather(*(self._scorer.score(s) for _, s in pairs))
 
+        # The reformulator resolves pronouns from the last few sentences before the one it
+        # rewrites, with speakers by name (the operator's assignment) instead of labels.
+        names = speaker_names or {}
+
+        def line(speaker: str, sentence: str) -> str:
+            return f"{names.get(speaker, speaker)}: {sentence}" if speaker else sentence
+
         claims: List[GatedClaim] = []
-        rolling = previous_context  # last sentence(s) seen, for pronoun resolution
+        rolling = [ln for ln in (previous_context or "").splitlines() if ln.strip()]
         for (speaker, sentence), sc in zip(pairs, scores):
             if self._debug:
                 c_str = "  ? " if sc.check is None else f"{sc.check:.2f}"
                 i_str = " ? " if sc.important is None else f"{sc.important:.2f}"
                 logger.info(f"JevGate[{self._band(sc.check):5} p={c_str} imp={i_str}] {speaker or '—'}: {sentence}")
-            rolling_next = f"{speaker}: {sentence}" if speaker else sentence
             if sc.check is not None and sc.check >= self.check_hi:
                 # Checkable — but skip if Jev judged it not important enough (fail-open on None).
                 if sc.important is not None and sc.important < self.imp_hi:
                     if self._debug:
                         logger.info(f"JevGate[drop  unwichtig imp={sc.important:.2f}] {sentence}")
-                    rolling = rolling_next
+                    rolling.append(line(speaker, sentence))
                     continue
                 try:
                     claim = await self._extractor.reformulate_claim_async(
                         sentence,
-                        speaker=speaker,
+                        speaker=names.get(speaker, speaker),
                         guests=guests,
                         context=context,
-                        previous_context=rolling,
+                        previous_context="\n".join(rolling[-self.context_sentences:]) or None,
                     )
                 except Exception:
                     logger.exception("Reformulation failed for gated sentence")
@@ -291,11 +302,11 @@ class JevGate:
                 if claim and (claim.claim or "").strip():
                     # Keep the original sentence as the highlight anchor for the UI.
                     claims.append(GatedClaim(
-                        name=claim.name or speaker, claim=claim.claim, source=sentence,
+                        name=claim.name or names.get(speaker, speaker), claim=claim.claim, source=sentence,
                         search_queries=list(getattr(claim, "search_queries", None) or []),
                     ))
             # Every sentence (hit or not) extends the rolling context for the next one.
-            rolling = rolling_next
+            rolling.append(line(speaker, sentence))
 
         logger.info(
             f"JevGate: {len(claims)} claim(s) from {len(pairs)} sentence(s) "

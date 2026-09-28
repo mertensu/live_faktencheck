@@ -126,6 +126,26 @@ class TestJevGate:
         assert out == []
         assert scorer.calls == []  # never scored — dropped by speaker
 
+    async def test_reformulator_sees_last_sentences_by_name(self):
+        """Pronouns are resolved from the last few sentences, with names instead of labels."""
+        from unittest.mock import AsyncMock
+        ex = _make_extractor()
+        ex.reformulate_claim_async = AsyncMock(return_value=ExtractedClaim(name="Dröge", claim="X."))
+        gate = JevGate(ex, FakeScorer({"Er hat": 0.9}))
+        gate.context_sentences = 4
+        window = ("C: Erstens, der Atomausstieg hat keinen Einfluss.\n"
+                  "A: Das stimmt nicht.\n"
+                  "C: Er hat keine Einflüsse auf die Strompreise gehabt. Zweitens, Habeck hat gehandelt.")
+        await gate.gate(window, guests=["Dröge"], speaker_names={"C": "Dröge", "A": "Connemann"},
+                        previous_context="Maischberger: Frage eins.\nMaischberger: Frage zwei.")
+        kw = ex.reformulate_claim_async.await_args.kwargs
+        assert kw["speaker"] == "Dröge"
+        assert kw["previous_context"] == (
+            "Maischberger: Frage eins.\nMaischberger: Frage zwei.\n"
+            "Dröge: Erstens, der Atomausstieg hat keinen Einfluss.\nConnemann: Das stimmt nicht.")
+        # Only what came before: the following sentence is not part of it.
+        assert "Habeck" not in kw["previous_context"]
+
     async def test_empty_window_skips_scoring(self):
         gate = JevGate(_make_extractor(), FakeScorer({"x": 0.99}))
         assert await gate.gate("   ", guests=[]) == []

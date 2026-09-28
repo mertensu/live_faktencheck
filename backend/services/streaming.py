@@ -40,6 +40,8 @@ STREAM_EARLY_SENTENCES = os.getenv("STREAM_EARLY_SENTENCES", "true").lower() in 
 # Two renderings of a sentence (partial vs. final, or a repeated source) count as the same
 # above this similarity of their normalized text.
 SAME_SENTENCE_RATIO = 0.85
+# How many preceding sentences (across windows) the gate gets as context for pronouns.
+CONTEXT_SENTENCES = int(os.getenv("JEV_CONTEXT_SENTENCES", "4"))
 # How many recently checked source sentences to remember for duplicate suppression.
 CHECKED_SOURCES_MEMORY = 50
 
@@ -197,7 +199,9 @@ class StreamingSession:
         # Current window: finalized turns as {"turn_order", "speaker" (label), "text"}.
         self._buffer: list[dict] = []
         self._sentence_count = 0
-        self._previous_context: str | None = None
+        # The last sentences sent to the gate, as "Name: sentence" (labels shown by their
+        # assigned name): context for resolving pronouns across windows.
+        self._recent_lines: list[str] = []
         self._tasks: set[asyncio.Task] = set()
         self._client = None                   # AssemblyAI AsyncStreamingClient (set in start)
 
@@ -490,6 +494,13 @@ class StreamingSession:
         )
         self._buffer = []
         self._sentence_count = 0
+        # Taken before the gate runs, so a window gated meanwhile already sees this one.
+        previous = "\n".join(self._recent_lines) or None
+        for e in entries:
+            name = self._display(e["speaker"])
+            for sentence in split_sentences(e["text"]):
+                self._recent_lines.append(f"{name}: {sentence}" if name else sentence)
+        self._recent_lines = self._recent_lines[-CONTEXT_SENTENCES:]
 
         try:
             claims = await self.gate.gate(
@@ -498,14 +509,12 @@ class StreamingSession:
                 context=self.context,
                 conversation_type=self.conversation_type,
                 excluded_speakers=self.excluded_speakers,
-                previous_context=self._previous_context,
+                previous_context=previous,
+                speaker_names=dict(self._speaker_map),
             )
         except Exception:
             logger.exception("Window gate failed; skipping window")
             claims = []
-
-        # Carry a short tail for cross-window continuity.
-        self._previous_context = window_text[-300:]
 
         for claim in claims:
             name = getattr(claim, "name", "") or ""
