@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   TYPE_LABELS, STEPS, initialWizardState, wizardReducer,
-  formatParticipant, buildGuests, peopleStepValid, deriveTitle, buildSessionPayload,
+  formatParticipant, buildGuests, peopleStepValid, deriveTitle, buildSessionPayload, parseKeyterms,
 } from './wizardLogic'
 
 describe('formatParticipant', () => {
@@ -55,11 +55,19 @@ describe('buildSessionPayload', () => {
       conversation_type: 'private',
       guests: ['Klaus'],
       context: '',
+      keyterms: [],
       date: '',
       type: 'show',
       excluded_speakers: [],
       auto_check: false,
     })
+  })
+
+  it('turns the comma-separated terms into a clean list', () => {
+    const s = { ...initialWizardState(), conversationType: 'debate', people: [{ name: 'A', party: '', role: '' }],
+                keyterms: ' Katharina Reiche, , Peter Altmaier\nkatharina reiche ' }
+    expect(buildSessionPayload(s).keyterms).toEqual(['Katharina Reiche', 'Peter Altmaier'])
+    expect(parseKeyterms('')).toEqual([])
   })
   it('explicit topic and edited title win', () => {
     const s = { ...initialWizardState(), conversationType: 'debate',

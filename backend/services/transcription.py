@@ -17,6 +17,24 @@ logger = logging.getLogger(__name__)
 DEFAULT_SPEECH_MODELS = "universal-3-pro,universal-2"
 
 
+def clean_keyterms(terms: list[str]) -> list[str]:
+    """Trimmed, non-empty, de-duplicated (case-insensitive, order kept)."""
+    seen: set[str] = set()
+    out: list[str] = []
+    for term in terms or []:
+        term = (term or "").strip()
+        if term and term.casefold() not in seen:
+            seen.add(term.casefold())
+            out.append(term)
+    return out
+
+
+def session_keyterms(guests: list[str], extra: list[str] | None = None) -> list[str]:
+    """AssemblyAI keyterms for a session: the guests' names (and parties) automatically,
+    plus the operator's extra terms, e.g. people mentioned in the show."""
+    return clean_keyterms(keyterms_from_guests(guests) + list(extra or []))[:1000]
+
+
 def keyterms_from_guests(guests: list[str]) -> list[str]:
     """Derive AssemblyAI keyterms from formatted guest strings.
 

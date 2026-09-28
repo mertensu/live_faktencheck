@@ -16,7 +16,7 @@ from backend.models import ProcessingResponse
 from backend.state import processing_lock
 from backend.utils import auto_check_enabled, to_dict, truncate
 from backend.services.registry import get_transcription_service, get_claim_extractor
-from backend.services.transcription import keyterms_from_guests
+from backend.services.transcription import session_keyterms
 from backend.routers.claims import process_fact_checks_async
 import backend.state as state
 
@@ -136,7 +136,7 @@ async def process_audio_pipeline_async(block_id: str, audio_path: str, session_i
     ep_context = ep.context if ep else ""
     ep_conversation_type = ep.conversation_type if ep else "debate"
     ep_excluded_speakers = ep.excluded_speakers if ep else []
-    ep_keyterms = keyterms_from_guests(ep_guests)
+    ep_keyterms = session_keyterms(ep_guests, ep.keyterms if ep else [])
 
     try:
         logger.info(f"[{block_id}] Starting audio processing pipeline...")

@@ -2,7 +2,7 @@ import { useReducer, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { createSession, getAccessCode, setAccessCode } from '../services/api'
 import {
-  TYPE_LABELS, STEPS, initialWizardState, wizardReducer, buildSessionPayload, peopleStepValid,
+  TYPE_LABELS, STEPS, initialWizardState, wizardReducer, buildSessionPayload, peopleStepValid, parseKeyterms,
 } from '../wizard/wizardLogic'
 
 const TYPE_TILES = [
@@ -154,6 +154,16 @@ export function NewSessionPage() {
             <textarea className="wizard-input" rows={4} value={state.topic}
                       onChange={(e) => dispatch({ type: 'SET_TOPIC', value: e.target.value })}
                       placeholder="Anlass, Ort/Zeitraum und zentrale Themen des Gesprächs — kann leer bleiben" />
+            <label className="wizard-label" htmlFor="wizard-keyterms">
+              Namen &amp; Begriffe, die fallen könnten <span className="wizard-optional">(optional)</span>
+            </label>
+            <p className="wizard-hint">
+              Hilft der Transkription, Namen richtig zu schreiben (z. B. „Reiche“ statt „Reichelt“). Die Namen
+              der Personen sind automatisch dabei — ergänze Erwähnte, Institutionen oder Fachbegriffe.
+            </p>
+            <input id="wizard-keyterms" className="wizard-input" value={state.keyterms}
+                   onChange={(e) => dispatch({ type: 'SET_KEYTERMS', value: e.target.value })}
+                   placeholder="z. B. Katharina Reiche, Peter Altmaier, Bundesnetzagentur" />
           </section>
         )}
 
@@ -194,6 +204,7 @@ export function NewSessionPage() {
               <dt>Art</dt><dd>{TYPE_LABELS[state.conversationType]}</dd>
               <dt>Personen</dt><dd>{buildSessionPayload(state).guests.join(', ') || '—'}</dd>
               <dt>Thema</dt><dd>{state.topic.trim() || '— (nicht angegeben)'}</dd>
+              <dt>Begriffe</dt><dd>{parseKeyterms(state.keyterms).join(', ') || '—'}</dd>
               <dt>Prüfung</dt><dd>{state.autoCheck ? 'Automatisch' : 'Moderator:in (selbst entscheiden)'}</dd>
             </dl>
             <div className="form-field">

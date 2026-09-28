@@ -86,6 +86,7 @@ async def stream(websocket: WebSocket):
         context=ep.context if ep else "",
         conversation_type=ep.conversation_type if ep else "debate",
         excluded_speakers=ep.excluded_speakers if ep else [],
+        keyterms=ep.keyterms if ep else [],
         episode_date=episode_date,
         on_event=on_event,
         # Bare names (no roles): what the operator may assign a speaker label to.

@@ -21,7 +21,7 @@ from difflib import SequenceMatcher
 from backend.lang import UNCLEAR_SPEAKER
 from backend.utils import build_fact_check_dict
 from .gate import split_sentences
-from .transcription import keyterms_from_guests
+from .transcription import session_keyterms
 
 logger = logging.getLogger(__name__)
 
@@ -168,6 +168,17 @@ def _log_mixed_speakers(session_id: str, kind: str, turn_order, label, words) ->
         logger.info(f"[stream:{session_id}] mixed-speaker {kind} #{turn_order} label={label}: {detail}")
 
 
+def _is_complete(sentence: str) -> bool:
+    """True if a sentence ends like one (., !, ?, …, maybe followed by a closing quote)."""
+    return bool(re.search(r"[.!?…][\"'“”»)]*\s*$", sentence))
+
+
+def _continues(sentence: str) -> bool:
+    """True if a sentence starts in lower case: the rest of an earlier, unfinished one."""
+    m = re.search(r"[^\W\d_]", sentence)
+    return bool(m) and m.group().islower()
+
+
 def _count_sentences(text: str) -> int:
     return sum(text.count(m) for m in (".", "!", "?"))
 
@@ -188,6 +199,7 @@ class StreamingSession:
         context: str = "",
         conversation_type: str = "debate",
         excluded_speakers: list[str] | None = None,
+        keyterms: list[str] | None = None,
         episode_date: str | None = None,
         on_event=None,
         speakers: list[str] | None = None,
@@ -200,6 +212,7 @@ class StreamingSession:
         self.context = context
         self.conversation_type = conversation_type
         self.excluded_speakers = excluded_speakers or []
+        self.keyterms = list(keyterms or [])  # extra terms set with the session (names mentioned, …)
         self.episode_date = episode_date
         self.on_event = on_event  # optional async callable(dict) -> pushes JSON to browser
         self.speakers = speakers or []  # guest names without roles: what a label may be assigned to
@@ -234,6 +247,9 @@ class StreamingSession:
         # later reclustering doesn't move them (it did, wrongly, early in a live run).
         self._confirmed_turns: set[int] = set()
 
+        # AssemblyAI ends a turn at a pause, sometimes mid-sentence. Such a trailing fragment
+        # waits here for the next turn: if that starts in lower case, it's the rest of it.
+        self._carry: dict | None = None
         # Early sentences: per turn, the normalized sentences already taken from partials.
         self._early: dict[int, list[str]] = {}
         # Normalized source sentences of recent claims — the same sentence is checked once.
@@ -256,6 +272,16 @@ class StreamingSession:
         task = asyncio.create_task(coro)
         self._tasks.add(task)
         task.add_done_callback(self._tasks.discard)
+
+    # ---- keyterms ---------------------------------------------------------------
+    @property
+    def _known_names(self) -> list[str]:
+        """Guests plus the operator's extra terms: names the reformulator may correct to."""
+        return self.guests + [k for k in self.keyterms if k not in self.guests]
+
+    def _excluded(self, name: str | None) -> bool:
+        """True for a speaker the session excludes from checking (e.g. the moderator)."""
+        return bool(name) and name.casefold() in {x.strip().casefold() for x in self.excluded_speakers}
 
     # ---- speakers: operator assignment + reclustering (unit-testable) --------
     @property
@@ -460,12 +486,31 @@ class StreamingSession:
 
     def _buffer_segments(self, turn_order: int | None, sentences) -> None:
         """Add a final turn to the window, one entry per speaker segment. Sentences already
-        taken early from partials are not gated a second time."""
-        for label, seg_text in speaker_segments(sentences):
-            rest = self._untaken(turn_order, seg_text)
-            if rest:
-                self._buffer.append({"turn_order": turn_order, "speaker": label, "text": rest})
-                self._sentence_count += _count_sentences(rest)
+        taken early from partials are not gated a second time. A turn that stops
+        mid-sentence keeps that fragment back until the next turn shows how it goes on."""
+        taken = self._early.get(turn_order) if turn_order is not None else None
+        todo = [(sentence, label) for sentence, label in sentences
+                if not (taken and any(_same_sentence(_norm(sentence), t) for t in taken))]
+        todo = self._join_carry(todo)
+        if todo and not _is_complete(todo[-1][0]):
+            fragment, label = todo.pop()
+            self._carry = {"turn_order": turn_order, "speaker": label, "text": fragment}
+        for label, seg_text in speaker_segments(todo):
+            self._buffer.append({"turn_order": turn_order, "speaker": label, "text": seg_text})
+            self._sentence_count += _count_sentences(seg_text)
+
+    def _join_carry(self, todo: list[tuple[str, str | None]]) -> list[tuple[str, str | None]]:
+        """Put a waiting fragment in front of the first sentence if that continues it
+        (starts in lower case); otherwise the fragment is gated on its own, as it was."""
+        carry, self._carry = self._carry, None
+        if carry is None:
+            return todo
+        if todo and _continues(todo[0][0]):
+            sentence, label = todo[0]
+            return [(f"{carry['text']} {sentence}", label)] + todo[1:]
+        self._buffer.append({"turn_order": carry["turn_order"], "speaker": carry["speaker"],
+                             "text": carry["text"]})
+        return todo
 
     async def _take_early_sentences(self, text, speaker_label, turn_order) -> None:
         """Buffer a partial's settled sentences (all but its last) not taken yet."""
@@ -476,6 +521,7 @@ class StreamingSession:
             if not key or any(_same_sentence(key, t) for t in taken):
                 continue
             taken.append(key)
+            (sentence, _), = self._join_carry([(sentence, speaker_label)])
             self._buffer.append({"turn_order": turn_order, "speaker": speaker_label, "text": sentence,
                                  "early": True})
             self._sentence_count += 1
@@ -523,11 +569,14 @@ class StreamingSession:
         if not self._buffer:
             return
         entries = self._buffer
-        window_text = "\n".join(
-            (f"{e['speaker']}: {e['text']}" if e["speaker"] else e["text"]) for e in entries
-        )
         self._buffer = []
         self._sentence_count = 0
+        # A speaker the session excludes (the moderator) is not gated once the operator has
+        # named their label; their words still count as context.
+        gated = [e for e in entries if not self._excluded(self._display(e["speaker"], e.get("turn_order")))]
+        window_text = "\n".join(
+            (f"{e['speaker']}: {e['text']}" if e["speaker"] else e["text"]) for e in gated
+        )
         # Taken before the gate runs, so a window gated meanwhile already sees this one.
         previous = "\n".join(self._recent_lines) or None
         for e in entries:
@@ -536,17 +585,19 @@ class StreamingSession:
                 self._recent_lines.append(f"{name}: {sentence}" if name else sentence)
         self._recent_lines = self._recent_lines[-CONTEXT_SENTENCES:]
 
+        if not gated:
+            return
         try:
             claims = await self.gate.gate(
                 window_text,
-                self.guests,
+                self._known_names,
                 context=self.context,
                 conversation_type=self.conversation_type,
                 excluded_speakers=self.excluded_speakers,
                 previous_context=previous,
                 # Label -> name as assigned for this window's turns.
                 speaker_names={e["speaker"]: self._display(e["speaker"], e.get("turn_order"))
-                               for e in entries if e["speaker"]},
+                               for e in gated if e["speaker"]},
             )
         except Exception:
             logger.exception("Window gate failed; skipping window")
@@ -566,8 +617,8 @@ class StreamingSession:
                 continue
             # Tie the claim to the turn and label it came from. The speaker is that label
             # (or the operator's name for it) — never a name the gate guessed from the text.
-            match = self._match_turn(source, entries)
-            turn_order, label = match if match else self._label_from_window(name, entries)
+            match = self._match_turn(source, gated)
+            turn_order, label = match if match else self._label_from_window(name, gated)
             # A claim from an early sentence: its turn may be re-formatted when finalized.
             # Already final → show the final wording now; else re-send it on finalization.
             if source and turn_order is not None and any(
@@ -628,6 +679,9 @@ class StreamingSession:
         if passage_speaker:
             speaker_label = None
         speaker = passage_speaker or self._display(speaker_label, turn_order) or UNCLEAR_SPEAKER
+        if self._excluded(speaker):
+            logger.info(f"[stream:{self.session_id}] skip claim from excluded speaker {speaker}: {claim[:80]!r}")
+            return
         placeholder = {
             "sprecher": speaker,
             "behauptung": claim,
@@ -755,7 +809,7 @@ class StreamingSession:
             speaker_labels=True,
             max_speakers=self._max_speakers(),
             speaker_labels_revision_interval_ms=STREAM_SPEAKER_REVISION_MS or None,
-            keyterms_prompt=keyterms_from_guests(self.guests) or None,
+            keyterms_prompt=session_keyterms(self.guests, self.keyterms) or None,
         )
         await self._client.connect(params)
         logger.info(f"[stream:{self.session_id}] AssemblyAI streaming connected")
@@ -767,6 +821,7 @@ class StreamingSession:
     async def stop(self) -> None:
         """Flush the tail window, close AssemblyAI, and drain background tasks."""
         try:
+            self._join_carry([])  # a fragment still waiting is gated on its own
             await self._flush_window()
         finally:
             if self._client is not None:

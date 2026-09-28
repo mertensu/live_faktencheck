@@ -124,6 +124,13 @@ class Database:
             except Exception:
                 pass  # Column already exists
 
+        # Migration: extra AssemblyAI keyterms per session (names mentioned in the show).
+        try:
+            await self.db.execute("ALTER TABLE sessions ADD COLUMN keyterms TEXT NOT NULL DEFAULT '[]'")
+            await self.db.commit()
+        except Exception:
+            pass  # Column already exists
+
         # Migrations: add Quick Check quota columns to existing codes tables
         for migration in [
             "ALTER TABLE codes ADD COLUMN quick_checks_used INTEGER NOT NULL DEFAULT 0",
@@ -316,6 +323,7 @@ class Database:
             "type": row["type"],
             "conversation_type": row["conversation_type"],
             "excluded_speakers": json.loads(row["excluded_speakers"]),
+            "keyterms": json.loads(row["keyterms"]) if "keyterms" in row.keys() else [],
             "auto_check": bool(row["auto_check"]),
             "status": row["status"],
             "visibility": row["visibility"],
@@ -330,8 +338,9 @@ class Database:
         await self.db.execute(
             """INSERT INTO sessions
                (session_id, title, date, guests, context,
-                type, conversation_type, excluded_speakers, auto_check, status, visibility, owner_code, created_at, ended_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                type, conversation_type, excluded_speakers, keyterms, auto_check, status, visibility, owner_code,
+                created_at, ended_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 session["session_id"],
                 session.get("title", ""),
@@ -341,6 +350,7 @@ class Database:
                 session.get("type", "show"),
                 session.get("conversation_type", "debate"),
                 json.dumps(session.get("excluded_speakers", []), ensure_ascii=False),
+                json.dumps(session.get("keyterms", []), ensure_ascii=False),
                 int(bool(session.get("auto_check", False))),
                 session.get("status", "active"),
                 session.get("visibility", "private"),

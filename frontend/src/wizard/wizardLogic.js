@@ -18,6 +18,8 @@ export function initialWizardState() {
     conversationType: null,
     people: [emptyPerson()],
     topic: '',
+    // Extra names/terms for the transcription (people mentioned in the show, …), comma-separated.
+    keyterms: '',
     // The user's chosen role for this session: null = not yet decided,
     // false = Moderator:in (decide each claim manually), true = automatic checking.
     autoCheck: null,
@@ -50,6 +52,17 @@ export function peopleStepValid(type, people) {
   return !people.some((p) => p.exclude && !(p.name || '').trim())
 }
 
+// Comma- or line-separated terms → trimmed list without empties or case-insensitive repeats.
+export function parseKeyterms(text) {
+  const seen = new Set()
+  return (text || '').split(/[,\n]/).map((t) => t.trim()).filter((t) => {
+    const key = t.toLowerCase()
+    if (!t || seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+}
+
 export function deriveTitle(type, people) {
   const label = TYPE_LABELS[type] || 'Gespräch'
   const firstNamed = people.map((p) => (p.name || '').trim()).find(Boolean)
@@ -63,6 +76,7 @@ export function buildSessionPayload(state) {
     conversation_type: type,
     guests: buildGuests(type, state.people),
     context: state.topic.trim(),
+    keyterms: parseKeyterms(state.keyterms),
     date: '',
     type: 'show',
     excluded_speakers: state.people
@@ -92,6 +106,8 @@ export function wizardReducer(state, action) {
       }
     case 'SET_TOPIC':
       return { ...state, topic: action.value }
+    case 'SET_KEYTERMS':
+      return { ...state, keyterms: action.value }
     case 'SET_AUTO_CHECK':
       return { ...state, autoCheck: action.value }
     case 'SET_TITLE':

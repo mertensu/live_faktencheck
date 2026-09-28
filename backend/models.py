@@ -85,6 +85,7 @@ class CreateSessionRequest(BaseModel):
     type: str = "show"
     conversation_type: str = "debate"
     excluded_speakers: List[str] = []
+    keyterms: List[str] = []
     auto_check: bool = False
 
 
@@ -155,6 +156,7 @@ class SessionResponse(BaseModel):
     type: str = "show"
     conversation_type: str = "debate"
     excluded_speakers: List[str] = []
+    keyterms: List[str] = []
     auto_check: bool = False
     status: str = "active"
     visibility: str = "private"

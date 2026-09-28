@@ -530,6 +530,92 @@ class TestWordSpeakers:
         await session.stop()
 
 
+class TestFragments:
+    """AssemblyAI ends a turn at a pause, sometimes mid-sentence."""
+
+    async def test_fragment_joins_the_next_turns_continuation(self, db):
+        gate, windows = _recording_gate()
+        session = StreamingSession("s1", gate, _fast_checker(), db)
+        await session.handle_turn("Das ist ein Fakt. Wir hatten an dieser Stelle 10 Millionen Haushalte,",
+                                  end_of_turn=True, speaker_label="B", turn_order=13)
+        assert windows == []  # only one complete sentence: the fragment waits
+        await session.handle_turn("die durch Kernenergie versorgt worden sind. Der Bedarf ist höher.",
+                                  end_of_turn=True, speaker_label="B", turn_order=14)
+        await session.stop()
+        gated = "\n".join(windows)
+        assert "B: Wir hatten an dieser Stelle 10 Millionen Haushalte, die durch Kernenergie versorgt worden sind." in gated
+        assert "Haushalte,\n" not in gated
+
+    async def test_fragment_joins_an_early_sentence(self, db):
+        gate, windows = _recording_gate()
+        session = StreamingSession("s1", gate, _fast_checker(), db)
+        await session.handle_turn("Eins. Wir hatten 10 Millionen Haushalte,", end_of_turn=True,
+                                  speaker_label="B", turn_order=1)
+        await session.handle_turn("die durch Kernenergie versorgt wurden. Und dann", end_of_turn=False, turn_order=2)
+        await session.handle_turn("Zwei.", end_of_turn=False, turn_order=3)
+        await session.stop()
+        assert any("Wir hatten 10 Millionen Haushalte, die durch Kernenergie versorgt wurden." in w for w in windows)
+
+    async def test_fragment_not_continued_is_gated_alone(self, db):
+        gate, windows = _recording_gate()
+        session = StreamingSession("s1", gate, _fast_checker(), db)
+        await session.handle_turn("Eins. Und dann haben wir", end_of_turn=True, speaker_label="B", turn_order=1)
+        await session.handle_turn("Was sagen Sie dazu? Nichts.", end_of_turn=True, speaker_label="A", turn_order=2)
+        await session.stop()
+        gated = "\n".join(windows)
+        assert "B: Und dann haben wir" in gated and "A: Was sagen Sie dazu? Nichts." in gated
+
+    async def test_waiting_fragment_is_gated_at_stop(self, db):
+        gate, windows = _recording_gate()
+        session = StreamingSession("s1", gate, _fast_checker(), db)
+        await session.handle_turn("Und dann haben wir", end_of_turn=True, speaker_label="B", turn_order=1)
+        await session.stop()
+        assert windows == ["B: Und dann haben wir"]
+
+
+class TestExcludedSpeakers:
+    async def test_named_moderator_label_is_not_gated(self, db):
+        gate, windows = _recording_gate()
+        session = StreamingSession("s1", gate, _fast_checker(), db, speakers=["Maischberger", "Dröge"],
+                                   excluded_speakers=["Maischberger"])
+        await session.assign_speaker("B", "Maischberger")
+        await session.handle_turn("Sie sind Staatssekretärin. Was sagen Sie?", end_of_turn=True,
+                                  speaker_label="B", turn_order=0)
+        await session.handle_turn("Der Strom ist teuer. Punkt.", end_of_turn=True, speaker_label="A", turn_order=1)
+        await session.stop()
+        assert windows == ["A: Der Strom ist teuer. Punkt."]
+        # Their words are still context for the reformulator.
+        assert "Maischberger: Sie sind Staatssekretärin." in gate.gate.await_args.kwargs["previous_context"]
+
+    async def test_passage_given_to_moderator_is_not_checked(self, db):
+        claim = GatedClaim(name="A", claim="X.", source="Sie sind Staatssekretärin.")
+        checker = _fast_checker()
+        session = StreamingSession("s1", _gate([[claim]]), checker, db, speakers=["Maischberger"],
+                                   excluded_speakers=["Maischberger"])
+        await session.assign_passage("Sie sind Staatssekretärin.", "Maischberger")
+        await session.handle_turn("Sie sind Staatssekretärin. Was sagen Sie?", end_of_turn=True,
+                                  speaker_label="A", turn_order=0)
+        await session.stop()
+        assert checker.check_claim_async.await_count == 0
+        assert await db.get_fact_checks(session_id="s1") == []
+
+
+class TestKeyterms:
+    def test_guests_are_keyterms_plus_extra_terms(self):
+        from backend.services.transcription import session_keyterms
+        assert session_keyterms(["Katharina Dröge (Grüne, Fraktionschefin)", "Sandra Maischberger (Moderatorin)"],
+                                ["Katharina Reiche", "grüne"]) == [
+            "Katharina Dröge", "Grüne", "Sandra Maischberger", "Moderatorin", "Katharina Reiche"]
+
+    async def test_extra_terms_are_known_names_for_the_reformulator(self, db):
+        gate, _ = _recording_gate()
+        session = StreamingSession("s1", gate, _fast_checker(), db, guests=["Katharina Dröge (Grüne)"],
+                                   keyterms=["Katharina Reiche"])
+        await session.handle_turn("Eins. Zwei.", end_of_turn=True, speaker_label="A", turn_order=0)
+        assert gate.gate.await_args.args[1] == ["Katharina Dröge (Grüne)", "Katharina Reiche"]
+        await session.stop()
+
+
 class TestPendingLabel:
     """AssemblyAI labels a turn too short to attribute "PENDING": that is no speaker."""
 

@@ -2487,6 +2487,7 @@
   margin: 0;
 }
 .wizard-hint, .wizard-optional { color: #6b7280; font-size: .9rem; }
+.wizard-label { display: block; margin-top: 1.25rem; font-weight: 600; }
 .wizard-summary { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; margin: 16px 0; }
 .wizard-summary dt { color: #6b7280; }
 .wizard-summary dd { margin: 0; color: #1f2533; }

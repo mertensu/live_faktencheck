@@ -23,7 +23,8 @@ schreiben, mit denen ein Faktenprüfer die Behauptung sofort überprüfen kann.
    („Dröge hat …“). Beruft sich der Sprecher auf eine Quelle (z. B. „laut
    Bundesnetzagentur“), bleibt diese Quelle Teil der Behauptung.
 2. **Sprecher & Namen:** ``name`` = Sprecher. Korrigiere offensichtliche
-   Transkriptions-/Schreibfehler bei Eigennamen anhand der ``guests``-Liste — wenn ein
+   Transkriptions-/Schreibfehler bei Eigennamen anhand der ``guests``-Liste (Gäste und in
+   der Sendung erwähnte Namen/Begriffe, die der Operator ergänzt hat) — wenn ein
    Name im Satz einem Gast nur ähnelt (z. B. "Reichelt" statt "Reiche", "Merz" statt
    "März"), verwende die korrekte Schreibweise aus ``guests``. Erfinde keine Namen, die
    nicht in ``guests`` oder im Kontext vorkommen.
