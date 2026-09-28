@@ -203,23 +203,31 @@ export function useAudioStream(sessionId, { deviceId = '' } = {}) {
     ws.send(JSON.stringify({ type: 'assign_speaker', label, speaker: speaker || null, from_turn: fromTurn ?? null }))
   }, [])
 
-  // Give a marked passage of transcript line `index` (chars start..end of `lineText`) to a
-  // guest: the line splits so the passage shows under that name, and the backend moves any
-  // claim from it (now or later) to the guest, whatever its label says.
-  const assignPassage = useCallback((index, lineText, start, end, speaker) => {
+  // Give a marked passage to a guest. It may span several transcript lines: `parts` is
+  // [{ index, lineText, start, end }], chars start..end of line `index`. Each line splits so
+  // its marked part shows under that name, and the backend moves any claim from it (now or
+  // later) to the guest, whatever its label says.
+  const assignPassage = useCallback((parts, speaker) => {
     const ws = wsRef.current
-    const text = lineText.slice(start, end).trim()
-    if (!ws || ws.readyState !== WebSocket.OPEN || !speaker || !text) return
-    ws.send(JSON.stringify({ type: 'assign_passage', text, speaker }))
+    if (!ws || ws.readyState !== WebSocket.OPEN || !speaker) return
+    const marked = parts
+      .map((p) => ({ ...p, text: p.lineText.slice(p.start, p.end).trim() }))
+      .filter((p) => p.text)
+    for (const p of marked) ws.send(JSON.stringify({ type: 'assign_passage', text: p.text, speaker }))
     setTranscript((prev) => {
-      const t = prev[index]
-      if (!t || t.text !== lineText) return prev
-      const parts = [
-        { ...t, text: lineText.slice(0, start).trim() },
-        { ...t, text, speaker },
-        { ...t, text: lineText.slice(end).trim() },
-      ].filter((p) => p.text)
-      return [...prev.slice(0, index), ...parts, ...prev.slice(index + 1)]
+      let next = prev
+      // From the last line up, so splitting a line doesn't shift the indices still to come.
+      for (const p of [...marked].sort((a, b) => b.index - a.index)) {
+        const t = next[p.index]
+        if (!t || t.text !== p.lineText) continue
+        const pieces = [
+          { ...t, text: p.lineText.slice(0, p.start).trim() },
+          { ...t, text: p.text, speaker },
+          { ...t, text: p.lineText.slice(p.end).trim() },
+        ].filter((piece) => piece.text)
+        next = [...next.slice(0, p.index), ...pieces, ...next.slice(p.index + 1)]
+      }
+      return next
     })
   }, [])
 

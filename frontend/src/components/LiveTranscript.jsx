@@ -43,30 +43,37 @@ function groupTurns(transcript, speakerMap) {
   return groups
 }
 
-// The operator's text selection as { index, start, end } within one transcript line,
-// widened to whole words; null unless it lies inside a single line.
-function selectedPassage(transcript) {
+// The operator's text selection as { parts: [{ index, start, end }], left, top }: the
+// marked part of every transcript line it touches, widened to whole words at both ends;
+// null if it touches no line.
+function selectedPassage(transcript, root) {
   const sel = window.getSelection?.()
-  if (!sel || sel.isCollapsed || sel.rangeCount === 0) return null
+  if (!sel || sel.isCollapsed || sel.rangeCount === 0 || !root) return null
   const range = sel.getRangeAt(0)
-  const lineOf = (node) => (node?.nodeType === 1 ? node : node?.parentElement)?.closest?.('.live-bubble-line[data-index]')
-  const lineEl = lineOf(range.startContainer)
-  if (!lineEl || lineEl !== lineOf(range.endContainer)) return null
-  const index = Number(lineEl.dataset.index)
-  const text = transcript[index]?.text
-  if (!text) return null
-  const before = document.createRange()
-  before.selectNodeContents(lineEl)
-  before.setEnd(range.startContainer, range.startOffset)
-  let start = before.toString().length
-  let end = start + range.toString().length
-  while (start > 0 && /\S/.test(text[start - 1])) start--
-  while (end < text.length && /\S/.test(text[end])) end++
-  while (start < end && /\s/.test(text[start])) start++
-  while (end > start && /\s/.test(text[end - 1])) end--
-  if (end <= start) return null
-  const r = (range.getBoundingClientRect ? range : lineEl).getBoundingClientRect()
-  return { index, start, end, left: r.left, top: r.bottom }
+  const lines = [...root.querySelectorAll('.live-bubble-line[data-index]')]
+    .filter((el) => range.intersectsNode(el))
+  const offsetIn = (el, container, offset) => {
+    const before = document.createRange()
+    before.selectNodeContents(el)
+    before.setEnd(container, offset)
+    return before.toString().length
+  }
+  const parts = []
+  lines.forEach((el, k) => {
+    const index = Number(el.dataset.index)
+    const text = transcript[index]?.text
+    if (!text) return
+    let start = el.contains(range.startContainer) ? offsetIn(el, range.startContainer, range.startOffset) : 0
+    let end = el.contains(range.endContainer) ? offsetIn(el, range.endContainer, range.endOffset) : text.length
+    if (k === 0) while (start > 0 && /\S/.test(text[start - 1])) start--
+    if (k === lines.length - 1) while (end < text.length && /\S/.test(text[end])) end++
+    while (start < end && /\s/.test(text[start])) start++
+    while (end > start && /\s/.test(text[end - 1])) end--
+    if (end > start) parts.push({ index, start, end })
+  })
+  if (parts.length === 0) return null
+  const r = (range.getBoundingClientRect ? range : lines[lines.length - 1]).getBoundingClientRect()
+  return { parts, left: r.left, top: r.bottom }
 }
 
 // Floating menu at a marked passage: which guest said it.
@@ -266,14 +273,15 @@ export function LiveTranscript({ live, speakers = [] }) {
   const colorsRef = useRef(new Map()) // speaker name → palette slot, sticky per session
   const closeTimer = useRef(null)
   const [open, setOpen] = useState(null) // { id, pinned }
-  const [passage, setPassage] = useState(null) // marked text awaiting a speaker: { index, start, end, left, top }
+  const [passage, setPassage] = useState(null) // marked text awaiting a speaker: { parts, left, top }
   const closePassage = useCallback(() => setPassage(null), [])
 
   const active = status === 'connecting' || status === 'streaming'
   const hasContent = transcript.length > 0 || partial || claims.length > 0
 
   // The page is the window: keep the newest line in view, but only while the user hasn't
-  // scrolled up to reread, and not while a result is being read.
+  // scrolled up to reread, and not while a result is being read. Scroll only as far as
+  // needed ('nearest'), so the page doesn't move while the newest line is still visible.
   useEffect(() => {
     const onScroll = () => {
       const end = endRef.current
@@ -284,7 +292,7 @@ export function LiveTranscript({ live, speakers = [] }) {
   }, [])
 
   useEffect(() => {
-    if (stickRef.current && !open) endRef.current?.scrollIntoView?.({ block: 'end' })
+    if (stickRef.current && !open) endRef.current?.scrollIntoView?.({ block: 'nearest' })
   }, [transcript, partial, claims, open])
 
   const cancelClose = () => clearTimeout(closeTimer.current)
@@ -353,12 +361,14 @@ export function LiveTranscript({ live, speakers = [] }) {
   const canAssignPassage = status === 'streaming' && speakers.length > 0 && typeof assignPassage === 'function'
   const onSelectEnd = () => {
     if (!canAssignPassage) return
-    const p = selectedPassage(transcript)
+    const p = selectedPassage(transcript, rootRef.current)
     if (p) setPassage(p)
   }
   const pickPassage = (name) => {
-    const line = transcript[passage.index]
-    if (line) assignPassage(passage.index, line.text, passage.start, passage.end, name)
+    const parts = passage.parts
+      .filter((p) => transcript[p.index])
+      .map((p) => ({ ...p, lineText: transcript[p.index].text }))
+    if (parts.length) assignPassage(parts, name)
     window.getSelection?.()?.removeAllRanges()
     setPassage(null)
   }
@@ -377,9 +387,11 @@ export function LiveTranscript({ live, speakers = [] }) {
     </div>
   ))
   // Claims can be found before the turn ends (early sentences), so mark the interim line too.
-  const partialBubble = partial && (
-    <div className="live-bubble live-bubble-partial">
-      <p className="live-bubble-line">{renderLine(partial, claimsBySource, markHandlers, marked)}</p>
+  // While live, the interim bubble stays in place even when empty: a finished sentence then
+  // moves up into its bubble without the page first getting shorter (which made it jump).
+  const partialBubble = (partial || status === 'streaming') && (
+    <div className={`live-bubble live-bubble-partial${partial ? '' : ' is-empty'}`} aria-hidden={!partial}>
+      <p className="live-bubble-line">{partial ? renderLine(partial, claimsBySource, markHandlers, marked) : '\u00a0'}</p>
     </div>
   )
   // A claim whose sentence isn't (or no longer) visible verbatim still needs a way in.

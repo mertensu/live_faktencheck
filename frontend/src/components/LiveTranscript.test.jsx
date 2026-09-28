@@ -22,7 +22,7 @@ const live = {
 describe('LiveTranscript', () => {
   it('groups consecutive lines of a label into one bubble; lines without a label stay neutral', () => {
     const { container } = render(<LiveTranscript live={live} />)
-    const bubbles = container.querySelectorAll('.live-bubble')
+    const bubbles = container.querySelectorAll('.live-bubble:not(.live-bubble-partial)')
     expect(bubbles).toHaveLength(3)
     expect(bubbles[0].querySelectorAll('.live-bubble-line')).toHaveLength(2)
     expect(bubbles[0].className).toMatch(/spk-0/)
@@ -63,8 +63,34 @@ describe('LiveTranscript', () => {
     window.getSelection().addRange(range)
     fireEvent.mouseUp(textNode)
     fireEvent.click(screen.getByRole('menuitem', { name: 'Maischberger' }))
-    expect(assignPassage).toHaveBeenCalledWith(0, 'Was ist Ihre Antwort?', 8, 21, 'Maischberger')
+    expect(assignPassage).toHaveBeenCalledWith(
+      [{ index: 0, start: 8, end: 21, lineText: 'Was ist Ihre Antwort?' }], 'Maischberger')
     expect(screen.queryByRole('menu', { name: 'Textstelle zuordnen' })).toBeNull()
+  })
+
+  it('gives a passage over several lines to a guest', () => {
+    const assignPassage = vi.fn()
+    const transcript = [
+      { label: 'B', text: 'Was ist Ihre Antwort?' },
+      { label: 'B', text: 'Also, Sie hatten gerade den Begriff bemüht.' },
+      { label: 'B', text: 'Und das tun Sie gerade, und zwar bar jeden Fakten.' },
+    ]
+    const { container } = render(
+      <LiveTranscript live={{ ...live, transcript, claims: [], assignSpeaker: vi.fn(), assignPassage }}
+        speakers={['Connemann', 'Maischberger']} />
+    )
+    const line = (i) => container.querySelector(`.live-bubble-line[data-index="${i}"]`).firstChild
+    const range = document.createRange()
+    range.setStart(line(1), 2) // inside "Also,"
+    range.setEnd(line(2), 17) // inside "gerade,"
+    window.getSelection().removeAllRanges()
+    window.getSelection().addRange(range)
+    fireEvent.mouseUp(line(2))
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Connemann' }))
+    expect(assignPassage).toHaveBeenCalledWith([
+      { index: 1, start: 0, end: 43, lineText: 'Also, Sie hatten gerade den Begriff bemüht.' },
+      { index: 2, start: 0, end: 23, lineText: 'Und das tun Sie gerade, und zwar bar jeden Fakten.' },
+    ], 'Connemann')
   })
 
   it('shows a passage given to a guest as a bubble of that name', () => {
@@ -74,7 +100,7 @@ describe('LiveTranscript', () => {
       { label: 'A', text: 'Das stimmt.' },
     ]
     const { container } = render(<LiveTranscript live={{ ...live, transcript }} />)
-    const bubbles = container.querySelectorAll('.live-bubble')
+    const bubbles = container.querySelectorAll('.live-bubble:not(.live-bubble-partial)')
     expect(bubbles).toHaveLength(3)
     expect(bubbles[1].textContent).toContain('Maischberger')
     expect(bubbles[1].className).not.toMatch(/spk-none/)
@@ -93,7 +119,7 @@ describe('LiveTranscript', () => {
     const { container } = render(
       <LiveTranscript live={{ ...live, transcript, speakerMap, assignSpeaker }} speakers={['Maischberger', 'Connemann']} />
     )
-    const bubbles = container.querySelectorAll('.live-bubble')
+    const bubbles = container.querySelectorAll('.live-bubble:not(.live-bubble-partial)')
     expect(bubbles).toHaveLength(3)
     expect(bubbles[0].textContent).toContain('Maischberger')
     expect(bubbles[2].textContent).toContain('Connemann')

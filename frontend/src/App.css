@@ -2658,6 +2658,7 @@
   border: 1px dashed var(--border-medium);
   box-shadow: none;
 }
+.live-bubble-partial.is-empty { visibility: hidden; }
 
 /* Passage gated as a claim; tinted by verdict. Hover or click opens the result. */
 .live-transcript-mark {
