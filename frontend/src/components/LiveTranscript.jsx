@@ -76,9 +76,12 @@ function selectedPassage(transcript, root) {
   return { parts, left: r.left, top: r.bottom }
 }
 
-// Floating menu at a marked passage: which guest said it.
-function PassageMenu({ at, speakers, onPick, onClose }) {
+// Floating menu at a marked passage: which guest said it. When the marked lines share one
+// diarization label, the name can also go to everything that label says afterwards
+// (diarization may have folded this guest into another's label) — on by default.
+function PassageMenu({ at, speakers, followLabel, onPick, onClose }) {
   const ref = useRef(null)
+  const [follow, setFollow] = useState(true)
   useEffect(() => {
     const onDown = (e) => { if (!ref.current?.contains(e.target)) onClose() }
     const onKey = (e) => { if (e.key === 'Escape') onClose() }
@@ -89,7 +92,7 @@ function PassageMenu({ at, speakers, onPick, onClose }) {
       document.removeEventListener('keydown', onKey)
     }
   }, [onClose])
-  const left = Math.max(8, Math.min(at.left, window.innerWidth - 200))
+  const left = Math.max(8, Math.min(at.left, window.innerWidth - 240))
   return (
     <ul
       ref={ref}
@@ -101,9 +104,17 @@ function PassageMenu({ at, speakers, onPick, onClose }) {
       <li className="live-passage-menu-head">Textstelle gesagt von</li>
       {speakers.map((name) => (
         <li key={name}>
-          <button type="button" role="menuitem" onClick={() => onPick(name)}>{name}</button>
+          <button type="button" role="menuitem" onClick={() => onPick(name, followLabel && follow)}>{name}</button>
         </li>
       ))}
+      {followLabel && (
+        <li className="live-passage-menu-follow">
+          <label>
+            <input type="checkbox" checked={follow} onChange={(e) => setFollow(e.target.checked)} />
+            {' '}auch alles Weitere von Sprecher {followLabel}
+          </label>
+        </li>
+      )}
     </ul>
   )
 }
@@ -364,11 +375,21 @@ export function LiveTranscript({ live, speakers = [] }) {
     const p = selectedPassage(transcript, rootRef.current)
     if (p) setPassage(p)
   }
-  const pickPassage = (name) => {
+  // The label all marked lines share (none if they differ, or one was already given away).
+  const passageLabel = (() => {
+    const lines = passage?.parts.map((p) => transcript[p.index]).filter(Boolean) || []
+    const labels = new Set(lines.map((t) => (t.speaker ? null : t.label || null)))
+    const [label] = labels
+    return labels.size === 1 && label ? label : null
+  })()
+  const pickPassage = (name, follow) => {
     const parts = passage.parts
       .filter((p) => transcript[p.index])
       .map((p) => ({ ...p, lineText: transcript[p.index].text }))
     if (parts.length) assignPassage(parts, name)
+    // "Everything further from this label": from the turn after the marked text on.
+    const lastTurn = transcript[passage.parts[passage.parts.length - 1].index]?.turnOrder
+    if (follow && passageLabel && lastTurn != null) assignSpeaker(passageLabel, name, lastTurn + 1)
     window.getSelection?.()?.removeAllRanges()
     setPassage(null)
   }
@@ -430,7 +451,7 @@ export function LiveTranscript({ live, speakers = [] }) {
       <div ref={endRef} />
 
       {passage && canAssignPassage && (
-        <PassageMenu at={passage} speakers={speakers} onPick={pickPassage} onClose={closePassage} />
+        <PassageMenu at={passage} speakers={speakers} followLabel={passageLabel} onPick={pickPassage} onClose={closePassage} />
       )}
 
       {openClaim && (

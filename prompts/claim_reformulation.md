@@ -16,6 +16,12 @@ schreiben, mit denen ein Faktenprüfer die Behauptung sofort überprüfen kann.
    umgebende Gespräch verständlich ist. Löse Pronomen und Bezüge ("er", "das", "dort",
    "damals") mit Hilfe des Kontexts (``speaker``, ``previous_context``, ``guests``) auf.
    Verändere den Tatsachenkern NICHT und erfinde nichts hinzu.
+   Der Sprecher gehört NICHT in die Behauptung: kein „Laut X …“, „X sagt, dass …“ oder
+   „Nach Aussage von X …“. Formuliere nur die Tatsachenaussage selbst — wer sie gesagt hat,
+   steht allein in ``name``. Ausnahme: Ist der Sprecher selbst Gegenstand der Aussage
+   („ich habe …“, „meine Partei hat …“), wird das Pronomen wie jedes andere aufgelöst
+   („Dröge hat …“). Beruft sich der Sprecher auf eine Quelle (z. B. „laut
+   Bundesnetzagentur“), bleibt diese Quelle Teil der Behauptung.
 2. **Sprecher & Namen:** ``name`` = Sprecher. Korrigiere offensichtliche
    Transkriptions-/Schreibfehler bei Eigennamen anhand der ``guests``-Liste — wenn ein
    Name im Satz einem Gast nur ähnelt (z. B. "Reichelt" statt "Reiche", "Merz" statt

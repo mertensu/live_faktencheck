@@ -93,6 +93,50 @@ describe('LiveTranscript', () => {
     ], 'Connemann')
   })
 
+  it('can give everything further from the marked label to the guest', () => {
+    const assignPassage = vi.fn()
+    const assignSpeaker = vi.fn()
+    const transcript = [
+      { label: 'A', text: 'Was ist Ihre Antwort?', turnOrder: 12 },
+      { label: 'A', text: 'Also, Sie hatten gerade den Begriff bemüht.', turnOrder: 13 },
+    ]
+    const speakerMap = { A: [[-1, 'Maischberger']] }
+    const { container } = render(
+      <LiveTranscript live={{ ...live, transcript, speakerMap, claims: [], assignSpeaker, assignPassage }}
+        speakers={['Connemann', 'Maischberger']} />
+    )
+    const textNode = container.querySelector('.live-bubble-line[data-index="1"]').firstChild
+    const range = document.createRange()
+    range.setStart(textNode, 0)
+    range.setEnd(textNode, 10)
+    window.getSelection().removeAllRanges()
+    window.getSelection().addRange(range)
+    fireEvent.mouseUp(textNode)
+    expect(screen.getByRole('checkbox', { name: /auch alles Weitere von Sprecher A/ }).checked).toBe(true)
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Connemann' }))
+    expect(assignPassage).toHaveBeenCalled()
+    expect(assignSpeaker).toHaveBeenCalledWith('A', 'Connemann', 14)
+  })
+
+  it('corrects only the passage when the option is unticked', () => {
+    const assignSpeaker = vi.fn()
+    const transcript = [{ label: 'A', text: 'Also, Sie hatten gerade den Begriff bemüht.', turnOrder: 13 }]
+    const { container } = render(
+      <LiveTranscript live={{ ...live, transcript, claims: [], assignSpeaker, assignPassage: vi.fn() }}
+        speakers={['Connemann']} />
+    )
+    const textNode = container.querySelector('.live-bubble-line[data-index="0"]').firstChild
+    const range = document.createRange()
+    range.setStart(textNode, 0)
+    range.setEnd(textNode, 10)
+    window.getSelection().removeAllRanges()
+    window.getSelection().addRange(range)
+    fireEvent.mouseUp(textNode)
+    fireEvent.click(screen.getByRole('checkbox'))
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Connemann' }))
+    expect(assignSpeaker).not.toHaveBeenCalled()
+  })
+
   it('shows a passage given to a guest as a bubble of that name', () => {
     const transcript = [
       { label: 'A', text: 'Strom ist teurer geworden.' },
