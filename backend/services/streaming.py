@@ -41,7 +41,7 @@ STREAM_EARLY_SENTENCES = os.getenv("STREAM_EARLY_SENTENCES", "true").lower() in 
 # above this similarity of their normalized text.
 SAME_SENTENCE_RATIO = 0.85
 # How many preceding sentences (across windows) the gate gets as context for pronouns.
-CONTEXT_SENTENCES = int(os.getenv("JEV_CONTEXT_SENTENCES", "4"))
+CONTEXT_SENTENCES = int(os.getenv("REFORMULATE_CONTEXT_SENTENCES", "4"))
 # How many recently checked source sentences to remember for duplicate suppression.
 CHECKED_SOURCES_MEMORY = 50
 

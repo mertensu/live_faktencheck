@@ -225,7 +225,7 @@ class JevGate:
         # the DB keeps only the claims that passed, not scores or skipped sentences.
         self._debug = os.getenv("JEV_GATE_DEBUG", "").strip().lower() in ("1", "true", "yes")
         # How many preceding sentences the reformulator sees to resolve "er", "das", …
-        self.context_sentences = int(os.getenv("JEV_CONTEXT_SENTENCES", "4"))
+        self.context_sentences = int(os.getenv("REFORMULATE_CONTEXT_SENTENCES", "4"))
 
     def _band(self, p: float | None) -> str:
         if p is None:
