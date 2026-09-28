@@ -207,14 +207,17 @@ class StreamingSession:
 
         # Speakers: AssemblyAI's diarization labels (A/B/…) are the only automatic signal.
         # Names come from the operator, who assigns a label to a guest in the live UI
-        # (assign_speaker); an unassigned label stays bare. Online reclustering may move a
-        # turn to another label later (SpeakerRevisionEvent, matched by turn_order), so we
-        # keep every finalized turn and the claims it produced.
-        self._speaker_map: dict[str, str] = {}         # label -> name, set by the operator
+        # (assign_speaker) from a given turn on: diarization may fold two people into one
+        # label, so the same label can mean Maischberger early and Connemann later. An
+        # unassigned label stays bare. Online reclustering may move a turn to another label
+        # later (SpeakerRevisionEvent, matched by turn_order), so we keep every finalized
+        # turn and the claims it produced.
+        self._assignments: dict[str, list[tuple[int, str | None]]] = {}  # label -> [(from turn, name)]
         self._turns: dict[int, dict] = {}              # turn_order -> {"speaker", "text"}
         self._turn_claims: dict[int, list[int]] = {}   # turn_order -> [fact_check_id]
         self._claim_labels: dict[int, str] = {}        # fact_check_id -> current label
         self._claim_speakers: dict[int, str] = {}      # fact_check_id -> current speaker
+        self._claim_turns: dict[int, int] = {}         # fact_check_id -> turn_order
         # Passages the operator marked and gave to a guest, overriding their label (the
         # diarization folded one speaker's words into another's turn): [(normalized, name)].
         self._passages: list[tuple[str, str]] = []
@@ -247,34 +250,56 @@ class StreamingSession:
         task.add_done_callback(self._tasks.discard)
 
     # ---- speakers: operator assignment + reclustering (unit-testable) --------
-    def _display(self, label: str | None) -> str | None:
-        """A label's assigned name, else the bare label."""
-        return self._speaker_map.get(label, label) if label else label
+    @property
+    def _speaker_map(self) -> dict[str, str]:
+        """Each label's current name: the one new turns get."""
+        latest = {label: entries[-1][1] for label, entries in self._assignments.items() if entries}
+        return {label: name for label, name in latest.items() if name}
 
-    async def assign_speaker(self, label: str, name: str | None) -> None:
-        """The operator assigns a diarization label to a guest, or clears it (``None``).
+    def _name_at(self, label: str, turn_order: int | None) -> str | None:
+        """The name the operator gave a label for this turn (the latest one if unknown)."""
+        name = None
+        for start, assigned in self._assignments.get(label, []):
+            if turn_order is None or start <= turn_order:
+                name = assigned
+        return name
 
-        Rewrites every stored claim currently under that label (DB + ``claim_speaker_update``)
-        and announces the mapping, so the UI renames the label's transcript lines. A name
-        outside the episode's speakers is ignored.
+    def _display(self, label: str | None, turn_order: int | None = None) -> str | None:
+        """A label's assigned name at that turn, else the bare label."""
+        return (self._name_at(label, turn_order) or label) if label else label
+
+    async def assign_speaker(self, label: str, name: str | None, from_turn: int | None = None) -> None:
+        """The operator assigns a diarization label to a guest, or clears it (``None``),
+        from turn ``from_turn`` on (``None``: from the start).
+
+        Earlier turns keep the name they had: one label may hold two people. Rewrites the
+        stored claims this changes (DB + ``claim_speaker_update``) and announces the
+        mapping, so the UI renames those transcript lines. A name outside the episode's
+        speakers is ignored.
         """
         if not label:
             return
         if name is not None and name not in self.speakers:
             logger.warning(f"[stream:{self.session_id}] assign {label!r} -> unknown speaker {name!r}; ignored")
             return
+        start = -1 if from_turn is None else from_turn
+        entries = [e for e in self._assignments.get(label, []) if e[0] < start]
+        self._assignments[label] = entries + [(start, name)]
         if name:
-            self._speaker_map[label] = name
             for turn_order, turn in self._turns.items():
-                if turn["speaker"] == label or any(lbl == label for _, lbl in turn.get("sentences", [])):
+                if turn_order >= start and (
+                        turn["speaker"] == label or any(lbl == label for _, lbl in turn.get("sentences", []))):
                     self._confirmed_turns.add(turn_order)
-        else:
-            self._speaker_map.pop(label, None)
-        logger.info(f"[stream:{self.session_id}] speaker map: {self._speaker_map}")
-        await self._emit({"type": "speaker_map_update", "label": label, "speaker": name})
+        logger.info(f"[stream:{self.session_id}] speaker {label} -> {name} from turn {from_turn}; "
+                    f"map: {self._assignments}")
+        await self._emit({"type": "speaker_map_update", "label": label, "speaker": name, "from_turn": from_turn})
         for pid, claim_label in list(self._claim_labels.items()):
             if claim_label == label:
-                await self._rewrite_speaker(pid, self._display(label))
+                await self._rewrite_speaker(pid, self._claim_display(pid))
+
+    def _claim_display(self, pid: int) -> str | None:
+        """A claim's speaker from its label, as named at the claim's turn."""
+        return self._display(self._claim_labels.get(pid), self._claim_turns.get(pid))
 
     async def assign_passage(self, text: str, name: str) -> None:
         """The operator marks a passage of the transcript and gives it to a guest.
@@ -336,7 +361,7 @@ class StreamingSession:
             for pid in self._turn_claims.get(turn_order, []):
                 label = self._sentence_label(turn_order, self._claim_sources.get(pid, "")) or new_label
                 self._claim_labels[pid] = label
-                await self._rewrite_speaker(pid, self._display(label))
+                await self._rewrite_speaker(pid, self._claim_display(pid))
 
     def _segment_events(self, sentences) -> list[dict]:
         return [{"label": label, "text": text} for label, text in speaker_segments(sentences)]
@@ -361,7 +386,7 @@ class StreamingSession:
             label = self._sentence_label(turn_order, self._claim_sources.get(pid, ""))
             if label:
                 self._claim_labels[pid] = label
-                await self._rewrite_speaker(pid, self._display(label))
+                await self._rewrite_speaker(pid, self._claim_display(pid))
 
     async def _rewrite_speaker(self, pid: int, name: str) -> None:
         """Update a stored claim's speaker in place and notify the UI."""
@@ -389,7 +414,7 @@ class StreamingSession:
         text = (transcript or "").strip()
         if not text:
             return
-        display_speaker = self._display(speaker_label)
+        display_speaker = self._display(speaker_label, turn_order)
         # Live partial for the UI; its settled sentences may enter the window early.
         if not end_of_turn:
             await self._emit({"type": "partial", "text": text, "speaker": display_speaker})
@@ -497,7 +522,7 @@ class StreamingSession:
         # Taken before the gate runs, so a window gated meanwhile already sees this one.
         previous = "\n".join(self._recent_lines) or None
         for e in entries:
-            name = self._display(e["speaker"])
+            name = self._display(e["speaker"], e.get("turn_order"))
             for sentence in split_sentences(e["text"]):
                 self._recent_lines.append(f"{name}: {sentence}" if name else sentence)
         self._recent_lines = self._recent_lines[-CONTEXT_SENTENCES:]
@@ -510,7 +535,9 @@ class StreamingSession:
                 conversation_type=self.conversation_type,
                 excluded_speakers=self.excluded_speakers,
                 previous_context=previous,
-                speaker_names=dict(self._speaker_map),
+                # Label -> name as assigned for this window's turns.
+                speaker_names={e["speaker"]: self._display(e["speaker"], e.get("turn_order"))
+                               for e in entries if e["speaker"]},
             )
         except Exception:
             logger.exception("Window gate failed; skipping window")
@@ -591,7 +618,7 @@ class StreamingSession:
         passage_speaker = self._passage_speaker(source)
         if passage_speaker:
             speaker_label = None
-        speaker = passage_speaker or self._display(speaker_label) or UNCLEAR_SPEAKER
+        speaker = passage_speaker or self._display(speaker_label, turn_order) or UNCLEAR_SPEAKER
         placeholder = {
             "sprecher": speaker,
             "behauptung": claim,
@@ -605,6 +632,8 @@ class StreamingSession:
         }
         pid = await self.db.add_fact_check(placeholder)
         self._claim_speakers[pid] = speaker
+        if turn_order is not None:
+            self._claim_turns[pid] = turn_order
         if source:
             self._claim_sources[pid] = _norm(source)
         # Tracked so an assignment or a revision can rewrite this row later — also without
@@ -628,8 +657,8 @@ class StreamingSession:
                 if late_label:
                     self._claim_labels[pid] = late_label
             label = self._claim_labels.get(pid)
-            if label and self._display(label) != speaker:
-                await self._rewrite_speaker(pid, self._display(label))
+            if label and self._claim_display(pid) != speaker:
+                await self._rewrite_speaker(pid, self._claim_display(pid))
                 speaker = self._claim_speakers[pid]
 
         try:

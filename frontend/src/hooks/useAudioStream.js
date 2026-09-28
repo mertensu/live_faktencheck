@@ -30,6 +30,24 @@ export function placeTurn(prev, turnOrder, lines, append) {
   return [...rest.slice(0, at), ...lines, ...rest.slice(at)]
 }
 
+// A label's names over time: [[fromTurn, name], …]. Diarization may fold two people into
+// one label, so the operator names it from a given turn on; earlier turns keep their name.
+// fromTurn null = from the start.
+export function assignFrom(map, label, fromTurn, name) {
+  const start = fromTurn ?? -1
+  const kept = (map[label] || []).filter(([from]) => from < start)
+  return { ...map, [label]: [...kept, [start, name]] }
+}
+
+// The name a label has at a turn (the latest one when the turn is unknown), or null.
+export function nameAt(map, label, turnOrder) {
+  let name = null
+  for (const [from, assigned] of map[label] || []) {
+    if (turnOrder == null || from <= turnOrder) name = assigned
+  }
+  return name
+}
+
 /**
  * Live streaming recorder: captures mic audio as 16 kHz PCM16 via an AudioWorklet and
  * streams it over a WebSocket to the backend (/api/stream), which relays to AssemblyAI
@@ -44,7 +62,7 @@ export function useAudioStream(sessionId, { deviceId = '' } = {}) {
   const [partial, setPartial] = useState('')      // current interim (not-yet-final) turn
   const [transcript, setTranscript] = useState([]) // finalized turns [{ label, text, turnOrder, speaker? }]
   const [claims, setClaims] = useState([])        // gated claims [{ id, speaker, label, claim, source, consistency, status, begruendung, quellen }]
-  const [speakerMap, setSpeakerMap] = useState({}) // diarization label → guest name, assigned by the operator
+  const [speakerMap, setSpeakerMap] = useState({}) // label → [[fromTurn, name]], assigned by the operator
   const [events, setEvents] = useState([])        // last few backend events (for debug/UI)
 
   const wsRef = useRef(null)
@@ -142,13 +160,8 @@ export function useAudioStream(sessionId, { deviceId = '' } = {}) {
         setClaims((prev) => prev.map((c) =>
           c.source === msg.old ? { ...c, source: msg.source } : c))
       } else if (msg.type === 'speaker_map_update') {
-        // The operator named (or un-named) a label; confirmed by the backend.
-        setSpeakerMap((prev) => {
-          const next = { ...prev }
-          if (msg.speaker) next[msg.label] = msg.speaker
-          else delete next[msg.label]
-          return next
-        })
+        // The operator named (or un-named) a label from a turn on; confirmed by the backend.
+        setSpeakerMap((prev) => assignFrom(prev, msg.label, msg.from_turn, msg.speaker || null))
       } else if (msg.type === 'partial') {
         setPartial(msg.text || '')
       } else if (msg.type === 'claim_processing') {
@@ -182,12 +195,12 @@ export function useAudioStream(sessionId, { deviceId = '' } = {}) {
     }
   }, [sessionId, deviceId, cleanup])
 
-  // Name a diarization label (or clear it with null). The backend rewrites the stored
-  // claims and answers with speaker_map_update, which is what updates speakerMap.
-  const assignSpeaker = useCallback((label, speaker) => {
+  // Name a diarization label (or clear it with null) from turn `fromTurn` on. The backend
+  // rewrites the stored claims and answers with speaker_map_update, which updates speakerMap.
+  const assignSpeaker = useCallback((label, speaker, fromTurn = null) => {
     const ws = wsRef.current
     if (!ws || ws.readyState !== WebSocket.OPEN) return
-    ws.send(JSON.stringify({ type: 'assign_speaker', label, speaker: speaker || null }))
+    ws.send(JSON.stringify({ type: 'assign_speaker', label, speaker: speaker || null, from_turn: fromTurn ?? null }))
   }, [])
 
   // Give a marked passage of transcript line `index` (chars start..end of `lineText`) to a

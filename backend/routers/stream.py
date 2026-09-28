@@ -5,8 +5,8 @@ The browser opens a WebSocket, sends 16 kHz mono PCM16 audio as binary frames, a
 receives JSON status events (partial transcript, claim processing/result). The backend
 relays audio to AssemblyAI Universal-Streaming and drives the fast lane via
 ``StreamingSession``. Text frames carry control messages: ``stop``, or JSON
-``{"type": "assign_speaker", "label": "A", "speaker": "Name" | null}`` when the operator
-assigns a diarization label to a guest, or ``{"type": "assign_passage", "text": "…",
+``{"type": "assign_speaker", "label": "A", "speaker": "Name" | null, "from_turn": 12}``
+when the operator assigns a diarization label to a guest from that turn on, or ``{"type": "assign_passage", "text": "…",
 "speaker": "Name"}`` when they mark a passage that belongs to another guest.
 
 Auth: header-based ``require_code`` can't run on a WS handshake, so the access code is
@@ -139,9 +139,11 @@ async def _handle_control(session: StreamingSession, text: str) -> None:
     if not isinstance(msg, dict):
         return
     if msg.get("type") == "assign_speaker":
-        label, speaker = msg.get("label"), msg.get("speaker")
+        label, speaker, from_turn = msg.get("label"), msg.get("speaker"), msg.get("from_turn")
+        if not isinstance(from_turn, int) or isinstance(from_turn, bool):
+            from_turn = None
         if isinstance(label, str) and (speaker is None or isinstance(speaker, str)):
-            await session.assign_speaker(label, speaker or None)
+            await session.assign_speaker(label, speaker or None, from_turn)
     elif msg.get("type") == "assign_passage":
         text, speaker = msg.get("text"), msg.get("speaker")
         if isinstance(text, str) and isinstance(speaker, str):

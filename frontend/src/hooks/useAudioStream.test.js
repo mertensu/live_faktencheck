@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { turnLines, placeTurn } from './useAudioStream'
+import { turnLines, placeTurn, assignFrom, nameAt } from './useAudioStream'
 
 describe('turn lines', () => {
   const msg = {
@@ -28,5 +28,20 @@ describe('turn lines', () => {
     const split = [{ label: 'A', text: 'Ist das falsch?', turnOrder: 3, speaker: 'Maischberger' },
       { label: 'A', text: 'Also nein.', turnOrder: 3 }]
     expect(placeTurn(split, 3, turnLines(msg), true)).toBe(split)
+  })
+})
+
+describe('speaker names from a turn on', () => {
+  it('keeps earlier turns and replaces what comes later', () => {
+    let map = assignFrom({}, 'B', 3, 'Maischberger')
+    map = assignFrom(map, 'B', 5, 'Connemann')
+    expect(nameAt(map, 'B', 2)).toBeNull()
+    expect(nameAt(map, 'B', 4)).toBe('Maischberger')
+    expect(nameAt(map, 'B', 9)).toBe('Connemann')
+    expect(nameAt(map, 'B', null)).toBe('Connemann')
+    // A click on the first bubble corrects everything from there on.
+    map = assignFrom(map, 'B', 3, 'Dröge')
+    expect(map.B).toEqual([[3, 'Dröge']])
+    expect(nameAt(assignFrom(map, 'B', null, null), 'B', 9)).toBeNull()
   })
 })

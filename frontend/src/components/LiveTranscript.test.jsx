@@ -11,7 +11,7 @@ const live = {
     { label: 'B', text: 'Das stimmt nicht.' },
     { label: null, text: 'Moment.' },
   ],
-  speakerMap: { A: 'Connemann' },
+  speakerMap: { A: [[-1, 'Connemann']] },
   claims: [{
     id: 7, speaker: 'Connemann', label: 'A', claim: 'Strom ist teurer geworden.', source: 'Strom ist teurer geworden.',
     status: 'done', consistency: 'niedrig', begruendung: 'Die Preise sind gesunken.',
@@ -38,7 +38,7 @@ describe('LiveTranscript', () => {
     render(<LiveTranscript live={{ ...live, assignSpeaker }} speakers={['Connemann', 'Dröge']} />)
     fireEvent.click(screen.getByRole('button', { name: /Sprecher B/ }))
     fireEvent.click(screen.getByRole('menuitemradio', { name: 'Dröge' }))
-    expect(assignSpeaker).toHaveBeenCalledWith('B', 'Dröge')
+    expect(assignSpeaker).toHaveBeenCalledWith('B', 'Dröge', null)
     expect(screen.queryByRole('menu')).toBeNull()
   })
 
@@ -47,7 +47,7 @@ describe('LiveTranscript', () => {
     render(<LiveTranscript live={{ ...live, assignSpeaker }} speakers={['Connemann', 'Dröge']} />)
     fireEvent.click(screen.getByRole('button', { name: /Connemann/ }))
     fireEvent.click(screen.getByRole('menuitem', { name: 'Zuordnung entfernen' }))
-    expect(assignSpeaker).toHaveBeenCalledWith('A', null)
+    expect(assignSpeaker).toHaveBeenCalledWith('A', null, null)
   })
 
   it('gives a marked passage, widened to whole words, to a guest', () => {
@@ -79,6 +79,28 @@ describe('LiveTranscript', () => {
     expect(bubbles[1].textContent).toContain('Maischberger')
     expect(bubbles[1].className).not.toMatch(/spk-none/)
     expect(bubbles[2].textContent).toContain('Connemann')
+  })
+
+  it('names a label from the clicked bubble on; earlier bubbles keep their name', () => {
+    const assignSpeaker = vi.fn()
+    const transcript = [
+      { label: 'B', text: 'Was ist Ihre Antwort?', turnOrder: 3 },
+      { label: 'A', text: 'Dazwischen.', turnOrder: 4 },
+      { label: 'B', text: 'Also, Sie hatten gerade den Begriff bemüht.', turnOrder: 5 },
+      { label: 'B', text: 'Und das tun Sie gerade.', turnOrder: 6 },
+    ]
+    const speakerMap = { B: [[-1, 'Maischberger'], [5, 'Connemann']] }
+    const { container } = render(
+      <LiveTranscript live={{ ...live, transcript, speakerMap, assignSpeaker }} speakers={['Maischberger', 'Connemann']} />
+    )
+    const bubbles = container.querySelectorAll('.live-bubble')
+    expect(bubbles).toHaveLength(3)
+    expect(bubbles[0].textContent).toContain('Maischberger')
+    expect(bubbles[2].textContent).toContain('Connemann')
+    expect(bubbles[2].querySelectorAll('.live-bubble-line')).toHaveLength(2)
+    fireEvent.click(screen.getByRole('button', { name: /Connemann/ }))
+    fireEvent.click(screen.getByRole('menuitemradio', { name: 'Maischberger' }))
+    expect(assignSpeaker).toHaveBeenCalledWith('B', 'Maischberger', 5)
   })
 
   it('offers no picker once the stream has stopped', () => {

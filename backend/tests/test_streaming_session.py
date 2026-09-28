@@ -133,7 +133,7 @@ class TestWindowing:
         """When the new label is already assigned, a revision rewrites to that name."""
         gate = _gate([[GatedClaim(name="A", claim="Behauptung A.", source="Behauptung A.")]])
         session = StreamingSession("s1", gate, _fast_checker(), db)
-        session._speaker_map = {"B": "Katharina Reiche"}
+        session._assignments = {"B": [(-1, "Katharina Reiche")]}
         await session.handle_turn("Behauptung A. Noch ein Satz.", end_of_turn=True,
                                   speaker_label="A", turn_order=0)
         await asyncio.gather(*list(session._tasks))
@@ -303,7 +303,7 @@ class TestSpeakerAssignment:
 
         await session.assign_speaker("A", "Dröge")
         assert (await db.get_fact_checks(session_id="s1"))[0]["sprecher"] == "Dröge"
-        assert {"type": "speaker_map_update", "label": "A", "speaker": "Dröge"} in events
+        assert {"type": "speaker_map_update", "label": "A", "speaker": "Dröge", "from_turn": None} in events
         assert {"type": "claim_speaker_update", "id": pid, "speaker": "Dröge", "label": "A"} in events
         await session.stop()
 
@@ -412,6 +412,33 @@ class TestSpeakerAssignment:
         await _drain(session)
         await session.handle_speaker_revision([{"turn_order": 1, "speaker_label": "C"}])
         assert (await db.get_fact_checks(session_id="s1"))[0]["sprecher"] == "Dröge"
+        await session.stop()
+
+    async def test_assignment_applies_from_the_clicked_turn_on(self, db):
+        """One label, two people: B is Maischberger's question, then Connemann's answer."""
+        q = GatedClaim(name="B", claim="Frage.", source="Sie sind ja Staatssekretärin.")
+        a = GatedClaim(name="B", claim="Antwort.", source="Der Strom ist teuer.")
+        events, on_event = _collect()
+        session = StreamingSession("s1", _gate([[q], [a]]), _fast_checker(), db, on_event=on_event,
+                                   speakers=["Maischberger", "Connemann"])
+        await session.handle_turn("Sie sind ja Staatssekretärin. Was sagen Sie?", end_of_turn=True,
+                                  speaker_label="B", turn_order=3)
+        await session.assign_speaker("B", "Maischberger", from_turn=3)
+        await session.handle_turn("Der Strom ist teuer. Das ist so.", end_of_turn=True,
+                                  speaker_label="B", turn_order=4)
+        await _drain(session)
+        rows = {r["behauptung"]: r["sprecher"] for r in await db.get_fact_checks(session_id="s1")}
+        assert rows == {"Frage.": "Maischberger", "Antwort.": "Maischberger"}
+
+        await session.assign_speaker("B", "Connemann", from_turn=4)
+        rows = {r["behauptung"]: r["sprecher"] for r in await db.get_fact_checks(session_id="s1")}
+        assert rows == {"Frage.": "Maischberger", "Antwort.": "Connemann"}
+        assert {"type": "speaker_map_update", "label": "B", "speaker": "Connemann", "from_turn": 4} in events
+        assert session._speaker_map == {"B": "Connemann"}  # new turns
+        # Clicking the first bubble again corrects everything from there on.
+        await session.assign_speaker("B", "Connemann", from_turn=3)
+        rows = {r["behauptung"]: r["sprecher"] for r in await db.get_fact_checks(session_id="s1")}
+        assert rows == {"Frage.": "Connemann", "Antwort.": "Connemann"}
         await session.stop()
 
     async def test_gate_guessed_name_is_not_used(self, db):
@@ -655,6 +682,9 @@ class TestControlMessages:
         assert session._speaker_map == {"A": "Dröge"}
         await _handle_control(session, json.dumps({"type": "assign_speaker", "label": "A", "speaker": None}))
         assert session._speaker_map == {}
+        await _handle_control(session, json.dumps({"type": "assign_speaker", "label": "B", "speaker": "Dröge",
+                                                   "from_turn": 7}))
+        assert session._assignments["B"] == [(7, "Dröge")]
         await session.stop()
 
     async def test_passage_message_reaches_session(self, db):
