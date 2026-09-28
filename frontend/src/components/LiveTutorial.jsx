@@ -4,8 +4,8 @@ import { assignFrom, nameAt, splitPassages } from '../hooks/useAudioStream'
 
 // Made-up guests for the practice transcript; never the episode's real ones.
 const HOST = 'Anna Beispiel'
-const GUEST_B = 'Bernd Muster'
-const GUEST_C = 'Clara Probe'
+const GUEST_B = 'Peter Müller'
+const GUEST_C = 'Sandra Berger'
 const SPEAKERS = [HOST, GUEST_B, GUEST_C]
 
 const line = (label, turnOrder, text) => ({ label, turnOrder, text })
@@ -15,14 +15,14 @@ const SCENES = {
     transcript: [
       line('A', 0, 'Guten Abend und herzlich willkommen. Heute sprechen wir über die Rente.'),
       line('B', 1, 'Danke für die Einladung. Das Thema beschäftigt sehr viele Menschen.'),
-      line('A', 2, 'Herr Muster, fangen wir gleich bei Ihnen an.'),
+      line('A', 2, 'Herr Müller, fangen wir gleich bei Ihnen an.'),
       line('B', 3, 'Gern. Die Lage ist ernster, als viele glauben.'),
     ],
   },
   passage: {
-    // Diarization folded Clara's voice into the host's label A.
+    // Diarization folded Sandra's voice into the host's label A.
     transcript: [
-      line('A', 0, 'Frau Probe, wie sehen Sie das?'),
+      line('A', 0, 'Frau Berger, wie sehen Sie das?'),
       line('A', 1, 'Ganz anders. Die Beiträge sind seit Jahren stabil geblieben.'),
       line('B', 2, 'Das stimmt so einfach nicht.'),
       line('A', 3, 'Doch, das zeigen die Zahlen der letzten zehn Jahre.'),
@@ -31,7 +31,7 @@ const SCENES = {
   },
   results: {
     transcript: [
-      line('A', 0, 'Herr Muster, wie viele Menschen beziehen denn heute Rente?'),
+      line('A', 0, 'Herr Müller, wie viele Menschen beziehen denn heute Rente?'),
       line('B', 1, 'In Deutschland beziehen rund 21 Millionen Menschen eine Rente. Und die Renten sind seit 2010 real gesunken.'),
       line('C', 2, 'Das halte ich für falsch, die Renten sind gestiegen.'),
     ],
