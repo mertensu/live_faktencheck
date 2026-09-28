@@ -386,6 +386,34 @@ class TestSpeakerAssignment:
         assert (await db.get_fact_checks(session_id="s1"))[0]["sprecher"] == "Connemann"
         await session.stop()
 
+    async def test_revision_does_not_move_turns_the_operator_confirmed(self, db):
+        """Naming a label confirms the turns under it; a later reclustering keeps them."""
+        events, on_event = _collect()
+        session = StreamingSession("s1", _gate([[CLAIM_A]]), _fast_checker(), db,
+                                   on_event=on_event, speakers=["Connemann", "Dröge"])
+        await session.handle_turn("Behauptung A. Noch ein Satz.", end_of_turn=True,
+                                  speaker_label="A", turn_order=0)
+        await _drain(session)
+        await session.assign_speaker("A", "Connemann")
+        await session.assign_speaker("C", "Dröge")
+        await session.handle_speaker_revision([{"turn_order": 0, "speaker_label": "C"}])
+        assert (await db.get_fact_checks(session_id="s1"))[0]["sprecher"] == "Connemann"
+        assert session._turns[0]["speaker"] == "A"
+        assert not any(e["type"] == "turn_speaker_update" for e in events)
+        await session.stop()
+
+    async def test_turns_after_the_assignment_still_follow_revisions(self, db):
+        session = StreamingSession("s1", _gate([[], [CLAIM_A]]), _fast_checker(), db,
+                                   speakers=["Connemann", "Dröge"])
+        await session.handle_turn("Erster Satz. Zweiter Satz.", end_of_turn=True, speaker_label="A", turn_order=0)
+        await session.assign_speaker("A", "Connemann")
+        await session.assign_speaker("C", "Dröge")
+        await session.handle_turn("Behauptung A. Noch ein Satz.", end_of_turn=True, speaker_label="A", turn_order=1)
+        await _drain(session)
+        await session.handle_speaker_revision([{"turn_order": 1, "speaker_label": "C"}])
+        assert (await db.get_fact_checks(session_id="s1"))[0]["sprecher"] == "Dröge"
+        await session.stop()
+
     async def test_gate_guessed_name_is_not_used(self, db):
         """A name the gate made up (not a label of the window) never becomes the speaker."""
         claim = GatedClaim(name="Dröge", claim="X.", source="Nicht im Fenster.")

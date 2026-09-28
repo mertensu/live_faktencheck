@@ -215,6 +215,9 @@ class StreamingSession:
         # diarization folded one speaker's words into another's turn): [(normalized, name)].
         self._passages: list[tuple[str, str]] = []
         self._claim_sources: dict[int, str] = {}       # fact_check_id -> normalized source
+        # Turns the operator confirmed: those under a label at the moment they named it. A
+        # later reclustering doesn't move them (it did, wrongly, early in a live run).
+        self._confirmed_turns: set[int] = set()
 
         # Early sentences: per turn, the normalized sentences already taken from partials.
         self._early: dict[int, list[str]] = {}
@@ -258,6 +261,9 @@ class StreamingSession:
             return
         if name:
             self._speaker_map[label] = name
+            for turn_order, turn in self._turns.items():
+                if turn["speaker"] == label or any(lbl == label for _, lbl in turn.get("sentences", [])):
+                    self._confirmed_turns.add(turn_order)
         else:
             self._speaker_map.pop(label, None)
         logger.info(f"[stream:{self.session_id}] speaker map: {self._speaker_map}")
@@ -303,7 +309,8 @@ class StreamingSession:
 
         Each item is ``{"turn_order", "speaker_label", "words"}``: the corrected labels for
         a turn we saw earlier. We re-split the kept turn by its words' speakers (and its
-        transcript lines in the UI) and move each claim from it to its sentence's label.
+        transcript lines in the UI) and move each claim from it to its sentence's label —
+        unless the operator confirmed the turn by naming its label: their call stands.
         """
         for rev in revisions or []:
             turn_order = rev.get("turn_order")
@@ -311,6 +318,12 @@ class StreamingSession:
             if turn_order is None or new_label is None:
                 continue
             turn = self._turns.get(turn_order)
+            confirmed = turn_order in self._confirmed_turns
+            logger.info(f"[stream:{self.session_id}] speaker revision #{turn_order}: "
+                        f"{turn['speaker'] if turn else '?'} -> {new_label}"
+                        f"{' (confirmed by operator; kept)' if confirmed else ''}")
+            if confirmed:
+                continue
             if turn:
                 turn["speaker"] = new_label
                 turn["sentences"] = sentence_speakers(turn["text"], rev.get("words"), new_label)
