@@ -146,6 +146,12 @@ class TestJevGate:
         # Only what came before: the following sentence is not part of it.
         assert "Habeck" not in kw["previous_context"]
 
+    async def test_colon_in_a_line_without_speaker_is_text(self):
+        scorer = FakeScorer({})
+        gate = JevGate(_make_extractor(), scorer)
+        await gate.gate("?: Und da haben viele Berliner gesagt: Ja, wollen wir.\nA: Gut.", guests=[])
+        assert scorer.calls == ["Und da haben viele Berliner gesagt: Ja, wollen wir.", "Gut."]
+
     async def test_empty_window_skips_scoring(self):
         gate = JevGate(_make_extractor(), FakeScorer({"x": 0.99}))
         assert await gate.gate("   ", guests=[]) == []

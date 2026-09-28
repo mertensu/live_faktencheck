@@ -624,7 +624,7 @@ class TestPendingLabel:
         gate, windows = _recording_gate()
         session = StreamingSession("s1", gate, _fast_checker(), db, on_event=on_event, speakers=["Dröge"])
         await session.handle_turn("Was ist Ihre Antwort? Ja.", end_of_turn=True, speaker_label="PENDING", turn_order=0)
-        assert windows == ["Was ist Ihre Antwort? Ja."]
+        assert windows == ["?: Was ist Ihre Antwort? Ja."]
         turn = next(e for e in events if e["type"] == "turn")
         assert turn["label"] is None and turn["segments"] == [{"label": None, "text": "Was ist Ihre Antwort? Ja."}]
         await session.assign_speaker("PENDING", "Dröge")

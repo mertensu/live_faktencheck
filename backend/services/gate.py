@@ -187,15 +187,21 @@ def split_sentences(text: str) -> list[str]:
     return [s.strip() for s in _SENTENCE_SPLIT.split(text) if s.strip()]
 
 
+# Window-line prefix for a line without a speaker label.
+NO_SPEAKER = "?"
+
+
 def _split_speaker(line: str) -> tuple[str, str]:
     """Split a ``"Speaker: text"`` window line into (speaker, text).
 
-    The streaming layer prefixes finalized turns with ``"{label}: "``. If no such prefix
-    is present, the whole line is treated as text with an empty speaker.
+    The streaming layer prefixes every line with ``"{label}: "``, and a line without a
+    speaker with ``"?: "`` — otherwise a colon in the text ("… gesagt: Ja …") would read
+    as a speaker. If no prefix is present, the whole line is text with an empty speaker.
     """
     m = re.match(r"^\s*([^:\n]{1,60}?):\s+(.*)$", line, re.DOTALL)
     if m:
-        return m.group(1).strip(), m.group(2).strip()
+        speaker = m.group(1).strip()
+        return ("" if speaker == NO_SPEAKER else speaker), m.group(2).strip()
     return "", line.strip()
 
 

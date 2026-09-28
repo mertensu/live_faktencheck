@@ -20,7 +20,7 @@ from difflib import SequenceMatcher
 
 from backend.lang import UNCLEAR_SPEAKER
 from backend.utils import build_fact_check_dict
-from .gate import split_sentences
+from .gate import NO_SPEAKER, split_sentences
 from .transcription import session_keyterms
 
 logger = logging.getLogger(__name__)
@@ -574,9 +574,7 @@ class StreamingSession:
         # A speaker the session excludes (the moderator) is not gated once the operator has
         # named their label; their words still count as context.
         gated = [e for e in entries if not self._excluded(self._display(e["speaker"], e.get("turn_order")))]
-        window_text = "\n".join(
-            (f"{e['speaker']}: {e['text']}" if e["speaker"] else e["text"]) for e in gated
-        )
+        window_text = "\n".join(f"{e['speaker'] or NO_SPEAKER}: {e['text']}" for e in gated)
         # Taken before the gate runs, so a window gated meanwhile already sees this one.
         previous = "\n".join(self._recent_lines) or None
         for e in entries:
