@@ -1,10 +1,11 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { BACKEND_URL, N8N_VERIFIED_WEBHOOK, authHeaders, safeJsonParse, debug, getAccessCode } from '../services/api'
 import { AdminView } from '../components/AdminView'
 import { BackendErrorDisplay } from '../components/BackendErrorDisplay'
 import { ClaimDetailOverlay } from '../components/ClaimDetailOverlay'
 import { RecordingBar, formatElapsed } from '../components/RecordingBar'
 import { LiveTranscript } from '../components/LiveTranscript'
+import { LiveTutorial } from '../components/LiveTutorial'
 import { ReviewView } from '../components/ReviewView'
 import { useAudioRecorder } from '../hooks/useAudioRecorder'
 import { useAudioStream } from '../hooks/useAudioStream'
@@ -93,6 +94,9 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
     liveStream.status === 'connecting' || liveStream.status === 'streaming' ||
     liveStream.transcript.length > 0 || liveStream.claims.length > 0
   )
+  // The live-check guide opens every time an operator opens the page, before the show starts.
+  const [tutorialOpen, setTutorialOpen] = useState(!isViewer)
+  const closeTutorial = useCallback(() => setTutorialOpen(false), [])
   const isRecording = recorder.status === 'recording'
   const isStarting = recorder.status === 'requesting'
   // The full-screen "Aufnahme starten" splash is a one-time onboarding screen:
@@ -724,6 +728,11 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
                 </button>
               )
             )}
+            {!isAdminMode && (
+              <button type="button" className="header-help-link" onClick={() => setTutorialOpen(true)}>
+                Kurzanleitung
+              </button>
+            )}
             {!isAdminMode && liveStream.error && (
               <span className="header-live-error">{liveStream.error}</span>
             )}
@@ -740,6 +749,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
         </div>
       </header>
 
+      {tutorialOpen && !isViewer && <LiveTutorial onClose={closeTutorial} />}
       <main className="main-content">
         {showLiveTranscript && <LiveTranscript live={liveStream} speakers={speakers} />}
         {isAdminMode ? (

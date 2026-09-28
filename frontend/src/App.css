@@ -3045,3 +3045,50 @@
 @media (max-width: 540px) {
   .fcs-flabel { width: 100%; }
 }
+
+/* ===== Live-check guide: the real LiveTranscript on made-up data, in a dialog ===== */
+.live-tutorial-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 950;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 4vh 16px;
+  overflow-y: auto;
+  background: rgba(0, 0, 0, 0.5);
+}
+.live-tutorial {
+  width: min(720px, 100%);
+  padding: 1.25rem 1.5rem 1rem;
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  background: var(--bg-main);
+  color: var(--text-main);
+  line-height: 1.55;
+}
+.live-tutorial h2 { margin: 0.25rem 0 0.75rem; font-size: 1.2rem; }
+.live-tutorial-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.live-tutorial-kicker { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-secondary); }
+.live-tutorial-skip { padding: 0; border: 0; background: none; color: var(--text-secondary); font: inherit; font-size: 0.85rem; text-decoration: underline; cursor: pointer; }
+.live-tutorial-body p { margin: 0 0 0.6rem; font-size: 0.95rem; }
+.live-tutorial-task { padding: 0.5rem 0.75rem; border-left: 3px solid #2563eb; border-radius: 4px; background: #fff; }
+.live-tutorial-body .live-transcript { margin: 0.9rem 0; padding: 0.9rem 0.9rem 0.3rem; border: 1px dashed var(--border-medium); border-radius: 10px; background: #fff; }
+.live-tutorial-body .live-bubble { max-width: 92%; }
+.live-tutorial-done { margin: 0 0 0.6rem; padding: 0.5rem 0.75rem; border-radius: 8px; background: var(--verdict-true-bg); color: #166534; font-size: 0.9rem; }
+.live-tutorial-done p { margin: 0 0 0.4rem; }
+.live-tutorial-reset { padding: 0; border: 0; background: none; color: #166534; font: inherit; font-size: 0.85rem; font-weight: 600; text-decoration: underline; cursor: pointer; }
+.live-tutorial-tip { margin-top: 0.9rem !important; font-size: 0.9rem !important; color: var(--text-secondary); }
+.live-tutorial-chip { padding: 0 0.3em; border-radius: 3px; border-bottom: 3px solid; }
+.live-tutorial-chip.verdict-hoch { border-bottom-color: #16a34a; background: rgba(22,163,74,0.24); }
+.live-tutorial-chip.verdict-niedrig { border-bottom-color: #dc2626; background: rgba(220,38,38,0.22); }
+.live-tutorial-chip.verdict-unklar { border-bottom-color: #d97706; background: rgba(217,119,6,0.24); }
+.live-tutorial-foot { display: flex; align-items: center; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem; }
+.live-tutorial-dots { display: flex; gap: 0.35rem; margin-right: auto; }
+.live-tutorial-dots span { width: 8px; height: 8px; border-radius: 50%; background: var(--border-medium); }
+.live-tutorial-dots span.is-active { background: #2563eb; }
+.header-help-link { padding: 0; border: 0; background: none; color: inherit; font: inherit; font-size: 0.85rem; text-decoration: underline; opacity: 0.85; cursor: pointer; }
+.header-help-link:hover { opacity: 1; }
+@media (max-width: 600px) {
+  .live-tutorial { padding: 1rem; }
+}

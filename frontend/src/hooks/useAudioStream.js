@@ -48,6 +48,31 @@ export function nameAt(map, label, turnOrder) {
   return name
 }
 
+// The marked text of each part: [{ index, lineText, start, end, text }], empty ones dropped.
+function markedParts(parts) {
+  return parts
+    .map((p) => ({ ...p, text: p.lineText.slice(p.start, p.end).trim() }))
+    .filter((p) => p.text)
+}
+
+// Split each marked line so its marked part becomes a line of its own under `speaker`.
+// `parts` is [{ index, lineText, start, end }]; a line that changed since it was marked stays.
+export function splitPassages(transcript, parts, speaker) {
+  let next = transcript
+  // From the last line up, so splitting a line doesn't shift the indices still to come.
+  for (const p of markedParts(parts).sort((a, b) => b.index - a.index)) {
+    const t = next[p.index]
+    if (!t || t.text !== p.lineText) continue
+    const pieces = [
+      { ...t, text: p.lineText.slice(0, p.start).trim() },
+      { ...t, text: p.text, speaker },
+      { ...t, text: p.lineText.slice(p.end).trim() },
+    ].filter((piece) => piece.text)
+    next = [...next.slice(0, p.index), ...pieces, ...next.slice(p.index + 1)]
+  }
+  return next
+}
+
 /**
  * Live streaming recorder: captures mic audio as 16 kHz PCM16 via an AudioWorklet and
  * streams it over a WebSocket to the backend (/api/stream), which relays to AssemblyAI
@@ -210,25 +235,8 @@ export function useAudioStream(sessionId, { deviceId = '' } = {}) {
   const assignPassage = useCallback((parts, speaker) => {
     const ws = wsRef.current
     if (!ws || ws.readyState !== WebSocket.OPEN || !speaker) return
-    const marked = parts
-      .map((p) => ({ ...p, text: p.lineText.slice(p.start, p.end).trim() }))
-      .filter((p) => p.text)
-    for (const p of marked) ws.send(JSON.stringify({ type: 'assign_passage', text: p.text, speaker }))
-    setTranscript((prev) => {
-      let next = prev
-      // From the last line up, so splitting a line doesn't shift the indices still to come.
-      for (const p of [...marked].sort((a, b) => b.index - a.index)) {
-        const t = next[p.index]
-        if (!t || t.text !== p.lineText) continue
-        const pieces = [
-          { ...t, text: p.lineText.slice(0, p.start).trim() },
-          { ...t, text: p.text, speaker },
-          { ...t, text: p.lineText.slice(p.end).trim() },
-        ].filter((piece) => piece.text)
-        next = [...next.slice(0, p.index), ...pieces, ...next.slice(p.index + 1)]
-      }
-      return next
-    })
+    for (const p of markedParts(parts)) ws.send(JSON.stringify({ type: 'assign_passage', text: p.text, speaker }))
+    setTranscript((prev) => splitPassages(prev, parts, speaker))
   }, [])
 
   // Release everything on unmount.
