@@ -21,8 +21,8 @@ describe('LiveTutorial', () => {
     const { container } = render(<LiveTutorial onClose={vi.fn()} />)
     expect(bubbleNames(container)).toEqual(['Sprecher A', 'Sprecher B', 'Sprecher A', 'Sprecher B'])
     fireEvent.click(screen.getAllByRole('button', { name: /Sprecher A/ })[0])
-    fireEvent.click(screen.getByRole('menuitemradio', { name: 'Anna Beispiel' }))
-    expect(bubbleNames(container)).toEqual(['Anna Beispiel', 'Sprecher B', 'Anna Beispiel', 'Sprecher B'])
+    fireEvent.click(screen.getByRole('menuitemradio', { name: 'Anna Keller' }))
+    expect(bubbleNames(container)).toEqual(['Anna Keller', 'Sprecher B', 'Anna Keller', 'Sprecher B'])
     expect(screen.getByRole('status').textContent).toMatch(/ab dieser Blase/)
   })
 
@@ -33,7 +33,7 @@ describe('LiveTutorial', () => {
     // Checkbox on (default): the later line of label A goes to Sandra too.
     markLine(container, 1)
     fireEvent.click(screen.getByRole('menuitem', { name: 'Sandra Berger' }))
-    expect(bubbleNames(container)).toEqual(['Anna Beispiel', 'Sandra Berger', 'Peter Müller', 'Sandra Berger'])
+    expect(bubbleNames(container)).toEqual(['Anna Keller', 'Sandra Berger', 'Peter Müller', 'Sandra Berger'])
     expect(screen.getByRole('status').textContent).toMatch(/Haken an/)
 
     // Reset, then checkbox off: only the marked passage.
@@ -42,7 +42,7 @@ describe('LiveTutorial', () => {
     markLine(container, 1)
     fireEvent.click(screen.getByRole('checkbox', { name: /auch alles Weitere von Sprecher A/ }))
     fireEvent.click(screen.getByRole('menuitem', { name: 'Sandra Berger' }))
-    expect(bubbleNames(container)).toEqual(['Anna Beispiel', 'Sandra Berger', 'Peter Müller', 'Anna Beispiel'])
+    expect(bubbleNames(container)).toEqual(['Anna Keller', 'Sandra Berger', 'Peter Müller', 'Anna Keller'])
     expect(screen.getByRole('status').textContent).toMatch(/Haken aus/)
   })
 

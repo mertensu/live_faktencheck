@@ -3,7 +3,7 @@ import { LiveTranscript } from './LiveTranscript'
 import { assignFrom, nameAt, splitPassages } from '../hooks/useAudioStream'
 
 // Made-up guests for the practice transcript; never the episode's real ones.
-const HOST = 'Anna Beispiel'
+const HOST = 'Anna Keller'
 const GUEST_B = 'Peter Müller'
 const GUEST_C = 'Sandra Berger'
 const SPEAKERS = [HOST, GUEST_B, GUEST_C]
