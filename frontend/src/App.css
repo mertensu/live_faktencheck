@@ -2332,6 +2332,11 @@
   margin: 0 auto 4.5rem;
 }
 
+.action-cards--single {
+  grid-template-columns: 1fr;
+  max-width: 360px;
+}
+
 .action-card {
   display: flex;
   flex-direction: column;
