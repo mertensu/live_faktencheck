@@ -55,7 +55,7 @@ describe('buildSessionPayload', () => {
       date: '',
       type: 'show',
       excluded_speakers: [],
-      auto_check: false,
+      auto_check: true,
     })
   })
 
@@ -74,11 +74,10 @@ describe('buildSessionPayload', () => {
     expect(p.guests).toEqual(['A (SPD)'])
   })
 
-  it('defaults auto_check to false and reflects an explicit automatic choice', () => {
+  it('always checks automatically', () => {
     const base = { ...initialWizardState(),
                    people: [{ name: 'A', party: '', role: '' }], topic: '', title: '' }
-    expect(buildSessionPayload(base).auto_check).toBe(false)
-    expect(buildSessionPayload({ ...base, autoCheck: true }).auto_check).toBe(true)
+    expect(buildSessionPayload(base).auto_check).toBe(true)
   })
 
   it('emits excluded_speakers from checked, named people', () => {
@@ -134,12 +133,6 @@ describe('wizardReducer', () => {
     expect(s.people[0].name).toBe('Z')
     s = wizardReducer(s, { type: 'REMOVE_PERSON', index: 1 })
     expect(s.people).toHaveLength(2)
-  })
-  it('SET_AUTO_CHECK records the chosen role', () => {
-    let s = wizardReducer(initialWizardState(), { type: 'SET_AUTO_CHECK', value: true })
-    expect(s.autoCheck).toBe(true)
-    s = wizardReducer(s, { type: 'SET_AUTO_CHECK', value: false })
-    expect(s.autoCheck).toBe(false)
   })
   it('NEXT/BACK clamp within STEPS bounds', () => {
     let s = initialWizardState()

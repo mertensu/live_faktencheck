@@ -2,7 +2,7 @@
 
 // People and topic share one page: names (party optional) and what the conversation is about.
 // There is no conversation-type step: the backend defaults it, and nothing live depends on it.
-export const STEPS = ['people', 'mode', 'review']
+export const STEPS = ['people', 'review']
 
 // `role` has no field any more (it stays empty): live, the operator assigns speakers by click.
 // The party still helps ("meine Partei …" becomes checkable) and is a transcription keyterm.
@@ -15,9 +15,6 @@ export function initialWizardState() {
     topic: '',
     // Extra names/terms for the transcription (people mentioned in the show, …), comma-separated.
     keyterms: '',
-    // The user's chosen role for this session: null = not yet decided,
-    // false = Moderator:in (decide each claim manually), true = automatic checking.
-    autoCheck: null,
     title: '',
     titleEdited: false,
   }
@@ -73,7 +70,9 @@ export function buildSessionPayload(state) {
     excluded_speakers: state.people
       .filter((p) => p.exclude && (p.name || '').trim())
       .map((p) => p.name.trim()),
-    auto_check: !!state.autoCheck,
+    // Always automatic: the live stream checks on its own; the flag only drives the
+    // older block path, which should behave the same.
+    auto_check: true,
   }
 }
 
@@ -93,8 +92,6 @@ export function wizardReducer(state, action) {
       return { ...state, topic: action.value }
     case 'SET_KEYTERMS':
       return { ...state, keyterms: action.value }
-    case 'SET_AUTO_CHECK':
-      return { ...state, autoCheck: action.value }
     case 'SET_TITLE':
       return { ...state, title: action.value, titleEdited: true }
     case 'NEXT':

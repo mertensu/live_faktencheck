@@ -13,6 +13,7 @@ describe('NewSessionPage', () => {
     expect(screen.getByPlaceholderText(/Anlass, Ort\/Zeitraum/)).toBeDefined()
     expect(screen.getByLabelText(/Namen & Begriffe/)).toBeDefined()
     fireEvent.click(screen.getByRole('button', { name: 'Weiter' }))
-    expect(screen.getByRole('heading', { name: 'Welche Rolle nimmst du ein?' })).toBeDefined()
+    expect(screen.getByRole('heading', { name: 'Übersicht' })).toBeDefined()
+    expect(screen.queryByText('Welche Rolle nimmst du ein?')).toBeNull()
   })
 })
