@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { turnLines, placeTurn, assignFrom, nameAt } from './useAudioStream'
+import { turnLines, placeTurn, assignFrom, nameAt, audioConstraints } from './useAudioStream'
 
 describe('turn lines', () => {
   const msg = {
@@ -43,5 +43,15 @@ describe('speaker names from a turn on', () => {
     map = assignFrom(map, 'B', 3, 'Dröge')
     expect(map.B).toEqual([[3, 'Dröge']])
     expect(nameAt(assignFrom(map, 'B', null, null), 'B', 9)).toBeNull()
+  })
+})
+
+describe('audio constraints', () => {
+  const raw = { echoCancellation: false, noiseSuppression: false, autoGainControl: false }
+  it('turns the browser call-processing off for the default input', () => {
+    expect(audioConstraints('')).toEqual({ audio: raw })
+  })
+  it('keeps it off for a chosen input', () => {
+    expect(audioConstraints('mic-2')).toEqual({ audio: { ...raw, deviceId: { exact: 'mic-2' } } })
   })
 })

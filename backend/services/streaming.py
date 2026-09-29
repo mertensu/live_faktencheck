@@ -374,7 +374,17 @@ class StreamingSession:
         a turn we saw earlier. We re-split the kept turn by its words' speakers (and its
         transcript lines in the UI) and move each claim from it to its sentence's label —
         unless the operator confirmed the turn by naming its label: their call stands.
+
+        A revision that folds turns of two differently named speakers into one label is
+        dropped whole: on single-mic TV audio the reclusterer sometimes merges everyone
+        into one cluster (seen live at the first revision, ~2 min in), and applying it
+        would rename the operator's speakers.
         """
+        merged = self._merged_label(revisions or [])
+        if merged:
+            logger.warning(f"[stream:{self.session_id}] speaker revision dropped: it merges "
+                           f"{merged[1]} into {merged[0]} ({len(revisions)} turns)")
+            return
         for rev in revisions or []:
             turn_order = rev.get("turn_order")
             new_label = _label(rev.get("speaker_label"))
@@ -396,6 +406,24 @@ class StreamingSession:
                 label = self._sentence_label(turn_order, self._claim_sources.get(pid, "")) or new_label
                 self._claim_labels[pid] = label
                 await self._rewrite_speaker(pid, self._claim_display(pid))
+
+    def _merged_label(self, revisions: list[dict]) -> tuple[str, list[str]] | None:
+        """(target label, names) if the revision moves turns of two or more differently
+        named speakers into the same label, else None."""
+        names_into: dict[str, set[str]] = {}
+        for rev in revisions:
+            turn_order = rev.get("turn_order")
+            new_label = _label(rev.get("speaker_label"))
+            turn = self._turns.get(turn_order) if turn_order is not None else None
+            if not turn or new_label is None or turn["speaker"] == new_label:
+                continue
+            name = self._name_at(turn["speaker"], turn_order) if turn["speaker"] else None
+            if name:
+                names_into.setdefault(new_label, set()).add(name)
+        for label, names in names_into.items():
+            if len(names) >= 2:
+                return label, sorted(names)
+        return None
 
     def _segment_events(self, sentences) -> list[dict]:
         return [{"label": label, "text": text} for label, text in speaker_segments(sentences)]

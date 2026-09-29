@@ -81,6 +81,14 @@ export function splitPassages(transcript, parts, speaker) {
  * Returns live status plus the latest partial transcript and a small event log so the
  * UI can show "Live" activity while verdicts stream into the results feed separately.
  */
+// Capture the source as it is: the browser's call-processing (echo cancellation, noise
+// suppression, gain control) is tuned for one voice and flattens the differences between
+// speakers that AssemblyAI's diarization needs — on TV audio it made voices merge.
+export function audioConstraints(deviceId) {
+  const raw = { echoCancellation: false, noiseSuppression: false, autoGainControl: false }
+  return { audio: deviceId ? { ...raw, deviceId: { exact: deviceId } } : raw }
+}
+
 export function useAudioStream(sessionId, { deviceId = '' } = {}) {
   const [status, setStatus] = useState('idle')   // idle | connecting | streaming | error
   const [error, setError] = useState(null)
@@ -127,8 +135,7 @@ export function useAudioStream(sessionId, { deviceId = '' } = {}) {
 
     // 1. Mic
     try {
-      const constraints = { audio: deviceId ? { deviceId: { exact: deviceId } } : true }
-      streamRef.current = await navigator.mediaDevices.getUserMedia(constraints)
+      streamRef.current = await navigator.mediaDevices.getUserMedia(audioConstraints(deviceId))
     } catch (e) {
       setStatus('error')
       setError(e && e.name === 'NotFoundError' ? MSG.noMic : MSG.denied)

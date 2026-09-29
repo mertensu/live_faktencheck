@@ -414,6 +414,43 @@ class TestSpeakerAssignment:
         assert (await db.get_fact_checks(session_id="s1"))[0]["sprecher"] == "Dröge"
         await session.stop()
 
+    async def test_revision_merging_two_named_speakers_is_dropped(self, db):
+        """Seen live: the first revision moved Maischberger's and Connemann's turns to C."""
+        events, on_event = _collect()
+        session = StreamingSession("s1", _gate([[], [], [CLAIM_A]]), _fast_checker(), db,
+                                   on_event=on_event, speakers=["Maischberger", "Connemann", "Dröge"])
+        await session.assign_speaker("A", "Maischberger")
+        await session.assign_speaker("B", "Connemann")
+        await session.handle_turn("Erste Frage. Noch eine.", end_of_turn=True, speaker_label="A", turn_order=0)
+        await session.handle_turn("Eine Antwort. Und mehr.", end_of_turn=True, speaker_label="B", turn_order=1)
+        await session.handle_turn("Behauptung A. Noch ein Satz.", end_of_turn=True, speaker_label="A", turn_order=2)
+        await _drain(session)
+        await session.handle_speaker_revision([
+            {"turn_order": 0, "speaker_label": "C"},
+            {"turn_order": 1, "speaker_label": "C"},
+            {"turn_order": 2, "speaker_label": "C"},
+        ])
+        assert [session._turns[i]["speaker"] for i in range(3)] == ["A", "B", "A"]
+        assert (await db.get_fact_checks(session_id="s1"))[0]["sprecher"] == "Maischberger"
+        assert not any(e["type"] == "turn_speaker_update" for e in events)
+        await session.stop()
+
+    async def test_revision_joining_two_labels_of_one_speaker_applies(self, db):
+        """Two labels the operator gave the same name may well be merged."""
+        session = StreamingSession("s1", _gate([[], [CLAIM_A]]), _fast_checker(), db,
+                                   speakers=["Maischberger", "Dröge"])
+        await session.assign_speaker("A", "Maischberger")
+        await session.assign_speaker("B", "Maischberger")
+        await session.handle_turn("Erste Frage. Noch eine.", end_of_turn=True, speaker_label="A", turn_order=0)
+        await session.handle_turn("Behauptung A. Noch ein Satz.", end_of_turn=True, speaker_label="B", turn_order=1)
+        await _drain(session)
+        await session.handle_speaker_revision([
+            {"turn_order": 0, "speaker_label": "C"},
+            {"turn_order": 1, "speaker_label": "C"},
+        ])
+        assert session._turns[1]["speaker"] == "C"
+        await session.stop()
+
     async def test_assignment_applies_from_the_clicked_turn_on(self, db):
         """One label, two people: B is Maischberger's question, then Connemann's answer."""
         q = GatedClaim(name="B", claim="Frage.", source="Sie sind ja Staatssekretärin.")
