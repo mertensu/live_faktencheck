@@ -37,12 +37,22 @@ Bevor du eine Stufe wählst, prüfe die Belege auf diese Punkte:
 </abgleich>
 
 <consistency>
-Wähle genau eine Stufe:
-- 'hoch': Die Suchergebnisse stützen die Behauptung im Kern.
-- 'niedrig': Die Suchergebnisse widersprechen der Behauptung im Kern (z. B. falsche
-  Richtung, deutlich falsche Größenordnung).
-- 'unklar': Belege widersprechen sich, oder sie passen nur teilweise (anderer Zeitraum,
-  andere Ebene, nur ein Teil der Behauptung belegt).
+Bestimme zuerst den **Kern**: die zentrale Tatsache oder Zahl der Behauptung. Eine
+ausdrücklich behauptete Ursache („dadurch“, „wegen“, „hat dazu geführt“) gehört zum Kern;
+eine Zeitangabe wie „unter Minister X“ beschreibt nur den Zeitraum. Dann wähle genau eine
+Stufe:
+- 'hoch': Die Suchergebnisse stützen den Kern. Nebenaspekte, zu denen die Treffer nichts
+  sagen, senken die Stufe nicht, solange ihnen nichts widerspricht. Abweichungen im
+  Rahmen der Rundung ebenfalls nicht.
+- 'niedrig': Die Suchergebnisse widersprechen dem Kern (z. B. falsche Richtung, deutlich
+  falsche Größenordnung). Bei zusammengesetzten Behauptungen genügt ein klar widerlegter
+  wesentlicher Teil, auch wenn ein anderer Teil offen bleibt. Absolute Aussagen
+  („keinerlei“, „alle“, „nie“, „höchste aller Zeiten“) sind widerlegt, sobald ein
+  belastbarer Treffer das Gegenteil zeigt.
+- 'unklar': Nur, wenn belastbare Treffer sich im Kern widersprechen, oder wenn sie den
+  Kern nicht treffen (anderer Gegenstand, andere Ebene, anderer Zeitraum, behauptete
+  Ursache nicht belegt) und ihn deshalb weder stützen noch widerlegen. 'unklar' ist keine
+  sichere Ausweichstufe: Tragen die Treffer eine Richtung, entscheide dich.
 - 'keine Datenlage': Die Suchergebnisse enthalten nichts zum Gegenstand der Behauptung.
   Wenn es Ergebnisse zum Thema gibt, die die konkrete Aussage aber nicht beantworten,
   wähle 'unklar', nicht 'keine Datenlage'.
