@@ -116,8 +116,11 @@ async def stream(websocket: WebSocket):
     except Exception:
         logger.exception(f"[stream:{session_id}] error")
     finally:
-        await session.stop()
-        state.streaming_sessions.pop(session_id, None)
+        try:
+            await session.stop()
+        finally:
+            # Always unregister: a stale entry would hold every deploy (health in_flight).
+            state.streaming_sessions.pop(session_id, None)
         # Meter the real connection duration against the code's budget.
         elapsed = int(round(time.monotonic() - started))
         if elapsed > 0:

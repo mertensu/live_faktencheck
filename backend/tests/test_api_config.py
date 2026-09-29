@@ -55,6 +55,16 @@ async def test_health_in_flight_counts_only_unfinished_blocks(client):
     assert resp.json()["in_flight"] == 2
 
 
+async def test_health_in_flight_counts_open_streams(client):
+    # A deploy must not restart into a running live stream.
+    state.streaming_sessions["live1"] = object()
+    try:
+        resp = await client.get("/api/health")
+        assert resp.json()["in_flight"] == 1
+    finally:
+        state.streaming_sessions.pop("live1", None)
+
+
 async def test_session_config_omits_owner_code(client):
     db = state.get_db()
     await db.add_session({"session_id": "sec1", "title": "t", "owner_code": "SECRET"})

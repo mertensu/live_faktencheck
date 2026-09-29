@@ -95,7 +95,9 @@ async def health():
         active_sessions=await db.count_active_sessions(),
         pending_blocks=await db.count_pending_blocks(),
         fact_checks=await db.count_fact_checks(),
-        in_flight=state.claim_queue.qsize() + blocks_processing,
+        # An open live stream counts too: a restart cuts it off and loses the speaker
+        # assignments, which live only in memory.
+        in_flight=state.claim_queue.qsize() + blocks_processing + len(state.streaming_sessions),
     )
 
 

@@ -15,7 +15,7 @@
 #   3. In-flight work defers the restart (up to DEPLOY_MAX_DEFER), so a queued or
 #      in-progress fact-check is not dropped — the timer retries and lands it in the
 #      next lull. "In flight" is /api/health's in_flight (queued claim batches +
-#      processing blocks), NOT active_sessions — that one is a lifecycle flag that
+#      processing blocks + open live streams), NOT active_sessions — that one is a lifecycle flag that
 #      stays set for days after a session and would defer every deploy forever.
 #      There is no single quiet evening in continuous use; this waits for a real gap.
 #   4. A failed health check rolls back to the previously running image automatically.
