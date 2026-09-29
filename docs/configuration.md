@@ -1,7 +1,7 @@
 # Configuration Reference
 
 All configuration is via environment variables in `.env`. The four required keys are
-covered in the [README](../README.md#installation); this is the full list.
+covered in the [development workflow](development-workflow.md#setup); this is the full list.
 
 ## Required
 
