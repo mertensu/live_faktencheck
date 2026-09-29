@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from backend.auth import require_code
 from backend.models import AutoCheckRequest, CreateSessionRequest, SessionResponse
+from backend.services.transcription import clean_keyterms
 import backend.state as state
 
 logger = logging.getLogger(__name__)
@@ -27,6 +28,7 @@ async def create_session(request: CreateSessionRequest, code: dict = Depends(req
         "type": request.type,
         "conversation_type": request.conversation_type,
         "excluded_speakers": request.excluded_speakers,
+        "keyterms": clean_keyterms(request.keyterms),
         "auto_check": request.auto_check,
         "status": "active",
         "visibility": "private",

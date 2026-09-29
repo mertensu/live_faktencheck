@@ -32,6 +32,7 @@ async def tavily_search(
     query: str,
     start_date: str | None = None,
     end_date: str | None = None,
+    search_depth: str | None = None,
 ) -> dict:
     """Search the web to verify a claim against trusted German sources.
 
@@ -39,10 +40,13 @@ async def tavily_search(
         query: The search query, in German.
         start_date: Optional earliest publication date, format YYYY-MM-DD.
         end_date: Optional latest publication date, format YYYY-MM-DD.
+        search_depth: Optional depth override (e.g. "fast"/"basic"/"advanced").
+            Defaults to the TAVILY_SEARCH_DEPTH env var, then "basic". Lets the fast
+            lane request a low-latency tier without mutating global env state.
     """
     client = _get_client()
     kwargs: dict = {
-        "search_depth": os.getenv("TAVILY_SEARCH_DEPTH", "basic"),
+        "search_depth": search_depth or os.getenv("TAVILY_SEARCH_DEPTH", "basic"),
         "max_results": int(os.getenv("TAVILY_MAX_RESULTS", "5")),
         "include_domains": TRUSTED_DOMAINS,
     }

@@ -59,7 +59,8 @@ class Database:
                 session_id TEXT,
                 status TEXT NOT NULL DEFAULT '',
                 double_check INTEGER NOT NULL DEFAULT 0,
-                critique_note TEXT NOT NULL DEFAULT ''
+                critique_note TEXT NOT NULL DEFAULT '',
+                check_depth TEXT NOT NULL DEFAULT 'deep'
             );
 
             CREATE INDEX IF NOT EXISTS idx_fact_checks_speaker_claim
@@ -114,12 +115,21 @@ class Database:
             "ALTER TABLE fact_checks ADD COLUMN status TEXT NOT NULL DEFAULT ''",
             "ALTER TABLE fact_checks ADD COLUMN double_check INTEGER NOT NULL DEFAULT 0",
             "ALTER TABLE fact_checks ADD COLUMN critique_note TEXT NOT NULL DEFAULT ''",
+            # Existing rows are full/deep checks; the live fast lane writes 'fast'.
+            "ALTER TABLE fact_checks ADD COLUMN check_depth TEXT NOT NULL DEFAULT 'deep'",
         ]:
             try:
                 await self.db.execute(migration)
                 await self.db.commit()
             except Exception:
                 pass  # Column already exists
+
+        # Migration: extra AssemblyAI keyterms per session (names mentioned in the show).
+        try:
+            await self.db.execute("ALTER TABLE sessions ADD COLUMN keyterms TEXT NOT NULL DEFAULT '[]'")
+            await self.db.commit()
+        except Exception:
+            pass  # Column already exists
 
         # Migrations: add Quick Check quota columns to existing codes tables
         for migration in [
@@ -201,6 +211,7 @@ class Database:
             data.get("status", ""),
             int(bool(data.get("double_check", False))),
             data.get("critique_note", ""),
+            data.get("check_depth", "deep"),
         )
 
     async def add_fact_check(self, fact_check: dict) -> int:
@@ -208,8 +219,8 @@ class Database:
         cursor = await self.db.execute(
             """INSERT INTO fact_checks
                (sprecher, behauptung, consistency, begruendung, quellen, timestamp, session_id, status,
-                double_check, critique_note)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                double_check, critique_note, check_depth)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             self._fact_check_params(fact_check),
         )
         await self.db.commit()
@@ -249,7 +260,7 @@ class Database:
             """UPDATE fact_checks
                SET sprecher = ?, behauptung = ?, consistency = ?,
                    begruendung = ?, quellen = ?, timestamp = ?, session_id = ?, status = ?,
-                   double_check = ?, critique_note = ?
+                   double_check = ?, critique_note = ?, check_depth = ?
                WHERE id = ?""",
             (*self._fact_check_params(data), fact_check_id),
         )
@@ -295,6 +306,7 @@ class Database:
             "status": row["status"],
             "double_check": bool(row["double_check"]),
             "critique_note": row["critique_note"],
+            "check_depth": row["check_depth"],
         }
 
     # =========================================================================
@@ -311,6 +323,7 @@ class Database:
             "type": row["type"],
             "conversation_type": row["conversation_type"],
             "excluded_speakers": json.loads(row["excluded_speakers"]),
+            "keyterms": json.loads(row["keyterms"]) if "keyterms" in row.keys() else [],
             "auto_check": bool(row["auto_check"]),
             "status": row["status"],
             "visibility": row["visibility"],
@@ -325,8 +338,9 @@ class Database:
         await self.db.execute(
             """INSERT INTO sessions
                (session_id, title, date, guests, context,
-                type, conversation_type, excluded_speakers, auto_check, status, visibility, owner_code, created_at, ended_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                type, conversation_type, excluded_speakers, keyterms, auto_check, status, visibility, owner_code,
+                created_at, ended_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 session["session_id"],
                 session.get("title", ""),
@@ -336,6 +350,7 @@ class Database:
                 session.get("type", "show"),
                 session.get("conversation_type", "debate"),
                 json.dumps(session.get("excluded_speakers", []), ensure_ascii=False),
+                json.dumps(session.get("keyterms", []), ensure_ascii=False),
                 int(bool(session.get("auto_check", False))),
                 session.get("status", "active"),
                 session.get("visibility", "private"),

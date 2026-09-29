@@ -23,7 +23,9 @@ export function Navigation() {
       <div className="nav-container">
         <Link to="/" className="nav-logo">Live-Faktencheck</Link>
         <div className="nav-links">
-          <Link to="/#beispiele">Beispiele</Link>
+          <Link to="/beispiele" className={location.pathname === '/beispiele' ? 'active' : ''}>
+            Beispiele
+          </Link>
           <Link to="/about" className={location.pathname === '/about' ? 'active' : ''}>
             About
           </Link>

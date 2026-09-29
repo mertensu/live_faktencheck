@@ -10,33 +10,29 @@ function WaveformBars() {
   )
 }
 
-const CHUNKS = [
-  { id: 1, label: 'Block 1', state: 'active' },
-  { id: 2, label: 'Block 2', state: 'pending' },
-  { id: 3, label: 'Block 3', state: 'pending' },
-  { id: 4, label: 'Block 4', state: 'pending' },
+// The live lane streams continuously; the chunks only suggest sentences passing by.
+const SENTENCES = [
+  { id: 1, label: 'Satz 1', state: 'done' },
+  { id: 2, label: 'Satz 2', state: 'done' },
+  { id: 3, label: 'Satz 3', state: 'active' },
+  { id: 4, label: '…', state: 'pending' },
 ]
 
 const PIPELINE_STEPS = [
-  { label: 'Transkription', sublabel: 'AssemblyAI' },
-  { label: 'Claim-Extraktion', sublabel: 'LLM' },
-  { label: 'Human-in-the-Loop', sublabel: 'prüfen / verwerfen' },
-  { label: 'Faktencheck', sublabel: 'LLM + Websuche', react: true },
-  { label: 'Darstellung', sublabel: 'Begründung + Quellen' },
+  { label: 'Transkription', sublabel: 'AssemblyAI Streaming' },
+  { label: 'Satzauswahl', sublabel: 'KI-Filter: prüfbar & relevant?' },
+  { label: 'Umformulierung', sublabel: 'eigenständige Aussage + Suchanfragen' },
+  { label: 'Schnellcheck', sublabel: 'LLM + Websuche', search: true },
+  { label: 'Darstellung', sublabel: 'markiert im Live-Transkript' },
 ]
 
-function ReActLoop() {
+function ParallelSearch() {
   return (
     <div className="react-loop">
       <div className="react-loop-steps">
-        <span className="react-loop-step">Denken</span>
+        <span className="react-loop-step">Suchen ×5</span>
         <span className="react-loop-sep">→</span>
-        <span className="react-loop-step">Suchen</span>
-        <span className="react-loop-sep">→</span>
-        <span className="react-loop-step">Auswerten</span>
-      </div>
-      <div className="react-loop-bracket">
-        <span className="react-loop-icon">↺</span>
+        <span className="react-loop-step">Bewerten</span>
       </div>
     </div>
   )
@@ -49,11 +45,11 @@ export function WorkflowDiagram() {
 
       <div className="workflow-audio-row">
         <div className="workflow-audio-stream">
-          {CHUNKS.map((chunk) => (
-            <div key={chunk.id} className={`audio-chunk audio-chunk--${chunk.state}`}>
-              {chunk.state === 'active' && <span className="audio-recording-dot" />}
+          {SENTENCES.map((s) => (
+            <div key={s.id} className={`audio-chunk audio-chunk--${s.state}`}>
+              {s.state === 'active' && <span className="audio-recording-dot" />}
               <WaveformBars />
-              <span className="audio-chunk-label">{chunk.label}</span>
+              <span className="audio-chunk-label">{s.label}</span>
             </div>
           ))}
         </div>
@@ -62,15 +58,15 @@ export function WorkflowDiagram() {
 
       <div className="workflow-connector">
         <span className="workflow-connector-arrow">↓</span>
-        <span className="workflow-connector-text">je Block</span>
+        <span className="workflow-connector-text">Satz für Satz</span>
       </div>
 
       <div className="workflow-pipeline">
         {PIPELINE_STEPS.map((step, i) => (
           <div key={step.label} className="pipeline-step-wrapper">
-            <div className={`pipeline-step${step.react ? ' pipeline-step--react' : ''}`}>
+            <div className={`pipeline-step${step.search ? ' pipeline-step--react' : ''}`}>
               <div className="pipeline-step-label">{step.label}</div>
-              {step.react && <ReActLoop />}
+              {step.search && <ParallelSearch />}
               <div className="pipeline-step-sublabel">{step.sublabel}</div>
             </div>
             {i < PIPELINE_STEPS.length - 1 && (

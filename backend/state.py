@@ -26,6 +26,11 @@ db: Database | None = None
 # status values: "processing" | "slow" | "timeout" | "error" | "done"
 pipeline_events: dict[str, dict] = {}
 
+# Live streaming sessions (in-memory, not persisted). Keyed by the WebSocket
+# connection so the /api/stream endpoint can look up and tear down its session.
+# Values are backend.services.streaming.StreamingSession instances.
+streaming_sessions: dict[str, object] = {}
+
 # Claim processing queue (batches enqueued by approve_claims, processed by queue_worker)
 claim_queue: asyncio.Queue = asyncio.Queue()
 

@@ -2,36 +2,10 @@ import { useReducer, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { createSession, getAccessCode, setAccessCode } from '../services/api'
 import {
-  TYPE_LABELS, STEPS, initialWizardState, wizardReducer, buildSessionPayload, peopleStepValid,
+  STEPS, initialWizardState, wizardReducer, buildSessionPayload, peopleStepValid, parseKeyterms,
 } from '../wizard/wizardLogic'
 
-const TYPE_TILES = [
-  { value: 'debate', icon: '🏛️', label: 'Öffentliche Debatte / Talkshow' },
-  { value: 'interview', icon: '🎙️', label: 'Interview' },
-  { value: 'private', icon: '💬', label: 'Privates Gespräch' },
-]
-
-const MODE_TILES = [
-  { value: false, icon: '🙋', label: 'Moderator:in',
-    hint: 'Du entscheidest selbst, welche Behauptungen geprüft werden.' },
-  { value: true, icon: '🤖', label: 'Automatisch prüfen lassen',
-    hint: 'Das System wählt selbst – das Smartphone kann liegen bleiben.' },
-]
-
-const MODE_EXPLAINER = {
-  false: {
-    icon: '🙋',
-    title: 'Du moderierst',
-    text: 'Alle 60 Sekunden werden aus dem Gesagten Behauptungen extrahiert. Jede legen wir dir einzeln vor – du entscheidest mit einem Wisch, ob sie geprüft oder verworfen wird.',
-  },
-  true: {
-    icon: '🤖',
-    title: 'Die KI übernimmt',
-    text: 'Alle 60 Sekunden werden Behauptungen extrahiert. Die KI wählt automatisch die relevantesten aus und prüft sie für dich – du musst dich um nichts kümmern und kannst dich ganz auf das Gespräch konzentrieren.',
-  },
-}
-
-function PersonFields({ person, index, type, dispatch, removable }) {
+function PersonFields({ person, index, dispatch, removable }) {
   const upd = (field) => (e) =>
     dispatch({ type: 'UPDATE_PERSON', index, field, value: e.target.value })
   const toggleExclude = (e) =>
@@ -39,13 +13,9 @@ function PersonFields({ person, index, type, dispatch, removable }) {
   return (
     <div className="wizard-person">
       <input className="wizard-input" value={person.name} onChange={upd('name')}
-             placeholder={type === 'private' ? 'Name' : `Sprecher ${String.fromCharCode(65 + index)}`} />
-      {type !== 'private' && (
-        <input className="wizard-input" value={person.party} onChange={upd('party')}
-               placeholder="Partei / Organisation" />
-      )}
-      <input className="wizard-input" value={person.role} onChange={upd('role')}
-             placeholder={type === 'private' ? 'Rolle (optional, z. B. Nachbar)' : 'Rolle / Funktion'} />
+             placeholder={`Sprecher ${String.fromCharCode(65 + index)}`} />
+      <input className="wizard-input" value={person.party} onChange={upd('party')}
+             placeholder="Partei / Organisation (optional)" />
       <label className="wizard-exclude">
         <input type="checkbox" checked={!!person.exclude} onChange={toggleExclude} />
         <span>Aussagen nicht prüfen</span>
@@ -69,9 +39,7 @@ export function NewSessionPage() {
   const stepName = STEPS[state.step]
 
   const canAdvance = () => {
-    if (stepName === 'type') return !!state.conversationType
-    if (stepName === 'people') return peopleStepValid(state.conversationType, state.people)
-    if (stepName === 'mode') return state.autoCheck !== null
+    if (stepName === 'people') return peopleStepValid(state.people)
     return true
   }
 
@@ -100,52 +68,22 @@ export function NewSessionPage() {
           ))}
         </div>
 
-        {stepName === 'type' && (
-          <section className="wizard-step">
-            <h1>Was für ein Gespräch?</h1>
-            <div className="wizard-tiles">
-              {TYPE_TILES.map((t) => (
-                <button key={t.value} type="button"
-                        className={`wizard-tile ${state.conversationType === t.value ? 'selected' : ''}`}
-                        onClick={() => dispatch({ type: 'SET_TYPE', value: t.value })}>
-                  <span className="wizard-tile-icon">{t.icon}</span>
-                  <span>{t.label}</span>
-                </button>
-              ))}
-            </div>
-          </section>
-        )}
-
         {stepName === 'people' && (
           <section className="wizard-step">
-            <h1>Wer spricht?</h1>
-            {state.conversationType === 'interview' && (
-              <p className="wizard-hint">Meist sollen nur die Aussagen der interviewten Person geprüft werden – bei der interviewenden Person kannst du „Aussagen nicht prüfen“ setzen (Name dafür nötig).</p>
-            )}
-            {state.conversationType === 'private' && (
-              <p className="wizard-hint">Nur Vornamen/Rollen genügen — keine Partei nötig. Du kannst diesen Schritt auch leer lassen.</p>
-            )}
-            {state.conversationType !== 'private' && (
-              <p className="wizard-hint">
-                Namen sind optional – ohne Namen bleiben die Sprecher:innen als <strong>Sprecher A/B/C</strong>.
-                Mit Namen ordnet die KI die Aussagen den Personen zu; Partei/Organisation und Rolle helfen zusätzlich, wenn Namen im Gespräch nicht fallen.
-              </p>
-            )}
+            <h1>Wer spricht und worum geht es?</h1>
+            <p className="wizard-hint">
+              Namen sind optional – ohne Namen bleiben die Sprecher:innen <strong>Sprecher A/B/C</strong>.
+              Die Partei hilft, Aussagen wie „meine Partei hat …“ richtig einzuordnen. Wessen Aussagen
+              nicht geprüft werden sollen (z. B. Moderation), markierst du mit „Aussagen nicht prüfen“ (Name dafür nötig).
+            </p>
             {state.people.map((p, i) => (
-              <PersonFields key={i} person={p} index={i} type={state.conversationType}
-                            dispatch={dispatch}
-                            removable={state.conversationType !== 'interview' && state.people.length > 1} />
+              <PersonFields key={i} person={p} index={i} dispatch={dispatch}
+                            removable={state.people.length > 1} />
             ))}
-            {state.conversationType !== 'interview' && (
-              <button type="button" className="wizard-add"
-                      onClick={() => dispatch({ type: 'ADD_PERSON' })}>+ weitere Person</button>
-            )}
-          </section>
-        )}
+            <button type="button" className="wizard-add"
+                    onClick={() => dispatch({ type: 'ADD_PERSON' })}>+ weitere Person</button>
 
-        {stepName === 'topic' && (
-          <section className="wizard-step">
-            <h1>Worum geht es? <span className="wizard-optional">(optional)</span></h1>
+            <h2 className="wizard-subhead">Worum geht es? <span className="wizard-optional">(optional)</span></h2>
             <p className="wizard-hint">
               Je konkreter, desto besser prüft die KI: Mit klarem Hintergrund kann sie mehrdeutige
               Bezüge richtig einordnen und passendere Quellen finden. Hilfreich sind – soweit relevant –
@@ -154,36 +92,16 @@ export function NewSessionPage() {
             <textarea className="wizard-input" rows={4} value={state.topic}
                       onChange={(e) => dispatch({ type: 'SET_TOPIC', value: e.target.value })}
                       placeholder="Anlass, Ort/Zeitraum und zentrale Themen des Gesprächs — kann leer bleiben" />
-          </section>
-        )}
-
-        {stepName === 'mode' && (
-          <section className="wizard-step">
-            <h1>Welche Rolle nimmst du ein?</h1>
-            <div className="wizard-tiles">
-              {MODE_TILES.map((t) => (
-                <button key={String(t.value)} type="button"
-                        className={`wizard-tile ${state.autoCheck === t.value ? 'selected' : ''}`}
-                        onClick={() => dispatch({ type: 'SET_AUTO_CHECK', value: t.value })}>
-                  <span className="wizard-tile-icon">{t.icon}</span>
-                  <span className="wizard-tile-text">
-                    <strong>{t.label}</strong>
-                    <span className="wizard-tile-hint">{t.hint}</span>
-                  </span>
-                </button>
-              ))}
-            </div>
-            {state.autoCheck !== null && (
-              <div className="wizard-explainer" role="status">
-                <span className="wizard-explainer-icon" aria-hidden="true">
-                  {MODE_EXPLAINER[state.autoCheck].icon}
-                </span>
-                <div>
-                  <strong>{MODE_EXPLAINER[state.autoCheck].title}</strong>
-                  <p>{MODE_EXPLAINER[state.autoCheck].text}</p>
-                </div>
-              </div>
-            )}
+            <label className="wizard-label" htmlFor="wizard-keyterms">
+              Namen &amp; Begriffe, die fallen könnten <span className="wizard-optional">(optional)</span>
+            </label>
+            <p className="wizard-hint">
+              Hilft der Transkription, Namen richtig zu schreiben (z. B. „Reiche“ statt „Reichelt“). Die Namen
+              der Personen sind automatisch dabei — ergänze Erwähnte, Institutionen oder Fachbegriffe.
+            </p>
+            <input id="wizard-keyterms" className="wizard-input" value={state.keyterms}
+                   onChange={(e) => dispatch({ type: 'SET_KEYTERMS', value: e.target.value })}
+                   placeholder="z. B. Katharina Reiche, Peter Altmaier, Bundesnetzagentur" />
           </section>
         )}
 
@@ -191,10 +109,9 @@ export function NewSessionPage() {
           <section className="wizard-step">
             <h1>Übersicht</h1>
             <dl className="wizard-summary">
-              <dt>Art</dt><dd>{TYPE_LABELS[state.conversationType]}</dd>
               <dt>Personen</dt><dd>{buildSessionPayload(state).guests.join(', ') || '—'}</dd>
               <dt>Thema</dt><dd>{state.topic.trim() || '— (nicht angegeben)'}</dd>
-              <dt>Prüfung</dt><dd>{state.autoCheck ? 'Automatisch' : 'Moderator:in (selbst entscheiden)'}</dd>
+              <dt>Begriffe</dt><dd>{parseKeyterms(state.keyterms).join(', ') || '—'}</dd>
             </dl>
             <div className="form-field">
               <label htmlFor="wizard-title">Titel</label>

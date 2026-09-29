@@ -1,11 +1,14 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { BACKEND_URL, N8N_VERIFIED_WEBHOOK, authHeaders, safeJsonParse, debug, getAccessCode } from '../services/api'
 import { AdminView } from '../components/AdminView'
 import { BackendErrorDisplay } from '../components/BackendErrorDisplay'
 import { ClaimDetailOverlay } from '../components/ClaimDetailOverlay'
 import { RecordingBar, formatElapsed } from '../components/RecordingBar'
+import { LiveTranscript } from '../components/LiveTranscript'
+import { LiveTutorial } from '../components/LiveTutorial'
 import { ReviewView } from '../components/ReviewView'
 import { useAudioRecorder } from '../hooks/useAudioRecorder'
+import { useAudioStream } from '../hooks/useAudioStream'
 
 // Default speakers as fallback
 const DEFAULT_SPEAKERS = []
@@ -84,6 +87,16 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
 
   // Recorder lives at page level so recording survives switching Review <-> Pro.
   const recorder = useAudioRecorder(episodeKey)
+  // Live streaming fast lane (SG-4). Shares the selected mic with the block recorder.
+  const liveStream = useAudioStream(episodeKey, { deviceId: recorder.deviceId })
+  // Mirrors LiveTranscript's own visibility: a live session is running or left a transcript.
+  const showLiveTranscript = !isViewer && (
+    liveStream.status === 'connecting' || liveStream.status === 'streaming' ||
+    liveStream.transcript.length > 0 || liveStream.claims.length > 0
+  )
+  // The live-check guide opens every time an operator opens the page, before the show starts.
+  const [tutorialOpen, setTutorialOpen] = useState(!isViewer)
+  const closeTutorial = useCallback(() => setTutorialOpen(false), [])
   const isRecording = recorder.status === 'recording'
   const isStarting = recorder.status === 'requesting'
   // The full-screen "Aufnahme starten" splash is a one-time onboarding screen:
@@ -697,6 +710,32 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
                 {isStarting ? 'Mikrofon…' : '⏺ Aufnahme'}
               </button>
             )}
+            {!isAdminMode && (
+              (liveStream.status === 'streaming' || liveStream.status === 'connecting') ? (
+                <button type="button" className="header-rec-stop" onClick={() => liveStream.stop()}>
+                  <span className="header-rec-dot" aria-hidden="true">◉</span>
+                  {liveStream.status === 'connecting' ? 'Live verbindet…' : 'Live stoppen'}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="header-rec-start"
+                  onClick={() => liveStream.start()}
+                  disabled={isRecording || isStarting}
+                  title={isRecording ? 'Erst die Blockaufnahme stoppen' : 'Live-Check starten (Streaming)'}
+                >
+                  ◉ Live-Check
+                </button>
+              )
+            )}
+            {!isAdminMode && (
+              <button type="button" className="header-help-link" onClick={() => setTutorialOpen(true)}>
+                Kurzanleitung
+              </button>
+            )}
+            {!isAdminMode && liveStream.error && (
+              <span className="header-live-error">{liveStream.error}</span>
+            )}
             {showAdminMode && (
               <button
                 className="admin-toggle"
@@ -710,10 +749,12 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
         </div>
       </header>
 
+      {tutorialOpen && !isViewer && <LiveTutorial onClose={closeTutorial} />}
       <main className="main-content">
+        {showLiveTranscript && <LiveTranscript live={liveStream} speakers={speakers} />}
         {isAdminMode ? (
           <>
-            <RecordingBar recorder={recorder} />
+            <RecordingBar recorder={recorder} live={liveStream} />
             <AdminView
               pendingClaims={pendingClaims}
               pendingBlocks={pendingBlocks}
@@ -735,7 +776,8 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
         ) : (
           <>
             <BackendErrorDisplay error={backendError} />
-            <ReviewView
+            {/* In the live view, results open from the transcript marks, not as a list below. */}
+            {!showLiveTranscript && <ReviewView
               sessionId={episodeKey}
               initialAutoCheck={initialAutoCheck}
               onSelect={setSelectedClaim}
@@ -745,7 +787,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
               onStartRecording={() => recorder.start(60)}
               recordingError={recorder.error}
               recorder={recorder}
-            />
+            />}
             {selectedClaim && (
               <ClaimDetailOverlay
                 claim={selectedClaim}

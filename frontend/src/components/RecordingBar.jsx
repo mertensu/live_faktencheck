@@ -10,7 +10,9 @@ export function formatElapsed(totalSeconds) {
 
 // Presentational: the recorder state/controls are owned by FactCheckPage (so
 // recording survives switching between the Review and Pro views) and passed in.
-export function RecordingBar({ recorder }) {
+// `live` is the optional useAudioStream object for the streaming fast lane; when
+// present, a "Live-Check" control is shown alongside the classic block recorder.
+export function RecordingBar({ recorder, live }) {
   const {
     status, elapsed, blocksSent, error,
     blockSeconds, setBlockSeconds, start, sendNow, stop,
@@ -68,6 +70,38 @@ export function RecordingBar({ recorder }) {
         </>
       )}
       {error && <span className="recording-bar-error">{error}</span>}
+      {live && <LiveControls live={live} blockRecording={isRecording || isRequesting} />}
     </div>
+  )
+}
+
+// Streaming fast-lane control. Kept separate from the block recorder; the two are
+// mutually exclusive (both would grab the mic), so each disables the other while active.
+function LiveControls({ live, blockRecording }) {
+  const streaming = live.status === 'streaming'
+  const connecting = live.status === 'connecting'
+  const active = streaming || connecting
+
+  return (
+    <span className="recording-bar-live">
+      {active ? (
+        <>
+          <span className="recording-bar-live-dot" aria-hidden="true">◉</span>
+          {connecting ? 'Live verbindet…' : 'LIVE'}
+          {live.partial && <span className="recording-bar-live-partial" title={live.partial}>{live.partial}</span>}
+          <button className="recording-bar-stop" onClick={() => live.stop()}>Live stoppen</button>
+        </>
+      ) : (
+        <button
+          className="recording-bar-start"
+          onClick={() => live.start()}
+          disabled={blockRecording}
+          title={blockRecording ? 'Erst die Blockaufnahme stoppen' : 'Live-Check starten (Streaming)'}
+        >
+          Live-Check starten
+        </button>
+      )}
+      {live.error && <span className="recording-bar-error">{live.error}</span>}
+    </span>
   )
 }

@@ -31,6 +31,11 @@ Open a PR and merge it. The deploy follows automatically within a few minutes â€
 [`docs/deployment.md`](deployment.md). Plan for that lag: add the episode well before
 the show, not while the guests are being introduced.
 
+**Speakers in the live lane:** the live transcript shows AssemblyAI's diarization labels
+(`Sprecher A`, `Sprecher B`, â€¦). Click a label and pick the guest to name it; that also
+renames every claim already stored under that label. With three guests that is three
+clicks. Skip it and claims keep the bare label. Nothing guesses names automatically.
+
 ---
 
 ## During the show

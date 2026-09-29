@@ -88,3 +88,8 @@ handover/
 
 # Visual companion (brainstorming) artifacts
 .superpowers/
+
+# Audio recordings
+*.mp3
+*.m4a
+*.flac

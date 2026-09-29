@@ -51,6 +51,7 @@ class Episode:
     type: str = "show"
     conversation_type: str = "debate"
     excluded_speakers: list[str] = field(default_factory=list)
+    keyterms: list[str] = field(default_factory=list)  # extra names/terms for transcription
     publish: bool = False
 
     @property
@@ -81,6 +82,7 @@ class Episode:
             type=row.get("type", "show"),
             conversation_type=row.get("conversation_type", "debate"),
             excluded_speakers=row.get("excluded_speakers", []),
+            keyterms=row.get("keyterms", []),
             publish=row.get("visibility") == "public",
         )
 

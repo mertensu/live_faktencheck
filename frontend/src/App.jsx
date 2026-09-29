@@ -11,8 +11,9 @@ import { TrustedDomainsPage } from './pages/TrustedDomainsPage'
 import { FactCheckPage } from './pages/FactCheckPage'
 import { NewSessionPage } from './pages/NewSessionPage'
 import { QuickCheckPage } from './pages/QuickCheckPage'
+import { ExamplesPage } from './pages/ExamplesPage'
 
-// Scroll to an in-page anchor (e.g. nav "Beispiele" → /#beispiele); BrowserRouter
+// Scroll to an in-page anchor (e.g. /about#section); BrowserRouter
 // does not do this natively.
 function ScrollToHash() {
   const { hash } = useLocation()
@@ -32,7 +33,7 @@ function EpisodeRoute() {
 }
 
 // Static top-level routes; anything else is an episode/session page.
-const STATIC_ROUTES = new Set(['/', '/about', '/trusted-domains', '/new', '/pruefen'])
+const STATIC_ROUTES = new Set(['/', '/about', '/trusted-domains', '/new', '/pruefen', '/beispiele'])
 
 function AppInner() {
   const { pathname } = useLocation()
@@ -52,6 +53,7 @@ function AppInner() {
         <Route path="/trusted-domains" element={<TrustedDomainsPage />} />
         <Route path="/new" element={<NewSessionPage />} />
         <Route path="/pruefen" element={<QuickCheckPage />} />
+        <Route path="/beispiele" element={<ExamplesPage />} />
         <Route path="/:episodeKey" element={<EpisodeRoute />} />
       </Routes>
       {viewerMinimal ? <Footer slim /> : <Footer />}

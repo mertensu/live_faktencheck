@@ -28,3 +28,8 @@ CRITIQUE_CONFIDENCE_DESCRIPTION = (
 CRITIQUE_REASON_DESCRIPTION = (
     "Kurze und prägnante deutschsprachige Erklärung, warum das Urteil (nicht) robust ist. Immer ausfüllen."
 )
+
+# --- Live speakers ---
+# Shown when a live claim cannot be tied to a diarization label — preferred over a name
+# guessed from the text.
+UNCLEAR_SPEAKER = "Unklar"

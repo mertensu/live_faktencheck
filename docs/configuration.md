@@ -1,7 +1,7 @@
 # Configuration Reference
 
 All configuration is via environment variables in `.env`. The four required keys are
-covered in the [README](../README.md#installation); this is the full list.
+covered in the [development workflow](development-workflow.md#setup); this is the full list.
 
 ## Required
 
@@ -16,6 +16,7 @@ covered in the [README](../README.md#installation); this is the full list.
 
 | Variable | Description | Default |
 |----------|-------------|---------|
+| `ASSEMBLYAI_REGION` | `eu` pins batch + streaming to AssemblyAI's EU endpoints (data residency); unknown values fail at startup of the service | unset (US / edge routing) |
 | `ASSEMBLYAI_SPEECH_MODELS` | Comma-separated model preference (rollback knob) | `universal-3-pro,universal-2` |
 | `MAX_AUDIO_BLOCK_BYTES` | Max accepted audio block size | `26214400` (25 MB) |
 | `LIVE_AUDIO_LIMIT_MINUTES` | Per-code lifetime live-audio budget (minutes) | `5` |
@@ -41,6 +42,27 @@ covered in the [README](../README.md#installation); this is the full list.
 | `TAVILY_SEARCH_DEPTH` | `basic` or `advanced`, applied to every search | `basic` |
 | `TAVILY_MAX_RESULTS` | Results per search | `5` |
 | `AUTO_APPROVE` | Fallback auto-approve when a session has no per-session setting | `false` |
+
+## Live lane (streaming)
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `STREAM_SPEECH_MODEL` | AssemblyAI streaming model | `universal-3-6-pro` |
+| `STREAM_SPEAKER_REVISION_MS` | Interval for AssemblyAI speaker revisions | `120000` |
+| `STREAM_MAX_SPEAKERS` | Cap on diarized speakers | unset |
+| `STREAM_EARLY_SENTENCES` | Gate settled sentences from partial turns before the turn ends | `true` |
+| `CLAIM_GATE` | `jev` (per-sentence classifier via Requesty) or `extractor` (Gemini window gate) | `extractor` |
+| `GEMINI_MODEL_WINDOW_GATE` | Model for the extractor gate | `gemini-3.5-flash-lite` |
+| `JEV_MODEL` / `JEV_TIMEOUT_S` | Jev gate model and per-call timeout (s) | `typesafe/jev-1.13.0` / `5` |
+| `JEV_CHECK_THRESHOLD` / `JEV_SKIP_THRESHOLD` | Jev probability band: check above, skip below | `0.80` / `0.30` |
+| `JEV_IMPORTANCE_THRESHOLD` | Minimum Jev importance score | `0.60` |
+| `JEV_GATE_DEBUG` | Log per-sentence Jev scores | off |
+| `GEMINI_MODEL_REFORMULATE` / `GEMINI_THINKING_REFORMULATE` | Reformulator model + thinking level | `gemini-3.6-flash` / `low` |
+| `REFORMULATE_CONTEXT_SENTENCES` | Preceding sentences the reformulator sees | `4` |
+| `GEMINI_MODEL_FAST_CHECK` / `GEMINI_THINKING_FAST_CHECK` | Fast-check synthesis model + thinking level | `gemini-3.6-flash` / `low` |
+| `FAST_SEARCH_MAX_QUERIES` | Parallel Tavily searches per claim | `5` |
+| `FAST_TAVILY_SEARCH_DEPTH` | Tavily depth for the fast check | `basic` |
+| `FAST_SNIPPET_CHARS` | Characters kept per search hit | `1200` |
 
 ## Cross-provider fallback
 

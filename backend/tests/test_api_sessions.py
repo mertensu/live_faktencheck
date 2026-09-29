@@ -83,3 +83,14 @@ async def test_set_auto_check_unknown_session_404(client):
 async def test_set_auto_check_requires_code(no_auth_client):
     resp = await no_auth_client.post("/api/sessions/whatever/auto-check", json={"enabled": True})
     assert resp.status_code == 401
+
+
+
+async def test_keyterms_set_with_the_session(client):
+    sid = (await client.post("/api/sessions", json={
+        "title": "T", "keyterms": [" Katharina Reiche ", "", "katharina reiche", "Bundesnetzagentur"],
+    })).json()["session_id"]
+    assert (await client.get(f"/api/sessions/{sid}")).json()["keyterms"] == ["Katharina Reiche", "Bundesnetzagentur"]
+    assert (await client.get(f"/api/config/{sid}")).json()["keyterms"] == ["Katharina Reiche", "Bundesnetzagentur"]
+    other = (await client.post("/api/sessions", json={"title": "T"})).json()["session_id"]
+    assert (await client.get(f"/api/sessions/{other}")).json()["keyterms"] == []

@@ -1,0 +1,200 @@
+import { describe, it, expect, vi } from 'vitest'
+import { render, screen, fireEvent } from '@testing-library/react'
+import { LiveTranscript } from './LiveTranscript'
+
+const live = {
+  status: 'streaming',
+  partial: '',
+  transcript: [
+    { label: 'A', text: 'Was ist Ihre Antwort?' },
+    { label: 'A', text: 'Strom ist teurer geworden. Punkt.' },
+    { label: 'B', text: 'Das stimmt nicht.' },
+    { label: null, text: 'Moment.' },
+  ],
+  speakerMap: { A: [[-1, 'Connemann']] },
+  claims: [{
+    id: 7, speaker: 'Connemann', label: 'A', claim: 'Strom ist teurer geworden.', source: 'Strom ist teurer geworden.',
+    status: 'done', consistency: 'niedrig', begruendung: 'Die Preise sind gesunken.',
+    quellen: [{ url: 'https://example.org', title: 'Quelle X' }],
+  }],
+}
+
+describe('LiveTranscript', () => {
+  it('groups consecutive lines of a label into one bubble; lines without a label stay neutral', () => {
+    const { container } = render(<LiveTranscript live={live} />)
+    const bubbles = container.querySelectorAll('.live-bubble:not(.live-bubble-partial)')
+    expect(bubbles).toHaveLength(3)
+    expect(bubbles[0].querySelectorAll('.live-bubble-line')).toHaveLength(2)
+    expect(bubbles[0].className).toMatch(/spk-0/)
+    expect(bubbles[0].textContent).toContain('Connemann')
+    expect(bubbles[1].className).toMatch(/spk-1/)
+    expect(bubbles[2].className).toMatch(/spk-none/)
+    expect(screen.getByText('Sprecher B')).toBeDefined()
+    expect(screen.getByText('Unklar')).toBeDefined()
+  })
+
+  it('assigns a label to a guest from the bubble name', () => {
+    const assignSpeaker = vi.fn()
+    render(<LiveTranscript live={{ ...live, assignSpeaker }} speakers={['Connemann', 'Dröge']} />)
+    fireEvent.click(screen.getByRole('button', { name: /Sprecher B/ }))
+    fireEvent.click(screen.getByRole('menuitemradio', { name: 'Dröge' }))
+    expect(assignSpeaker).toHaveBeenCalledWith('B', 'Dröge', null)
+    expect(screen.queryByRole('menu')).toBeNull()
+  })
+
+  it('clears an assignment', () => {
+    const assignSpeaker = vi.fn()
+    render(<LiveTranscript live={{ ...live, assignSpeaker }} speakers={['Connemann', 'Dröge']} />)
+    fireEvent.click(screen.getByRole('button', { name: /Connemann/ }))
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Zuordnung entfernen' }))
+    expect(assignSpeaker).toHaveBeenCalledWith('A', null, null)
+  })
+
+  it('gives a marked passage, widened to whole words, to a guest', () => {
+    const assignPassage = vi.fn()
+    const { container } = render(
+      <LiveTranscript live={{ ...live, assignSpeaker: vi.fn(), assignPassage }} speakers={['Connemann', 'Maischberger']} />
+    )
+    const textNode = container.querySelector('.live-bubble-line[data-index="0"]').firstChild
+    const range = document.createRange()
+    range.setStart(textNode, 9) // "hre Antw" of "Was ist Ihre Antwort?"
+    range.setEnd(textNode, 17)
+    window.getSelection().removeAllRanges()
+    window.getSelection().addRange(range)
+    fireEvent.mouseUp(textNode)
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Maischberger' }))
+    expect(assignPassage).toHaveBeenCalledWith(
+      [{ index: 0, start: 8, end: 21, lineText: 'Was ist Ihre Antwort?' }], 'Maischberger')
+    expect(screen.queryByRole('menu', { name: 'Textstelle zuordnen' })).toBeNull()
+  })
+
+  it('gives a passage over several lines to a guest', () => {
+    const assignPassage = vi.fn()
+    const transcript = [
+      { label: 'B', text: 'Was ist Ihre Antwort?' },
+      { label: 'B', text: 'Also, Sie hatten gerade den Begriff bemüht.' },
+      { label: 'B', text: 'Und das tun Sie gerade, und zwar bar jeden Fakten.' },
+    ]
+    const { container } = render(
+      <LiveTranscript live={{ ...live, transcript, claims: [], assignSpeaker: vi.fn(), assignPassage }}
+        speakers={['Connemann', 'Maischberger']} />
+    )
+    const line = (i) => container.querySelector(`.live-bubble-line[data-index="${i}"]`).firstChild
+    const range = document.createRange()
+    range.setStart(line(1), 2) // inside "Also,"
+    range.setEnd(line(2), 17) // inside "gerade,"
+    window.getSelection().removeAllRanges()
+    window.getSelection().addRange(range)
+    fireEvent.mouseUp(line(2))
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Connemann' }))
+    expect(assignPassage).toHaveBeenCalledWith([
+      { index: 1, start: 0, end: 43, lineText: 'Also, Sie hatten gerade den Begriff bemüht.' },
+      { index: 2, start: 0, end: 23, lineText: 'Und das tun Sie gerade, und zwar bar jeden Fakten.' },
+    ], 'Connemann')
+  })
+
+  it('can give everything further from the marked label to the guest', () => {
+    const assignPassage = vi.fn()
+    const assignSpeaker = vi.fn()
+    const transcript = [
+      { label: 'A', text: 'Was ist Ihre Antwort?', turnOrder: 12 },
+      { label: 'A', text: 'Also, Sie hatten gerade den Begriff bemüht.', turnOrder: 13 },
+    ]
+    const speakerMap = { A: [[-1, 'Maischberger']] }
+    const { container } = render(
+      <LiveTranscript live={{ ...live, transcript, speakerMap, claims: [], assignSpeaker, assignPassage }}
+        speakers={['Connemann', 'Maischberger']} />
+    )
+    const textNode = container.querySelector('.live-bubble-line[data-index="1"]').firstChild
+    const range = document.createRange()
+    range.setStart(textNode, 0)
+    range.setEnd(textNode, 10)
+    window.getSelection().removeAllRanges()
+    window.getSelection().addRange(range)
+    fireEvent.mouseUp(textNode)
+    expect(screen.getByRole('checkbox', { name: /auch alles Weitere von Sprecher A/ }).checked).toBe(true)
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Connemann' }))
+    expect(assignPassage).toHaveBeenCalled()
+    expect(assignSpeaker).toHaveBeenCalledWith('A', 'Connemann', 14)
+  })
+
+  it('corrects only the passage when the option is unticked', () => {
+    const assignSpeaker = vi.fn()
+    const transcript = [{ label: 'A', text: 'Also, Sie hatten gerade den Begriff bemüht.', turnOrder: 13 }]
+    const { container } = render(
+      <LiveTranscript live={{ ...live, transcript, claims: [], assignSpeaker, assignPassage: vi.fn() }}
+        speakers={['Connemann']} />
+    )
+    const textNode = container.querySelector('.live-bubble-line[data-index="0"]').firstChild
+    const range = document.createRange()
+    range.setStart(textNode, 0)
+    range.setEnd(textNode, 10)
+    window.getSelection().removeAllRanges()
+    window.getSelection().addRange(range)
+    fireEvent.mouseUp(textNode)
+    fireEvent.click(screen.getByRole('checkbox'))
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Connemann' }))
+    expect(assignSpeaker).not.toHaveBeenCalled()
+  })
+
+  it('shows a passage given to a guest as a bubble of that name', () => {
+    const transcript = [
+      { label: 'A', text: 'Strom ist teurer geworden.' },
+      { label: 'A', text: 'Und Ihre Antwort?', speaker: 'Maischberger' },
+      { label: 'A', text: 'Das stimmt.' },
+    ]
+    const { container } = render(<LiveTranscript live={{ ...live, transcript }} />)
+    const bubbles = container.querySelectorAll('.live-bubble:not(.live-bubble-partial)')
+    expect(bubbles).toHaveLength(3)
+    expect(bubbles[1].textContent).toContain('Maischberger')
+    expect(bubbles[1].className).not.toMatch(/spk-none/)
+    expect(bubbles[2].textContent).toContain('Connemann')
+  })
+
+  it('names a label from the clicked bubble on; earlier bubbles keep their name', () => {
+    const assignSpeaker = vi.fn()
+    const transcript = [
+      { label: 'B', text: 'Was ist Ihre Antwort?', turnOrder: 3 },
+      { label: 'A', text: 'Dazwischen.', turnOrder: 4 },
+      { label: 'B', text: 'Also, Sie hatten gerade den Begriff bemüht.', turnOrder: 5 },
+      { label: 'B', text: 'Und das tun Sie gerade.', turnOrder: 6 },
+    ]
+    const speakerMap = { B: [[-1, 'Maischberger'], [5, 'Connemann']] }
+    const { container } = render(
+      <LiveTranscript live={{ ...live, transcript, speakerMap, assignSpeaker }} speakers={['Maischberger', 'Connemann']} />
+    )
+    const bubbles = container.querySelectorAll('.live-bubble:not(.live-bubble-partial)')
+    expect(bubbles).toHaveLength(3)
+    expect(bubbles[0].textContent).toContain('Maischberger')
+    expect(bubbles[2].textContent).toContain('Connemann')
+    expect(bubbles[2].querySelectorAll('.live-bubble-line')).toHaveLength(2)
+    fireEvent.click(screen.getByRole('button', { name: /Connemann/ }))
+    fireEvent.click(screen.getByRole('menuitemradio', { name: 'Maischberger' }))
+    expect(assignSpeaker).toHaveBeenCalledWith('B', 'Maischberger', 5)
+  })
+
+  it('offers no picker once the stream has stopped', () => {
+    render(<LiveTranscript live={{ ...live, status: 'idle', assignSpeaker: vi.fn() }} speakers={['Dröge']} />)
+    expect(screen.queryByRole('button', { name: /Sprecher B/ })).toBeNull()
+  })
+
+  it('shows the result only on hover or click of the marked passage', () => {
+    render(<LiveTranscript live={live} />)
+    expect(screen.queryByText('Die Preise sind gesunken.')).toBeNull()
+    const mark = screen.getByText('Strom ist teurer geworden.', { selector: 'mark' })
+    fireEvent.mouseEnter(mark)
+    expect(screen.getByText('Die Preise sind gesunken.')).toBeDefined()
+    expect(screen.getByText('Quelle X').getAttribute('href')).toBe('https://example.org')
+    fireEvent.click(mark)
+    fireEvent.mouseLeave(mark)
+    expect(screen.getByRole('dialog')).toBeDefined() // pinned by the click
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
+
+  it('offers claims without a visible passage as badges', () => {
+    const l = { ...live, claims: [{ ...live.claims[0], source: 'nicht im Text' }] }
+    const { container } = render(<LiveTranscript live={l} />)
+    expect(container.querySelector('.live-orphan')).not.toBeNull()
+  })
+})
