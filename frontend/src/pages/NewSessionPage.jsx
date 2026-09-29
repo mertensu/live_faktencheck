@@ -2,14 +2,8 @@ import { useReducer, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { createSession, getAccessCode, setAccessCode } from '../services/api'
 import {
-  TYPE_LABELS, STEPS, initialWizardState, wizardReducer, buildSessionPayload, peopleStepValid, parseKeyterms,
+  STEPS, initialWizardState, wizardReducer, buildSessionPayload, peopleStepValid, parseKeyterms,
 } from '../wizard/wizardLogic'
-
-const TYPE_TILES = [
-  { value: 'debate', icon: '🏛️', label: 'Öffentliche Debatte / Talkshow' },
-  { value: 'interview', icon: '🎙️', label: 'Interview' },
-  { value: 'private', icon: '💬', label: 'Privates Gespräch' },
-]
 
 const MODE_TILES = [
   { value: false, icon: '🙋', label: 'Moderator:in',
@@ -31,7 +25,7 @@ const MODE_EXPLAINER = {
   },
 }
 
-function PersonFields({ person, index, type, dispatch, removable }) {
+function PersonFields({ person, index, dispatch, removable }) {
   const upd = (field) => (e) =>
     dispatch({ type: 'UPDATE_PERSON', index, field, value: e.target.value })
   const toggleExclude = (e) =>
@@ -39,11 +33,9 @@ function PersonFields({ person, index, type, dispatch, removable }) {
   return (
     <div className="wizard-person">
       <input className="wizard-input" value={person.name} onChange={upd('name')}
-             placeholder={type === 'private' ? 'Name' : `Sprecher ${String.fromCharCode(65 + index)}`} />
-      {type !== 'private' && (
-        <input className="wizard-input" value={person.party} onChange={upd('party')}
-               placeholder="Partei / Organisation (optional)" />
-      )}
+             placeholder={`Sprecher ${String.fromCharCode(65 + index)}`} />
+      <input className="wizard-input" value={person.party} onChange={upd('party')}
+             placeholder="Partei / Organisation (optional)" />
       <label className="wizard-exclude">
         <input type="checkbox" checked={!!person.exclude} onChange={toggleExclude} />
         <span>Aussagen nicht prüfen</span>
@@ -67,8 +59,7 @@ export function NewSessionPage() {
   const stepName = STEPS[state.step]
 
   const canAdvance = () => {
-    if (stepName === 'type') return !!state.conversationType
-    if (stepName === 'people') return peopleStepValid(state.conversationType, state.people)
+    if (stepName === 'people') return peopleStepValid(state.people)
     if (stepName === 'mode') return state.autoCheck !== null
     return true
   }
@@ -98,46 +89,20 @@ export function NewSessionPage() {
           ))}
         </div>
 
-        {stepName === 'type' && (
-          <section className="wizard-step">
-            <h1>Was für ein Gespräch?</h1>
-            <div className="wizard-tiles">
-              {TYPE_TILES.map((t) => (
-                <button key={t.value} type="button"
-                        className={`wizard-tile ${state.conversationType === t.value ? 'selected' : ''}`}
-                        onClick={() => dispatch({ type: 'SET_TYPE', value: t.value })}>
-                  <span className="wizard-tile-icon">{t.icon}</span>
-                  <span>{t.label}</span>
-                </button>
-              ))}
-            </div>
-          </section>
-        )}
-
         {stepName === 'people' && (
           <section className="wizard-step">
             <h1>Wer spricht und worum geht es?</h1>
-            {state.conversationType === 'interview' && (
-              <p className="wizard-hint">Meist sollen nur die Aussagen der interviewten Person geprüft werden – bei der interviewenden Person kannst du „Aussagen nicht prüfen“ setzen (Name dafür nötig).</p>
-            )}
-            {state.conversationType === 'private' && (
-              <p className="wizard-hint">Vornamen genügen. Du kannst die Namen auch leer lassen.</p>
-            )}
-            {state.conversationType !== 'private' && (
-              <p className="wizard-hint">
-                Namen sind optional – ohne Namen bleiben die Sprecher:innen <strong>Sprecher A/B/C</strong>.
-                Die Partei hilft, Aussagen wie „meine Partei hat …“ richtig einzuordnen.
-              </p>
-            )}
+            <p className="wizard-hint">
+              Namen sind optional – ohne Namen bleiben die Sprecher:innen <strong>Sprecher A/B/C</strong>.
+              Die Partei hilft, Aussagen wie „meine Partei hat …“ richtig einzuordnen. Wessen Aussagen
+              nicht geprüft werden sollen (z. B. Moderation), markierst du mit „Aussagen nicht prüfen“ (Name dafür nötig).
+            </p>
             {state.people.map((p, i) => (
-              <PersonFields key={i} person={p} index={i} type={state.conversationType}
-                            dispatch={dispatch}
-                            removable={state.conversationType !== 'interview' && state.people.length > 1} />
+              <PersonFields key={i} person={p} index={i} dispatch={dispatch}
+                            removable={state.people.length > 1} />
             ))}
-            {state.conversationType !== 'interview' && (
-              <button type="button" className="wizard-add"
-                      onClick={() => dispatch({ type: 'ADD_PERSON' })}>+ weitere Person</button>
-            )}
+            <button type="button" className="wizard-add"
+                    onClick={() => dispatch({ type: 'ADD_PERSON' })}>+ weitere Person</button>
 
             <h2 className="wizard-subhead">Worum geht es? <span className="wizard-optional">(optional)</span></h2>
             <p className="wizard-hint">
@@ -195,7 +160,6 @@ export function NewSessionPage() {
           <section className="wizard-step">
             <h1>Übersicht</h1>
             <dl className="wizard-summary">
-              <dt>Art</dt><dd>{TYPE_LABELS[state.conversationType]}</dd>
               <dt>Personen</dt><dd>{buildSessionPayload(state).guests.join(', ') || '—'}</dd>
               <dt>Thema</dt><dd>{state.topic.trim() || '— (nicht angegeben)'}</dd>
               <dt>Begriffe</dt><dd>{parseKeyterms(state.keyterms).join(', ') || '—'}</dd>

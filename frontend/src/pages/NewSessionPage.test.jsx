@@ -4,12 +4,11 @@ import { MemoryRouter } from 'react-router-dom'
 import { NewSessionPage } from './NewSessionPage'
 
 describe('NewSessionPage', () => {
-  it('asks for people and topic on one page, without a role field', () => {
+  it('opens directly on people and topic, without a type or role field', () => {
     render(<MemoryRouter><NewSessionPage /></MemoryRouter>)
-    fireEvent.click(screen.getByText('Öffentliche Debatte / Talkshow'))
-    fireEvent.click(screen.getByRole('button', { name: 'Weiter' }))
+    expect(screen.queryByText('Was für ein Gespräch?')).toBeNull()
     expect(screen.getByRole('heading', { name: 'Wer spricht und worum geht es?' })).toBeDefined()
-    expect(screen.getByPlaceholderText('Partei / Organisation (optional)')).toBeDefined()
+    expect(screen.getAllByPlaceholderText('Partei / Organisation (optional)')).toHaveLength(2)
     expect(screen.queryByPlaceholderText(/Rolle/)).toBeNull()
     expect(screen.getByPlaceholderText(/Anlass, Ort\/Zeitraum/)).toBeDefined()
     expect(screen.getByLabelText(/Namen & Begriffe/)).toBeDefined()

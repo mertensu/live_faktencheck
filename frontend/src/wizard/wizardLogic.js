@@ -1,15 +1,8 @@
 // Pure, framework-free wizard logic — unit-tested in wizardLogic.test.js.
 
-export const CONVERSATION_TYPES = ['debate', 'interview', 'private']
-
-export const TYPE_LABELS = {
-  debate: 'Öffentliche Debatte',
-  interview: 'Interview',
-  private: 'Privates Gespräch',
-}
-
 // People and topic share one page: names (party optional) and what the conversation is about.
-export const STEPS = ['type', 'people', 'mode', 'review']
+// There is no conversation-type step: the backend defaults it, and nothing live depends on it.
+export const STEPS = ['people', 'mode', 'review']
 
 // `role` has no field any more (it stays empty): live, the operator assigns speakers by click.
 // The party still helps ("meine Partei …" becomes checkable) and is a transcription keyterm.
@@ -18,8 +11,7 @@ const emptyPerson = () => ({ name: '', party: '', role: '', exclude: false })
 export function initialWizardState() {
   return {
     step: 0,
-    conversationType: null,
-    people: [emptyPerson()],
+    people: [emptyPerson(), emptyPerson()],
     topic: '',
     // Extra names/terms for the transcription (people mentioned in the show, …), comma-separated.
     keyterms: '',
@@ -31,27 +23,26 @@ export function initialWizardState() {
   }
 }
 
-export function formatParticipant(type, person) {
+export function formatParticipant(person) {
   const name = (person.name || '').trim()
   if (!name) return ''
   const parts = []
-  if (type !== 'private' && (person.party || '').trim()) parts.push(person.party.trim())
+  if ((person.party || '').trim()) parts.push(person.party.trim())
   if ((person.role || '').trim()) parts.push(person.role.trim())
   return parts.length ? `${name} (${parts.join(', ')})` : name
 }
 
-export function buildGuests(type, people) {
-  return people.map((p) => formatParticipant(type, p)).filter(Boolean)
+export function buildGuests(people) {
+  return people.map(formatParticipant).filter(Boolean)
 }
 
-// Gating for the "people" step. Naming is optional for every conversation type:
-// the step may be left empty, and any unnamed speaker simply stays as its generic
+// Gating for the "people" step. Naming is optional: the step may be left empty, and any unnamed speaker simply stays as its generic
 // label ("Sprecher A/B/C") in the fact-check. Names are what the speaker-label
 // resolver maps those generic labels onto; party/role further help when names
 // aren't spoken in the transcript. The one hard rule: any participant flagged
 // `exclude` must be named, because the extractor identifies excluded speakers by
 // their resolved name.
-export function peopleStepValid(type, people) {
+export function peopleStepValid(people) {
   return !people.some((p) => p.exclude && !(p.name || '').trim())
 }
 
@@ -66,18 +57,15 @@ export function parseKeyterms(text) {
   })
 }
 
-export function deriveTitle(type, people) {
-  const label = TYPE_LABELS[type] || 'Gespräch'
+export function deriveTitle(people) {
   const firstNamed = people.map((p) => (p.name || '').trim()).find(Boolean)
-  return firstNamed ? `${label}: ${firstNamed}` : label
+  return firstNamed ? `Gespräch: ${firstNamed}` : 'Gespräch'
 }
 
 export function buildSessionPayload(state) {
-  const type = state.conversationType
   return {
-    title: (state.title && state.title.trim()) || deriveTitle(type, state.people),
-    conversation_type: type,
-    guests: buildGuests(type, state.people),
+    title: (state.title && state.title.trim()) || deriveTitle(state.people),
+    guests: buildGuests(state.people),
     context: state.topic.trim(),
     keyterms: parseKeyterms(state.keyterms),
     date: '',
@@ -91,12 +79,6 @@ export function buildSessionPayload(state) {
 
 export function wizardReducer(state, action) {
   switch (action.type) {
-    case 'SET_TYPE': {
-      const people = action.value === 'interview'
-        ? [emptyPerson(), emptyPerson()]
-        : [emptyPerson()]
-      return { ...state, conversationType: action.value, people }
-    }
     case 'ADD_PERSON':
       return { ...state, people: [...state.people, emptyPerson()] }
     case 'REMOVE_PERSON':
