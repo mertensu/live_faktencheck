@@ -181,7 +181,7 @@ export function ClaimCard({ claim, onSelect }) {
         <div className="claim-text">{stripDateAnnotation(claim.behauptung)}</div>
         <div className="claim-header-actions">
           {claim.check_depth === 'fast' && (
-            <span className="fast-check-flag" aria-label="Schnellcheck (vorläufig)" title="Schnellcheck – vorläufiges Ergebnis, Tiefenprüfung folgt ggf.">Schnellcheck</span>
+            <span className="fast-check-flag" aria-label="Schnellcheck" title="Schnellcheck – automatische Bewertung in Sekunden">Schnellcheck</span>
           )}
           {claim.double_check && (
             <span className="double-check-flag" aria-label="Bewertung unter Vorbehalt" title="Bewertung unter Vorbehalt">⚠</span>

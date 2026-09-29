@@ -3,52 +3,58 @@
 **Live at [live-faktencheck.de](https://live-faktencheck.de).**
 
 Real-time fact-checking for German TV talk shows and other spoken-word formats. It
-captures audio in the browser, transcribes it, extracts verifiable claims, and verifies
-them against authoritative German sources — with results shown live in a dashboard.
+streams audio from the browser, transcribes it as it is spoken, picks out verifiable
+claims sentence by sentence, and checks them against authoritative German sources — with
+the result appearing in the live transcript within seconds.
 
-It runs as a small multi-user app: each fact-check run is a **session**, access is gated
-by per-person **access codes**, and there is a lightweight one-shot **Quick Check** for
-pasting a single quote without recording any audio.
+It runs as a small multi-user app: each show is a **session**, and access is gated by
+per-person **access codes**.
 
 ## How It Works
 
 ```
-  Browser mic (fixed-length blocks)
+  Browser mic ── 16 kHz PCM over WebSocket (/api/stream)
         │
         ▼
-┌───────────────────┐
-│   Transcription   │  AssemblyAI (universal-3-pro, speaker diarization)
-└────────┬──────────┘
-         ▼
-┌───────────────────┐
-│ Claim Extraction  │  Gemini via PydanticAI (speaker → claims → selection)
-└────────┬──────────┘
-         ▼
-┌───────────────────┐
-│  Human Review     │  Review / Pro UI (approve · edit · discard)
-└────────┬──────────┘
-         ▼
-┌───────────────────┐
-│  Fact-Checking    │  PydanticAI agent: Gemini + Tavily (trusted domains),
-│                   │  iterative search → typed verdict + self-critique pass
-└────────┬──────────┘
-         ▼
-┌───────────────────┐
-│     Display       │  verdict + evidence + sources, live
-└───────────────────┘
+┌─────────────────────┐
+│ Streaming transcript│  AssemblyAI Universal-Streaming (v3), turn by turn,
+│                     │  speaker labels (A, B, …) + session keyterms
+└──────────┬──────────┘
+           ▼   sentence by sentence
+┌─────────────────────┐
+│     Claim gate      │  Jev per-sentence classifier (CLAIM_GATE=jev) or a
+│                     │  Gemini window extractor — no manual approval
+└──────────┬──────────┘
+           ▼
+┌─────────────────────┐
+│   Reformulation     │  Gemini: makes the sentence self-contained (uses the last
+│                     │  few sentences) and writes 3–5 search queries
+└──────────┬──────────┘
+           ▼
+┌─────────────────────┐
+│     Fast check      │  parallel Tavily searches on trusted domains, sources
+│                     │  ranked official-first → one Gemini call: verdict + short reason
+└──────────┬──────────┘
+           ▼
+┌─────────────────────┐
+│  Live transcript    │  claim passages marked in the chat bubbles; hover/click
+│                     │  for verdict, reason and sources ("Schnellcheck" badge)
+└─────────────────────┘
 ```
 
-The fact-check agent loops (search Tavily on trusted German domains → decide → respond),
-returns a **typed** result (verdict, evidence, sources) so there are no silent parsing
-failures, and is capped at `FACT_CHECK_RECURSION_LIMIT` model requests. A separate
-self-critique agent then flags low confidence without changing the verdict.
+The operator names speakers by clicking a diarization label (or marking a passage) and
+picking a guest; names are never guessed automatically. Only the checked claims and their
+results are stored; the live transcript itself is not.
 
-→ Full pipeline details (models, schemas, prompts): [`docs/llm_pipeline.md`](docs/llm_pipeline.md)
+→ Code: `backend/services/streaming.py` (session, windowing), `gate.py`,
+`fast_fact_checker.py`; prompts in `prompts/claim_reformulation.md` and
+`prompts/fast_fact_checker.md`; tuning knobs in [`docs/configuration.md`](docs/configuration.md#live-lane-streaming).
 
 The app is hosted: the backend runs permanently on the project's VPS and the public site
-reads the live API, so there is nothing to install to *use* it — you open a session
-dashboard, unlock with an access code, and record. New sessions are created through the
-wizard at `/new`; paste a single quote at `/pruefen` for a one-shot **Quick Check**.
+reads the live API, so there is nothing to install to *use* it — you create a session with
+the wizard at `/new` (guests, topic, keyterms), unlock with an access code, and press
+**◉ Live-Check**. A short interactive guide (*Kurzanleitung*) opens on the session page.
+Past sessions are listed under `/beispiele`.
 
 ## Running It Yourself
 
@@ -86,18 +92,18 @@ audio limits, and observability, and [docs/live-workflow.md](docs/live-workflow.
 
 ## Access Codes
 
-Cost-incurring endpoints (sessions, audio/text, claim approval, fact-checking, Quick Check)
-require an `X-Access-Code` header; read-only `GET`s stay open so sessions can be shared by
+Cost-incurring endpoints (creating sessions, live streaming) require an access code — as
+an `X-Access-Code` header, or as a query parameter on the `/api/stream` WebSocket; read-only `GET`s stay open so sessions can be shared by
 link. Codes are seeded on startup from `ACCESS_CODES`:
 
 ```bash
-# name:code  — or  name:code:quick_check_limit  (a number or "unlimited")
-ACCESS_CODES=alice:1234,bob:5678:5,owner:9999:unlimited
+# name:code, comma-separated
+ACCESS_CODES=alice:1234,bob:5678
 ```
 
 The gate is **fail-closed**: if `ACCESS_CODES` is empty, every gated request is rejected —
 always configure it before exposing the backend publicly. Live audio is additionally capped
-per code by `LIVE_AUDIO_LIMIT_MINUTES` (returns HTTP 429 when exhausted).
+per code by `LIVE_AUDIO_LIMIT_MINUTES`; the stream is refused once the budget is used up.
 
 ## Trusted Sources
 
