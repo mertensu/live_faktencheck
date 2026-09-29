@@ -70,7 +70,7 @@ export function HomePage() {
           to="/new"
           icon="🎙"
           title="Live-Faktencheck starten"
-          description="Eine Sendung live mitschneiden und Aussagen in Echtzeit prüfen."
+          description="Eine Sendung live verfolgen und Aussagen in Echtzeit prüfen."
           beta
           unlocked={unlocked}
           onLockedClick={focusUnlock}
