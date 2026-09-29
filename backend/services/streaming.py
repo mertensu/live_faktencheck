@@ -21,7 +21,7 @@ from difflib import SequenceMatcher
 from backend.lang import UNCLEAR_SPEAKER
 from backend.utils import build_fact_check_dict
 from .gate import NO_SPEAKER, split_sentences
-from .transcription import session_keyterms
+from .transcription import assemblyai_hosts, session_keyterms
 
 logger = logging.getLogger(__name__)
 
@@ -764,7 +764,8 @@ class StreamingSession:
             StreamingEvents, Encoding,
         )
 
-        self._client = AsyncStreamingClient(StreamingClientOptions(api_key=api_key))
+        self._client = AsyncStreamingClient(
+            StreamingClientOptions(api_key=api_key, api_host=assemblyai_hosts()[1]))
         loop = asyncio.get_running_loop()
 
         def _on_turn(_client, event):

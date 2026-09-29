@@ -16,6 +16,7 @@ covered in the [README](../README.md#installation); this is the full list.
 
 | Variable | Description | Default |
 |----------|-------------|---------|
+| `ASSEMBLYAI_REGION` | `eu` pins batch + streaming to AssemblyAI's EU endpoints (data residency); unknown values fail at startup of the service | unset (US / edge routing) |
 | `ASSEMBLYAI_SPEECH_MODELS` | Comma-separated model preference (rollback knob) | `universal-3-pro,universal-2` |
 | `MAX_AUDIO_BLOCK_BYTES` | Max accepted audio block size | `26214400` (25 MB) |
 | `LIVE_AUDIO_LIMIT_MINUTES` | Per-code lifetime live-audio budget (minutes) | `5` |

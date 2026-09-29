@@ -70,3 +70,29 @@ class TestTranscribeConfig:
         text, duration = svc.transcribe(b"audio")
         assert text == "ok"   # no utterances -> formatter falls back to transcript.text
         assert duration == 12.5
+
+
+class TestAssemblyaiRegion:
+    def test_unset_keeps_assemblyai_defaults(self, monkeypatch):
+        monkeypatch.delenv("ASSEMBLYAI_REGION", raising=False)
+        assert tr.assemblyai_hosts() == ("https://api.assemblyai.com", "streaming.assemblyai.com")
+
+    def test_eu_pins_both_paths(self, monkeypatch):
+        monkeypatch.setenv("ASSEMBLYAI_REGION", " EU ")
+        assert tr.assemblyai_hosts() == ("https://api.eu.assemblyai.com", "streaming.eu.assemblyai.com")
+
+    def test_unknown_region_fails_loudly(self, monkeypatch):
+        monkeypatch.setenv("ASSEMBLYAI_REGION", "europe")
+        try:
+            tr.assemblyai_hosts()
+        except ValueError as e:
+            assert "europe" in str(e)
+        else:
+            raise AssertionError("expected ValueError")
+
+    def test_service_sets_batch_base_url(self, monkeypatch):
+        monkeypatch.setenv("ASSEMBLYAI_API_KEY", "dummy")
+        monkeypatch.setenv("ASSEMBLYAI_REGION", "eu")
+        monkeypatch.setattr(tr.aai.settings, "base_url", "https://api.assemblyai.com")
+        tr.TranscriptionService()
+        assert tr.aai.settings.base_url == "https://api.eu.assemblyai.com"

@@ -16,6 +16,23 @@ logger = logging.getLogger(__name__)
 # env for easy rollback, e.g. ASSEMBLYAI_SPEECH_MODELS="universal-2".
 DEFAULT_SPEECH_MODELS = "universal-3-pro,universal-2"
 
+# Data residency: ASSEMBLYAI_REGION="eu" pins batch and streaming to AssemblyAI's EU
+# endpoints (audio and transcripts stay in the EU). Unset = AssemblyAI's defaults
+# (batch: US, streaming: edge routing). Same API key for all regions.
+_REGION_HOSTS = {
+    "": ("https://api.assemblyai.com", "streaming.assemblyai.com"),
+    "eu": ("https://api.eu.assemblyai.com", "streaming.eu.assemblyai.com"),
+}
+
+
+def assemblyai_hosts() -> tuple[str, str]:
+    """(batch base_url, streaming api_host) for ASSEMBLYAI_REGION. Raises on an
+    unknown region rather than silently falling back to the US."""
+    region = os.getenv("ASSEMBLYAI_REGION", "").strip().lower()
+    if region not in _REGION_HOSTS:
+        raise ValueError(f"Unknown ASSEMBLYAI_REGION={region!r}; use 'eu' or leave unset")
+    return _REGION_HOSTS[region]
+
 
 def clean_keyterms(terms: list[str]) -> list[str]:
     """Trimmed, non-empty, de-duplicated (case-insensitive, order kept)."""
@@ -76,13 +93,15 @@ class TranscriptionService:
             raise ValueError("ASSEMBLYAI_API_KEY environment variable not set")
 
         aai.settings.api_key = api_key
+        aai.settings.base_url = assemblyai_hosts()[0]
         self.speech_models = [
             m.strip()
             for m in os.getenv("ASSEMBLYAI_SPEECH_MODELS", DEFAULT_SPEECH_MODELS).split(",")
             if m.strip()
         ]
 
-        logger.info(f"TranscriptionService initialized (speech_models={self.speech_models})")
+        logger.info(f"TranscriptionService initialized (speech_models={self.speech_models}, "
+                    f"base_url={aai.settings.base_url})")
 
     def _build_config(self, keyterms: list[str] | None) -> aai.TranscriptionConfig:
         """Build a per-call config. keyterms is added only when non-empty
