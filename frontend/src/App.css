@@ -2576,8 +2576,8 @@
 
 /* One chat bubble per run of lines from the same speaker; light tint per speaker. */
 .live-bubble {
-  width: fit-content;
-  max-width: min(85%, 60rem);
+  width: min(85%, 60rem);
+  box-sizing: border-box;
   margin: 0 0 0.65rem;
   padding: 0.45rem 0.8rem 0.55rem;
   border-radius: 4px 14px 14px 14px;
@@ -3074,7 +3074,7 @@
 .live-tutorial-body p { margin: 0 0 0.6rem; font-size: 0.95rem; }
 .live-tutorial-task { padding: 0.5rem 0.75rem; border-left: 3px solid #2563eb; border-radius: 4px; background: #fff; }
 .live-tutorial-body .live-transcript { margin: 0.9rem 0; padding: 0.9rem 0.9rem 0.3rem; border: 1px dashed var(--border-medium); border-radius: 10px; background: #fff; }
-.live-tutorial-body .live-bubble { max-width: 92%; }
+.live-tutorial-body .live-bubble { width: 92%; }
 .live-tutorial-done { margin: 0 0 0.6rem; padding: 0.5rem 0.75rem; border-radius: 8px; background: var(--verdict-true-bg); color: #166534; font-size: 0.9rem; }
 .live-tutorial-done p { margin: 0 0 0.4rem; }
 .live-tutorial-reset { padding: 0; border: 0; background: none; color: #166534; font: inherit; font-size: 0.85rem; font-weight: 600; text-decoration: underline; cursor: pointer; }
