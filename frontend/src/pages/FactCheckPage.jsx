@@ -35,8 +35,11 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
   const showLiveTranscript = !isViewer && (
     isLive || liveStream.transcript.length > 0 || liveStream.claims.length > 0
   )
-  // The live-check guide opens every time an operator opens the page, before the show starts.
-  const [tutorialOpen, setTutorialOpen] = useState(!isViewer)
+  // The live-check guide opens every time an operator opens a session that has no
+  // results yet (before the show starts) — not when reopening a finished check.
+  // Decided once, after the first results fetch, so it doesn't flash open.
+  const [tutorialOpen, setTutorialOpen] = useState(false)
+  const tutorialDecidedRef = useRef(false)
   const closeTutorial = useCallback(() => setTutorialOpen(false), [])
 
   // Load episode configuration from backend
@@ -82,6 +85,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
   useEffect(() => {
     let isMounted = true
     let currentController = null
+    tutorialDecidedRef.current = false
 
     const fetchFactChecks = async () => {
       const controller = new AbortController()
@@ -118,7 +122,12 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
 
         const data = await safeJsonParse(response, 'Error loading fact-checks')
         debug.log(`Loaded fact-checks (Live): ${data.length}`, data)
-        setFactChecks(data.filter((fc) => fc.status !== 'discarded'))
+        const visible = data.filter((fc) => fc.status !== 'discarded')
+        setFactChecks(visible)
+        if (!tutorialDecidedRef.current) {
+          tutorialDecidedRef.current = true
+          if (!isViewer && visible.length === 0) setTutorialOpen(true)
+        }
         pollFailuresRef.current = 0
         setBackendError(null)  // Clear error on success
       } catch (error) {
@@ -154,7 +163,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
       if (currentController) currentController.abort()
       clearInterval(interval)
     }
-  }, [episodeKey])
+  }, [episodeKey, isViewer])
 
   // What sits below the header when no live transcript is showing:
   // - viewer: the results stream, or a "starts soon" note until the first result
