@@ -73,7 +73,8 @@ export function NewSessionPage() {
             <h1>Wer spricht und worum geht es?</h1>
             <p className="wizard-hint">
               Namen sind optional – ohne Namen bleiben die Sprecher:innen <strong>Sprecher A/B/C</strong>.
-              Die Partei hilft, Aussagen wie „meine Partei hat …“ richtig einzuordnen. Wessen Aussagen
+              Partei oder Organisation der Teilnehmer:innen helfen der KI, Aussagen besser einzuordnen
+              (z. B. „meine Partei hat …“). Wessen Aussagen
               nicht geprüft werden sollen (z. B. Moderation), markierst du mit „Aussagen nicht prüfen“ (Name dafür nötig).
             </p>
             {state.people.map((p, i) => (
