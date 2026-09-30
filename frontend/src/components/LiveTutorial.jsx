@@ -81,16 +81,17 @@ function NamesStep() {
     <>
       <p>
         Das System hört nur, dass <em>verschiedene</em> Stimmen sprechen, und nennt sie
-        Sprecher A, B, … <strong>Wer das ist, sagst du.</strong> Es rät nie einen Namen.
+        Sprecher A, B, … <strong>Deine Aufgabe</strong> ist es daher, jede Stimme einmal der
+        richtigen Person zuzuordnen, sobald sie zum ersten Mal spricht.
       </p>
       <p className="live-tutorial-task">
-        Probier es: Klick oben in einer Blase auf <strong>Sprecher A ▾</strong> und wähle {HOST}.
+        Probiere es aus: Klicke oben in einer Sprechblase auf <strong>Sprecher A ▾</strong> und wähle {HOST}.
       </p>
       <LiveTranscript live={live} speakers={SPEAKERS} />
       {named && (
         <Done>
-          Die Zuordnung gilt ab dieser Blase für alles, was diese Stimme danach sagt.
-          Frühere Blasen behalten ihren Namen.
+          Die Zuordnung gilt ab dieser Sprechblase für alles, was diese Stimme danach sagt.
+          Frühere Sprechblasen behalten ihren Namen.
         </Done>
       )}
     </>
@@ -109,8 +110,8 @@ function PassagePractice({ onReset }) {
   return (
     <>
       <p>
-        Ähnliche Stimmen landen manchmal unter einem Buchstaben. Hier steckt {GUEST_C} mit in
-        der Blase von {HOST}.
+        Das System ist nicht perfekt, und so kann es besonders in den ersten Minuten einer
+        Aufnahme vorkommen, dass ähnliche Stimmen unter einem Sprecher landen. Hier steckt {GUEST_C} mit in der Sprechblase von {HOST}.
       </p>
       <p className="live-tutorial-task">
         Markiere mit der Maus ihre Antwort „Ganz anders. … stabil geblieben.“ und wähle im Menü {GUEST_C}. Achte auf
@@ -123,7 +124,7 @@ function PassagePractice({ onReset }) {
             <p>
               ✓ <strong>Haken an:</strong> Auch die spätere Zeile von Sprecher A heißt jetzt {GUEST_C}.
               Richtig, wenn die zwei Stimmen weiter vermischt sind. Spricht {HOST} danach wieder,
-              klick dort auf den Blasennamen und stell es ab da zurück.
+              klick dort auf den Namen der Sprechblase und stell es ab da zurück.
             </p>
           ) : (
             <p>
@@ -159,8 +160,7 @@ function ResultsStep() {
       </div>
       {opened && <Done>So öffnest du im Live-Check jedes Ergebnis.</Done>}
       <p className="live-tutorial-tip">
-        <strong>Starte den Live-Check zu Sendungsbeginn und bleib die ersten Minuten dran.</strong>{' '}
-        Dann sprechen alle zum ersten Mal – wer jetzt früh zuordnet, hat die Namen für den Rest der Sendung.
+        Du kannst nun den Live-Faktencheck starten.
       </p>
     </>
   )
@@ -168,7 +168,7 @@ function ResultsStep() {
 
 const STEPS = [
   { title: 'Namen vergibst du', Body: NamesStep },
-  { title: 'Vermischte Stimmen trennen', Body: PassageStep },
+  { title: 'Korrektur', Body: PassageStep },
   { title: 'Ergebnisse lesen', Body: ResultsStep },
 ]
 

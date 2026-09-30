@@ -23,7 +23,7 @@ describe('LiveTutorial', () => {
     fireEvent.click(screen.getAllByRole('button', { name: /Sprecher A/ })[0])
     fireEvent.click(screen.getByRole('menuitemradio', { name: 'Anna Keller' }))
     expect(bubbleNames(container)).toEqual(['Anna Keller', 'Sprecher B', 'Anna Keller', 'Sprecher B'])
-    expect(screen.getByRole('status').textContent).toMatch(/ab dieser Blase/)
+    expect(screen.getByRole('status').textContent).toMatch(/ab dieser Sprechblase/)
   })
 
   it('shows the difference of the "everything further" checkbox, and resets', () => {
