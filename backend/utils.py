@@ -2,30 +2,13 @@
 Shared utility functions for the backend.
 """
 
-import os
 from datetime import datetime
 from pathlib import Path
-
-
-def auto_check_enabled(session: dict | None) -> bool:
-    """True if auto-checking should run for this session.
-
-    Per-session ``auto_check`` flag OR the global ``AUTO_APPROVE`` env var (kept
-    for tests/dev). ``session`` may be ``None`` when no session row exists.
-    """
-    if session and session.get("auto_check"):
-        return True
-    return os.getenv("AUTO_APPROVE", "false").lower() == "true"
 
 
 def to_dict(obj):
     """Convert Pydantic model to dict, or return as-is if already a dict."""
     return obj.model_dump() if hasattr(obj, "model_dump") else obj
-
-
-def truncate(text: str, max_length: int = 200) -> str:
-    """Truncate text to max_length, appending '...' if truncated."""
-    return text[:max_length] + "..." if len(text) > max_length else text
 
 
 def build_fact_check_dict(

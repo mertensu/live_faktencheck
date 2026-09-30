@@ -1,13 +1,13 @@
 import { useEffect } from 'react'
 
-// Mic input picker driven by the useAudioRecorder hook. The browser hides device
+// Mic input picker driven by the useMicDevices hook. The browser hides device
 // labels/ids until mic permission has been granted, so before that the picker has
 // no real names. Guided flow: the dropdown stays disabled and the user is led to
 // click "Mikrofone laden" first, which requests a one-shot permission and reveals
 // the real device names (e.g. an external mic at a live event). Viewers who never
 // click it are never prompted.
-export function MicSelect({ recorder, className = '', disabled = false }) {
-  const { devices, deviceId, setDeviceId, listDevices } = recorder
+export function MicSelect({ mic, className = '', disabled = false }) {
+  const { devices, deviceId, setDeviceId, listDevices } = mic
 
   // Passive enumerate on mount (no permission prompt).
   useEffect(() => { listDevices() }, [listDevices])

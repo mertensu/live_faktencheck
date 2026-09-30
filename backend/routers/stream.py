@@ -11,7 +11,7 @@ when the operator assigns a diarization label to a guest from that turn on, or `
 
 Auth: header-based ``require_code`` can't run on a WS handshake, so the access code is
 passed as a query param and validated here against the same ``codes`` table. Audio
-budget is metered by connection wall-clock, mirroring the block pipeline.
+budget is metered by connection wall-clock.
 """
 
 import os

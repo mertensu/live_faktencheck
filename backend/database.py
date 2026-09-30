@@ -1,8 +1,8 @@
 """
 SQLite database module for persistent storage.
 
-Uses aiosqlite for async SQLite access. Stores fact-checks and pending claim blocks
-with JSON serialization for complex fields (quellen, claims).
+Uses aiosqlite for async SQLite access. Stores fact-checks, sessions and access
+codes, with JSON serialization for complex fields (quellen, guests).
 """
 
 import json
@@ -17,7 +17,7 @@ DEFAULT_DB_PATH = Path(__file__).parent / "data" / "factcheck.db"
 
 
 class Database:
-    """Async SQLite database for fact-checks and pending claims."""
+    """Async SQLite database for fact-checks, sessions and access codes."""
 
     def __init__(self, db_path: str | Path = DEFAULT_DB_PATH):
         self.db_path = str(db_path)
@@ -66,6 +66,8 @@ class Database:
             CREATE INDEX IF NOT EXISTS idx_fact_checks_speaker_claim
                 ON fact_checks (sprecher, behauptung);
 
+            -- Legacy: written by the removed block pipeline (<= v0.2.0). Kept so
+            -- existing databases keep their rows; nothing reads or writes it now.
             CREATE TABLE IF NOT EXISTS pending_claims_blocks (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 block_id TEXT NOT NULL UNIQUE,
@@ -131,7 +133,8 @@ class Database:
         except Exception:
             pass  # Column already exists
 
-        # Migrations: add Quick Check quota columns to existing codes tables
+        # Migrations: add Quick Check quota columns to existing codes tables.
+        # Quick Check is gone (v0.3.0); the columns stay so existing rows are untouched.
         for migration in [
             "ALTER TABLE codes ADD COLUMN quick_checks_used INTEGER NOT NULL DEFAULT 0",
             "ALTER TABLE codes ADD COLUMN quick_check_limit INTEGER DEFAULT 3",
@@ -267,17 +270,6 @@ class Database:
         await self.db.commit()
         return cursor.rowcount > 0
 
-    async def find_fact_check(
-        self, speaker: str, claim: str
-    ) -> dict | None:
-        """Find a fact-check by speaker + claim text (newest first)."""
-        cursor = await self.db.execute(
-            "SELECT * FROM fact_checks WHERE sprecher = ? AND behauptung = ? ORDER BY id DESC LIMIT 1",
-            (speaker, claim),
-        )
-        row = await cursor.fetchone()
-        return self._row_to_fact_check(row) if row else None
-
     async def count_fact_checks(self) -> int:
         """Return the total number of fact-checks."""
         cursor = await self.db.execute("SELECT COUNT(*) FROM fact_checks")
@@ -406,15 +398,6 @@ class Database:
         await self.db.commit()
         return cursor.rowcount > 0
 
-    async def set_session_auto_check(self, session_id: str, enabled: bool) -> bool:
-        """Set the per-session auto_check flag. Returns True if a row was updated."""
-        cursor = await self.db.execute(
-            "UPDATE sessions SET auto_check = ? WHERE session_id = ?",
-            (int(enabled), session_id),
-        )
-        await self.db.commit()
-        return cursor.rowcount > 0
-
     async def seed_session_if_absent(self, session: dict) -> None:
         """Insert a session only if its session_id does not already exist."""
         existing = await self.get_session(session["session_id"])
@@ -429,20 +412,18 @@ class Database:
         self,
         code: str,
         name: str,
-        quick_check_limit: int | None = 3,
         audio_seconds_limit: int | None = 300,
     ) -> None:
         """Insert an access code (no-op if the code already exists).
 
-        quick_check_limit: lifetime Quick Check cap; None means unlimited.
         audio_seconds_limit: lifetime live-audio cap in seconds; None means unlimited.
         """
         from datetime import datetime
         await self.db.execute(
             "INSERT OR IGNORE INTO codes "
-            "(code, name, active, created_at, quick_check_limit, audio_seconds_limit) "
-            "VALUES (?, ?, 1, ?, ?, ?)",
-            (code, name, datetime.now().isoformat(), quick_check_limit, audio_seconds_limit),
+            "(code, name, active, created_at, audio_seconds_limit) "
+            "VALUES (?, ?, 1, ?, ?)",
+            (code, name, datetime.now().isoformat(), audio_seconds_limit),
         )
         await self.db.commit()
 
@@ -473,14 +454,6 @@ class Database:
         row = await cursor.fetchone()
         return row[0]
 
-    async def increment_quick_checks(self, code: str) -> None:
-        """Increment the lifetime Quick Check counter for a code by 1."""
-        await self.db.execute(
-            "UPDATE codes SET quick_checks_used = quick_checks_used + 1 WHERE code = ?",
-            (code,),
-        )
-        await self.db.commit()
-
     async def increment_audio_seconds(self, code: str, seconds: int) -> None:
         """Add transcribed audio seconds to a code's lifetime counter."""
         await self.db.execute(
@@ -488,100 +461,3 @@ class Database:
             (seconds, code),
         )
         await self.db.commit()
-
-    # =========================================================================
-    # Pending Claims Blocks CRUD
-    # =========================================================================
-
-    async def add_pending_block(self, block: dict) -> int:
-        """Insert a pending claims block. Returns the row ID."""
-        cursor = await self.db.execute(
-            """INSERT INTO pending_claims_blocks
-               (block_id, timestamp, claims_count, claims, status,
-                session_id, source_id, headline, text_preview, info)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-            (
-                block["block_id"],
-                block["timestamp"],
-                block.get("claims_count", len(block.get("claims", []))),
-                json.dumps(block.get("claims", []), ensure_ascii=False),
-                block.get("status", "pending"),
-                block.get("session_id"),
-                block.get("source_id"),
-                block.get("headline"),
-                block.get("text_preview"),
-                block.get("info"),
-            ),
-        )
-        await self.db.commit()
-        return cursor.lastrowid
-
-    async def get_pending_blocks(self, session_id: str | None = None) -> list[dict]:
-        """Return pending blocks, newest first. Optionally filter by session_id."""
-        if session_id:
-            cursor = await self.db.execute(
-                "SELECT * FROM pending_claims_blocks WHERE session_id = ? ORDER BY timestamp DESC",
-                (session_id,),
-            )
-        else:
-            cursor = await self.db.execute(
-                "SELECT * FROM pending_claims_blocks ORDER BY timestamp DESC"
-            )
-        rows = await cursor.fetchall()
-        return [self._row_to_pending_block(row) for row in rows]
-
-    async def get_pending_block_by_id(self, block_id: str) -> dict | None:
-        """Return a single pending block by block_id, or None."""
-        cursor = await self.db.execute(
-            "SELECT * FROM pending_claims_blocks WHERE block_id = ?", (block_id,)
-        )
-        row = await cursor.fetchone()
-        return self._row_to_pending_block(row) if row else None
-
-    async def block_id_exists(self, block_id: str) -> bool:
-        """Check if a block_id already exists."""
-        cursor = await self.db.execute(
-            "SELECT 1 FROM pending_claims_blocks WHERE block_id = ?", (block_id,)
-        )
-        return await cursor.fetchone() is not None
-
-    async def delete_pending_block(self, block_id: str) -> bool:
-        """Delete a pending block by block_id. Returns True if deleted."""
-        cursor = await self.db.execute(
-            "DELETE FROM pending_claims_blocks WHERE block_id = ?", (block_id,)
-        )
-        await self.db.commit()
-        return cursor.rowcount > 0
-
-    async def clear_pending_blocks(self, session_id: str | None = None) -> int:
-        """Delete all pending blocks, optionally filtered by session_id. Returns count deleted."""
-        if session_id:
-            cursor = await self.db.execute(
-                "DELETE FROM pending_claims_blocks WHERE session_id = ?",
-                (session_id,),
-            )
-        else:
-            cursor = await self.db.execute("DELETE FROM pending_claims_blocks")
-        await self.db.commit()
-        return cursor.rowcount
-
-    async def count_pending_blocks(self) -> int:
-        """Return the total number of pending blocks."""
-        cursor = await self.db.execute("SELECT COUNT(*) FROM pending_claims_blocks")
-        row = await cursor.fetchone()
-        return row[0]
-
-    def _row_to_pending_block(self, row: aiosqlite.Row) -> dict:
-        """Convert a database row to a pending block dict with parsed JSON."""
-        return {
-            "block_id": row["block_id"],
-            "timestamp": row["timestamp"],
-            "claims_count": row["claims_count"],
-            "claims": json.loads(row["claims"]),
-            "status": row["status"],
-            "session_id": row["session_id"],
-            "source_id": row["source_id"],
-            "headline": row["headline"],
-            "text_preview": row["text_preview"],
-            "info": row["info"],
-        }

@@ -4,7 +4,7 @@ Streaming session (SG-3): the live fast lane's orchestrator.
 One ``StreamingSession`` per connected browser. It relays PCM audio to AssemblyAI
 Universal-Streaming (v3), collects finalized turns into a rolling window, and — on each
 window — drives the pluggable ``ClaimGate`` and ``FastFactChecker`` autopilot-style,
-writing ``check_depth="fast"`` rows the same way the batch pipeline writes deep ones.
+writing ``check_depth="fast"`` rows into the same ``fact_checks`` table.
 
 The windowing/pipeline logic (``handle_turn`` / ``_flush_window``) takes its
 collaborators by injection so it is unit-testable with no network. The AssemblyAI
@@ -21,7 +21,7 @@ from difflib import SequenceMatcher
 from backend.lang import UNCLEAR_SPEAKER
 from backend.utils import build_fact_check_dict
 from .gate import NO_SPEAKER, split_sentences
-from .transcription import assemblyai_hosts, session_keyterms
+from .transcription import assemblyai_streaming_host, session_keyterms
 
 logger = logging.getLogger(__name__)
 
@@ -793,7 +793,7 @@ class StreamingSession:
         )
 
         self._client = AsyncStreamingClient(
-            StreamingClientOptions(api_key=api_key, api_host=assemblyai_hosts()[1]))
+            StreamingClientOptions(api_key=api_key, api_host=assemblyai_streaming_host()))
         loop = asyncio.get_running_loop()
 
         def _on_turn(_client, event):

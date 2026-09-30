@@ -5,7 +5,7 @@ reads the live API at `https://api.live-faktencheck.de`. There is no local start
 static-JSON export.
 
 **Almost nothing here needs server access.** Deploying is merging a PR; reading production
-data is `scripts/pull-db.sh`; traces are in Logfire; claims are managed through the admin
+data is `scripts/pull-db.sh`; traces are in Logfire; claims are managed through the live
 UI and the API. Shell access exists for operating the machine itself — installing the
 services below, and the rare incident — and is held by maintainers.
 
@@ -64,10 +64,10 @@ PR merged → CI: test + build → ghcr.io/mertensu/live_faktencheck:latest
                           automatic rollback to the previous digest
 ```
 
-A restart drops only in-memory state — most sharply the queue of approved-but-not-yet-
-checked claims (`backend/state.py`); stored fact-checks live in SQLite and survive. So the
-timer does **not** restart into live work: if `/api/health` reports `in_flight > 0` (queued
-claim batches plus blocks still processing) it defers the new image and tries again next tick,
+A restart drops only in-memory state — an open live stream is cut off and loses its
+speaker assignments (`backend/state.py`); stored fact-checks live in SQLite and survive. So
+the timer does **not** restart into live work: if `/api/health` reports `in_flight > 0` (open
+live streams) it defers the new image and tries again next tick,
 landing the deploy in the first real lull. In continuous use there is no single quiet evening
 to aim for, so it waits for a gap instead of a schedule. The wait is capped at
 `DEPLOY_MAX_DEFER` (default 3600s) so a permanently busy system still deploys eventually.
@@ -246,7 +246,7 @@ curl -fsS http://127.0.0.1:5000/api/health
 ```
 
 Two things the image does not change:
-- **Single process.** `backend/state.py` keeps the claim queue and pipeline status in
+- **Single process.** `backend/state.py` keeps the open live streams in
   process memory — no `--workers`, no `--reload`, and no second replica.
 - **The DB stays outside.** `backend/data/` is a volume; the image ships no database.
 
@@ -285,9 +285,9 @@ The old nightly cron has been removed; the previous crontab is saved at
 
 ## Access gate (Phase 3a)
 
-Cost-incurring endpoints (`POST /api/sessions`, `audio-block`, `text-block`,
-`approve-claims`, `fact-checks/resend`, `PUT /api/fact-checks/{id}`, pipeline retrigger)
-require a valid `X-Access-Code` header. Codes live in the `codes` table and are seeded at
+Cost-incurring and destructive endpoints (`POST /api/sessions`,
+`DELETE /api/fact-checks/{id}`) require a valid `X-Access-Code` header; the live stream
+(`/api/stream`, a WebSocket) takes the code as a `code` query parameter instead. Codes live in the `codes` table and are seeded at
 startup from the `ACCESS_CODES` env var **if the table is empty**.
 
 - **Required env** in `/opt/fact_check/.env`:
@@ -300,37 +300,21 @@ startup from the `ACCESS_CODES` env var **if the table is empty**.
   - revocation takes effect immediately (no restart).
 - After editing `.env`, restart: `systemctl restart factcheck-backend`.
 
-### Quick Check quota (Phase Q)
-
-`ACCESS_CODES` entries accept an optional third field — `name:code:limit`:
-- `name:code`            → default cap of 3 lifetime quick checks
-- `name:code:unlimited`  → no cap (use for your own owner code)
-- `name:code:<n>`        → custom cap
-
-The quota lives on the `codes` table (`quick_checks_used` / `quick_check_limit`); deleting
-a quick-check fact-check row does **not** refund quota.
-
-**On the VPS:** the existing live code was seeded before this column existed, so after
-deploying it defaults to a cap of 3. To make the owner code unlimited, either update it
-in place:
-
-    sqlite3 /opt/fact_check/backend/data/factcheck.db "UPDATE codes SET quick_check_limit = NULL WHERE name = '<your-name>';"
-
-or set `ACCESS_CODES=owner:SOME_SECRET:unlimited` in `/opt/fact_check/.env` before the **first**
-seeding of a fresh codes table (seeding is idempotent and will not re-run on a populated table).
-
 ### Live-Audio-Limit (Phase 3b)
 
-Live audio (`POST /api/audio-block`) is metered by **real transcribed seconds** against a
-lifetime cap per code, stored on the `codes` table (`audio_seconds_used` / `audio_seconds_limit`,
-`NULL` = unlimited). This is independent of the Quick Check quota.
+Live audio (`/api/stream`) is metered by **connection seconds** against a lifetime cap per
+code, stored on the `codes` table (`audio_seconds_used` / `audio_seconds_limit`,
+`NULL` = unlimited). A stream is refused once the cap is reached.
 
 - `LIVE_AUDIO_LIMIT_MINUTES` (default `5`) sets the cap applied at **seeding** as
   `audio_seconds_limit = minutes * 60`. Set it in `/opt/fact_check/.env` before the first seed.
-- The `ACCESS_CODES` syntax is **unchanged** (no fourth field). Per-code overrides are DB edits.
+- `ACCESS_CODES` entries accept an optional third field: `name:code:unlimited` seeds that code
+  without a cap (use it for your own owner code). Any other third value is ignored — older
+  entries carried a Quick Check cap there (Quick Check was removed in v0.3.0; its
+  `quick_check_*` columns stay in the table, unused). Per-code overrides are DB edits.
 - **Fail-closed migration:** the migration backfills **existing** codes to `300` s (5 min) — not
   unlimited. After deploy every old code is capped at 5 minutes of live audio.
-- **Owner-code wrinkle (same as Quick Check):** a code already seeded as `unlimited` is **not**
+- **Owner-code wrinkle:** a code already seeded as `unlimited` is **not**
   updated to `NULL` by the idempotent `INSERT OR IGNORE` seed and will sit at the 300 s backfill.
   To make it truly unlimited again:
 
@@ -342,8 +326,6 @@ lifetime cap per code, stored on the `codes` table (`audio_seconds_used` / `audi
 
 - The lifetime counter is deletion-proof: removing fact-checks or sessions does **not** refund
   audio seconds. Reset = DB edit (`UPDATE codes SET audio_seconds_used = 0 WHERE code = '…'`).
-- `MAX_AUDIO_BLOCK_BYTES` (default ~25 MB) bounds a single uploaded block (returns `413`); raise
-  only if legitimate blocks ever exceed it. The browser recorder sends ~60–180 s blocks, well under.
 
 ## Provider budget caps (manual — do this once)
 
@@ -351,7 +333,7 @@ The access gate is the primary control; provider-side spend caps are the outer c
 holds even if a code leaks or a bug loops. Set hard limits + alerts in each dashboard:
 
 - **AssemblyAI** — usage/spend cap + alert (transcription).
-- **Google / Gemini** (AI Studio or Cloud billing) — budget + alert (claim extraction + fact-check).
+- **Google / Gemini** (AI Studio or Cloud billing) — budget + alert (claim gate, reformulation, fast check).
 - **Tavily** — usage cap/alert (web search).
 
 These are operational settings, not enforced in code.

@@ -1,19 +1,15 @@
 """
-Web search tool for the fact-check agent.
+Web search for the fast fact checker.
 
-Wraps tavily-python directly (PydanticAI tool). Restricts results to trusted
-German domains and retries without the date filter when a date-filtered search
-returns nothing — the behavior previously provided by FallbackSearchTool.
+Wraps tavily-python directly and restricts results to trusted German domains.
 """
 
 import os
-import logging
 
 from tavily import AsyncTavilyClient
 
 from .trusted_domains import TRUSTED_DOMAINS
 
-logger = logging.getLogger(__name__)
 
 _client: AsyncTavilyClient | None = None
 
@@ -28,39 +24,17 @@ def _get_client() -> AsyncTavilyClient:
     return _client
 
 
-async def tavily_search(
-    query: str,
-    start_date: str | None = None,
-    end_date: str | None = None,
-    search_depth: str | None = None,
-) -> dict:
+async def tavily_search(query: str, search_depth: str = "basic") -> dict:
     """Search the web to verify a claim against trusted German sources.
 
     Args:
         query: The search query, in German.
-        start_date: Optional earliest publication date, format YYYY-MM-DD.
-        end_date: Optional latest publication date, format YYYY-MM-DD.
-        search_depth: Optional depth override (e.g. "fast"/"basic"/"advanced").
-            Defaults to the TAVILY_SEARCH_DEPTH env var, then "basic". Lets the fast
-            lane request a low-latency tier without mutating global env state.
+        search_depth: Tavily tier ("fast"/"basic"/"advanced").
     """
     client = _get_client()
-    kwargs: dict = {
-        "search_depth": search_depth or os.getenv("TAVILY_SEARCH_DEPTH", "basic"),
-        "max_results": int(os.getenv("TAVILY_MAX_RESULTS", "5")),
-        "include_domains": TRUSTED_DOMAINS,
-    }
-    if start_date:
-        kwargs["start_date"] = start_date
-    if end_date:
-        kwargs["end_date"] = end_date
-
-    result = await client.search(query, **kwargs)
-
-    if not result.get("results") and (start_date or end_date):
-        logger.info("Empty results with date filter — retrying without date filter: '%s'", query)
-        kwargs.pop("start_date", None)
-        kwargs.pop("end_date", None)
-        result = await client.search(query, **kwargs)
-
-    return result
+    return await client.search(
+        query,
+        search_depth=search_depth,
+        max_results=int(os.getenv("TAVILY_MAX_RESULTS", "5")),
+        include_domains=TRUSTED_DOMAINS,
+    )

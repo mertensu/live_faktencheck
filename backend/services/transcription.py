@@ -1,33 +1,23 @@
 """
-Transcription Service using AssemblyAI
+AssemblyAI helpers for the live streaming lane: region endpoints and keyterms.
 
-Handles audio transcription with speaker detection for German language.
+The streaming client itself lives in services/streaming.py.
 """
 
 import os
-import logging
 
-import assemblyai as aai
-
-logger = logging.getLogger(__name__)
-
-# Universal-3 Pro (with universal-2 as automatic fallback) is a promptable speech
-# model: it accepts keyterms to boost domain-specific proper nouns. Overridable via
-# env for easy rollback, e.g. ASSEMBLYAI_SPEECH_MODELS="universal-2".
-DEFAULT_SPEECH_MODELS = "universal-3-pro,universal-2"
-
-# Data residency: ASSEMBLYAI_REGION="eu" pins batch and streaming to AssemblyAI's EU
-# endpoints (audio and transcripts stay in the EU). Unset = AssemblyAI's defaults
-# (batch: US, streaming: edge routing). Same API key for all regions.
+# Data residency: ASSEMBLYAI_REGION="eu" pins streaming to AssemblyAI's EU endpoint
+# (audio and transcripts stay in the EU). Unset = AssemblyAI's default (edge
+# routing). Same API key for all regions.
 _REGION_HOSTS = {
-    "": ("https://api.assemblyai.com", "streaming.assemblyai.com"),
-    "eu": ("https://api.eu.assemblyai.com", "streaming.eu.assemblyai.com"),
+    "": "streaming.assemblyai.com",
+    "eu": "streaming.eu.assemblyai.com",
 }
 
 
-def assemblyai_hosts() -> tuple[str, str]:
-    """(batch base_url, streaming api_host) for ASSEMBLYAI_REGION. Raises on an
-    unknown region rather than silently falling back to the US."""
+def assemblyai_streaming_host() -> str:
+    """Streaming api_host for ASSEMBLYAI_REGION. Raises on an unknown region rather
+    than silently falling back to the US."""
     region = os.getenv("ASSEMBLYAI_REGION", "").strip().lower()
     if region not in _REGION_HOSTS:
         raise ValueError(f"Unknown ASSEMBLYAI_REGION={region!r}; use 'eu' or leave unset")
@@ -82,102 +72,3 @@ def keyterms_from_guests(guests: list[str]) -> list[str]:
             seen.add(term)
             deduped.append(term)
     return deduped[:1000]
-
-
-class TranscriptionService:
-    """Service for transcribing audio using AssemblyAI."""
-
-    def __init__(self):
-        api_key = os.getenv("ASSEMBLYAI_API_KEY")
-        if not api_key:
-            raise ValueError("ASSEMBLYAI_API_KEY environment variable not set")
-
-        aai.settings.api_key = api_key
-        aai.settings.base_url = assemblyai_hosts()[0]
-        self.speech_models = [
-            m.strip()
-            for m in os.getenv("ASSEMBLYAI_SPEECH_MODELS", DEFAULT_SPEECH_MODELS).split(",")
-            if m.strip()
-        ]
-
-        logger.info(f"TranscriptionService initialized (speech_models={self.speech_models}, "
-                    f"base_url={aai.settings.base_url})")
-
-    def _build_config(self, keyterms: list[str] | None) -> aai.TranscriptionConfig:
-        """Build a per-call config. keyterms is added only when non-empty
-        (an empty keyterms_prompt would needlessly trigger the paid add-on)."""
-        kwargs = dict(
-            speech_models=self.speech_models,
-            language_code="de",
-            speaker_labels=True,
-        )
-        if keyterms:
-            kwargs["keyterms_prompt"] = keyterms
-        return aai.TranscriptionConfig(**kwargs)
-
-    def transcribe(self, audio_data: bytes, keyterms: list[str] | None = None) -> tuple[str, float]:
-        """
-        Transcribe audio data and return formatted transcript with speaker labels.
-
-        Args:
-            audio_data: Raw audio bytes (WebM/Opus, MP4, or WAV — format auto-detected)
-            keyterms: Optional proper nouns (names, parties/orgs) to boost recognition
-
-        Returns:
-            Tuple of (formatted transcript, audio_duration_seconds)
-
-        Raises:
-            Exception: If transcription fails
-        """
-        logger.info(f"Starting transcription of {len(audio_data)} bytes ({len(keyterms or [])} keyterms)")
-
-        # AssemblyAI SDK handles upload and polling automatically
-        transcript = aai.Transcriber().transcribe(audio_data, self._build_config(keyterms))
-        self._raise_on_error(transcript)
-
-        formatted = self._format_transcript(transcript)
-        duration = float(transcript.audio_duration or 0.0)
-        logger.info(f"Transcription completed: {len(formatted)} characters, {duration:.1f}s audio")
-        return formatted, duration
-
-    def transcribe_file(self, file_path: str, keyterms: list[str] | None = None) -> tuple[str, float]:
-        """
-        Transcribe audio from a file path.
-
-        Args:
-            file_path: Path to audio file
-            keyterms: Optional proper nouns to boost recognition
-
-        Returns:
-            Tuple of (formatted transcript, audio_duration_seconds)
-        """
-        logger.info(f"Transcribing file: {file_path}")
-
-        transcript = aai.Transcriber().transcribe(file_path, self._build_config(keyterms))
-        self._raise_on_error(transcript)
-        return self._format_transcript(transcript), float(transcript.audio_duration or 0.0)
-
-    def _raise_on_error(self, transcript: aai.Transcript) -> None:
-        if transcript.status == aai.TranscriptStatus.error:
-            error_msg = f"Transcription failed: {transcript.error}"
-            logger.error(error_msg)
-            raise Exception(error_msg)
-
-    def _format_transcript(self, transcript: aai.Transcript) -> str:
-        """
-        Format transcript with speaker labels.
-
-        Args:
-            transcript: AssemblyAI transcript object
-
-        Returns:
-            Formatted string with "Sprecher X: text" format
-        """
-        if not transcript.utterances:
-            # Fallback if no speaker detection
-            logger.warning("No utterances found, returning raw text")
-            return transcript.text or ""
-
-        return "\n".join(
-            f"Sprecher {u.speaker}: {u.text}" for u in transcript.utterances
-        )

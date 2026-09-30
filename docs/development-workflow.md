@@ -33,13 +33,27 @@ ACCESS_CODES=name:code         # Access gate, comma-separated; fail-closed if em
 
 ```bash
 # Start backend + frontend (no tunnel)
-./start_dev.sh atalay-2026-02-09   # inherits Atalay's speakers and config
+./start_dev.sh atalay-2026-02-09   # an episode from backend/config.py (speakers, context)
 ```
 
-Open the UI at **http://localhost:3000**, unlock with an access code, and (in **Review** mode, or switch to **Pro**) click "Aufnahme starten" to start the browser mic recorder.
+Open **http://localhost:3000/atalay-2026-02-09**, unlock with an access code, and click
+**◉ Live-Check** in the header to stream the browser mic. Claims are gated and checked
+automatically and appear as marks in the live transcript. Sessions created in the wizard
+(**/new**) work the same way.
 
-- Review and approve extracted claims in **Review** or **Pro** mode
-- Approve claims → fact-checking runs automatically
-- Results visible locally only — nothing appears on the public domain
+Results are visible locally only — nothing appears on the public domain. Stop with Ctrl-C
+or kill the backend/frontend processes.
 
-Stop with Ctrl-C in each terminal.
+---
+
+## Tests, lint, build
+
+```bash
+uv run pytest backend/tests          # backend unit tests (no API keys, no network)
+uv run ruff check backend/           # lint
+cd frontend && bun run test          # frontend unit tests (vitest)
+cd frontend && bun run build         # must pass before committing frontend changes
+```
+
+The backend tests mock every model (`ALLOW_MODEL_REQUESTS=False`), so an accidental real
+LLM call fails loudly. Real-API measurements live in `benchmarks/`, not in the test suite.
