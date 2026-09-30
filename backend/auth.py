@@ -11,7 +11,6 @@ import os
 from fastapi import Header, HTTPException
 
 
-DEFAULT_QUICK_CHECK_LIMIT = 3
 DEFAULT_LIVE_AUDIO_LIMIT_MINUTES = 5
 
 
@@ -22,17 +21,15 @@ def live_audio_limit_seconds() -> int:
     return minutes * 60
 
 
-def parse_access_codes(raw: str | None) -> list[tuple[str, str, int | None]]:
-    """Parse ``ACCESS_CODES`` into ``[(name, code, quick_check_limit), ...]``.
+def parse_access_codes(raw: str | None) -> list[tuple[str, str, bool]]:
+    """Parse ``ACCESS_CODES`` into ``[(name, code, unlimited), ...]``.
 
-    Each entry is ``name:code`` with an optional third field:
-      - absent            -> default cap (DEFAULT_QUICK_CHECK_LIMIT)
-      - ``unlimited``     -> None (no cap)
-      - a positive int    -> that cap
-      - anything else     -> default cap
-    Malformed entries (no colon, empty name or code) are silently skipped.
+    Each entry is ``name:code`` with an optional third field: ``unlimited`` lifts
+    the live-audio cap for that code; anything else is ignored (older entries
+    carried a Quick Check cap there). Malformed entries (no colon, empty name or
+    code) are silently skipped.
     """
-    entries: list[tuple[str, str, int | None]] = []
+    entries: list[tuple[str, str, bool]] = []
     if not raw:
         return entries
     for entry in raw.split(","):
@@ -43,14 +40,8 @@ def parse_access_codes(raw: str | None) -> list[tuple[str, str, int | None]]:
         name, code = parts[0], parts[1]
         if not name or not code:
             continue
-        limit: int | None = DEFAULT_QUICK_CHECK_LIMIT
-        if len(parts) >= 3:
-            third = parts[2].lower()
-            if third == "unlimited":
-                limit = None
-            elif third.isdigit():
-                limit = int(third)
-        entries.append((name, code, limit))
+        unlimited = len(parts) >= 3 and parts[2].lower() == "unlimited"
+        entries.append((name, code, unlimited))
     return entries
 
 
@@ -66,12 +57,11 @@ async def seed_codes_from_env(db, raw: str | None = None) -> int:
         return 0
     entries = parse_access_codes(raw)
     audio_limit = live_audio_limit_seconds()
-    for name, code, limit in entries:
+    for name, code, unlimited in entries:
         await db.add_code(
             code,
             name,
-            quick_check_limit=limit,
-            audio_seconds_limit=None if limit is None else audio_limit,
+            audio_seconds_limit=None if unlimited else audio_limit,
         )
     return len(entries)
 

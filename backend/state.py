@@ -1,41 +1,19 @@
 """
 Shared state for the fact-check backend.
 
-Runtime state (episode, transcript context) and database reference.
-Fact-checks and pending claims are stored in SQLite via the Database class.
+Runtime state and database reference. Fact-checks and sessions are stored in
+SQLite via the Database class.
 """
-
-import asyncio
 
 from backend.database import Database
 
-# Runtime state (not persisted)
-# Resolved transcript tail per session, used as cross-block context for the next
-# block. Keyed by session_id so concurrent sessions never bleed transcript
-# context into each other.
-last_transcript_tails: dict[str, str | None] = {}
-
-# Lock for concurrent access
-processing_lock = asyncio.Lock()
-
 # Database instance (set during app lifespan)
 db: Database | None = None
-
-# Pipeline event tracking (in-memory, not persisted)
-# schema per entry: { block_id, status, started_at, session_id, audio_file, message }
-# status values: "processing" | "slow" | "timeout" | "error" | "done"
-pipeline_events: dict[str, dict] = {}
 
 # Live streaming sessions (in-memory, not persisted). Keyed by the WebSocket
 # connection so the /api/stream endpoint can look up and tear down its session.
 # Values are backend.services.streaming.StreamingSession instances.
 streaming_sessions: dict[str, object] = {}
-
-# Claim processing queue (batches enqueued by approve_claims, processed by queue_worker)
-claim_queue: asyncio.Queue = asyncio.Queue()
-
-# Reference to the running queue worker task (set during lifespan startup)
-queue_worker_task: asyncio.Task | None = None
 
 
 def get_db() -> Database:
@@ -43,5 +21,3 @@ def get_db() -> Database:
     if db is None:
         raise RuntimeError("Database not initialized. Is the app lifespan running?")
     return db
-
-

@@ -10,38 +10,14 @@ covered in the [development workflow](development-workflow.md#setup); this is th
 | `ASSEMBLYAI_API_KEY` | AssemblyAI key for transcription |
 | `GEMINI_API_KEY` / `GOOGLE_API_KEY` | Google Gemini key |
 | `TAVILY_API_KEY` | Tavily key for web search |
-| `ACCESS_CODES` | Access-code seeds, `name:code[:limit]` (gate is fail-closed; required for a gated/public backend) |
+| `ACCESS_CODES` | Access-code seeds, `name:code[:unlimited]`; `unlimited` lifts the live-audio cap (gate is fail-closed; required for a gated/public backend) |
 
 ## Transcription
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `ASSEMBLYAI_REGION` | `eu` pins batch + streaming to AssemblyAI's EU endpoints (data residency); unknown values fail at startup of the service | unset (US / edge routing) |
-| `ASSEMBLYAI_SPEECH_MODELS` | Comma-separated model preference (rollback knob) | `universal-3-pro,universal-2` |
-| `MAX_AUDIO_BLOCK_BYTES` | Max accepted audio block size | `26214400` (25 MB) |
+| `ASSEMBLYAI_REGION` | `eu` pins streaming to AssemblyAI's EU endpoint (data residency); unknown values fail when a stream starts | unset (edge routing) |
 | `LIVE_AUDIO_LIMIT_MINUTES` | Per-code lifetime live-audio budget (minutes) | `5` |
-
-## Models
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `GEMINI_MODEL_CLAIM_EXTRACTION` | Model for claim extraction | `gemini-2.5-flash` |
-| `GEMINI_MODEL_FACT_CHECKER` | Model for fact-checking | `gemini-2.5-pro` |
-| `GEMINI_MODEL_FACT_CHECKER_FALLBACK` | Fallback fact-checker model | `gemini-3-flash-preview` |
-| `GEMINI_MODEL_SELF_CRITIQUE` | Model for the self-critique pass | `gemini-2.5-flash` |
-| `SELF_CRITIQUE_ENABLED` | Run the self-critique pass | `true` |
-
-## Fact-checking behaviour
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `FACT_CHECK_RECURSION_LIMIT` | Max agent model requests per claim | `35` |
-| `FACT_CHECK_PARALLEL` | Fact-check claims in a batch concurrently | `false` |
-| `FACT_CHECK_MAX_WORKERS` | Concurrent fact-checks within a batch | `5` |
-| `FACT_CHECK_MAX_CONCURRENCY` | Concurrent approval batches | `2` |
-| `TAVILY_SEARCH_DEPTH` | `basic` or `advanced`, applied to every search | `basic` |
-| `TAVILY_MAX_RESULTS` | Results per search | `5` |
-| `AUTO_APPROVE` | Fallback auto-approve when a session has no per-session setting | `false` |
 
 ## Live lane (streaming)
 
@@ -60,16 +36,18 @@ covered in the [development workflow](development-workflow.md#setup); this is th
 | `GEMINI_MODEL_REFORMULATE` / `GEMINI_THINKING_REFORMULATE` | Reformulator model + thinking level | `gemini-3.6-flash` / `low` |
 | `REFORMULATE_CONTEXT_SENTENCES` | Preceding sentences the reformulator sees | `4` |
 | `GEMINI_MODEL_FAST_CHECK` / `GEMINI_THINKING_FAST_CHECK` | Fast-check synthesis model + thinking level | `gemini-3.6-flash` / `low` |
+| `GEMINI_MODEL_FACT_CHECKER_FALLBACK` | Second Gemini model for the fast check, tried before the cross-provider tier; empty skips it | `gemini-3-flash-preview` |
 | `FAST_SEARCH_MAX_QUERIES` | Parallel Tavily searches per claim | `5` |
 | `FAST_TAVILY_SEARCH_DEPTH` | Tavily depth for the fast check | `basic` |
 | `FAST_SNIPPET_CHARS` | Characters kept per search hit | `1200` |
+| `TAVILY_MAX_RESULTS` | Results per search | `5` |
 
 ## Cross-provider fallback
 
 To survive a full Google outage (downtime, quota, auth) mid-broadcast, `build_model()` in
 `backend/services/llm_base.py` appends a **non-Google** model as the last tier — Claude via
-Requesty, EU-hosted. Both the fact-checker and claim extraction run
-`gemini-2.5-pro → claude-opus-4-8@eu`.
+Requesty, EU-hosted. Every Gemini call in the live lane (window gate, reformulator, fast
+check) falls through to `claude-opus-4-8@eu` when Google fails.
 
 It engages only when `REQUESTY_API_KEY` is set; without it the pipeline runs Google-only
 and stays fully functional. That is why `.env.example` leaves the key commented out — a
@@ -84,8 +62,9 @@ Google hiccup into a confusing auth error.
 | `REQUESTY_BASE_URL` | Requesty endpoint | `https://router.requesty.ai/v1` |
 
 Production leaves `GEMINI_MODEL_FACT_CHECKER_FALLBACK` **empty** on purpose: it skips the
-weak Gemini-Flash intermediate step so the fact-checker falls straight through to the
-cross-provider tier.
+intermediate Gemini step so the fast check falls straight through to the cross-provider
+tier. (The name predates the removal of the deep checker; it now only affects the fast
+check.)
 
 ## Observability & frontend
 

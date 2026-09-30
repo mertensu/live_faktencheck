@@ -1,141 +1,43 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { sendAudioBlock, setSessionAutoCheck, approveClaims, discardClaims } from './api'
+import { fetchFactChecks, openStreamUrl } from './api'
 
-describe('sendAudioBlock', () => {
-  beforeEach(() => {
-    localStorage.clear()
-    global.fetch = vi.fn()
-  })
-  afterEach(() => {
-    vi.restoreAllMocks()
-  })
-
-  it('POSTs multipart form data with audio + session_id and no JSON content-type', async () => {
-    localStorage.setItem('fc_access_code', 'SECRET')
-    global.fetch.mockResolvedValue({
-      ok: true,
-      headers: { get: () => 'application/json' },
-      text: async () => JSON.stringify({ block_id: 'block_1' }),
-      url: '', status: 202,
-    })
-    const blob = new Blob(['xx'], { type: 'audio/webm' })
-
-    const result = await sendAudioBlock('sess-42', blob)
-
-    expect(global.fetch).toHaveBeenCalledTimes(1)
-    const [url, opts] = global.fetch.mock.calls[0]
-    expect(url).toMatch(/\/api\/audio-block$/)
-    expect(opts.method).toBe('POST')
-    expect(opts.headers['X-Access-Code']).toBe('SECRET')
-    expect(opts.headers['Content-Type']).toBeUndefined()
-    expect(opts.body).toBeInstanceOf(FormData)
-    expect(opts.body.get('session_id')).toBe('sess-42')
-    expect(opts.body.get('audio')).toBeInstanceOf(Blob)
-    expect(result).toEqual({ block_id: 'block_1' })
-  })
-
-  it('throws on a non-ok response', async () => {
-    global.fetch.mockResolvedValue({
-      ok: false,
-      headers: { get: () => 'application/json' },
-      text: async () => JSON.stringify({ detail: 'nope' }),
-      url: '', status: 403,
-    })
-    const blob = new Blob(['xx'], { type: 'audio/webm' })
-    await expect(sendAudioBlock('s', blob)).rejects.toThrow('nope')
-  })
+const okJson = (body) => ({
+  ok: true, status: 200,
+  headers: { get: () => 'application/json' },
+  text: async () => JSON.stringify(body), url: '',
 })
 
-describe('sendAudioBlock quota handling', () => {
-  beforeEach(() => {
-    localStorage.clear()
-    global.fetch = vi.fn()
-  })
-  afterEach(() => {
-    vi.restoreAllMocks()
-  })
-
-  it('throws a quota-flagged error on 429', async () => {
-    global.fetch.mockResolvedValue({
-      ok: false, status: 429, url: '',
-      headers: { get: () => 'application/json' },
-      text: async () => JSON.stringify({ detail: 'Audio-Kontingent aufgebraucht' }),
-    })
-    await expect(sendAudioBlock('s1', new Blob(['x'])))
-      .rejects.toMatchObject({ isQuota: true })
-  })
-
-  it('returns remaining_seconds on success', async () => {
-    global.fetch.mockResolvedValue({
-      ok: true, status: 202, url: '',
-      headers: { get: () => 'application/json' },
-      text: async () => JSON.stringify({ status: 'processing', block_id: 'b1', remaining_seconds: 180 }),
-    })
-    const data = await sendAudioBlock('s1', new Blob(['x']))
-    expect(data.remaining_seconds).toBe(180)
-  })
-})
-
-describe('claim + auto-check helpers', () => {
+describe('fetchFactChecks', () => {
   beforeEach(() => { localStorage.clear(); global.fetch = vi.fn() })
   afterEach(() => { vi.restoreAllMocks() })
 
-  const okJson = (body) => ({
-    ok: true, status: 200,
-    headers: { get: () => 'application/json' },
-    text: async () => JSON.stringify(body), url: '',
-  })
-
-  it('setSessionAutoCheck POSTs {enabled} with auth header', async () => {
+  it('GETs the session-scoped fact-checks with the access code attached', async () => {
     localStorage.setItem('fc_access_code', 'SECRET')
-    global.fetch.mockResolvedValue(okJson({ auto_check: true }))
+    global.fetch.mockResolvedValue(okJson([{ id: 1 }]))
 
-    const res = await setSessionAutoCheck('sess-1', true)
+    const res = await fetchFactChecks('sess 1')
 
     const [url, opts] = global.fetch.mock.calls[0]
-    expect(url).toMatch(/\/api\/sessions\/sess-1\/auto-check$/)
-    expect(opts.method).toBe('POST')
+    expect(url).toMatch(/\/api\/fact-checks\?session_id=sess%201$/)
     expect(opts.headers['X-Access-Code']).toBe('SECRET')
-    expect(JSON.parse(opts.body)).toEqual({ enabled: true })
-    expect(res).toEqual({ auto_check: true })
+    expect(res).toEqual([{ id: 1 }])
   })
 
-  it('setSessionAutoCheck throws on non-ok', async () => {
-    global.fetch.mockResolvedValue({
-      ok: false, status: 403, headers: { get: () => 'application/json' },
-      text: async () => JSON.stringify({ detail: 'nope' }), url: '',
-    })
-    await expect(setSessionAutoCheck('s', true)).rejects.toThrow('nope')
+  it('returns an empty list on a non-ok response', async () => {
+    global.fetch.mockResolvedValue({ ok: false, status: 500 })
+    expect(await fetchFactChecks('sess-1')).toEqual([])
   })
+})
 
-  it('approveClaims POSTs claims + session_id with auth header', async () => {
+describe('openStreamUrl', () => {
+  beforeEach(() => { localStorage.clear() })
+
+  it('uses ws(s) and carries session + code as query params', () => {
     localStorage.setItem('fc_access_code', 'SECRET')
-    global.fetch.mockResolvedValue(okJson({ status: 'processing' }))
-
-    await approveClaims('sess-1', [{ name: 'A', claim: 'X' }])
-
-    const [url, opts] = global.fetch.mock.calls[0]
-    expect(url).toMatch(/\/api\/approve-claims$/)
-    expect(opts.method).toBe('POST')
-    expect(opts.headers['X-Access-Code']).toBe('SECRET')
-    const body = JSON.parse(opts.body)
-    expect(body.session_id).toBe('sess-1')
-    expect(body.claims).toEqual([{ name: 'A', claim: 'X' }])
-    expect(body.block_id).toMatch(/^swipe_\d+$/)
-  })
-
-  it('discardClaims POSTs claims + session_id', async () => {
-    localStorage.setItem('fc_access_code', 'SECRET')
-    global.fetch.mockResolvedValue(okJson({ status: 'discarded' }))
-
-    await discardClaims('sess-1', [{ name: 'A', claim: 'X' }])
-
-    const [url, opts] = global.fetch.mock.calls[0]
-    expect(url).toMatch(/\/api\/discard-claims$/)
-    expect(opts.method).toBe('POST')
-    expect(opts.headers['X-Access-Code']).toBe('SECRET')
-    const body = JSON.parse(opts.body)
-    expect(body.session_id).toBe('sess-1')
-    expect(body.claims).toEqual([{ name: 'A', claim: 'X' }])
+    const url = new URL(openStreamUrl('sess-1'))
+    expect(url.protocol).toMatch(/^wss?:$/)
+    expect(url.pathname).toBe('/api/stream')
+    expect(url.searchParams.get('session_id')).toBe('sess-1')
+    expect(url.searchParams.get('code')).toBe('SECRET')
   })
 })

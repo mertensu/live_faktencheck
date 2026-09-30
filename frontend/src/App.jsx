@@ -10,7 +10,6 @@ import { AboutPage } from './pages/AboutPage'
 import { TrustedDomainsPage } from './pages/TrustedDomainsPage'
 import { FactCheckPage } from './pages/FactCheckPage'
 import { NewSessionPage } from './pages/NewSessionPage'
-import { QuickCheckPage } from './pages/QuickCheckPage'
 import { ExamplesPage } from './pages/ExamplesPage'
 
 // Scroll to an in-page anchor (e.g. /about#section); BrowserRouter
@@ -33,7 +32,7 @@ function EpisodeRoute() {
 }
 
 // Static top-level routes; anything else is an episode/session page.
-const STATIC_ROUTES = new Set(['/', '/about', '/trusted-domains', '/new', '/pruefen', '/beispiele'])
+const STATIC_ROUTES = new Set(['/', '/about', '/trusted-domains', '/new', '/beispiele'])
 
 function AppInner() {
   const { pathname } = useLocation()
@@ -52,7 +51,6 @@ function AppInner() {
         <Route path="/about" element={<AboutPage />} />
         <Route path="/trusted-domains" element={<TrustedDomainsPage />} />
         <Route path="/new" element={<NewSessionPage />} />
-        <Route path="/pruefen" element={<QuickCheckPage />} />
         <Route path="/beispiele" element={<ExamplesPage />} />
         <Route path="/:episodeKey" element={<EpisodeRoute />} />
       </Routes>

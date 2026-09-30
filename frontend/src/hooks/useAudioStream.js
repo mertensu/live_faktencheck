@@ -76,7 +76,7 @@ export function splitPassages(transcript, parts, speaker) {
 /**
  * Live streaming recorder: captures mic audio as 16 kHz PCM16 via an AudioWorklet and
  * streams it over a WebSocket to the backend (/api/stream), which relays to AssemblyAI
- * and drives the fast fact-check lane. Sibling of useAudioRecorder (the 120s block path).
+ * and drives the fast fact-check lane.
  *
  * Returns live status plus the latest partial transcript and a small event log so the
  * UI can show "Live" activity while verdicts stream into the results feed separately.

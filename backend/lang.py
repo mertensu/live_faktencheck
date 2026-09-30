@@ -16,18 +16,7 @@ CONSISTENCY_DESCRIPTION = """Empirische Konsistenz der Behauptung. Wähle genau 
 - 'niedrig': Die verfügbaren Daten widersprechen der Behauptung — auch wenn die Belege überwiegend widersprechen, aber nicht vollständig schlüssig sind.
 - 'unklar': Widersprüchliche Studien oder Belege ohne klare Richtung; wirklich nicht bestimmbar.
 - 'keine Datenlage': Keine relevanten Daten oder empirischen Belege zu diesem Thema gefunden."""
-EVIDENCE_DESCRIPTION = "Detaillierte und gut strukturierte deutschsprachige Begründung"
 SOURCES_DESCRIPTION = "Primärquellen mit URL und kurzem informativem Titel"
-
-# --- Self-critique response schema ---
-CRITIQUE_CONFIDENCE_DESCRIPTION = (
-    "'high' = Urteil ist klar und gut belegt; eine erneute Recherche würde dasselbe Ergebnis liefern. "
-    "'low' = Urteil ist mit Unsicherheit behaftet; die Begründung ist nicht vollständig schlüssig "
-    "bzw. lässt Spielraum für alternative Interpretationen."
-)
-CRITIQUE_REASON_DESCRIPTION = (
-    "Kurze und prägnante deutschsprachige Erklärung, warum das Urteil (nicht) robust ist. Immer ausfüllen."
-)
 
 # --- Live speakers ---
 # Shown when a live claim cannot be tied to a diarization label — preferred over a name

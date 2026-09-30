@@ -13,14 +13,11 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 EPISODE_KEY=""
-AUTOPILOT=false
 BACKEND_PORT=5000
 FRONTEND_DIR="frontend"
 
 for arg in "$@"; do
-    if [ "$arg" = "--autopilot" ]; then
-        AUTOPILOT=true
-    elif [[ "$arg" == --* ]]; then
+    if [[ "$arg" == --* ]]; then
         echo "Unknown option: $arg"
         exit 1
     else
@@ -30,7 +27,7 @@ done
 
 if [ -z "$EPISODE_KEY" ]; then
     echo "Error: episode key required."
-    echo "Usage: ./start_dev.sh <episode_key> [--autopilot]"
+    echo "Usage: ./start_dev.sh <episode_key>"
     echo "Example: ./start_dev.sh maischberger-2026-01-28"
     exit 1
 fi
@@ -68,11 +65,6 @@ else
     print_warning "No .env file found. Make sure API keys are set!"
 fi
 
-if [ "$AUTOPILOT" = "true" ]; then
-    export AUTO_APPROVE=true
-    print_info "Autopilot mode enabled: claims will be auto-approved (no admin review)"
-fi
-
 # Step 1: Start Backend
 print_header "Step 1: Start Backend"
 
@@ -93,19 +85,8 @@ else
     fi
 fi
 
-# Step 2: Set Episode
-print_header "Step 2: Set Episode"
-
-if curl -s -X POST http://localhost:$BACKEND_PORT/api/set-episode \
-    -H "Content-Type: application/json" \
-    -d "{\"episode_key\": \"$EPISODE_KEY\"}" > /dev/null 2>&1; then
-    print_success "Episode set: $EPISODE_KEY"
-else
-    print_warning "Could not set episode"
-fi
-
-# Step 3: Start Dev Frontend
-print_header "Step 3: Start Dev Frontend"
+# Step 2: Start Dev Frontend
+print_header "Step 2: Start Dev Frontend"
 
 if pgrep -f "vite.*dev" > /dev/null || lsof -ti:3000 > /dev/null 2>&1; then
     print_warning "Dev frontend already running on port 3000"
@@ -140,13 +121,12 @@ echo -e "${GREEN}═════════════════════
 echo ""
 echo -e "${BLUE}📋 Summary:${NC}"
 echo -e "   Episode:   ${YELLOW}$EPISODE_KEY${NC}"
-echo -e "   Autopilot: ${YELLOW}$AUTOPILOT${NC}"
-echo -e "   Backend: ${GREEN}http://localhost:$BACKEND_PORT${NC}"
-echo -e "   Admin UI: ${GREEN}http://localhost:3000${NC}"
+echo -e "   Backend:   ${GREEN}http://localhost:$BACKEND_PORT${NC}"
+echo -e "   Session:   ${GREEN}http://localhost:3000/$EPISODE_KEY${NC}"
 echo ""
 echo -e "${BLUE}📝 Next Steps:${NC}"
-echo -e "   1. Open Admin UI: ${YELLOW}http://localhost:3000${NC}"
-echo -e "   2. In Admin-Modus, click ${YELLOW}Aufnahme starten${NC} in the recording bar to capture mic audio"
+echo -e "   1. Open ${YELLOW}http://localhost:3000/$EPISODE_KEY${NC} and unlock with an access code"
+echo -e "   2. Click ${YELLOW}◉ Live-Check${NC} in the header to stream the mic"
 echo ""
 echo -e "${BLUE}🛑 Stop:${NC}"
 echo -e "   ${YELLOW}Ctrl+C, or kill the backend/frontend processes (ports $BACKEND_PORT/3000)${NC}"

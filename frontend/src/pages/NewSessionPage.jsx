@@ -73,7 +73,8 @@ export function NewSessionPage() {
             <h1>Wer spricht und worum geht es?</h1>
             <p className="wizard-hint">
               Namen sind optional – ohne Namen bleiben die Sprecher:innen <strong>Sprecher A/B/C</strong>.
-              Die Partei hilft, Aussagen wie „meine Partei hat …“ richtig einzuordnen. Wessen Aussagen
+              Partei oder Organisation der Teilnehmer:innen helfen der KI, Aussagen besser einzuordnen
+              (z. B. „meine Partei hat …“). Wessen Aussagen
               nicht geprüft werden sollen (z. B. Moderation), markierst du mit „Aussagen nicht prüfen“ (Name dafür nötig).
             </p>
             {state.people.map((p, i) => (
@@ -96,8 +97,8 @@ export function NewSessionPage() {
               Namen &amp; Begriffe, die fallen könnten <span className="wizard-optional">(optional)</span>
             </label>
             <p className="wizard-hint">
-              Hilft der Transkription, Namen richtig zu schreiben (z. B. „Reiche“ statt „Reichelt“). Die Namen
-              der Personen sind automatisch dabei — ergänze Erwähnte, Institutionen oder Fachbegriffe.
+              Hilft der Transkription, Namen oder Fachbegriffe richtig zu schreiben. Beachte: Namen und Parteien
+              der Teilnehmer:innen sind bereits vermerkt und müssen hier nicht aufgelistet werden.
             </p>
             <input id="wizard-keyterms" className="wizard-input" value={state.keyterms}
                    onChange={(e) => dispatch({ type: 'SET_KEYTERMS', value: e.target.value })}

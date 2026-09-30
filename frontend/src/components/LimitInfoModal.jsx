@@ -33,11 +33,6 @@ export function LimitInfoModal({ info, onClose }) {
 
         <ul className="limit-info-list">
           <li className="limit-info-item">
-            <span className="limit-info-icon" aria-hidden="true">🔎</span>
-            <span className="limit-info-label">Behauptungen prüfen</span>
-            <span className="limit-info-value">{formatLimit(info?.quick_check_limit)}</span>
-          </li>
-          <li className="limit-info-item">
             <span className="limit-info-icon" aria-hidden="true">🎙</span>
             <span className="limit-info-label">Live-Audio</span>
             <span className="limit-info-value">{formatLimit(info?.audio_limit_minutes, 'Min')}</span>

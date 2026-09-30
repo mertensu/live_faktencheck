@@ -40,35 +40,31 @@ clicks. Skip it and claims keep the bare label. Nothing guesses names automatica
 
 ## During the show
 
-The backend runs permanently on the VPS. Open the session dashboard in Admin-Modus to start recording:
+The backend runs permanently on the VPS. Open the session page with your access code
+unlocked:
 
-1. Navigate to **https://live-faktencheck.de/maischberger-2026-03-01** and switch to Admin-Modus.
-2. Choose your block length (60/120/180s, default 120s) in the recording bar.
-3. Click **"Aufnahme starten"** — the browser mic recorder begins capturing audio.
-4. Audio blocks are uploaded automatically; click **"Senden"** to flush the current block early, or **"Stop"** to end the recording.
+1. Navigate to **https://live-faktencheck.de/maischberger-2026-03-01**. The short guide
+   (Kurzanleitung) opens first; close it or reopen it from the header at any time.
+2. Pick the microphone ("Mikrofone laden" reveals the device names) and copy the share link
+   for viewers if needed.
+3. Click **◉ Live-Check** in the header. The browser streams the mic to the backend; the
+   live transcript appears within a second or two.
+4. Assign speakers by clicking a label (`Sprecher A`, …) and picking the guest.
+5. Claims are gated and checked automatically — there is no approval step. Each checked
+   claim is marked in the transcript; click it for the verdict, reasoning and sources.
+6. **Live stoppen** ends the stream. Viewers on the share link see the results stream.
 
-The browser mic captures live speech (in-person conversations or shows playing on speakers) — no virtual audio device needed.
-
-- Review extracted claims at the admin UI (served by the VPS backend at `https://api.live-faktencheck.de`)
-- Approve claims → fact-checking runs automatically
-- Results appear live at **https://live-faktencheck.de/maischberger-2026-03-01**
+The browser mic captures live speech (in-person conversations or shows playing on
+speakers) — no virtual audio device needed. Streaming time counts against the access
+code's live-audio budget (see [`docs/deployment.md`](deployment.md#live-audio-limit-phase-3b)).
 
 ---
 
-## Re-run a claim
+## A result is wrong
 
-The production database lives on the server, so claim management happens against the live
-backend (the admin UI talks to it directly). A deploy ships code only — it never touches
-the database.
-
-To re-run fact-checking on an existing claim (e.g. to overwrite a bad result):
-
-1. Open the live admin UI: **https://live-faktencheck.de/&lt;episode-key&gt;?admin=true**
-   (this talks to the VPS backend) → "Gesendete Claims" is pre-populated from the DB
-2. Click "Re-send" on the claim → it appears in Pending Claims
-3. Approve it → fact-checker runs and overwrites the existing DB record (not a new entry)
-
-The change is live immediately — the frontend reads fact-checks from the API on each poll.
+There is no re-run: the live lane checks each claim once, while it is on air. If a result
+is wrong or misleading, remove it (below). Speaker names can still be corrected during the
+session by reassigning the label.
 
 ---
 
@@ -78,7 +74,9 @@ Through the API — no server access needed. The change appears immediately; the
 reads fact-checks on each poll, so no restart and no deploy.
 
 ```bash
-curl -X DELETE https://api.live-faktencheck.de/api/fact-checks/<ID>
-```
+# find the ID
+curl -s "https://api.live-faktencheck.de/api/fact-checks?session_id=<episode-key>"
 
-The ID is the one shown on the claim in the admin UI.
+# delete it (gated: needs an access code)
+curl -X DELETE -H "X-Access-Code: <code>" https://api.live-faktencheck.de/api/fact-checks/<ID>
+```

@@ -5,22 +5,14 @@ Handles CRUD operations for fact-check results.
 """
 
 import json
-import asyncio
 import logging
 from datetime import datetime
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from backend.auth import require_code
-from backend.models import (
-    FactCheckRequest,
-    ClaimUpdateRequest,
-    ProcessingResponse,
-    FactCheckStoredResponse,
-)
-from backend.utils import to_dict, build_fact_check_dict
-from backend.services.registry import get_fact_checker
+from backend.models import FactCheckRequest, FactCheckStoredResponse
 import backend.state as state
 
 logger = logging.getLogger(__name__)
@@ -77,45 +69,6 @@ async def receive_fact_check(request: FactCheckRequest):
     return FactCheckStoredResponse(status="success", id=fact_check_id)
 
 
-@router.put('/fact-checks/{fact_check_id}', status_code=202, response_model=ProcessingResponse)
-async def update_fact_check(
-    fact_check_id: int,
-    request: ClaimUpdateRequest,
-    background_tasks: BackgroundTasks,
-    code: dict = Depends(require_code),
-):
-    """
-    Re-run fact-check for an existing claim (overwrite result).
-
-    Finds existing fact-check by ID, re-runs fact-checker with updated claim,
-    and replaces the result in the fact_checks list.
-    """
-    # Find existing fact-check
-    db = state.get_db()
-    existing = await db.get_fact_check_by_id(fact_check_id)
-
-    if not existing:
-        raise HTTPException(status_code=404, detail=f"Fact-check {fact_check_id} not found")
-
-    session_id = request.session_id or existing.get("session_id")
-
-    logger.info(f"Re-running fact-check for ID {fact_check_id}: {request.name} - {request.claim[:50]}...")
-
-    # Start fact-checking in background
-    background_tasks.add_task(
-        process_fact_check_update_async,
-        fact_check_id,
-        request.name,
-        request.claim,
-        session_id
-    )
-
-    return ProcessingResponse(
-        status="processing",
-        message=f"Fact-check {fact_check_id} re-run started"
-    )
-
-
 @router.delete('/fact-checks/{fact_check_id}')
 async def delete_fact_check(
     fact_check_id: int,
@@ -134,127 +87,3 @@ async def delete_fact_check(
     logger.info(f"Fact-check {fact_check_id} deleted")
     return {"status": "deleted", "id": fact_check_id}
 
-
-@router.post('/fact-checks/resend', status_code=202, response_model=ProcessingResponse)
-async def resend_fact_check(
-    request: ClaimUpdateRequest,
-    background_tasks: BackgroundTasks,
-    code: dict = Depends(require_code),
-):
-    """
-    Re-run fact-check by matching speaker+claim text.
-
-    Finds existing fact-check by speaker and claim text, re-runs fact-checker,
-    and replaces the result. If no match found, creates a new fact-check.
-    """
-    # Find existing fact-check: by ID first, then by speaker+original_claim, then by speaker+claim
-    db = state.get_db()
-    existing = None
-    existing_id = None
-    if request.fact_check_id:
-        existing = await db.get_fact_check_by_id(request.fact_check_id)
-        if existing:
-            existing_id = existing["id"]
-    if not existing and request.original_claim:
-        existing = await db.find_fact_check(request.name, request.original_claim)
-        if existing:
-            existing_id = existing["id"]
-    if not existing:
-        existing = await db.find_fact_check(request.name, request.claim)
-        if existing:
-            existing_id = existing["id"]
-
-    session_id = request.session_id or (existing.get("session_id") if existing else None)
-
-    if existing:
-        logger.info(f"Re-sending fact-check (matched ID {existing_id}): {request.name} - {request.claim[:50]}...")
-        background_tasks.add_task(
-            process_fact_check_update_async,
-            existing_id,
-            request.name,
-            request.claim,
-            session_id
-        )
-        return ProcessingResponse(
-            status="processing",
-            message=f"Fact-check {existing_id} re-run started (matched by speaker+claim)"
-        )
-    else:
-        # No match - create new fact-check
-        logger.info(f"No existing fact-check found, creating new: {request.name} - {request.claim[:50]}...")
-        background_tasks.add_task(
-            process_new_fact_check_async,
-            request.name,
-            request.claim,
-            session_id
-        )
-        return ProcessingResponse(
-            status="processing",
-            message="New fact-check started (no existing match found)"
-        )
-
-
-async def process_new_fact_check_async(name: str, claim: str, session_id: Optional[str]):
-    """
-    Background task: create a new fact-check.
-    """
-    try:
-        logger.info(f"Creating new fact-check: {name} - {claim[:50]}...")
-
-        fact_checker = get_fact_checker()
-        claims_to_check = [{"name": name, "claim": claim}]
-        session = await state.get_db().get_session(session_id) if session_id else None
-        episode_date = session["date"] if session else None
-
-        if hasattr(fact_checker, 'check_claims_async'):
-            results = await fact_checker.check_claims_async(claims_to_check, episode_date=episode_date)
-        else:
-            results = await asyncio.to_thread(fact_checker.check_claims, claims_to_check, episode_date=episode_date)
-
-        if not results:
-            logger.error("No results from fact-checker for new claim")
-            return
-
-        db = state.get_db()
-        fact_check = build_fact_check_dict(to_dict(results[0]), session_id, speaker_fallback=name, claim_fallback=claim)
-        new_id = await db.add_fact_check(fact_check)
-        logger.info(f"New fact-check created: ID {new_id} - {fact_check['consistency']}")
-
-    except Exception:
-        logger.exception("Error creating new fact-check")
-
-
-async def process_fact_check_update_async(fact_check_id: int, name: str, claim: str, session_id: Optional[str]):
-    """
-    Background task: re-run fact-check and update existing entry.
-    """
-    try:
-        logger.info(f"Re-running fact-check for ID {fact_check_id}...")
-
-        db = state.get_db()
-        await db.update_fact_check(fact_check_id, {"status": "processing"})
-
-        fact_checker = get_fact_checker()
-        claims_to_check = [{"name": name, "claim": claim}]
-        session = await db.get_session(session_id) if session_id else None
-        episode_date = session["date"] if session else None
-
-        # Use async method if available, otherwise wrap sync call
-        if hasattr(fact_checker, 'check_claims_async'):
-            results = await fact_checker.check_claims_async(claims_to_check, episode_date=episode_date)
-        else:
-            results = await asyncio.to_thread(fact_checker.check_claims, claims_to_check, episode_date=episode_date)
-
-        if not results:
-            logger.error(f"No results from fact-checker for ID {fact_check_id}")
-            return
-
-        # Update existing fact-check
-        updated_data = build_fact_check_dict(to_dict(results[0]), session_id, speaker_fallback=name, claim_fallback=claim)
-        await db.update_fact_check(fact_check_id, updated_data)
-        logger.info(f"Fact-check {fact_check_id} updated: {updated_data['consistency']}")
-
-        logger.info(f"Fact-check {fact_check_id} re-run complete.")
-
-    except Exception:
-        logger.exception(f"Error re-running fact-check {fact_check_id}")

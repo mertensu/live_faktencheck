@@ -1,151 +1,149 @@
-# LLM Pipeline — Four Calls, Four Schemas
+# LLM Pipeline — the Live Lane
 
-The AI core of the system consists of four sequential LLM calls, each with a dedicated prompt and input schema. They are strictly separated because they solve fundamentally different problems and require different models, output formats, and failure modes.
+The AI core is a streaming pipeline: audio is transcribed as it is spoken, each few
+sentences pass a claim gate, and every claim that gets through is fact-checked with one
+round of parallel searches and a single synthesis call. There is no human approval step
+and no multi-step research loop: a result has to land while the topic is still on air.
 
 ```
-Transcript (raw, with "Sprecher A / B")
+Browser mic (16 kHz PCM over WebSocket /api/stream)
         │
         ▼
-[1] Speaker Label Resolution      ← gemini-2.5-flash, structured JSON output
-        │  resolved transcript
+AssemblyAI Universal-Streaming ─── live transcript, diarization labels (A, B, …)
+        │  settled sentences, grouped into small windows
         ▼
-[2] Claim Extraction              ← gemini-2.5-flash, structured JSON output
-        │  list of claims
+[1] Claim gate ─────────────────── is there a verifiable, relevant factual claim?
+        │   CLAIM_GATE=extractor (default): one flash-lite call decides and extracts
+        │   CLAIM_GATE=jev: Jev scores each sentence, then [1b] reformulates the hits
         ▼
-   Human Review (Admin UI)
-        │  approved claims
+[2] Fast check ─────────────────── parallel Tavily searches → one synthesis call
+        │  consistency level + one or two sentences + cited sources
         ▼
-[3] Fact-Checking (ReAct agent)   ← gemini-2.5-pro, tool-calling loop
-        │  fact-check result
-        ▼
-[4] Self-Critique                 ← gemini-2.5-flash, structured JSON output
-        │  confidence flag + note
-        ▼
-   Frontend Display
+fact_checks row (check_depth="fast") ─── marked in the live transcript, result on click
 ```
+
+Orchestration lives in `backend/services/streaming.py` (`StreamingSession`), the gate in
+`backend/services/gate.py`, the LLM agents in `backend/services/claim_extraction.py` and
+`backend/services/fast_fact_checker.py`. All tunables are listed in
+[configuration.md](configuration.md#live-lane-streaming).
 
 ---
 
-## Call 1 — Speaker Label Resolution
+## Windowing
 
-**Prompt:** `prompts/speaker_labels.md`
-**Schema:** `SpeakerLabelsInput`
-**Model:** gemini-2.5-flash (fast, cheap)
-**Output:** Structured `ResolvedTranscript` — a list of `label → name` mappings
+Finalized transcript turns are split into sentences. With `STREAM_EARLY_SENTENCES` on,
+sentences that have settled inside a still-running turn are gated too, so a long answer
+does not hold its first claim back. A window is flushed once it holds
+`STREAM_WINDOW_MIN_SENTENCES` sentences or spans `STREAM_WINDOW_MAX_TURNS` turns.
 
-```
-SpeakerLabelsInput
-├── guests:    list[str]   # ["Caren Miosga (Moderatorin)", "Heidi Reichinnek (Linke)"]
-└── transcript: str        # raw transcript with "Sprecher A:", "Sprecher B:" labels
-```
-
-AssemblyAI's speaker diarization assigns generic labels (`Sprecher A`, `Sprecher B`) rather than real names. This call resolves them to actual person names using two signals:
-1. **Conversation flow** — direct address, topic alignment, stylistic patterns
-2. **Guest information** — party membership, political positions, known stances
-
-The `guests` list provides structured, unambiguous signal for both. Only high-confidence mappings are returned; uncertain labels are left as-is.
-
-The output is applied as a simple string replacement on the transcript before it is passed to claim extraction. The resolved transcript tail is also stored in state so that `previous_block_ending` in subsequent blocks already contains real names rather than generic labels.
-
-**Why a separate call?** Speaker resolution and claim extraction are independent reasoning tasks. Mixing them into one prompt would increase complexity and prompt length with no benefit. If resolution fails or the show has named speakers from the start (some formats already include names), this step is simply skipped.
+Speakers are never guessed: the transcript carries AssemblyAI's labels, and the operator
+assigns names by click. A claim that cannot be tied to a label is stored under "Unklar".
 
 ---
 
-## Call 2 — Claim Extraction
+## Call 1 — Claim gate
 
-**Prompt:** `prompts/claim_extraction.md`
+Two implementations sit behind the `ClaimGate` protocol, chosen by `CLAIM_GATE`.
+
+### `extractor` (default) — window gate
+
+**Prompt:** `prompts/claim_extraction_streaming.md`
 **Schema:** `ClaimExtractionInput`
-**Model:** gemini-2.5-flash (fast, cheap)
-**Output:** Structured `ClaimList` — a list of `(name, claim)` pairs
+**Model:** `GEMINI_MODEL_WINDOW_GATE` (default `gemini-3.5-flash-lite`)
+**Output:** `ClaimList` — zero or more `(name, claim)` pairs
 
 ```
 ClaimExtractionInput
-├── date:                 str         # "Oktober 2025"
-├── guests:               list[str]   # ["Caren Miosga (Moderatorin)", "Heidi Reichinnek (Linke)"]
-├── context:              str         # thematic background, e.g. "CDU und SPD haben sich auf..."
-├── transcript:           str         # resolved transcript (speaker names already applied)
-└── previous_block_ending: str | None # last lines of the prior audio block, for continuity
+├── conversation_type:     str        # "debate" | "interview" | "private"
+├── guests:                list[str]  # ["Caren Miosga (Moderatorin)", "Heidi Reichinnek (Linke)"]
+├── context:               str        # thematic background of the session
+├── excluded_speakers:     list[str]  # e.g. the host — their statements are not extracted
+├── transcript:            str        # the window (a few sentences)
+└── previous_block_ending: str | None # preceding sentences, only to resolve references
 ```
 
-The prompt instructs the model to extract only verifiable, falsifiable factual claims — concrete numbers, causal assertions, historical facts. Opinions, predictions, and vague statements are excluded. Each extracted claim is attributed to its speaker and de-contextualized: pronoun references (`er`, `sie`, `wir`) are resolved to full names so the claim can stand alone without the transcript.
+One cheap call both decides whether the window contains a checkable claim and rewrites it
+as a standalone, decontextualized sentence. An empty list is the normal answer.
 
-The prompt also handles compound claims: if a speaker makes multiple independent assertions in one sentence, they are separated into individual checkable units.
+### `jev` — per-sentence decision + reformulation
 
-**Why a separate call?** Claim extraction must be fast — it happens in real time while the show is airing, before any human has reviewed anything. Using a lighter, cheaper model here keeps latency low. The fact-checking step (Call 3) is far more expensive; claim extraction acts as a filter that reduces the number of claims that reach it.
+Only active when `REQUESTY_API_KEY` is set; otherwise the extractor gate is used.
 
-**`previous_block_ending`** solves a continuity problem: audio is processed in fixed-length blocks, so a claim may span a block boundary. Passing the last few lines of the previous block lets the model resolve references that start mid-sentence at the top of the current block. Since speaker label resolution now runs first, `previous_block_ending` contains real names rather than generic labels.
+**Step 1a — Jev** (TypeSafe's calibrated decision model via Requesty) scores every
+sentence for *checkability* and *importance*. Sentences above `JEV_CHECK_THRESHOLD` (and
+`JEV_IMPORTANCE_THRESHOLD`) pass; below `JEV_SKIP_THRESHOLD` they are dropped; the grey
+zone in between is skipped conservatively. See `benchmarks/jev_gate_bench.py`.
+
+**Step 1b — Reformulation**
+
+**Prompt:** `prompts/claim_reformulation.md`
+**Schema:** `ReformulationInput`
+**Model:** `GEMINI_MODEL_REFORMULATE` (default `gemini-3.6-flash`, thinking `low`)
+**Output:** `ReformulatedClaim` — `(name, claim, search_queries)`
+
+```
+ReformulationInput
+├── sentence:         str        # the sentence Jev let through
+├── speaker:          str        # diarization label or assigned name
+├── guests:           list[str]
+├── context:          str
+└── previous_context: str | None # REFORMULATE_CONTEXT_SENTENCES preceding sentences
+```
+
+The reformulator does **not** judge check-worthiness — Jev already did. It resolves
+pronouns, keeps the speaker out of the claim text, and writes 3–5 short German search
+queries. Those queries decide what the fast check gets to see, which is why this step uses
+flash rather than flash-lite.
+
+**Why two steps?** Jev is cheaper per sentence and better calibrated than the flash-lite
+window gate, which in benchmarking was too conservative. The expensive LLM only runs on
+the hits.
 
 ---
 
-## Call 3 — Fact-Checking (ReAct Agent)
+## Call 2 — Fast check
 
-**Prompt:** `prompts/fact_checker.md`
-**Schema:** `ClaimInput`
-**Model:** gemini-2.5-pro (most capable)
-**Output:** Structured `FactCheckResponse` — consistency rating, evidence summary, cited sources
+**Prompt:** `prompts/fast_fact_checker.md`
+**Model:** `GEMINI_MODEL_FAST_CHECK` (default `gemini-3.6-flash`, thinking `low`)
+**Output:** `FastVerdict` — `evidence`, `consistency`, `sources`
 
-```
-ClaimInput
-├── context:    str   # thematic background of the episode
-├── sprecher:   str   # "Heidi Reichinnek"
-├── sendedatum: str   # "Oktober 2025"
-└── behauptung: str   # the claim to verify
-```
+1. **Search.** Up to `FAST_SEARCH_MAX_QUERIES` Tavily searches run **in parallel**
+   (depth `FAST_TAVILY_SEARCH_DEPTH`), restricted to the trusted domains in
+   `backend/services/trusted_domains.py`. Queries come from the reformulator; without
+   them, heuristic variants of the claim are used.
+2. **Filter and rank.** Hits are de-duplicated by URL, bare homepages and plenary
+   transcripts are dropped, and the rest are sorted by source tier: federal/EU official
+   sources, then research institutes and fact-checkers, then state (Länder) sources, then
+   press, then parties.
+3. **Synthesize.** One call gets the claim, speaker, session context and date plus the
+   ranked snippets (`FAST_SNIPPET_CHARS` each). It writes the finding first and derives
+   the level from it:
+   - `hoch` — the data supports the claim
+   - `niedrig` — the data contradicts the claim
+   - `unklar` — conflicting evidence without a clear direction
+   - `keine Datenlage` — nothing relevant found
+4. **Guard.** Only sources whose URL was actually among the search results are kept, so
+   invented or mangled links never reach the page. On any failure the check returns
+   `unklar` with the error, never raising into the stream.
 
-This is the most complex step. Rather than a single LLM call, it runs a LangGraph ReAct agent loop: the model reasons about the claim, issues Tavily web search queries, evaluates the returned sources, and continues until it has sufficient evidence or hits a recursion limit. Searches are restricted to a curated list of authoritative domains (Destatis, DIW, ifo, Correctiv, etc.).
-
-The agent is instructed to:
-- seek original sources rather than news summaries
-- actively search for counter-evidence before concluding
-- treat statements from interest groups (parties, industry associations) as positions, not evidence
-- cross-check data against at least two independent official sources
-
-`context` (the thematic background) helps the model formulate relevant search queries. `sendedatum` anchors the claim temporally, since statistics and policies change over time.
-
-**Why a separate call from extraction?** The fact-checker runs after human review — only approved claims reach it. It uses a more expensive model and an unbounded tool-calling loop, making it unsuitable for the real-time extraction phase. The schema is also structurally different: instead of a transcript, it receives a single resolved claim with all necessary attribution already embedded.
-
----
-
-## Call 4 — Self-Critique
-
-**Prompt:** `prompts/self_critique.md`
-**Schema:** `SelfCritiqueInput`
-**Model:** gemini-2.5-flash (fast, cheap)
-**Output:** Structured `SelfCritiqueResponse` — confidence level + short explanation
-**Enabled by:** `SELF_CRITIQUE_ENABLED=true` (default on)
-
-```
-SelfCritiqueInput
-├── behauptung:  str                              # the verified claim
-├── urteil:      "hoch"|"niedrig"|"unklar"|...   # the verdict from Call 3
-└── begruendung: str                              # the reasoning from Call 3
-```
-
-After the ReAct agent produces a verdict, the self-critique step evaluates how robust that verdict is. It does not re-check the facts — it reviews the *reasoning* and asks: would a different framing of the same claim have produced a different result?
-
-Output:
-- `confidence: "high"` — verdict is well-supported; a re-run would likely agree
-- `confidence: "low"` — verdict is uncertain or phrasing-sensitive; flags the result with `double_check = True` and a `critique_note` explaining the concern
-
-This flag is surfaced in the frontend to signal claims that warrant extra scrutiny. The motivation: the same underlying claim phrased differently can produce different verdicts from the fact-checker. Self-critique is a cheap way to detect these fragile cases without running the expensive ReAct agent multiple times.
-
-**Why a separate call from fact-checking?** The ReAct agent produces its reasoning inline as part of the tool-calling loop. Evaluating that reasoning is a structurally different task — a single structured call on the completed output, not part of the search loop.
+The model is never allowed to judge a person or give absolute verdicts ("wahr",
+"falsch"); it rates how well the claim is backed by data.
 
 ---
 
-## Schema Design Principles
+## Fallbacks
 
-Each schema contains exactly what that LLM call needs — no more.
+Every Gemini call goes through `build_model()` in `backend/services/llm_base.py`: primary
+model → optional second Gemini model → Claude via Requesty (EU) when `REQUESTY_API_KEY` is
+set. See [configuration.md](configuration.md#cross-provider-fallback).
 
-| Field | Speaker Labels | Claim Extraction | Fact-Checking | Self-Critique |
-|---|---|---|---|---|
-| `guests` (list) | ✓ (names + party/positions) | ✓ (for attribution) | — | — |
-| `date` | — | ✓ (temporal refs) | via `sendedatum` | — |
-| `context` (thematic) | — | ✓ (optional) | ✓ | — |
-| `transcript` | ✓ | ✓ | — | — |
-| `previous_block_ending` | — | ✓ | — | — |
-| `sprecher` | — | — | ✓ | — |
-| `behauptung` | — | — | ✓ | ✓ |
-| `urteil` + `begruendung` | — | — | — | ✓ (output of Call 3) |
+---
 
-`guests` is a `list[str]` in `"Name (Rolle)"` format rather than a free-text blob. This gives the LLM structured, unambiguous signal while keeping the config simple. The thematic `context` (`Episode.context`) is kept separate from the guest list so the model can distinguish who is speaking from what the show is about.
+## Stored results
+
+Each check is one row in `fact_checks` with `check_depth="fast"`, written first as a
+`processing` placeholder (so the mark appears in the transcript immediately) and then
+updated in place. Older rows with `check_depth="deep"` — the examples under `/beispiele` —
+come from the ReAct deep checker with self-critique, removed in v0.3.0 (the code is still
+in tag `v0.2.0`; `v0.1.0` is the last release that used it). They are displayed unchanged, including their `double_check` flag
+and `critique_note`.

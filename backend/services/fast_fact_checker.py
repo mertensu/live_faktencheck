@@ -1,13 +1,11 @@
 """
-Fast Fact Checker — first-pass verdict for the live streaming lane.
+Fast Fact Checker — the verdict for the live streaming lane.
 
-Unlike ``FactChecker`` (a ReAct agent that loops search→reason up to ~35 times and
-then self-critiques), this service is built for latency: it fires a few Tavily
-searches *in parallel* (queries written by the reformulator, else heuristic variants),
-then makes a single synthesis call that returns only a ``consistency`` level
-(Vertrauenslevel) and one or two short sentences. No agent loop, no
-self-critique. A claim can later be upgraded to a full verdict by the deep
-``FactChecker`` (see check_depth="fast" rows).
+Built for latency: it fires a few Tavily searches *in parallel* (queries written by the
+reformulator, else heuristic variants), then makes a single synthesis call that returns
+only a ``consistency`` level (Vertrauenslevel) and one or two short sentences. No agent
+loop, no self-critique. Rows are stored with check_depth="fast"; older "deep" rows come
+from the removed ReAct checker (<= v0.2.0) and are only displayed.
 """
 
 import os
@@ -65,8 +63,8 @@ class Source(BaseModel):
 
 
 class FastVerdict(BaseModel):
-    """A fast first-pass verdict. Field names mirror ``FactCheckResponse`` so the
-    same ``build_fact_check_dict`` mapping stores it unchanged."""
+    """A fast verdict. Field names match what ``build_fact_check_dict`` maps into the
+    stored row (speaker, original_claim, evidence, consistency, sources)."""
     speaker: str = ""
     original_claim: str = ""
     # evidence before consistency: the model writes the finding first and derives the
@@ -88,8 +86,7 @@ class FastFactChecker:
         self.model_name = os.getenv("GEMINI_MODEL_FAST_CHECK", DEFAULT_MODEL)
         self.fallback_model_name = os.getenv("GEMINI_MODEL_FACT_CHECKER_FALLBACK", "gemini-3-flash-preview")
         self.max_queries = int(os.getenv("FAST_SEARCH_MAX_QUERIES", "5"))
-        # Own Tavily tier, independent of the deep checker's TAVILY_SEARCH_DEPTH. The
-        # searches run in parallel, so basic costs ~one search's latency, not five.
+        # The searches run in parallel, so basic costs ~one search's latency, not five.
         self.search_depth = os.getenv("FAST_TAVILY_SEARCH_DEPTH", "basic")
         # The deciding number often sits past the first few hundred characters.
         self.snippet_chars = int(os.getenv("FAST_SNIPPET_CHARS", "1200"))

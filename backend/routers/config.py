@@ -86,18 +86,13 @@ async def get_trusted_domains():
 async def health():
     """Health check endpoint"""
     db = state.get_db()
-    blocks_processing = sum(
-        1 for ev in state.pipeline_events.values()
-        if ev.get("status") in ("processing", "slow")
-    )
     return HealthResponse(
         status="ok",
         active_sessions=await db.count_active_sessions(),
-        pending_blocks=await db.count_pending_blocks(),
         fact_checks=await db.count_fact_checks(),
-        # An open live stream counts too: a restart cuts it off and loses the speaker
-        # assignments, which live only in memory.
-        in_flight=state.claim_queue.qsize() + blocks_processing + len(state.streaming_sessions),
+        # A restart cuts an open live stream off and loses the speaker assignments,
+        # which live only in memory.
+        in_flight=len(state.streaming_sessions),
     )
 
 
@@ -112,8 +107,6 @@ async def validate_code(code: dict = Depends(require_code)):
     audio_seconds_limit = code["audio_seconds_limit"]
     return {
         "name": code["name"],
-        "quick_check_limit": code["quick_check_limit"],
-        "quick_checks_used": code["quick_checks_used"],
         "audio_seconds_limit": audio_seconds_limit,
         "audio_limit_minutes": (
             None if audio_seconds_limit is None else audio_seconds_limit // 60

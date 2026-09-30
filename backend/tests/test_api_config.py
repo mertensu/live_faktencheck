@@ -44,17 +44,6 @@ async def test_health_in_flight_zero_when_idle(client):
     assert resp.json()["in_flight"] == 0
 
 
-async def test_health_in_flight_counts_only_unfinished_blocks(client):
-    # in_flight reflects real work a restart would drop, not terminal blocks.
-    state.pipeline_events["b1"] = {"status": "processing"}
-    state.pipeline_events["b2"] = {"status": "slow"}
-    state.pipeline_events["b3"] = {"status": "done"}
-    state.pipeline_events["b4"] = {"status": "error"}
-    resp = await client.get("/api/health")
-    assert resp.status_code == 200
-    assert resp.json()["in_flight"] == 2
-
-
 async def test_health_in_flight_counts_open_streams(client):
     # A deploy must not restart into a running live stream.
     state.streaming_sessions["live1"] = object()

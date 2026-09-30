@@ -53,13 +53,21 @@ async def test_count_and_list_codes(fresh_db):
 # =============================================================================
 
 def test_parse_access_codes_basic():
-    assert parse_access_codes("ulf:s1,anna:s2") == [("ulf", "s1", 3), ("anna", "s2", 3)]
+    assert parse_access_codes("ulf:s1,anna:s2") == [("ulf", "s1", False), ("anna", "s2", False)]
+
+
+def test_parse_access_codes_third_field():
+    # "unlimited" lifts the audio cap; anything else (old Quick Check caps) is ignored.
+    assert parse_access_codes("ulf:s1:unlimited,anna:s2:10") == [
+        ("ulf", "s1", True),
+        ("anna", "s2", False),
+    ]
 
 
 def test_parse_access_codes_ignores_malformed_and_whitespace():
     assert parse_access_codes(" ulf : s1 , broken , :x , y: ,anna:s2") == [
-        ("ulf", "s1", 3),
-        ("anna", "s2", 3),
+        ("ulf", "s1", False),
+        ("anna", "s2", False),
     ]
 
 
@@ -111,11 +119,8 @@ async def test_create_session_with_valid_code_persists_owner_code(client):
     assert session["owner_code"] == TEST_ACCESS_CODE
 
 
-async def test_approve_claims_without_code_is_401(no_auth_client):
-    resp = await no_auth_client.post(
-        "/api/approve-claims",
-        json={"claims": [{"name": "A", "claim": "x"}], "session_id": "s"},
-    )
+async def test_delete_fact_check_without_code_is_401(no_auth_client):
+    resp = await no_auth_client.delete("/api/fact-checks/1")
     assert resp.status_code == 401
 
 
@@ -131,14 +136,8 @@ def test_all_cost_endpoints_require_code():
 
     gated = {
         ("POST", "/api/sessions"),
-        ("POST", "/api/audio-block"),
-        ("POST", "/api/text-block"),
-        ("POST", "/api/approve-claims"),
-        ("POST", "/api/fact-checks/resend"),
-        ("PUT", "/api/fact-checks/{fact_check_id}"),
         # Not a paid call, but destructive and publicly reachable with sequential IDs.
         ("DELETE", "/api/fact-checks/{fact_check_id}"),
-        ("POST", "/api/pipeline-status/{block_id}/retrigger"),
     }
     found = set()
     for route in app.routes:
@@ -159,8 +158,6 @@ async def test_validate_code_valid_returns_public_fields(client):
     assert resp.status_code == 200
     body = resp.json()
     assert body["name"] == "tester"
-    assert body["quick_check_limit"] == 3
-    assert body["quick_checks_used"] == 0
     assert body["audio_seconds_limit"] == 300
     assert body["audio_limit_minutes"] == 5
 
@@ -185,10 +182,10 @@ async def test_validate_code_with_invalid_code_is_403(no_auth_client):
 
 
 async def test_validate_code_is_side_effect_free(client):
-    """A validate call must not consume Quick Check quota or otherwise write."""
+    """A validate call must not consume audio quota or otherwise write."""
     import backend.state as state
 
-    before = (await state.get_db().get_code(TEST_ACCESS_CODE))["quick_checks_used"]
+    before = (await state.get_db().get_code(TEST_ACCESS_CODE))["audio_seconds_used"]
     await client.get("/api/validate-code")
-    after = (await state.get_db().get_code(TEST_ACCESS_CODE))["quick_checks_used"]
+    after = (await state.get_db().get_code(TEST_ACCESS_CODE))["audio_seconds_used"]
     assert before == after == 0

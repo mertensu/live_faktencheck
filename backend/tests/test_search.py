@@ -1,4 +1,4 @@
-"""Tests for the tavily_search PydanticAI tool."""
+"""Tests for the tavily_search wrapper."""
 
 import pytest
 from unittest.mock import AsyncMock, patch
@@ -26,28 +26,14 @@ async def test_search_returns_results(mock_tavily):
     mock_tavily.search.assert_awaited_once()
 
 
-async def test_search_retries_without_date_filter_on_empty(mock_tavily):
+async def test_search_passes_depth_and_trusted_domains(mock_tavily):
     from backend.services.search import tavily_search
-    # First call (with date filter) empty, second call (no filter) has results.
-    mock_tavily.search.side_effect = [
-        {"results": []},
-        {"results": [{"title": "t", "url": "u"}]},
-    ]
-
-    result = await tavily_search("Mindestlohn", start_date="2024-01-01")
-
-    assert result["results"][0]["url"] == "u"
-    assert mock_tavily.search.await_count == 2
-    # Second call must NOT carry the date filter.
-    second_kwargs = mock_tavily.search.await_args_list[1].kwargs
-    assert "start_date" not in second_kwargs
-
-
-async def test_search_no_retry_when_no_date_filter(mock_tavily):
-    from backend.services.search import tavily_search
+    from backend.services.trusted_domains import TRUSTED_DOMAINS
     mock_tavily.search.return_value = {"results": []}
 
-    result = await tavily_search("Mindestlohn")
+    await tavily_search("Mindestlohn", search_depth="advanced")
 
-    assert result["results"] == []
+    kwargs = mock_tavily.search.await_args.kwargs
+    assert kwargs["search_depth"] == "advanced"
+    assert kwargs["include_domains"] == TRUSTED_DOMAINS
     assert mock_tavily.search.await_count == 1
