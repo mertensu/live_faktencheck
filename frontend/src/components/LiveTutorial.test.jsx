@@ -34,7 +34,7 @@ describe('LiveTutorial', () => {
     markLine(container, 1)
     fireEvent.click(screen.getByRole('menuitem', { name: 'Sandra Berger' }))
     expect(bubbleNames(container)).toEqual(['Anna Keller', 'Sandra Berger', 'Peter Müller', 'Sandra Berger'])
-    expect(screen.getByRole('status').textContent).toMatch(/Haken an/)
+    expect(screen.getByRole('status').textContent).toMatch(/„auch alles Weitere“ aktiviert/)
 
     // Reset, then checkbox off: only the marked passage.
     fireEvent.click(screen.getByRole('button', { name: /Zurücksetzen/ }))
@@ -43,7 +43,7 @@ describe('LiveTutorial', () => {
     fireEvent.click(screen.getByRole('checkbox', { name: /auch alles Weitere von Sprecher A/ }))
     fireEvent.click(screen.getByRole('menuitem', { name: 'Sandra Berger' }))
     expect(bubbleNames(container)).toEqual(['Anna Keller', 'Sandra Berger', 'Peter Müller', 'Anna Keller'])
-    expect(screen.getByRole('status').textContent).toMatch(/Haken aus/)
+    expect(screen.getByRole('status').textContent).toMatch(/„auch alles Weitere“ deaktiviert/)
   })
 
   it('opens a result from its mark and closes on the last step', () => {

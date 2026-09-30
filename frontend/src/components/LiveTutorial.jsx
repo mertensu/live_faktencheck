@@ -115,25 +115,26 @@ function PassagePractice({ onReset }) {
       </p>
       <p className="live-tutorial-task">
         Markiere mit der Maus ihre Antwort „Ganz anders. … stabil geblieben.“ und wähle im Menü {GUEST_C}. Achte auf
-        den Haken <em>auch alles Weitere von Sprecher A</em>.
+        die Option <em>auch alles Weitere von Sprecher A</em>.
       </p>
       <LiveTranscript live={live} speakers={SPEAKERS} />
       {assigned && (
         <div className="live-tutorial-done" role="status">
           {followed ? (
             <p>
-              ✓ <strong>Haken an:</strong> Auch die spätere Zeile von Sprecher A heißt jetzt {GUEST_C}.
-              Richtig, wenn die zwei Stimmen weiter vermischt sind. Spricht {HOST} danach wieder,
-              klick dort auf den Namen der Sprechblase und stell es ab da zurück.
+              ✓ <strong>„auch alles Weitere“ aktiviert:</strong> Auch die spätere Zeile von Sprecher A heißt jetzt {GUEST_C}.
+              Richtig, wenn die zwei Stimmen weiter vermischt sind. Spricht später wieder {HOST},
+              klick in ihrer Sprechblase auf den Namen ({GUEST_C} ▾) und wähle {HOST}. Ab dieser
+              Sprechblase stimmt der Name dann wieder.
             </p>
           ) : (
             <p>
-              ✓ <strong>Haken aus:</strong> Nur die markierte Stelle heißt {GUEST_C}; die spätere
+              ✓ <strong>„auch alles Weitere“ deaktiviert:</strong> Nur die markierte Stelle heißt {GUEST_C}; die spätere
               Zeile bleibt bei {HOST}. Richtig für einen einzelnen Ausrutscher.
             </p>
           )}
           <button type="button" className="live-tutorial-reset" onClick={onReset}>
-            Zurücksetzen und mit Haken {followed ? 'aus' : 'an'} probieren
+            Zurücksetzen und „auch alles Weitere“ {followed ? 'deaktiviert' : 'aktiviert'} testen
           </button>
         </div>
       )}
