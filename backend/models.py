@@ -99,3 +99,17 @@ class SessionResponse(BaseModel):
     visibility: str = "private"
     created_at: Optional[str] = None
     ended_at: Optional[str] = None
+
+
+class MySessionSummary(BaseModel):
+    """One entry in "Meine Checks": a session the caller's code created, with claim counts."""
+    session_id: str
+    title: str
+    date: str = ""
+    guests: List[str] = []
+    status: str = "active"
+    created_at: Optional[str] = None
+    claims: int = 0
+    hoch: int = 0
+    niedrig: int = 0
+    unklar: int = 0

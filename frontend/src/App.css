@@ -1478,6 +1478,22 @@
   margin-bottom: 1rem;
 }
 
+.my-check-counts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.9rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.my-check-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
 /* Stack action cards on narrow screens */
 @media (max-width: 600px) {
   .action-cards {
@@ -1857,6 +1873,7 @@
 .fcs-filter-toggle[aria-expanded="true"] { background: var(--bg-main); border-color: var(--text-muted); color: var(--text-main); }
 .fcs-filter-toggle:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 .fcs-filter-icon { flex: none; }
+.fcs-order-toggle { font-weight: 500; }
 .fcs-filter-badge {
   display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px;
   padding: 0 5px; border-radius: 999px; background: var(--accent-active); color: #fff;

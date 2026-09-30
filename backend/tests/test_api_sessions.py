@@ -75,3 +75,46 @@ async def test_keyterms_set_with_the_session(client):
     assert (await client.get(f"/api/config/{sid}")).json()["keyterms"] == ["Katharina Reiche", "Bundesnetzagentur"]
     other = (await client.post("/api/sessions", json={"title": "T"})).json()["session_id"]
     assert (await client.get(f"/api/sessions/{other}")).json()["keyterms"] == []
+
+
+# --- Meine Checks: GET /api/my/sessions -------------------------------------
+
+async def _add_check(sid, consistency, status="done"):
+    from backend import state
+    await state.get_db().add_fact_check({
+        "sprecher": "A", "behauptung": "x", "consistency": consistency,
+        "timestamp": "2026-09-30T20:00:00", "session_id": sid, "status": status,
+    })
+
+
+async def test_my_sessions_lists_only_own_sessions_with_counts(client):
+    from backend import state
+    await state.get_db().add_code("other-code", "other")
+    mine = (await client.post("/api/sessions", json={"title": "Meine"})).json()["session_id"]
+    theirs = (await client.post(
+        "/api/sessions", json={"title": "Fremd"}, headers={"X-Access-Code": "other-code"},
+    )).json()["session_id"]
+    await _add_check(mine, "hoch")
+    await _add_check(mine, "Niedrig")
+    await _add_check(mine, "hoch", status="discarded")
+    await _add_check(theirs, "hoch")
+
+    resp = await client.get("/api/my/sessions")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert [s["session_id"] for s in body] == [mine]
+    assert body[0]["claims"] == 2
+    assert (body[0]["hoch"], body[0]["niedrig"], body[0]["unklar"]) == (1, 1, 0)
+    assert "owner_code" not in body[0]
+
+
+async def test_my_sessions_includes_empty_sessions_newest_first(client):
+    first = (await client.post("/api/sessions", json={"title": "Erste"})).json()["session_id"]
+    second = (await client.post("/api/sessions", json={"title": "Zweite"})).json()["session_id"]
+    body = (await client.get("/api/my/sessions")).json()
+    assert [s["session_id"] for s in body] == [second, first]
+    assert body[0]["claims"] == 0
+
+
+async def test_my_sessions_requires_code(no_auth_client):
+    assert (await no_auth_client.get("/api/my/sessions")).status_code == 401

@@ -6,7 +6,7 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException
 
 from backend.auth import require_code
-from backend.models import CreateSessionRequest, SessionResponse
+from backend.models import CreateSessionRequest, MySessionSummary, SessionResponse
 from backend.services.transcription import clean_keyterms
 import backend.state as state
 
@@ -38,6 +38,12 @@ async def create_session(request: CreateSessionRequest, code: dict = Depends(req
     await db.add_session(row)
     logger.info(f"Session created: {session_id} ({request.title})")
     return SessionResponse(**await db.get_session(session_id))
+
+
+@router.get("/my/sessions", response_model=list[MySessionSummary])
+async def my_sessions(code: dict = Depends(require_code)):
+    """ "Meine Checks": the sessions created with the caller's access code."""
+    return await state.get_db().list_sessions_by_owner(code["code"])
 
 
 @router.get("/sessions/{session_id}", response_model=SessionResponse)

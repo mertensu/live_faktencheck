@@ -4,8 +4,9 @@ import { getConsistencyColor, formatBegruendung, stripDateAnnotation } from './C
 // Live "Fokus-Stream": fact-checks as one chronological stream, newest on top in
 // full focus, older ones fading/blurring downward. Tapping a card brings it into
 // focus and expands its reasoning + sources inline. Two filter groups (speaker,
-// trust level) narrow the stream. Checks still running (status 'processing')
-// appear greyed at the top with a short "being checked" note.
+// trust level) narrow the stream; a toggle flips the order to first-to-last.
+// Checks still running (status 'processing') appear greyed with a short
+// "being checked" note.
 
 // Trust-level wording, consistent with the rest of the app ("Vertrauenslevel").
 const VERDICTS = [
@@ -38,6 +39,8 @@ export function FactCheckStream({ factChecks }) {
   const [speakers, setSpeakers] = useState(() => new Set())
   const [verdicts, setVerdicts] = useState(() => new Set())
   const [filtersOpen, setFiltersOpen] = useState(false)
+  // Live default is newest on top; reading a finished session back is easier first to last.
+  const [oldestFirst, setOldestFirst] = useState(false)
   const containerRef = useRef(null)
   const barRef = useRef(null)
   const reduce = useRef(false)
@@ -46,11 +49,10 @@ export function FactCheckStream({ factChecks }) {
     reduce.current = window.matchMedia('(prefers-reduced-motion: reduce)').matches
   }, [])
 
-  // Newest first.
-  const ordered = useMemo(
-    () => [...(factChecks || [])].sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0)),
-    [factChecks]
-  )
+  const ordered = useMemo(() => {
+    const byTime = (a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0)
+    return [...(factChecks || [])].sort(oldestFirst ? (a, b) => byTime(b, a) : byTime)
+  }, [factChecks, oldestFirst])
 
   // Speaker filter options in order of first appearance.
   const speakerNames = useMemo(() => {
@@ -150,6 +152,18 @@ export function FactCheckStream({ factChecks }) {
                  stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="m6 9 6 6 6-6" />
             </svg>
+          </button>
+          <button
+            type="button"
+            className="fcs-filter-toggle fcs-order-toggle"
+            onClick={() => setOldestFirst((o) => !o)}
+            title="Reihenfolge umkehren"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="m3 16 4 4 4-4M7 20V4M21 8l-4-4-4 4M17 4v16" />
+            </svg>
+            {oldestFirst ? 'Älteste zuerst' : 'Neueste zuerst'}
           </button>
           <span className="fcs-spacer" />
           <span className="fcs-count">
@@ -286,7 +300,7 @@ export function FactCheckStream({ factChecks }) {
               </article>
             )
           })}
-          {filtered.length > 1 && <p className="fcs-peek">↓ älter — tippen fokussiert</p>}
+          {filtered.length > 1 && <p className="fcs-peek">{oldestFirst ? '↓ neuer' : '↓ älter'} — tippen fokussiert</p>}
         </div>
       )}
     </div>
