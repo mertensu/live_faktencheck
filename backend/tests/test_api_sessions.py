@@ -167,3 +167,15 @@ async def test_delete_session_while_streaming_is_409(client):
 
 async def test_delete_session_requires_code(no_auth_client):
     assert (await no_auth_client.delete("/api/sessions/x")).status_code == 401
+
+
+async def test_cors_preflight_allows_delete(no_auth_client):
+    """Browsers preflight DELETE from the frontend origin; without DELETE in the CORS
+    methods the request never leaves the browser ("Failed to fetch")."""
+    resp = await no_auth_client.options("/api/sessions/x", headers={
+        "Origin": "https://live-faktencheck.de",
+        "Access-Control-Request-Method": "DELETE",
+        "Access-Control-Request-Headers": "x-access-code,content-type",
+    })
+    assert resp.status_code == 200
+    assert "DELETE" in resp.headers["access-control-allow-methods"]

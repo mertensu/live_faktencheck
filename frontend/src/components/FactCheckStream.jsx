@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { getConsistencyColor, formatBegruendung, stripDateAnnotation } from './ClaimCard'
 
 // Live "Fokus-Stream": fact-checks as one chronological stream, newest on top in
-// full focus, older ones fading/blurring downward. Tapping a card brings it into
+// full focus, older ones fading slightly downward. Tapping a card brings it into
 // focus and expands its reasoning + sources inline. Two filter groups (speaker,
 // trust level) narrow the stream; a toggle flips the order to first-to-last.
 // Checks still running (status 'processing') appear greyed with a short
@@ -77,8 +77,8 @@ export function FactCheckStream({ factChecks }) {
 
   const focalLine = () => (barRef.current ? barRef.current.getBoundingClientRect().bottom + 20 : 100)
 
-  // Depth-of-field: the card near the focus line is sharp; those below fade and
-  // blur with distance. Re-run on scroll/resize and whenever the list changes.
+  // Focus: the card near the focus line is highlighted; those below fade a little with
+  // distance (no blur, so every claim stays readable). Re-run on scroll/resize and list changes.
   useEffect(() => {
     const root = containerRef.current
     if (!root) return
@@ -88,10 +88,9 @@ export function FactCheckStream({ factChecks }) {
         const passive = card.classList.contains('fcs-pending') || card.classList.contains('fcs-errored')
         const r = card.getBoundingClientRect()
         const dist = (r.top + r.height * 0.30) - f
-        let blur = 0, op = 1
-        if (dist > 0) { blur = Math.min(3.4, dist / 230); op = Math.max(0.5, 1 - dist / 1400) }
-        if (card.classList.contains('fcs-open')) { blur = 0; op = 1 }
-        card.style.filter = (reduce.current || blur < 0.15) ? '' : `blur(${blur.toFixed(2)}px)`
+        let op = 1
+        if (dist > 0) op = Math.max(0.5, 1 - dist / 1400)
+        if (card.classList.contains('fcs-open')) op = 1
         card.style.opacity = op.toFixed(3)
         card.classList.toggle('fcs-focused', Math.abs(dist) < 90 && !reduce.current && !passive)
       })
