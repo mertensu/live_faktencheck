@@ -2139,14 +2139,19 @@
 
 /* ===== Landing page (HomePage): copy left, live-view sketch right; stacks on narrow screens ===== */
 .landing-hero {
-  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); align-items: center;
+  display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); align-items: center;
   gap: clamp(2rem, 4vw, 4rem); max-width: 1180px; margin: 0 auto; padding: 7rem 1rem 4rem;
 }
 .landing-copy { display: flex; flex-direction: column; align-items: flex-start; gap: 1rem; min-width: 0; }
-.landing .hero-title { margin: 0; line-height: 1.1; }
-.landing .hero-subtitle { margin: 0; font-size: 1.2rem; }
-.landing-slogan { margin: 0.5rem 0 0; font-size: 1.35rem; font-weight: 600; color: var(--text-main); }
-.landing-desc { margin: 0; max-width: 46ch; font-size: 1.02rem; line-height: 1.6; color: var(--text-main); }
+/* Headline + lead in the style of a light display heading (Fira Sans 300), cf. lab.js.org. */
+.landing-title {
+  margin: 0 0 0.75rem; font-size: clamp(2.2rem, 3.4vw, 3rem); font-weight: 300; line-height: 1.2;
+  color: var(--text-main); text-wrap: balance;
+}
+.landing-lead { display: flex; flex-direction: column; gap: 0.35rem; max-width: 46ch; }
+.landing-lead p { margin: 0; font-size: 1.2rem; font-weight: 300; line-height: 1.5; color: var(--text-main); }
+.landing-lead strong { font-weight: 500; }
+.landing-lead .landing-lead-muted { color: var(--text-muted); }
 .landing-steps { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.25rem 0 0.5rem; padding: 0; list-style: none; }
 .landing-steps li {
   font-size: 0.8rem; font-weight: 500; color: var(--text-secondary); white-space: nowrap;
@@ -2202,6 +2207,9 @@
 .li-pop-sources { margin: 0; padding-left: 1.1rem; font-size: 0.8rem; }
 .li-pop-sources .li-blur { text-shadow: 0 0 4px rgba(29, 78, 216, 0.6); }
 
+@media (min-width: 901px) {
+  .landing-title-line { white-space: nowrap; }
+}
 @media (max-width: 900px) {
   .landing-hero { grid-template-columns: 1fr; padding-top: 6rem; }
 }

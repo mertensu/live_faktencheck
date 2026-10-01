@@ -56,13 +56,14 @@ export function HomePage() {
       )}
       <section className="landing-hero">
         <div className="landing-copy">
-          <h1 className="hero-title">Live-Faktencheck</h1>
-          <p className="hero-subtitle">KI-gestützte Faktenchecks zu Politik, Wirtschaft und Gesellschaft in Deutschland.</p>
-          <p className="landing-slogan">Fakten prüfen, während gesprochen wird.</p>
-          <p className="landing-desc">
-            Ob Talkshow, Interview oder Debatte: Jede überprüfbare Aussage wird live markiert und mit
-            vertrauenswürdigen Quellen bewertet, in wenigen Sekunden.
-          </p>
+          <h1 className="landing-title">Fakten prüfen,<br /> <span className="landing-title-line">während gesprochen wird.</span></h1>
+          <div className="landing-lead">
+            <p><strong>KI-gestützte Faktenchecks</strong> zu Politik, Wirtschaft und Gesellschaft in Deutschland.</p>
+            <p className="landing-lead-muted">
+              Ob Talkshow, Interview oder Debatte: Jede überprüfbare Aussage wird live markiert und mit
+              vertrauenswürdigen Quellen bewertet, in wenigen Sekunden.
+            </p>
+          </div>
           <ul className="landing-steps" aria-label="Ablauf">
             <li>Zuhören</li>
             <li>Aussage erkennen</li>
