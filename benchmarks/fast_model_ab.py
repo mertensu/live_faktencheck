@@ -11,7 +11,8 @@ becoming another model.
 
 Env: MODEL_A (default: current GEMINI_MODEL_FAST_CHECK default), THINKING_A (default low),
      MODEL_B (default gemini-2.5-pro; empty = run A only; names with "@" run via Requesty), THINKING_B (default: model default),
-     MAX_RESULTS_A / MAX_RESULTS_B (default TAVILY_MAX_RESULTS or 5), REPEAT (default 1), OUT.
+     MAX_RESULTS_A / MAX_RESULTS_B (default TAVILY_MAX_RESULTS or 5), REPEAT (default 1), OUT,
+     NO_PRESS_B=1 (B searches on its own without the "Qualitätsjournalismus" domains).
 Claims may carry deep_consistency (reference from the deep checker); it is copied through.
 """
 
@@ -33,9 +34,11 @@ from pydantic_ai.models.google import GoogleModel  # noqa: E402
 from pydantic_ai.models.openai import OpenAIChatModel, OpenAIChatModelSettings  # noqa: E402
 from pydantic_ai.providers.openai import OpenAIProvider  # noqa: E402
 
+import backend.services.search as search  # noqa: E402
 from backend.services.claim_extraction import ClaimExtractor  # noqa: E402
 from backend.services.fast_fact_checker import FastFactChecker, FastVerdict, DEFAULT_MODEL  # noqa: E402
 from backend.services.llm_base import _provider, settings_with_thinking  # noqa: E402
+from backend.services.trusted_domains import TRUSTED_DOMAINS, TRUSTED_DOMAINS_BY_CATEGORY, source_tier  # noqa: E402
 
 CLAIMS = os.getenv("CLAIMS", "claims.json")
 OUT = os.getenv("OUT", "fast_model_ab.jsonl")
@@ -47,6 +50,9 @@ _MAX_DEFAULT = os.getenv("TAVILY_MAX_RESULTS", "5")
 MAX_RESULTS_A = os.getenv("MAX_RESULTS_A", _MAX_DEFAULT)
 MAX_RESULTS_B = os.getenv("MAX_RESULTS_B", _MAX_DEFAULT)
 REPEAT = int(os.getenv("REPEAT", "1"))
+NO_PRESS_B = os.getenv("NO_PRESS_B", "") == "1"
+_PRESS = set(TRUSTED_DOMAINS_BY_CATEGORY["Qualitätsjournalismus"])
+DOMAINS_NO_PRESS = [d for d in TRUSTED_DOMAINS if d not in _PRESS]
 
 
 def _agent(checker: FastFactChecker, model: str, thinking: str) -> Agent:
@@ -81,9 +87,11 @@ async def _synth(agent: Agent, msg: str, found: set[str]) -> dict:
     }
 
 
-async def _search(checker: FastFactChecker, claim: str, queries: list[str], max_results: str):
+async def _search(checker: FastFactChecker, claim: str, queries: list[str], max_results: str,
+                  no_press: bool = False):
     # tavily_search reads TAVILY_MAX_RESULTS per call; A and B search one after the other.
     os.environ["TAVILY_MAX_RESULTS"] = max_results
+    search.TRUSTED_DOMAINS = DOMAINS_NO_PRESS if no_press else TRUSTED_DOMAINS
     t0 = time.perf_counter()
     results = await checker._gather_evidence(claim, queries)
     return results, round(time.perf_counter() - t0, 2)
@@ -120,10 +128,10 @@ async def main() -> None:
                 queries = list(getattr(r, "search_queries", []) or [])
                 reform_s = round(time.perf_counter() - t0, 2)
                 res_a, search_a = await _search(checker, c["claim"], queries, MAX_RESULTS_A)
-                if MAX_RESULTS_B == MAX_RESULTS_A or not b:
+                if (MAX_RESULTS_B == MAX_RESULTS_A and not NO_PRESS_B) or not b:
                     res_b, search_b = res_a, search_a
                 else:
-                    res_b, search_b = await _search(checker, c["claim"], queries, MAX_RESULTS_B)
+                    res_b, search_b = await _search(checker, c["claim"], queries, MAX_RESULTS_B, NO_PRESS_B)
                 ra = await _synth(a, _message(checker, c, res_a), {x.get("url") for x in res_a})
                 rb = (await _synth(b, _message(checker, c, res_b), {x.get("url") for x in res_b})
                       if b else {"skipped": True, "synth_s": 0.0})
@@ -144,7 +152,8 @@ async def main() -> None:
         return sum(xs) / len(xs) if xs else float("nan")
 
     print(f"\nA={MODEL_A} (thinking {THINKING_A or 'default'}, max_results {MAX_RESULTS_A})  "
-          f"B={MODEL_B} (thinking {THINKING_B or 'default'}, max_results {MAX_RESULTS_B})")
+          f"B={MODEL_B} (thinking {THINKING_B or 'default'}, max_results {MAX_RESULTS_B}"
+          f"{', no press' if NO_PRESS_B else ''})")
     print(f"reform {avg([r['reform_s'] for r in rows]):.2f}s")
     for v in ("A", "B") if b else ("A",):
         ok = [r[v] for r in rows if "error" not in r[v]]
@@ -152,6 +161,12 @@ async def main() -> None:
         print(f"{v}: synth avg {avg(ts):.2f}s  median {ts[len(ts) // 2] if ts else float('nan'):.2f}s  "
               f"max {max(ts) if ts else float('nan'):.2f}s  errors {len(rows) - len(ok)}  "
               f"search {avg([x['search_s'] for x in ok]):.2f}s  hits {avg([x['n_results'] for x in ok]):.1f}")
+        cons = [x["consistency"] for x in ok]
+        srcs = [u for x in ok for u in x["sources"]]
+        press = [u for u in srcs if source_tier(u)[1] == "Presse"]
+        print(f"   verdicts {', '.join(f'{k} {cons.count(k)}' for k in sorted(set(cons)))}  "
+              f"sources {len(srcs)}, press {len(press)}, "
+              f"checks citing press {sum(any(source_tier(u)[1] == 'Presse' for u in x['sources']) for x in ok)}/{len(ok)}")
         ref = [r for r in rows if r["deep"] and "error" not in r[v]]
         if ref:
             agree = sum(r[v]["consistency"] == r["deep"] for r in ref)

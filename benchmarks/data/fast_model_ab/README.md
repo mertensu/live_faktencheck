@@ -82,14 +82,76 @@ Trotz der Prompt-Regel („[Presse] nur, wenn keine bessere Quelle sie trägt“
 etwa jeder zweite Check auch auf Presse. Mehr Treffer pro Anfrage senken den Anteil, weil
 öfter amtliche Seiten dabei sind.
 
-## Offen: nächster Test
+## Neuer Prompt, Flash vs Luna (01.10.2026)
 
-1. **Aktueller Prompt, Flash vs Luna** auf `claims15b.json`, identische Treffer, 2 Läufe
-   (~150 Tavily-Suchen). Frage: Ist Luna mit dem neuen Prompt weniger übervorsichtig, und
-   hat der Prompt Flash verändert? Vergleich gegen `flash_vs_luna.jsonl`.
-2. **Ohne Presse-Domains**: Tavily-Suche ohne die Kategorie „Qualitätsjournalismus“
-   (faz.net, handelsblatt.com, sueddeutsche.de, zeit.de, spiegel.de, tagesschau.de — alle
-   sechs, auch tagesschau.de)
-   gegen die heutige Liste, gleiches Modell, 1 Lauf (~150 Suchen, da beide Varianten
-   getrennt suchen). Messen: Presse-Anteil, Anzahl Treffer, Anteil „unklar“ /
-   „keine Datenlage“ (verlieren wir Recall?), Tief-Check-Treffer.
+`flash_vs_luna_v3.jsonl`: `claims15b.json`, 2 Läufe, identische Treffer, beide Thinking/Reasoning
+low, Prompt-Stand v0.3.0 (`<consistency>` mit „Kern“). Vergleich gegen `flash_vs_luna.jsonl`
+(alter Prompt, gleiche Claims).
+
+| Variante | Prompt | Synthese Ø | Urteile (hoch / niedrig / unklar) | Stabil | Tief-Check-Treffer | Presse (Quellen / Checks) |
+|---|---|---|---|---|---|---|
+| Flash low | alt | 2,6 s | 11 / 11 / 8 | 9/15 | 8/10 | 26 von 62 / 17/30 |
+| | **neu** | 3,8 s | 15 / 13 / 2 | 10/15 | 10/10 | 23 von 59 / 15/30 |
+| Luna low | alt | 2,7 s | 2 / 9 / 19 | 14/15 | 6/10 | 18 von 57 / 14/30 |
+| | **neu** | 2,3 s | 5 / 11 / 14 | 13/15 | 9/10 | 21 von 55 / 16/30 |
+
+Je Claim (Lauf 1 Lauf 2, h/n/u):
+
+| # | Flash alt → neu | Luna alt → neu |
+|---|---|---|
+| 31 | nn → hn | un → uu |
+| 32 | un → nn | uu → nn |
+| 33 | hh → hh | uu → hu |
+| 34 | nn → nn | nn → nn |
+| 35 | hh → nh | uu → uu |
+| 36 | uh → hh | uu → uu |
+| 37 | un → uh | uu → uu |
+| 38 | un → hn | nn → nn |
+| 39 | hh → uh | uu → uu |
+| 40 | uu → hh | uu → uu |
+| 269 | nu → nn | uu → un |
+| 307 | hh → hh | hh → hh |
+| 318 | un → nn | nn → nn |
+| 319 | nn → nn | nn → nn |
+| 329 | hh → hh | uu → hh |
+
+- **Luna** ist mit dem neuen Prompt weniger übervorsichtig (19 → 14 „unklar“), trifft den
+  Tief-Check jetzt 9/10 statt 6/10 und bleibt am stabilsten. Das restliche „unklar“ sitzt fast
+  nur auf #31 #35–#40, und dort meist begründet: Die Treffer belegen die behauptete Ursache
+  bzw. den Vergleich nicht (#35 „wegen politischer Entscheidungen der teuerste“, #37 „im
+  Gegensatz zu 12 anderen“, #39 „Habeck hat … dadurch gesenkt“).
+- **Flash** ist entschiedener geworden (8 → 2 „unklar“), Tief-Check 10/10, aber kaum stabiler
+  (10/15) — und genau auf diesen Kausal-/Vergleichs-Claims kippt es in einem der Läufe auf
+  „hoch“ (#35 mit unverlinktem Verivox, #37, #39 Kausalität ohne Beleg). Die 10/10 kommen von
+  den 5 Maischberger-Claims, die Staging-Claims #31–40 haben keine Referenz.
+- Lesart: Der Prompt hat beide Modelle in die gewünschte Richtung bewegt. Luna ist jetzt der
+  vorsichtigere, aber konsistentere Prüfer; Flash wirkt auf Kausal-Claims zu nachsichtig.
+
+## Ohne Presse-Domains (01.10.2026)
+
+`no_press.jsonl`: `claims15b.json`, 1 Lauf, Flash low in A und B, gleiche Suchanfragen; B
+sucht getrennt ohne „Qualitätsjournalismus“ (faz, handelsblatt, sz, zeit, spiegel,
+tagesschau). Skript-Option `NO_PRESS_B=1`.
+
+| Variante | Treffer Ø | Urteile (h / n / u) | Tief-Check | Zitierte Quellen | davon Presse | Checks mit Presse |
+|---|---|---|---|---|---|---|
+| mit Presse | 18,8 | 9 / 6 / 0 | 5/5 | 27 | 7 | 5/15 |
+| ohne Presse | 17,8 | 6 / 7 / 2 | 5/5 | 27 | 0 | 0/15 |
+
+- Presse verschwindet vollständig, die Lücke füllen amtliche und Forschungsquellen
+  (#34, #35, #307 vorher nur/teils Presse, jetzt Destatis/Forschung/Land). Kaum Verlust an
+  Treffern (−1 pro Claim), gleich viele zitierte Quellen, Tief-Check unverändert 5/5.
+- Abweichende Urteile: #36 (Industriestrompreis) hoch → unklar — mit Presse stützte sich der
+  Check allein auf tagesschau/ZEIT (BDEW-Zahl), ohne findet er keinen Wert: echter
+  Recall-Verlust. #39 hoch → unklar (Kausalität, s. o. — eher ein Gewinn). #37 hoch → niedrig
+  (Destatis-Zahl statt bpb; Claim-Formulierung mehrdeutig).
+- Nur 1 Lauf: Urteilswechsel auf #31–40 liegen im Bereich des Lauf-Rauschens (vgl. Flash
+  stabil 10/15). Der Presse-Effekt selbst ist eindeutig.
+
+## Offen
+
+- Live-Modell: Luna (neuer Prompt) statt Flash? Spricht dafür: stabiler, 10× billiger,
+  schneller, fängt Kausalfehler. Dagegen: weiterhin ~halb „unklar“ auf den Staging-Claims.
+- Presse aus `TRUSTED_DOMAINS` nehmen: Kosten sind einzelne Recall-Lücken (#36, Zahlen, die
+  nur über Presse auffindbar sind, vgl. Berliner Zahlen); ggf. als zweite Stufe „Presse nur,
+  wenn ohne nichts gefunden“.
