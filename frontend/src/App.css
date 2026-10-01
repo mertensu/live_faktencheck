@@ -2164,7 +2164,6 @@
 .landing-code { width: 100%; max-width: 420px; margin: -0.25rem 0 0.5rem; }
 .landing-code-label { margin: 0 0 0.4rem; font-size: 0.9rem; color: var(--text-secondary); }
 .landing .access-unlock { margin: 0; }
-.landing-hint { margin: 0; font-size: 0.85rem; color: var(--text-muted); }
 
 /* The sketch (LandingIllustration) mirrors the live transcript's look. */
 .li { width: 100%; max-width: 540px; justify-self: center; }

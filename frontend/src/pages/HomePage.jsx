@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { AccessUnlock } from '../components/AccessUnlock'
 import { LandingIllustration } from '../components/LandingIllustration'
 import { getAccessCode } from '../services/api'
@@ -43,7 +43,6 @@ export function HomePage() {
               vertrauenswürdigen Quellen bewertet, in wenigen Sekunden.
             </p>
           </div>
-          <p className="landing-hint">Ohne Code: frühere Checks unter <Link to="/beispiele">Beispiele</Link>.</p>
         </div>
         <LandingIllustration />
       </section>
