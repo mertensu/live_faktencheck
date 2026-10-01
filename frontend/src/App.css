@@ -2096,6 +2096,13 @@
 .app--sb .nav-container { gap: 1rem; }
 .header-rec-start, .header-rec-stop { white-space: nowrap; }
 
+/* "Mein Bereich": the open-list button is only needed where the list is a drawer. */
+.my-area { padding-top: 6rem; }
+.my-area-open { width: auto; }
+@media (min-width: 1000px) {
+  .my-area-open { display: none; }
+}
+
 @media (min-width: 1000px) {
   .app--sb { padding-left: var(--sb-w); }
   .app--sb .main-navigation { left: var(--sb-w); }

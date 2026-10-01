@@ -67,10 +67,10 @@ export function HomePage() {
 
       <section className="action-cards action-cards--single">
         <ActionCard
-          to="/new"
+          to="/mein-bereich"
           icon="🎙"
-          title="Live-Faktencheck starten"
-          description="Eine Sendung live verfolgen und Aussagen in Echtzeit prüfen."
+          title="Mein Bereich"
+          description="Sendungen live prüfen und deine bisherigen Checks ansehen."
           beta
           unlocked={unlocked}
           onLockedClick={focusUnlock}

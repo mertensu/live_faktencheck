@@ -6,6 +6,7 @@ import { getAccessCode } from './services/api'
 import { Navigation } from './components/Navigation'
 import { Footer } from './components/Footer'
 import { HomePage } from './pages/HomePage'
+import { MyAreaPage } from './pages/MyAreaPage'
 import { AboutPage } from './pages/AboutPage'
 import { TrustedDomainsPage } from './pages/TrustedDomainsPage'
 import { FactCheckPage } from './pages/FactCheckPage'
@@ -35,10 +36,10 @@ function EpisodeRoute() {
 }
 
 // Static top-level routes; anything else is an episode/session page.
-const STATIC_ROUTES = new Set(['/', '/about', '/trusted-domains', '/new', '/beispiele', '/meine-checks'])
+const STATIC_ROUTES = new Set(['/', '/about', '/trusted-domains', '/new', '/beispiele', '/meine-checks', '/mein-bereich'])
 
 // Operator pages that show the "Meine Checks" sidebar (besides every session page).
-const SIDEBAR_ROUTES = new Set(['/', '/new'])
+const SIDEBAR_ROUTES = new Set(['/mein-bereich', '/new'])
 
 function AppInner() {
   const { pathname } = useLocation()
@@ -70,8 +71,9 @@ function AppShell({ viewerMinimal }) {
         <Route path="/trusted-domains" element={<TrustedDomainsPage />} />
         <Route path="/new" element={<NewSessionPage />} />
         <Route path="/beispiele" element={<ExamplesPage />} />
-        {/* The list lives in the sidebar now; keep old links working. */}
-        <Route path="/meine-checks" element={<Navigate to="/" replace />} />
+        <Route path="/mein-bereich" element={<MyAreaPage />} />
+        {/* The list lives in the sidebar of "Mein Bereich" now; keep old links working. */}
+        <Route path="/meine-checks" element={<Navigate to="/mein-bereich" replace />} />
         <Route path="/:episodeKey" element={<EpisodeRoute />} />
       </Routes>
       {viewerMinimal ? <Footer slim /> : <Footer />}

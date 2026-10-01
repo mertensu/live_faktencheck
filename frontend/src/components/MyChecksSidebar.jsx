@@ -162,7 +162,7 @@ export function MyChecksSidebar() {
 
   const handleDeleted = (id) => {
     setSessions((prev) => (prev || []).filter((x) => x.session_id !== id))
-    if (id === current) navigate('/')
+    if (id === current) navigate('/mein-bereich')
   }
 
   const groups = []
