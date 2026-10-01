@@ -148,6 +148,21 @@ tagesschau). Skript-Option `NO_PRESS_B=1`.
 - Nur 1 Lauf: Urteilswechsel auf #31–40 liegen im Bereich des Lauf-Rauschens (vgl. Flash
   stabil 10/15). Der Presse-Effekt selbst ist eindeutig.
 
+## Luna low mit 8 Treffern (01.10.2026)
+
+`luna_low_8.jsonl`: `claims15b.json`, 2 Läufe, nur Luna low, `MAX_RESULTS_A=8`. Frage: Sinkt
+der „unklar“-Anteil, wenn mehr Treffer da sind (Recall-Fälle #37, #269, #36)?
+
+| Variante | Treffer Ø | Synthese Ø | Urteile (h / n / u) | Stabil | Tief-Check |
+|---|---|---|---|---|---|
+| Luna low, 5 Treffer (`flash_vs_luna_v3`) | 18,7 | 2,3 s | 5 / 11 / 14 | 13/15 | 9/10 |
+| Luna low, 8 Treffer | 30,6 | 2,2 s | 5 / 10 / 15 | 10/15 | 8/10 |
+
+Nein: Trotz 60 % mehr Treffern bleibt „unklar“ gleich, die Stabilität sinkt eher (Wechsel bei
+#33 #34 #40 #269 #329, im Rahmen des Lauf-Rauschens). #37 und #36 bleiben „unklar“, weil auch
+unter 8 Treffern die Vergleichszahl bzw. ein Durchschnittswert fehlt. Mehr vom Gleichen hilft
+der Schnellprüfung nicht; diese Fälle brauchen gezieltes Nachsuchen (tiefe Prüfung).
+
 ## Offen
 
 - Live-Modell: Luna (neuer Prompt) statt Flash? Spricht dafür: stabiler, 10× billiger,

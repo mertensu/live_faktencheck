@@ -144,9 +144,11 @@ async def main() -> None:
                 rows.append(row)
                 f.write(json.dumps(row, ensure_ascii=False) + "\n")
                 f.flush()
-                print(f"r{run} #{row['id']:>3} deep={row['deep'] or '—':<15} "
-                      f"A={ra.get('consistency', 'ERR'):<15} {ra['n_results']:>2} hits {ra['synth_s']:5.1f}s | "
-                      f"B={rb.get('consistency', 'ERR'):<15} {rb['n_results']:>2} hits {rb['synth_s']:5.1f}s")
+                line = (f"r{run} #{row['id']:>3} deep={row['deep'] or '—':<15} "
+                        f"A={ra.get('consistency', 'ERR'):<15} {ra['n_results']:>2} hits {ra['synth_s']:5.1f}s")
+                if b:
+                    line += f" | B={rb.get('consistency', 'ERR'):<15} {rb['n_results']:>2} hits {rb['synth_s']:5.1f}s"
+                print(line)
 
     def avg(xs):
         return sum(xs) / len(xs) if xs else float("nan")
