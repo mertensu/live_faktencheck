@@ -31,10 +31,16 @@ jobs:
             if (alias.length > maxAlias) alias = alias.slice(0, maxAlias).replace(/-+$/, '');
             const url = `https://${alias}-${WORKER}.${SUBDOMAIN}.workers.dev`;
 
+            // QR code so the preview opens on a phone straight from the PR page. Rendered by
+            // api.qrserver.com (it only sees the preview URL, which is in this comment anyway).
+            const qr = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=8&data=${encodeURIComponent(url)}`;
+
             const marker = '<!-- preview-link -->';
             const body = [
               marker,
               `🔎 **Preview:** ${url}`,
+              '',
+              `<img src="${qr}" alt="QR-Code zur Preview" width="180" height="180">`,
               '',
               'Zeigt auf das **Staging-Backend**. Live, sobald der `Workers Builds`-Check grün ist.',
               'Bei ungewöhnlichen Branch-Namen kann der Link leicht abweichen — dann die exakte URL im `Workers Builds`-Check.',

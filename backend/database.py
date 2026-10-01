@@ -365,6 +365,37 @@ class Database:
         cursor = await self.db.execute("SELECT * FROM sessions ORDER BY created_at DESC")
         return [self._row_to_session(r) for r in await cursor.fetchall()]
 
+    async def list_sessions_by_owner(self, owner_code: str) -> list[dict]:
+        """Sessions created with ``owner_code``, newest first, each with its claim counts
+        (``claims`` total, plus ``hoch``/``niedrig``/``unklar``). Discarded claims are
+        not counted, matching what the results page shows."""
+        cursor = await self.db.execute(
+            """
+            SELECT s.*,
+                   COUNT(f.id) AS claims,
+                   COALESCE(SUM(LOWER(f.consistency) = 'hoch'), 0)    AS hoch,
+                   COALESCE(SUM(LOWER(f.consistency) = 'niedrig'), 0) AS niedrig,
+                   COALESCE(SUM(LOWER(f.consistency) = 'unklar'), 0)  AS unklar
+            FROM sessions s
+            LEFT JOIN fact_checks f
+              ON f.session_id = s.session_id AND f.status != 'discarded'
+            WHERE s.owner_code = ?
+            GROUP BY s.session_id
+            ORDER BY s.created_at DESC
+            """,
+            (owner_code,),
+        )
+        return [
+            {
+                **self._row_to_session(r),
+                "claims": r["claims"],
+                "hoch": r["hoch"],
+                "niedrig": r["niedrig"],
+                "unklar": r["unklar"],
+            }
+            for r in await cursor.fetchall()
+        ]
+
     async def count_active_sessions(self, within_minutes: int = 30) -> int:
         """Count sessions that are actually live: status 'active' AND touched within the
         window (created just now, or a fact-check produced recently). The bare 'active'
@@ -395,6 +426,15 @@ class Database:
             "UPDATE sessions SET status = 'ended', ended_at = ? WHERE session_id = ?",
             (datetime.now().isoformat(), session_id),
         )
+        await self.db.commit()
+        return cursor.rowcount > 0
+
+    async def delete_session(self, session_id: str) -> bool:
+        """Permanently delete a session with its fact-checks (and any legacy block rows),
+        in one transaction. Returns True if the session existed."""
+        await self.db.execute("DELETE FROM fact_checks WHERE session_id = ?", (session_id,))
+        await self.db.execute("DELETE FROM pending_claims_blocks WHERE session_id = ?", (session_id,))
+        cursor = await self.db.execute("DELETE FROM sessions WHERE session_id = ?", (session_id,))
         await self.db.commit()
         return cursor.rowcount > 0
 

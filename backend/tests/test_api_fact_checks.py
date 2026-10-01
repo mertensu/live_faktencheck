@@ -235,11 +235,12 @@ class TestDeleteFactCheckEndpoint:
     async def test_delete_existing_fact_check(self, client):
         """DELETE /api/fact-checks/{id} returns 200 and removes the record."""
         db = state.get_db()
+        sid = (await client.post("/api/sessions", json={"title": "T"})).json()["session_id"]
         await db.add_fact_check({
             "sprecher": "Speaker A",
             "behauptung": "Some claim",
             "timestamp": "2024-01-01T10:00:00",
-            "session_id": "ep1",
+            "session_id": sid,
         })
 
         response = await client.delete("/api/fact-checks/1")
@@ -256,3 +257,31 @@ class TestDeleteFactCheckEndpoint:
 
         assert response.status_code == 404
         assert "not found" in response.json()["detail"]
+
+    async def test_delete_fact_check_of_other_owner_is_404(self, client):
+        """A valid code can't delete a fact-check in a session it doesn't own."""
+        db = state.get_db()
+        await db.add_code("other-code", "other")
+        sid = (await client.post(
+            "/api/sessions", json={"title": "T"}, headers={"X-Access-Code": "other-code"},
+        )).json()["session_id"]
+        fc_id = await db.add_fact_check({
+            "behauptung": "x", "timestamp": "2024-01-01T10:00:00", "session_id": sid,
+        })
+
+        response = await client.delete(f"/api/fact-checks/{fc_id}")
+
+        assert response.status_code == 404
+        assert await db.get_fact_check_by_id(fc_id) is not None
+
+    async def test_delete_fact_check_of_ownerless_session_is_404(self, client):
+        """Legacy rows (no session row / no owner) can't be deleted via the API."""
+        db = state.get_db()
+        fc_id = await db.add_fact_check({
+            "behauptung": "x", "timestamp": "2024-01-01T10:00:00", "session_id": "ep1",
+        })
+
+        response = await client.delete(f"/api/fact-checks/{fc_id}")
+
+        assert response.status_code == 404
+        assert await db.get_fact_check_by_id(fc_id) is not None

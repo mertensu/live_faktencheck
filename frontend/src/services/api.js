@@ -29,6 +29,7 @@ export const FETCH_HEADERS = {
 
 // Access code (Phase 3a gate) — persisted in localStorage, sent as X-Access-Code.
 const ACCESS_CODE_KEY = 'fc_access_code'
+export const ACCESS_CODE_EVENT = 'fc-access-code'
 
 export const getAccessCode = () => {
   try { return localStorage.getItem(ACCESS_CODE_KEY) || '' } catch { return '' }
@@ -39,6 +40,8 @@ export const setAccessCode = (code) => {
     if (code) localStorage.setItem(ACCESS_CODE_KEY, code)
     else localStorage.removeItem(ACCESS_CODE_KEY)
   } catch { /* ignore storage errors */ }
+  // Lets the nav show/hide "Meine Checks" without a route change.
+  window.dispatchEvent(new Event(ACCESS_CODE_EVENT))
 }
 
 // Headers including the access code when present. Harmless on open GET endpoints,
@@ -115,4 +118,26 @@ export async function fetchFactChecks(sessionId) {
   })
   if (!res.ok) return []
   return safeJsonParse(res, 'fetchFactChecks')
+}
+
+// "Meine Checks": sessions created with the stored access code, with claim counts.
+export async function fetchMySessions() {
+  const res = await fetch(`${BACKEND_URL}/api/my/sessions`, { headers: authHeaders() })
+  const data = await safeJsonParse(res, 'fetchMySessions')
+  if (!res.ok) {
+    throw new Error(data?.detail || `fetchMySessions failed (${res.status})`)
+  }
+  return data
+}
+
+// Permanently delete one of the own sessions with all its claims (owner code only).
+export async function deleteSession(sessionId) {
+  const res = await fetch(`${BACKEND_URL}/api/sessions/${encodeURIComponent(sessionId)}`, {
+    method: 'DELETE', headers: authHeaders(),
+  })
+  const data = await safeJsonParse(res, 'deleteSession')
+  if (!res.ok) {
+    throw new Error(data?.detail || `deleteSession failed (${res.status})`)
+  }
+  return data
 }

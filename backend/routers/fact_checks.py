@@ -74,16 +74,18 @@ async def delete_fact_check(
     fact_check_id: int,
     code: dict = Depends(require_code),
 ):
-    """Permanently delete a fact-check by ID.
+    """Permanently delete a fact-check by ID — only with the code that owns its session.
 
-    Gated like the other write endpoints: the API is publicly reachable, and IDs
-    are sequential, so an ungated delete lets anyone walk the range and erase
-    published results.
+    The API is publicly reachable and IDs are sequential, so any valid code could
+    otherwise walk the range and erase other people's results. A fact-check outside
+    the caller's sessions answers 404, the same as a missing one.
     """
     db = state.get_db()
-    deleted = await db.delete_fact_check(fact_check_id)
-    if not deleted:
+    fc = await db.get_fact_check_by_id(fact_check_id)
+    session = await db.get_session(fc["session_id"]) if fc and fc["session_id"] else None
+    if session is None or session["owner_code"] != code["code"]:
         raise HTTPException(status_code=404, detail=f"Fact-check {fact_check_id} not found")
+    await db.delete_fact_check(fact_check_id)
     logger.info(f"Fact-check {fact_check_id} deleted")
     return {"status": "deleted", "id": fact_check_id}
 

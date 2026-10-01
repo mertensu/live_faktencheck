@@ -8,6 +8,7 @@ import { MicSelect } from '../components/MicSelect'
 import { ShareLink } from '../components/ShareLink'
 import { useAudioStream } from '../hooks/useAudioStream'
 import { useMicDevices } from '../hooks/useMicDevices'
+import { useSidebar } from '../components/MyChecksSidebar'
 
 // Default speakers as fallback
 const DEFAULT_SPEAKERS = []
@@ -21,6 +22,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
   const [speakers, setSpeakers] = useState(DEFAULT_SPEAKERS)  // Load config from backend
   const [displayTitle, setDisplayTitle] = useState(showName)  // Full show title (updated from config)
   const [backendError, setBackendError] = useState(null)  // Backend connection error
+  const [notFound, setNotFound] = useState(false)  // session unknown or deleted (config 404)
   // Only surface a connection error after several *consecutive* failed polls.
   // A single transient blip (load race, one slow request tripping the 5s abort)
   // self-heals on the next 2s poll, so showing it immediately just flashes a
@@ -31,17 +33,27 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
   const mic = useMicDevices()
   const liveStream = useAudioStream(episodeKey, { deviceId: mic.deviceId })
   const isLive = liveStream.status === 'streaming' || liveStream.status === 'connecting'
+  // The "Meine Checks" sidebar folds to a rail while live, so the transcript gets the width.
+  const { setLive: setSidebarLive } = useSidebar()
+  useEffect(() => {
+    setSidebarLive(isLive)
+    return () => setSidebarLive(false)
+  }, [isLive, setSidebarLive])
   // Mirrors LiveTranscript's own visibility: a live session is running or left a transcript.
   const showLiveTranscript = !isViewer && (
     isLive || liveStream.transcript.length > 0 || liveStream.claims.length > 0
   )
-  // The live-check guide opens every time an operator opens the page, before the show starts.
-  const [tutorialOpen, setTutorialOpen] = useState(!isViewer)
+  // The live-check guide opens every time an operator opens a session that has no
+  // results yet (before the show starts) — not when reopening a finished check.
+  // Decided once, after the first results fetch, so it doesn't flash open.
+  const [tutorialOpen, setTutorialOpen] = useState(false)
+  const tutorialDecidedRef = useRef(false)
   const closeTutorial = useCallback(() => setTutorialOpen(false), [])
 
   // Load episode configuration from backend
   useEffect(() => {
     const controller = new AbortController()
+    setNotFound(false)
 
     const loadEpisodeConfig = async () => {
       const key = episodeKey || showKey || showName.toLowerCase()
@@ -63,6 +75,8 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
           } else if (config.show_name) {
             setDisplayTitle(config.show_name)
           }
+        } else if (response.status === 404) {
+          setNotFound(true)
         } else {
           debug.warn(`Could not load config for ${key}, using fallback`)
         }
@@ -82,6 +96,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
   useEffect(() => {
     let isMounted = true
     let currentController = null
+    tutorialDecidedRef.current = false
 
     const fetchFactChecks = async () => {
       const controller = new AbortController()
@@ -118,7 +133,12 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
 
         const data = await safeJsonParse(response, 'Error loading fact-checks')
         debug.log(`Loaded fact-checks (Live): ${data.length}`, data)
-        setFactChecks(data.filter((fc) => fc.status !== 'discarded'))
+        const visible = data.filter((fc) => fc.status !== 'discarded')
+        setFactChecks(visible)
+        if (!tutorialDecidedRef.current) {
+          tutorialDecidedRef.current = true
+          if (!isViewer && visible.length === 0) setTutorialOpen(true)
+        }
         pollFailuresRef.current = 0
         setBackendError(null)  // Clear error on success
       } catch (error) {
@@ -154,13 +174,25 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
       if (currentController) currentController.abort()
       clearInterval(interval)
     }
-  }, [episodeKey])
+  }, [episodeKey, isViewer])
 
   // What sits below the header when no live transcript is showing:
   // - viewer: the results stream, or a "starts soon" note until the first result
   // - operator on a session with results (e.g. a Beispiel): the read-only stream
   // - operator before going live: share link + mic picker; the header starts Live-Check
   const renderResults = () => {
+    if (notFound) {
+      return (
+        <div className="review-view">
+          <div className="review-waiting-live" role="status">
+            <p className="review-waiting-title">Diesen Faktencheck gibt es nicht (mehr)</p>
+            <p className="review-waiting-sub">
+              Der Link ist falsch, oder der Check wurde gelöscht.
+            </p>
+          </div>
+        </div>
+      )
+    }
     if (factChecks.length > 0) {
       return (
         <div className="review-view">
@@ -201,7 +233,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
           <div>
             <h1>{isViewer ? displayTitle : `Fakten-Check - ${displayTitle}`}</h1>
           </div>
-          {!isViewer && (
+          {!isViewer && !notFound && (
           <div className="factcheck-header-actions">
             {isLive ? (
               <button type="button" className="header-rec-stop" onClick={() => liveStream.stop()}>
@@ -229,7 +261,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
         </div>
       </header>
 
-      {tutorialOpen && !isViewer && <LiveTutorial onClose={closeTutorial} />}
+      {tutorialOpen && !isViewer && !notFound && <LiveTutorial onClose={closeTutorial} />}
       <main className="main-content">
         {showLiveTranscript && <LiveTranscript live={liveStream} speakers={speakers} />}
         <BackendErrorDisplay error={backendError} />
