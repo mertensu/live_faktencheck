@@ -88,7 +88,8 @@ etwa jeder zweite Check auch auf Presse. Mehr Treffer pro Anfrage senken den Ant
    (~150 Tavily-Suchen). Frage: Ist Luna mit dem neuen Prompt weniger übervorsichtig, und
    hat der Prompt Flash verändert? Vergleich gegen `flash_vs_luna.jsonl`.
 2. **Ohne Presse-Domains**: Tavily-Suche ohne die Kategorie „Qualitätsjournalismus“
-   (faz.net, handelsblatt.com, sueddeutsche.de, zeit.de, spiegel.de, tagesschau.de)
+   (faz.net, handelsblatt.com, sueddeutsche.de, zeit.de, spiegel.de, tagesschau.de — alle
+   sechs, auch tagesschau.de)
    gegen die heutige Liste, gleiches Modell, 1 Lauf (~150 Suchen, da beide Varianten
    getrennt suchen). Messen: Presse-Anteil, Anzahl Treffer, Anteil „unklar“ /
    „keine Datenlage“ (verlieren wir Recall?), Tief-Check-Treffer.
