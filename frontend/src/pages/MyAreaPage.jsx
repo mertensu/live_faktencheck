@@ -16,7 +16,7 @@ export function MyAreaPage() {
           <>
             <p className="examples-intro">
               Unter „Meine Checks“ findest du deine bisherigen Faktenchecks mit allen geprüften
-              Aussagen und Bewertungen. Mit „+ Neuer Check“ legst du eine neue Sendung an.
+              Aussagen und Bewertungen. Mit „+ Neuer Check“ legst du einen neuen Faktencheck an.
               Das Transkript wird nicht gespeichert.
             </p>
             {/* Narrow screens: the list is a drawer, so offer a direct way to open it. */}
