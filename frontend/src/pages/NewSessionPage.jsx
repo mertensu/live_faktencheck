@@ -70,7 +70,7 @@ export function NewSessionPage() {
 
         {stepName === 'people' && (
           <section className="wizard-step">
-            <h1>Wer spricht und worum geht es?</h1>
+            <h1>Wer spricht?</h1>
             <p className="wizard-hint">
               Namen sind optional – ohne Namen bleiben die Sprecher:innen <strong>Sprecher A/B/C</strong>.
               Partei oder Organisation der Teilnehmer:innen helfen der KI, Aussagen besser einzuordnen
@@ -83,8 +83,12 @@ export function NewSessionPage() {
             ))}
             <button type="button" className="wizard-add"
                     onClick={() => dispatch({ type: 'ADD_PERSON' })}>+ weitere Person</button>
+          </section>
+        )}
 
-            <h2 className="wizard-subhead">Worum geht es? <span className="wizard-optional">(optional)</span></h2>
+        {stepName === 'topic' && (
+          <section className="wizard-step">
+            <h1>Worum geht es? <span className="wizard-optional">(optional)</span></h1>
             <p className="wizard-hint">
               Je konkreter, desto besser prüft die KI: Mit klarem Hintergrund kann sie mehrdeutige
               Bezüge richtig einordnen und passendere Quellen finden. Hilfreich sind – soweit relevant –
@@ -93,9 +97,15 @@ export function NewSessionPage() {
             <textarea className="wizard-input" rows={4} value={state.topic}
                       onChange={(e) => dispatch({ type: 'SET_TOPIC', value: e.target.value })}
                       placeholder="Anlass, Ort/Zeitraum und zentrale Themen des Gesprächs — kann leer bleiben" />
-            <label className="wizard-label" htmlFor="wizard-keyterms">
-              Namen &amp; Begriffe, die fallen könnten <span className="wizard-optional">(optional)</span>
-            </label>
+          </section>
+        )}
+
+        {stepName === 'keyterms' && (
+          <section className="wizard-step">
+            <h1>
+              <label htmlFor="wizard-keyterms">Namen &amp; Begriffe, die fallen könnten</label>{' '}
+              <span className="wizard-optional">(optional)</span>
+            </h1>
             <p className="wizard-hint">
               Hilft der Transkription, Namen oder Fachbegriffe richtig zu schreiben. Beachte: Namen und Parteien
               der Teilnehmer:innen sind bereits vermerkt und müssen hier nicht aufgelistet werden.

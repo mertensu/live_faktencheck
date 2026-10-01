@@ -1,8 +1,8 @@
 // Pure, framework-free wizard logic — unit-tested in wizardLogic.test.js.
 
-// People and topic share one page: names (party optional) and what the conversation is about.
-// There is no conversation-type step: the backend defaults it, and nothing live depends on it.
-export const STEPS = ['people', 'review']
+// One question per page: who speaks, what it is about, which names/terms may come up, then a
+// review. There is no conversation-type step: the backend defaults it, and nothing live depends on it.
+export const STEPS = ['people', 'topic', 'keyterms', 'review']
 
 // `role` has no field any more (it stays empty): live, the operator assigns speakers by click.
 // The party still helps ("meine Partei …" becomes checkable) and is a transcription keyterm.
