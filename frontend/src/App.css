@@ -2212,6 +2212,8 @@
 
 @media (min-width: 901px) {
   .landing-title-line { white-space: nowrap; }
+  /* Sit the text near the top of the sketch instead of centred against its full height. */
+  .landing-copy { align-self: start; padding-top: 2.5rem; }
 }
 @media (max-width: 900px) {
   .landing-hero { grid-template-columns: 1fr; padding-top: 6rem; }
