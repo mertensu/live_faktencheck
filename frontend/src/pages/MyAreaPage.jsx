@@ -1,4 +1,5 @@
-import { Link } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { LimitInfoModal } from '../components/LimitInfoModal'
 import { useSidebar } from '../components/MyChecksSidebar'
 import { useHasAccessCode } from '../hooks/useHasAccessCode'
 
@@ -7,9 +8,15 @@ import { useHasAccessCode } from '../hooks/useHasAccessCode'
 export function MyAreaPage() {
   const hasCode = useHasAccessCode()
   const sb = useSidebar()
+  const location = useLocation()
+  const navigate = useNavigate()
+  // Right after entering a code on the landing page: show the code's limits once.
+  const limitInfo = location.state?.limitInfo
+  const closeLimitInfo = () => navigate(location.pathname, { replace: true, state: null })
 
   return (
     <div className="home-page">
+      {limitInfo && <LimitInfoModal info={limitInfo} onClose={closeLimitInfo} />}
       <section className="examples-section my-area">
         <h2 className="examples-title">Mein Bereich</h2>
         {hasCode ? (
