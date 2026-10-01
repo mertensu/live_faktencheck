@@ -8,6 +8,7 @@ import { MicSelect } from '../components/MicSelect'
 import { ShareLink } from '../components/ShareLink'
 import { useAudioStream } from '../hooks/useAudioStream'
 import { useMicDevices } from '../hooks/useMicDevices'
+import { useSidebar } from '../components/MyChecksSidebar'
 
 // Default speakers as fallback
 const DEFAULT_SPEAKERS = []
@@ -32,6 +33,12 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
   const mic = useMicDevices()
   const liveStream = useAudioStream(episodeKey, { deviceId: mic.deviceId })
   const isLive = liveStream.status === 'streaming' || liveStream.status === 'connecting'
+  // The "Meine Checks" sidebar folds to a rail while live, so the transcript gets the width.
+  const { setLive: setSidebarLive } = useSidebar()
+  useEffect(() => {
+    setSidebarLive(isLive)
+    return () => setSidebarLive(false)
+  }, [isLive, setSidebarLive])
   // Mirrors LiveTranscript's own visibility: a live session is running or left a transcript.
   const showLiveTranscript = !isViewer && (
     isLive || liveStream.transcript.length > 0 || liveStream.claims.length > 0

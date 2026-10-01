@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom'
 import { useState, useEffect, useRef } from 'react'
-import { ACCESS_CODE_EVENT, getAccessCode } from '../services/api'
+import { useSidebar } from './MyChecksSidebar'
 
 const GITHUB_REPO_URL = "https://github.com/mertensu/live_faktencheck"
 
@@ -8,18 +8,7 @@ export function Navigation() {
   const location = useLocation()
   const [visible, setVisible] = useState(true)
   const lastYRef = useRef(0)
-  // "Meine Checks" only makes sense with a stored code — it lists that code's sessions.
-  const [hasCode, setHasCode] = useState(() => Boolean(getAccessCode()))
-
-  useEffect(() => {
-    const sync = () => setHasCode(Boolean(getAccessCode()))
-    window.addEventListener(ACCESS_CODE_EVENT, sync)
-    window.addEventListener('storage', sync)
-    return () => {
-      window.removeEventListener(ACCESS_CODE_EVENT, sync)
-      window.removeEventListener('storage', sync)
-    }
-  }, [])
+  const sb = useSidebar()
 
   useEffect(() => {
     const handleScroll = () => {
@@ -34,13 +23,20 @@ export function Navigation() {
   return (
     <nav className={`main-navigation${visible ? '' : ' main-navigation--hidden'}`}>
       <div className="nav-container">
+        {/* Narrow screens: the sidebar is a drawer; this button opens and closes it. */}
+        {sb.enabled && (
+          <button
+            type="button"
+            className="nav-sb-toggle"
+            aria-expanded={sb.open}
+            aria-label="Meine Checks"
+            onClick={() => sb.setOpen(!sb.open)}
+          >
+            {sb.open ? '✕' : '☰'}<span className="nav-sb-label"> Meine Checks</span>
+          </button>
+        )}
         <Link to="/" className="nav-logo">Live-Faktencheck</Link>
         <div className="nav-links">
-          {hasCode && (
-            <Link to="/meine-checks" className={location.pathname === '/meine-checks' ? 'active' : ''}>
-              Meine Checks
-            </Link>
-          )}
           <Link to="/beispiele" className={location.pathname === '/beispiele' ? 'active' : ''}>
             Beispiele
           </Link>
