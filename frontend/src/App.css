@@ -2061,11 +2061,11 @@
 .sb-dots { display: inline-flex; gap: 3px; }
 .sb-dots .fcs-dot { width: 7px; height: 7px; }
 .sb-more {
-  flex: none; cursor: pointer; border: none; background: none; font: inherit; font-size: 1.3rem; font-weight: 700;
-  line-height: 1; letter-spacing: 0.05em; color: var(--text-secondary); border-radius: var(--radius-md);
-  padding: 0.3rem 0.45rem 0.55rem; margin: 0.2rem 0.2rem 0 0; transition: background var(--transition-fast), color var(--transition-fast);
+  flex: none; display: inline-flex; cursor: pointer; border: none; background: none; color: var(--text-secondary);
+  border-radius: var(--radius-md); padding: 0.4rem; margin: 0.3rem 0.25rem 0 0;
+  transition: background var(--transition-fast), color var(--transition-fast);
 }
-.sb-more:hover, .sb-more[aria-expanded="true"] { background: var(--border-medium); color: var(--text-main); }
+.sb-more:hover, .sb-more[aria-expanded="true"] { background: #fee2e2; color: #b91c1c; }
 .sb-confirm { padding: 0 0.65rem 0.65rem; font-size: 0.8rem; color: var(--text-secondary); }
 .sb-confirm p { margin: 0 0 0.5rem; }
 .sb-confirm-actions { display: flex; gap: 0.5rem; }
