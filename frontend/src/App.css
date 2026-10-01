@@ -7,6 +7,8 @@
 /* Navigation */
 .main-navigation {
   background: var(--bg-main);
+  /* Lifts the bar slightly off the page. */
+  box-shadow: 0 2px 12px rgba(44, 62, 80, 0.08), 0 1px 0 rgba(44, 62, 80, 0.04);
   padding: 1rem 2rem;
   position: fixed;
   top: 0;
@@ -2013,6 +2015,7 @@
   position: fixed; top: 0; bottom: 0; left: 0; z-index: 101;
   width: var(--sb-w); display: flex; flex-direction: column; min-height: 0;
   background: #EEF2F6; border-right: 1px solid var(--border-light);
+  box-shadow: 2px 0 12px rgba(44, 62, 80, 0.08);
   transition: transform 0.22s ease;
 }
 .sb-head { display: flex; align-items: center; gap: 0.4rem; padding: 1.1rem 0.9rem 0.6rem 1.1rem; }
@@ -2082,6 +2085,7 @@
   position: fixed; top: 0; bottom: 0; left: 0; z-index: 101; width: var(--sb-rail-w);
   display: flex; flex-direction: column; align-items: center; gap: 0.5rem; padding-top: 1rem;
   background: #EEF2F6; border-right: 1px solid var(--border-light);
+  box-shadow: 2px 0 12px rgba(44, 62, 80, 0.08);
 }
 .sb-rail .sb-icon-btn { font-size: 1.1rem; padding: 0.45rem 0.6rem; }
 .sb-rail-count { font-size: 0.7rem; color: var(--text-muted); font-variant-numeric: tabular-nums; }
