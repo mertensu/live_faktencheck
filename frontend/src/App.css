@@ -2062,7 +2062,7 @@
 .sb-dots .fcs-dot { width: 7px; height: 7px; }
 .sb-more {
   flex: none; display: inline-flex; cursor: pointer; border: none; background: none; color: var(--text-secondary);
-  border-radius: var(--radius-md); padding: 0.4rem; margin: 0.3rem 0.25rem 0 0;
+  border-radius: var(--radius-md); padding: 0.35rem; margin: 0.35rem 0.3rem 0 0;
   transition: background var(--transition-fast), color var(--transition-fast);
 }
 .sb-more:hover, .sb-more[aria-expanded="true"] { background: #fee2e2; color: #b91c1c; }
