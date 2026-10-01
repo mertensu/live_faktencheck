@@ -2,6 +2,7 @@ import { useCallback, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AccessUnlock } from '../components/AccessUnlock'
 import { LimitInfoModal } from '../components/LimitInfoModal'
+import { LandingIllustration } from '../components/LandingIllustration'
 import { getAccessCode } from '../services/api'
 
 function ActionCard({ to, icon, title, description, beta, unlocked, onLockedClick }) {
@@ -49,31 +50,48 @@ export function HomePage() {
   const focusUnlock = () => unlockRef.current?.focus()
 
   return (
-    <div className="home-page">
+    <div className="home-page landing">
       {limitInfo && (
         <LimitInfoModal info={limitInfo} onClose={() => setLimitInfo(null)} />
       )}
-      <section className="hero-section">
-        <h1 className="hero-title">Live-Faktencheck</h1>
-        <p className="hero-subtitle">KI-gestützte Faktenchecks zu Politik, Wirtschaft und Gesellschaft in Deutschland.</p>
-      </section>
+      <section className="landing-hero">
+        <div className="landing-copy">
+          <h1 className="hero-title">Live-Faktencheck</h1>
+          <p className="hero-subtitle">KI-gestützte Faktenchecks zu Politik, Wirtschaft und Gesellschaft in Deutschland.</p>
+          <p className="landing-slogan">Fakten prüfen, während gesprochen wird.</p>
+          <p className="landing-desc">
+            Ob Talkshow, Interview oder Debatte: Jede überprüfbare Aussage wird live markiert und mit
+            vertrauenswürdigen Quellen bewertet, in wenigen Sekunden.
+          </p>
+          <ul className="landing-steps" aria-label="Ablauf">
+            <li>Zuhören</li>
+            <li>Aussage erkennen</li>
+            <li>Quellen prüfen</li>
+            <li>Bewerten</li>
+          </ul>
 
-      <AccessUnlock
-        ref={unlockRef}
-        unlocked={unlocked}
-        name={name}
-        onUnlock={handleUnlock}
-      />
+          <AccessUnlock
+            ref={unlockRef}
+            unlocked={unlocked}
+            name={name}
+            onUnlock={handleUnlock}
+          />
 
-      <section className="action-cards action-cards--single">
-        <ActionCard
-          to="/mein-bereich"
-          icon="🎙"
-          title="Mein Bereich"
-          description="Sendungen live prüfen und deine bisherigen Checks ansehen."
-          unlocked={unlocked}
-          onLockedClick={focusUnlock}
-        />
+          <section className="action-cards action-cards--single">
+            <ActionCard
+              to="/mein-bereich"
+              icon="🎙"
+              title="Mein Bereich"
+              description="Gespräche live prüfen und deine bisherigen Checks ansehen."
+              unlocked={unlocked}
+              onLockedClick={focusUnlock}
+            />
+          </section>
+          {!unlocked && (
+            <p className="landing-hint">Ohne Code: frühere Checks unter <Link to="/beispiele">Beispiele</Link>.</p>
+          )}
+        </div>
+        <LandingIllustration />
       </section>
     </div>
   )
