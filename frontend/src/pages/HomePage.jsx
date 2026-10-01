@@ -27,6 +27,13 @@ export function HomePage() {
       <section className="landing-hero">
         <div className="landing-copy">
           <h1 className="landing-title">Fakten prüfen,<br /> <span className="landing-title-line">während gesprochen wird.</span></h1>
+          <div className="landing-lead">
+            <p><strong>KI-gestützte Faktenchecks</strong> zu Politik, Wirtschaft und Gesellschaft in Deutschland.</p>
+            <p className="landing-lead-muted">
+              Ob Talkshow, Interview oder Debatte: Jede überprüfbare Aussage wird live markiert und mit
+              vertrauenswürdigen Quellen bewertet, in wenigen Sekunden.
+            </p>
+          </div>
           <button type="button" className="landing-cta" onClick={start} aria-expanded={askCode}>
             Jetzt starten <span aria-hidden="true">→</span>
           </button>
@@ -36,13 +43,6 @@ export function HomePage() {
               <AccessUnlock ref={unlockRef} unlocked={false} onUnlock={handleUnlock} />
             </div>
           )}
-          <div className="landing-lead">
-            <p><strong>KI-gestützte Faktenchecks</strong> zu Politik, Wirtschaft und Gesellschaft in Deutschland.</p>
-            <p className="landing-lead-muted">
-              Ob Talkshow, Interview oder Debatte: Jede überprüfbare Aussage wird live markiert und mit
-              vertrauenswürdigen Quellen bewertet, in wenigen Sekunden.
-            </p>
-          </div>
         </div>
         <LandingIllustration />
       </section>

@@ -2154,14 +2154,14 @@
 .landing-lead .landing-lead-muted { color: var(--text-muted); }
 .landing-cta {
   cursor: pointer; font: inherit; font-size: 1.05rem; font-weight: 600; color: #fff;
-  background: var(--accent-active); border: none; border-radius: 999px; padding: 0.7rem 1.6rem; margin: 0.25rem 0 0.5rem;
+  background: var(--accent-active); border: none; border-radius: 999px; padding: 0.7rem 1.6rem; margin: 0.75rem 0 0;
   box-shadow: 0 4px 14px rgba(33, 150, 243, 0.3); transition: background var(--transition-normal), transform var(--transition-normal);
 }
 .landing-cta span { display: inline-block; transition: transform var(--transition-normal); }
 .landing-cta:hover { background: #1976D2; }
 .landing-cta:hover span { transform: translateX(3px); }
 .landing-cta:focus-visible { outline: none; box-shadow: var(--focus-ring), 0 4px 14px rgba(33, 150, 243, 0.3); }
-.landing-code { width: 100%; max-width: 420px; margin: -0.25rem 0 0.5rem; }
+.landing-code { width: 100%; max-width: 420px; }
 .landing-code-label { margin: 0 0 0.4rem; font-size: 0.9rem; color: var(--text-secondary); }
 .landing .access-unlock { margin: 0; }
 
