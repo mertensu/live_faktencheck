@@ -71,7 +71,6 @@ export function HomePage() {
           icon="🎙"
           title="Mein Bereich"
           description="Sendungen live prüfen und deine bisherigen Checks ansehen."
-          beta
           unlocked={unlocked}
           onLockedClick={focusUnlock}
         />

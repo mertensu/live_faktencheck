@@ -1399,17 +1399,19 @@
   border: 1px solid var(--border-light);
   border-radius: var(--radius-lg);
   background: white;
+  box-shadow: 0 4px 14px rgba(44, 62, 80, 0.08), 0 1px 3px rgba(44, 62, 80, 0.06);
   text-decoration: none;
   color: inherit;
   text-align: left;
   font: inherit;
   cursor: pointer;
-  transition: border-color var(--transition-normal), transform var(--transition-normal);
+  transition: border-color var(--transition-normal), transform var(--transition-normal), box-shadow var(--transition-normal);
 }
 
 .action-card:hover {
   border-color: var(--accent-blue);
   transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgba(44, 62, 80, 0.12), 0 2px 5px rgba(44, 62, 80, 0.06);
 }
 
 .action-card--locked {
