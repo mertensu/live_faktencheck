@@ -429,6 +429,15 @@ class Database:
         await self.db.commit()
         return cursor.rowcount > 0
 
+    async def delete_session(self, session_id: str) -> bool:
+        """Permanently delete a session with its fact-checks (and any legacy block rows),
+        in one transaction. Returns True if the session existed."""
+        await self.db.execute("DELETE FROM fact_checks WHERE session_id = ?", (session_id,))
+        await self.db.execute("DELETE FROM pending_claims_blocks WHERE session_id = ?", (session_id,))
+        cursor = await self.db.execute("DELETE FROM sessions WHERE session_id = ?", (session_id,))
+        await self.db.commit()
+        return cursor.rowcount > 0
+
     async def seed_session_if_absent(self, session: dict) -> None:
         """Insert a session only if its session_id does not already exist."""
         existing = await self.get_session(session["session_id"])

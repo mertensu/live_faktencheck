@@ -118,3 +118,52 @@ async def test_my_sessions_includes_empty_sessions_newest_first(client):
 
 async def test_my_sessions_requires_code(no_auth_client):
     assert (await no_auth_client.get("/api/my/sessions")).status_code == 401
+
+
+# --- Deleting own sessions: DELETE /api/sessions/{id} ------------------------
+
+async def test_delete_own_session_removes_it_and_its_checks(client):
+    from backend import state
+    sid = (await client.post("/api/sessions", json={"title": "Weg"})).json()["session_id"]
+    keep = (await client.post("/api/sessions", json={"title": "Bleibt"})).json()["session_id"]
+    await _add_check(sid, "hoch")
+    await _add_check(keep, "hoch")
+
+    resp = await client.delete(f"/api/sessions/{sid}")
+    assert resp.status_code == 200
+    assert (await client.get(f"/api/sessions/{sid}")).status_code == 404
+    assert await state.get_db().get_fact_checks(session_id=sid) == []
+    assert len(await state.get_db().get_fact_checks(session_id=keep)) == 1
+    assert [s["session_id"] for s in (await client.get("/api/my/sessions")).json()] == [keep]
+
+
+async def test_delete_other_owners_session_is_404(client):
+    from backend import state
+    await state.get_db().add_code("other-code", "other")
+    sid = (await client.post(
+        "/api/sessions", json={"title": "Fremd"}, headers={"X-Access-Code": "other-code"},
+    )).json()["session_id"]
+    assert (await client.delete(f"/api/sessions/{sid}")).status_code == 404
+    assert (await client.get(f"/api/sessions/{sid}")).status_code == 200
+
+
+async def test_delete_ownerless_session_is_404(client):
+    from backend import state
+    await state.get_db().add_session({"session_id": "legacy-ep", "title": "Alt"})
+    assert (await client.delete("/api/sessions/legacy-ep")).status_code == 404
+    assert (await client.get("/api/sessions/legacy-ep")).status_code == 200
+
+
+async def test_delete_session_while_streaming_is_409(client):
+    from backend import state
+    sid = (await client.post("/api/sessions", json={"title": "Live"})).json()["session_id"]
+    state.streaming_sessions[sid] = object()
+    try:
+        assert (await client.delete(f"/api/sessions/{sid}")).status_code == 409
+    finally:
+        state.streaming_sessions.pop(sid, None)
+    assert (await client.get(f"/api/sessions/{sid}")).status_code == 200
+
+
+async def test_delete_session_requires_code(no_auth_client):
+    assert (await no_auth_client.delete("/api/sessions/x")).status_code == 401

@@ -129,3 +129,15 @@ export async function fetchMySessions() {
   }
   return data
 }
+
+// Permanently delete one of the own sessions with all its claims (owner code only).
+export async function deleteSession(sessionId) {
+  const res = await fetch(`${BACKEND_URL}/api/sessions/${encodeURIComponent(sessionId)}`, {
+    method: 'DELETE', headers: authHeaders(),
+  })
+  const data = await safeJsonParse(res, 'deleteSession')
+  if (!res.ok) {
+    throw new Error(data?.detail || `deleteSession failed (${res.status})`)
+  }
+  return data
+}

@@ -21,6 +21,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
   const [speakers, setSpeakers] = useState(DEFAULT_SPEAKERS)  // Load config from backend
   const [displayTitle, setDisplayTitle] = useState(showName)  // Full show title (updated from config)
   const [backendError, setBackendError] = useState(null)  // Backend connection error
+  const [notFound, setNotFound] = useState(false)  // session unknown or deleted (config 404)
   // Only surface a connection error after several *consecutive* failed polls.
   // A single transient blip (load race, one slow request tripping the 5s abort)
   // self-heals on the next 2s poll, so showing it immediately just flashes a
@@ -45,6 +46,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
   // Load episode configuration from backend
   useEffect(() => {
     const controller = new AbortController()
+    setNotFound(false)
 
     const loadEpisodeConfig = async () => {
       const key = episodeKey || showKey || showName.toLowerCase()
@@ -66,6 +68,8 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
           } else if (config.show_name) {
             setDisplayTitle(config.show_name)
           }
+        } else if (response.status === 404) {
+          setNotFound(true)
         } else {
           debug.warn(`Could not load config for ${key}, using fallback`)
         }
@@ -170,6 +174,18 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
   // - operator on a session with results (e.g. a Beispiel): the read-only stream
   // - operator before going live: share link + mic picker; the header starts Live-Check
   const renderResults = () => {
+    if (notFound) {
+      return (
+        <div className="review-view">
+          <div className="review-waiting-live" role="status">
+            <p className="review-waiting-title">Diesen Faktencheck gibt es nicht (mehr)</p>
+            <p className="review-waiting-sub">
+              Der Link ist falsch, oder der Check wurde gelöscht.
+            </p>
+          </div>
+        </div>
+      )
+    }
     if (factChecks.length > 0) {
       return (
         <div className="review-view">
@@ -210,7 +226,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
           <div>
             <h1>{isViewer ? displayTitle : `Fakten-Check - ${displayTitle}`}</h1>
           </div>
-          {!isViewer && (
+          {!isViewer && !notFound && (
           <div className="factcheck-header-actions">
             {isLive ? (
               <button type="button" className="header-rec-stop" onClick={() => liveStream.stop()}>
@@ -238,7 +254,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
         </div>
       </header>
 
-      {tutorialOpen && !isViewer && <LiveTutorial onClose={closeTutorial} />}
+      {tutorialOpen && !isViewer && !notFound && <LiveTutorial onClose={closeTutorial} />}
       <main className="main-content">
         {showLiveTranscript && <LiveTranscript live={liveStream} speakers={speakers} />}
         <BackendErrorDisplay error={backendError} />
