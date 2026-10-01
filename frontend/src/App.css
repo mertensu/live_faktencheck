@@ -1900,7 +1900,7 @@
   position: relative; overflow: hidden; cursor: pointer;
   background: #fff; border: 1px solid var(--border-light); border-radius: 12px;
   padding: 0.9rem 1.05rem; box-shadow: var(--shadow-sm);
-  transition: box-shadow var(--transition-normal), border-color var(--transition-normal), filter 0.18s linear, opacity 0.18s linear;
+  transition: box-shadow var(--transition-normal), border-color var(--transition-normal), opacity 0.18s linear;
 }
 .fcs-stripe { position: absolute; left: 0; top: 0; bottom: 0; width: 4px; }
 .fcs-focused { box-shadow: var(--shadow-md); border-color: var(--border-medium); }
