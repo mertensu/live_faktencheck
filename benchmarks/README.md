@@ -9,6 +9,7 @@ teilen sich das Tavily-Budget mit Produktion und Staging.
 |---|---|
 | `fast_check_ab.py` | Schneller Checker: alter vs. neuer Aufbau (Suchanfragen, Tavily-Tiefe, Snippet-Länge, Prompt) auf echten Claims |
 | `jev_gate_bench.py` | Jev als Satz-Gate: Wahrscheinlichkeit pro Satz, Latenz, Schwellen-Band |
+| `fast_model_ab.py` | Schneller Checker: Synthese-Modell A vs B (Gemini oder via Requesty) und/oder Treffer pro Anfrage; Ergebnisse vom 23.–24.09. in `data/fast_model_ab/` |
 
 Aufruf und Env-Stellschrauben stehen jeweils im Docstring des Skripts. Als Input
 eignen sich echte Claims aus einem DB-Snapshot (`./scripts/pull-db.sh`).
