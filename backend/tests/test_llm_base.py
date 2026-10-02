@@ -60,3 +60,30 @@ def test_build_model_raises_without_api_key(monkeypatch):
 
     with pytest.raises(ValueError, match="GEMINI_API_KEY or GOOGLE_API_KEY"):
         build_model("gemini-2.5-pro")
+
+
+def test_build_model_requesty_primary_falls_back_to_google(monkeypatch):
+    """An "@" name runs via Requesty with its reasoning effort and a short timeout; a Google
+    model always sits behind it so a Requesty stall never blocks the live lane."""
+    monkeypatch.setenv("GEMINI_API_KEY", "test-key")
+    monkeypatch.setenv("REQUESTY_API_KEY", "test-requesty-key")
+    monkeypatch.setenv("PROVIDER_FALLBACK_ENABLED", "false")
+    monkeypatch.delenv("GOOGLE_FALLBACK_MODEL", raising=False)
+    monkeypatch.delenv("REQUESTY_TIMEOUT_S", raising=False)
+    from pydantic_ai.models.openai import OpenAIChatModel
+    from backend.services.llm_base import build_model, GOOGLE_FALLBACK_MODEL
+
+    model = build_model("gpt-6-luna@eu", thinking="medium")
+    assert isinstance(model, FallbackModel)
+    primary, google = model.models
+    assert isinstance(primary, OpenAIChatModel) and primary.model_name == "gpt-6-luna@eu"
+    assert primary.settings == {"openai_reasoning_effort": "medium"}
+    assert primary.client.timeout == 12 and primary.client.max_retries == 0
+    assert isinstance(google, GoogleModel) and google.model_name == GOOGLE_FALLBACK_MODEL
+
+
+def test_build_model_requesty_primary_without_key_runs_on_google(no_provider_fallback):
+    from backend.services.llm_base import build_model, GOOGLE_FALLBACK_MODEL
+
+    model = build_model("vertex/gemini-3.8-flash@eu", thinking="low")
+    assert isinstance(model, GoogleModel) and model.model_name == GOOGLE_FALLBACK_MODEL

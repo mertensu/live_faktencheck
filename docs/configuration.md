@@ -33,14 +33,28 @@ covered in the [development workflow](development-workflow.md#setup); this is th
 | `JEV_CHECK_THRESHOLD` / `JEV_SKIP_THRESHOLD` | Jev probability band: check above, skip below | `0.80` / `0.30` |
 | `JEV_IMPORTANCE_THRESHOLD` | Minimum Jev importance score | `0.60` |
 | `JEV_GATE_DEBUG` | Log per-sentence Jev scores | off |
-| `GEMINI_MODEL_REFORMULATE` / `GEMINI_THINKING_REFORMULATE` | Reformulator model + thinking level | `gemini-3.6-flash` / `low` |
+| `GEMINI_MODEL_REFORMULATE` / `GEMINI_THINKING_REFORMULATE` | Reformulator model + thinking level | `gpt-6-luna@eu` / `medium` |
 | `REFORMULATE_CONTEXT_SENTENCES` | Preceding sentences the reformulator sees | `4` |
-| `GEMINI_MODEL_FAST_CHECK` / `GEMINI_THINKING_FAST_CHECK` | Fast-check synthesis model + thinking level | `gemini-3.6-flash` / `low` |
-| `GEMINI_MODEL_FACT_CHECKER_FALLBACK` | Second Gemini model for the fast check, tried before the cross-provider tier; empty skips it | `gemini-3-flash-preview` |
+| `GEMINI_MODEL_FAST_CHECK` / `GEMINI_THINKING_FAST_CHECK` | Fast-check synthesis model + thinking level | `vertex/gemini-3.8-flash@eu` / `low` |
+| `GEMINI_MODEL_FACT_CHECKER_FALLBACK` | Second Gemini model for the fast check, tried before the cross-provider tier; empty skips it (behind a Requesty primary, `GOOGLE_FALLBACK_MODEL` is used instead) | `gemini-3-flash-preview` |
 | `FAST_SEARCH_MAX_QUERIES` | Parallel Tavily searches per claim | `5` |
 | `FAST_TAVILY_SEARCH_DEPTH` | Tavily depth for the fast check | `basic` |
 | `FAST_SNIPPET_CHARS` | Characters kept per search hit | `1200` |
 | `TAVILY_MAX_RESULTS` | Results per search | `5` |
+
+## Models via Requesty
+
+A model name with a region suffix (`@eu`) runs through Requesty's EU router instead of
+Google directly — the live defaults for the reformulator and the fast check do (EU-hosted,
+zero retention, not used for training). The thinking level becomes the reasoning effort.
+Behind such a primary, `build_model()` always puts a Google model, so a Requesty outage or
+a stalled call (≈28 s seen in benchmarks) falls back after `REQUESTY_TIMEOUT_S`. Without
+`REQUESTY_API_KEY` the Google model runs directly.
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `REQUESTY_TIMEOUT_S` | Per-call timeout for a Requesty primary before falling back (no retries) | `12` |
+| `GOOGLE_FALLBACK_MODEL` | Google model behind a Requesty primary | `gemini-3.6-flash` |
 
 ## Cross-provider fallback
 

@@ -30,8 +30,9 @@ class ReformulatedClaim(ExtractedClaim):
     """A reformulated live claim plus search queries for the fast checker."""
     search_queries: List[str] = Field(
         default_factory=list,
-        description="3–5 kurze deutsche Suchanfragen (Stichworte, keine ganzen Sätze), die "
-                    "die Behauptung mit offiziellen Daten überprüfen.",
+        description="Genau 5 kurze deutsche Suchanfragen (Stichworte, keine ganzen Sätze), je "
+                    "aus einem anderen Blickwinkel: Kern, Datenquelle, Entwicklung, Maßstab, "
+                    "Einordnung.",
     )
 
 
@@ -78,14 +79,16 @@ class ClaimExtractor:
         # check-worthiness (the Jev gate already did) — it rewrites a single gated
         # sentence into a standalone, decontextualized claim, assigns the speaker and
         # writes the search queries for the fast checker. Used by ``JevGate`` in
-        # services/gate.py. Flash, not flash-lite: the queries decide what the fast
-        # checker gets to see.
-        self.reformulate_model_name = os.getenv("GEMINI_MODEL_REFORMULATE", "gemini-3.6-flash")
+        # services/gate.py. The queries decide what the fast checker gets to see:
+        # GPT-6 Luna (Requesty, EU) with medium reasoning writes five queries from fixed
+        # angles, which made verdicts stable across runs (13/15 vs 10/15) for ~0.5 s.
+        self.reformulate_model_name = os.getenv("GEMINI_MODEL_REFORMULATE", "gpt-6-luna@eu")
+        reformulate_thinking = os.getenv("GEMINI_THINKING_REFORMULATE", "medium")
         self.reformulator = Agent(
-            build_model(self.reformulate_model_name),
+            build_model(self.reformulate_model_name, thinking=reformulate_thinking),
             output_type=ReformulatedClaim,
             instructions=load_prompt("claim_reformulation.md"),
-            model_settings=settings_with_thinking(os.getenv("GEMINI_THINKING_REFORMULATE", "low")),
+            model_settings=settings_with_thinking(reformulate_thinking),
         )
 
         logger.info(
