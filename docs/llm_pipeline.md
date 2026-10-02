@@ -78,7 +78,7 @@ zone in between is skipped conservatively. See `benchmarks/jev_gate_bench.py`.
 
 **Prompt:** `prompts/claim_reformulation.md`
 **Schema:** `ReformulationInput`
-**Model:** `GEMINI_MODEL_REFORMULATE` (default `gemini-3.6-flash`, thinking `low`)
+**Model:** `GEMINI_MODEL_REFORMULATE` (default `gpt-6-luna@eu` via Requesty, reasoning `medium`)
 **Output:** `ReformulatedClaim` — `(name, claim, search_queries)`
 
 ```
@@ -91,9 +91,10 @@ ReformulationInput
 ```
 
 The reformulator does **not** judge check-worthiness — Jev already did. It resolves
-pronouns, keeps the speaker out of the claim text, and writes 3–5 short German search
-queries. Those queries decide what the fast check gets to see, which is why this step uses
-flash rather than flash-lite.
+pronouns, keeps the speaker out of the claim text, and writes exactly five short German
+search queries, each from a different angle (claim, data source, development, yardstick,
+analysis). Those queries decide what the fast check gets to see: covering the topic broadly
+made verdicts stable across runs, where near-identical rewordings used to flip them.
 
 **Why two steps?** Jev is cheaper per sentence and better calibrated than the flash-lite
 window gate, which in benchmarking was too conservative. The expensive LLM only runs on
@@ -104,7 +105,7 @@ the hits.
 ## Call 2 — Fast check
 
 **Prompt:** `prompts/fast_fact_checker.md`
-**Model:** `GEMINI_MODEL_FAST_CHECK` (default `gemini-3.6-flash`, thinking `low`)
+**Model:** `GEMINI_MODEL_FAST_CHECK` (default `vertex/gemini-3.8-flash@eu` via Requesty, thinking `low`)
 **Output:** `FastVerdict` — `evidence`, `consistency`, `sources`
 
 1. **Search.** Up to `FAST_SEARCH_MAX_QUERIES` Tavily searches run **in parallel**
@@ -133,9 +134,9 @@ The model is never allowed to judge a person or give absolute verdicts ("wahr",
 
 ## Fallbacks
 
-Every Gemini call goes through `build_model()` in `backend/services/llm_base.py`: primary
-model → optional second Gemini model → Claude via Requesty (EU) when `REQUESTY_API_KEY` is
-set. See [configuration.md](configuration.md#cross-provider-fallback).
+Every model call goes through `build_model()` in `backend/services/llm_base.py`: primary
+model → second Gemini model (always Google `gemini-3.6-flash` behind a Requesty primary) →
+Claude via Requesty (EU) when `REQUESTY_API_KEY` is set. See [configuration.md](configuration.md#cross-provider-fallback).
 
 ---
 

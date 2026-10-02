@@ -31,7 +31,10 @@ from pydantic_ai import Agent
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_MODEL = "gemini-3.6-flash"
+# Gemini 3.8 Flash via Requesty (EU, zero retention); Google 3.6 Flash is the fallback.
+# Same verdicts as 3.6 on the benchmark claims, more stable with the diverse queries
+# (benchmarks/data/fast_model_ab/README.md on branch fact-check-benchmarks).
+DEFAULT_MODEL = "vertex/gemini-3.8-flash@eu"
 
 
 def _url_key(url: str) -> str:
@@ -99,7 +102,7 @@ class FastFactChecker:
 
         # No tools: we run the searches ourselves and hand the results to the agent.
         self.agent = Agent(
-            build_model(self.model_name, self.fallback_model_name),
+            build_model(self.model_name, self.fallback_model_name, self.thinking_level),
             output_type=FastVerdict,
             instructions=self.prompt_template,
             model_settings=settings_with_thinking(self.thinking_level),
