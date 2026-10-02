@@ -125,16 +125,16 @@ class TestFastCheck:
 
     async def test_results_sorted_official_first_and_labelled(self, checker):
         mixed = {"results": [
-            {"title": "Handelsblatt", "url": "https://www.handelsblatt.com/a", "content": "x"},
+            {"title": "Unbekannt", "url": "https://www.example.org/a", "content": "x"},
             {"title": "Linke", "url": "https://www.die-linke.de/b", "content": "x"},
             {"title": "DIW", "url": "https://www.diw.de/c", "content": "x"},
             {"title": "Destatis", "url": "https://www.destatis.de/d", "content": "x"},
         ]}
         with patch("backend.services.fast_fact_checker.tavily_search", AsyncMock(return_value=mixed)):
             results = await checker._gather_evidence("claim", ["q"])
-        assert [r["title"] for r in results] == ["Destatis", "DIW", "Handelsblatt", "Linke"]
+        assert [r["title"] for r in results] == ["Destatis", "DIW", "Unbekannt", "Linke"]
         text = checker._format_evidence(results)
-        assert "[amtlich] Destatis" in text and "[Presse] Handelsblatt" in text and "[Partei] Linke" in text
+        assert "[amtlich] Destatis" in text and "[Sonstige] Unbekannt" in text and "[Partei] Linke" in text
 
     async def test_sources_not_in_results_are_dropped(self):
         c = _make_checker()
@@ -156,7 +156,7 @@ class TestSourceTier:
         assert source_tier("https://www.iwkoeln.de/x") == (1, "Forschung")
         assert source_tier("https://um.baden-wuerttemberg.de/x") == (2, "Land")
         assert source_tier("https://www.statistik-bw.de/x") == (2, "Land")
-        assert source_tier("https://www.zeit.de/x") == (3, "Presse")
+        assert source_tier("https://www.zeit.de/x") == (3, "Sonstige")  # press is not trusted
         assert source_tier("https://afd.de/x") == (4, "Partei")
         assert source_tier("https://example.org/x")[0] == 3
         assert source_tier("")[0] == 3
