@@ -1,9 +1,10 @@
 """
 Claim Extraction Service using PydanticAI + Gemini (live lane).
 
-Two single-shot typed agents: the window gate (does a small window hold a
-check-worthy claim?) and the reformulator (turns a gated sentence into a
-standalone claim plus search queries). No tools, no loop.
+Three single-shot typed agents: the window gate (does a small window hold a
+check-worthy claim?), the grey-zone judge (second opinion on a sentence the Jev gate
+was unsure about) and the reformulator (turns a gated sentence into a standalone claim
+plus search queries). No tools, no loop.
 """
 
 import os
@@ -34,6 +35,19 @@ class ReformulatedClaim(ExtractedClaim):
                     "aus einem anderen Blickwinkel: Kern, Datenquelle, Entwicklung, Maßstab, "
                     "Einordnung.",
     )
+
+
+class GreyZoneInput(BaseModel):
+    """Input for the second opinion on one sentence the Jev gate was unsure about."""
+    sentence: str = Field(description="Der Satz, bei dem das Gate unsicher war.")
+    speaker: str = Field(default="", description="Sprecher des Satzes (Label oder Eigenname), sofern bekannt.")
+    context: str = Field(default="", description="Thematischer Hintergrund des Gesprächs")
+    previous_context: str | None = Field(default=None, description="Vorheriger Gesprächsverlauf, nur zum Verständnis von Bezügen")
+
+
+class GreyZoneVerdict(BaseModel):
+    """The grey-zone judge's answer."""
+    check_worthy: bool = Field(description="True, wenn der Satz eine überprüfbare Tatsachenbehauptung von Gewicht enthält, die sich zu prüfen lohnt.")
 
 
 class ClaimList(BaseModel):
@@ -91,8 +105,22 @@ class ClaimExtractor:
             model_settings=settings_with_thinking(reformulate_thinking),
         )
 
+        # Grey-zone judge (live streaming lane, Jev gate): a second opinion on sentences
+        # Jev scored as uncertain. Talk-show claims are often wrapped in an assessment
+        # ("Der Staat nimmt den Bürgern immer mehr Geld weg"), which Jev scores around
+        # 0.5; a fast LLM decides whether the factual core is worth checking.
+        self.grey_zone_model_name = os.getenv("GEMINI_MODEL_GREY_ZONE", "gemini-3.5-flash-lite")
+        grey_zone_thinking = os.getenv("GEMINI_THINKING_GREY_ZONE", "low")
+        self.grey_zone_judge = Agent(
+            build_model(self.grey_zone_model_name, thinking=grey_zone_thinking),
+            output_type=GreyZoneVerdict,
+            instructions=load_prompt("claim_grey_zone.md"),
+            model_settings=settings_with_thinking(grey_zone_thinking),
+        )
+
         logger.info(
-            f"ClaimExtractor initialized (window_gate={self.window_model_name}, reformulate={self.reformulate_model_name})"
+            f"ClaimExtractor initialized (window_gate={self.window_model_name}, reformulate={self.reformulate_model_name}, "
+            f"grey_zone={self.grey_zone_model_name})"
         )
 
     async def extract_window_async(
@@ -120,6 +148,23 @@ class ClaimExtractor:
         result = await self.window_gate.run(user_message)
         logger.info(f"Window gate: {len(result.output.claims)} claim(s) in window ({len(window_text)} chars)")
         return result.output.claims
+
+    async def judge_grey_zone_async(
+        self,
+        sentence: str,
+        speaker: str = "",
+        context: str = "",
+        previous_context: str | None = None,
+    ) -> bool:
+        """Second opinion on a sentence the Jev gate was unsure about: does it hold a
+        checkable factual claim worth checking live? ``False`` for empty input."""
+        if not sentence or not sentence.strip():
+            return False
+        user_message = GreyZoneInput(
+            sentence=sentence, speaker=speaker, context=context, previous_context=previous_context,
+        ).model_dump_json(indent=2)
+        result = await self.grey_zone_judge.run(user_message)
+        return result.output.check_worthy
 
     async def reformulate_claim_async(
         self,

@@ -50,6 +50,44 @@ describe('LiveTranscript', () => {
     expect(assignSpeaker).toHaveBeenCalledWith('A', null, null)
   })
 
+  it('marks a voice as "Andere Stimme" and shows it neutral', () => {
+    const assignSpeaker = vi.fn()
+    render(<LiveTranscript live={{ ...live, assignSpeaker }} speakers={['Connemann', 'Dröge']} />)
+    fireEvent.click(screen.getByRole('button', { name: /Sprecher B/ }))
+    fireEvent.click(screen.getByRole('menuitemradio', { name: 'Andere Stimme – nicht prüfen' }))
+    expect(assignSpeaker).toHaveBeenCalledWith('B', 'Andere Stimme', null)
+
+    const { container } = render(
+      <LiveTranscript live={{ ...live, speakerMap: { B: [[-1, 'Andere Stimme']] }, assignSpeaker }} speakers={['Dröge']} />)
+    const other = [...container.querySelectorAll('.live-bubble')].find((b) => b.textContent.includes('Das stimmt nicht.'))
+    expect(other.className).toMatch(/spk-other/)
+    expect(other.textContent).not.toContain('nicht zugeordnet')
+  })
+
+  it('tells the operator that an unassigned voice is not checked', () => {
+    const { container } = render(<LiveTranscript live={{ ...live, assignSpeaker: vi.fn() }} speakers={['Connemann']} />)
+    const hints = [...container.querySelectorAll('.live-bubble-hint')]
+    expect(hints).toHaveLength(1) // Sprecher B only: A is Connemann, the last line has no label
+    expect(hints[0].textContent).toBe('nicht zugeordnet – wird nicht geprüft')
+  })
+
+  it('gives a marked passage to "Andere Stimme"', () => {
+    const assignPassage = vi.fn()
+    const { container } = render(
+      <LiveTranscript live={{ ...live, assignSpeaker: vi.fn(), assignPassage }} speakers={['Connemann']} />
+    )
+    const textNode = container.querySelector('.live-bubble-line[data-index="2"]').firstChild
+    const range = document.createRange()
+    range.setStart(textNode, 0)
+    range.setEnd(textNode, 3) // "Das"
+    window.getSelection().removeAllRanges()
+    window.getSelection().addRange(range)
+    fireEvent.mouseUp(textNode)
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Andere Stimme – nicht prüfen' }))
+    expect(assignPassage).toHaveBeenCalledWith(
+      [{ index: 2, start: 0, end: 3, lineText: 'Das stimmt nicht.' }], 'Andere Stimme')
+  })
+
   it('gives a marked passage, widened to whole words, to a guest', () => {
     const assignPassage = vi.fn()
     const { container } = render(

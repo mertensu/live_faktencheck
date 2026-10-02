@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { formatBegruendung } from './ClaimCard'
-import { nameAt } from '../hooks/useAudioStream'
+import { nameAt, OTHER_VOICE } from '../hooks/useAudioStream'
 
 // Verdict → short label + modifier class for the badge and the transcript highlight.
 const VERDICT = {
@@ -17,6 +17,9 @@ function verdictInfo(c) {
 }
 
 const SPEAKER_COLORS = 8 // .live-bubble.spk-0 … spk-7 in App.css
+
+// The menu entry that marks a voice (or passage) as no guest's: not checked.
+const OTHER_VOICE_ITEM = `${OTHER_VOICE} – nicht prüfen`
 
 // A diarization label shows as "Sprecher A" until the operator assigns it to a guest.
 // Lines without a label stay "Unklar" in a neutral bubble: no name is ever guessed.
@@ -107,6 +110,9 @@ function PassageMenu({ at, speakers, followLabel, onPick, onClose }) {
           <button type="button" role="menuitem" onClick={() => onPick(name, followLabel && follow)}>{name}</button>
         </li>
       ))}
+      <li className="live-speaker-menu-other">
+        <button type="button" role="menuitem" onClick={() => onPick(OTHER_VOICE, followLabel && follow)}>{OTHER_VOICE_ITEM}</button>
+      </li>
       {followLabel && (
         <li className="live-passage-menu-follow">
           <label>
@@ -144,11 +150,12 @@ function SpeakerPicker({ label, fromTurn, title, current, speakers, onPick }) {
         className="live-bubble-name live-speaker-button"
         aria-haspopup="menu"
         aria-expanded={open}
-        title="Sprecher zuordnen (ab hier)"
+        title={current ? 'Sprecher zuordnen (ab hier)' : 'Sprecher zuordnen (ab hier) – erst dann wird geprüft'}
         onClick={() => setOpen((o) => !o)}
       >
         {title} <span aria-hidden="true">▾</span>
       </button>
+      {!current && <span className="live-bubble-hint">nicht zugeordnet – wird nicht geprüft</span>}
       {open && (
         <ul className="live-speaker-menu" role="menu" aria-label={`Sprecher ${label} zuordnen`}>
           {speakers.map((name) => (
@@ -158,6 +165,11 @@ function SpeakerPicker({ label, fromTurn, title, current, speakers, onPick }) {
               </button>
             </li>
           ))}
+          <li className="live-speaker-menu-other">
+            <button type="button" role="menuitemradio" aria-checked={current === OTHER_VOICE} onClick={() => pick(OTHER_VOICE)}>
+              {OTHER_VOICE_ITEM}
+            </button>
+          </li>
           {current && (
             <li className="live-speaker-menu-clear">
               <button type="button" role="menuitem" onClick={() => pick(null)}>Zuordnung entfernen</button>
@@ -276,6 +288,7 @@ function ClaimPopover({ claim, speaker, anchor, onEnter, onLeave }) {
 // click a mark to see the result. While streaming, a click on a bubble's name assigns
 // that diarization label to one of the episode's `speakers` from that bubble on; marking text in a line gives
 // just that passage to a guest (diarization sometimes folds a question into an answer).
+// Only voices given to a guest are checked; "Andere Stimme" marks a clip voice as none.
 export function LiveTranscript({ live, speakers = [] }) {
   const { status, transcript = [], partial = '', claims = [], speakerMap = {}, assignSpeaker, assignPassage } = live || {}
   const rootRef = useRef(null)
@@ -396,7 +409,7 @@ export function LiveTranscript({ live, speakers = [] }) {
   const marked = new Set()
   const groups = groupTurns(transcript, speakerMap)
   const bubbles = groups.map((g, gi) => (
-    <div key={gi} className={`live-bubble ${g.label || g.name ? `spk-${colorOf(g)}` : 'spk-none'}`}>
+    <div key={gi} className={`live-bubble ${g.name === OTHER_VOICE ? 'spk-none spk-other' : g.label || g.name ? `spk-${colorOf(g)}` : 'spk-none'}`}>
       {canAssign && g.label
         ? <SpeakerPicker label={g.label} fromTurn={g.fromTurn} title={g.title} current={g.name} speakers={speakers} onPick={assignSpeaker} />
         : <div className="live-bubble-name">{g.title}</div>}

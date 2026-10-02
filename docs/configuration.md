@@ -27,11 +27,15 @@ covered in the [development workflow](development-workflow.md#setup); this is th
 | `STREAM_SPEAKER_REVISION_MS` | Interval for AssemblyAI speaker revisions | `120000` |
 | `STREAM_MAX_SPEAKERS` | Cap on diarized speakers | unset |
 | `STREAM_EARLY_SENTENCES` | Gate settled sentences from partial turns before the turn ends | `true` |
+| `STREAM_HOLD_UNASSIGNED` | Publish only claims of voices the operator gave to a guest; others are checked in the background and held (no effect for an episode without a speaker list) | `true` |
 | `CLAIM_GATE` | `jev` (per-sentence classifier via Requesty) or `extractor` (Gemini window gate) | `extractor` |
 | `GEMINI_MODEL_WINDOW_GATE` | Model for the extractor gate | `gemini-3.5-flash-lite` |
 | `JEV_MODEL` / `JEV_TIMEOUT_S` | Jev gate model and per-call timeout (s) | `typesafe/jev-1.13.0` / `5` |
-| `JEV_CHECK_THRESHOLD` / `JEV_SKIP_THRESHOLD` | Jev probability band: check above, skip below | `0.80` / `0.30` |
+| `JEV_CHECK_THRESHOLD` / `JEV_SKIP_THRESHOLD` | Jev probability band: check above, skip below, grey zone in between | `0.80` / `0.40` |
 | `JEV_IMPORTANCE_THRESHOLD` | Minimum Jev importance score | `0.60` |
+| `JEV_GREY_ZONE` | Send grey-zone sentences to an LLM for a second opinion (off: skip them) | `true` |
+| `JEV_GREY_IMPORTANCE_THRESHOLD` | Minimum Jev importance score for the grey zone | `0.40` |
+| `GEMINI_MODEL_GREY_ZONE` / `GEMINI_THINKING_GREY_ZONE` | Grey-zone judge model + thinking level | `gemini-3.5-flash-lite` / `low` |
 | `JEV_GATE_DEBUG` | Log per-sentence Jev scores | off |
 | `GEMINI_MODEL_REFORMULATE` / `GEMINI_THINKING_REFORMULATE` | Reformulator model + thinking level | `gpt-6-luna@eu` / `medium` |
 | `REFORMULATE_CONTEXT_SENTENCES` | Preceding sentences the reformulator sees | `4` |

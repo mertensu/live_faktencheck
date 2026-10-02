@@ -210,19 +210,23 @@ class JevGate:
 
     Pipeline per window:
       1. Split the window into (speaker, sentence) pairs.
-      2. Score every sentence with Jev, concurrently. ``p >= CHECK_HI`` is a hit; the
-         grey zone (``SKIP_LO < p < CHECK_HI``) and misses are skipped conservatively.
-      3. For each hit, a flash call reformulates the sentence into a standalone claim
+      2. Score every sentence with Jev, concurrently. A hit needs ``check >= CHECK_HI``
+         and ``important >= IMPORTANCE``.
+      3. A sentence in the grey zone (not a hit, but check and importance above the grey
+         thresholds) gets a second opinion from a fast LLM; a yes makes it a hit.
+      4. For each hit, an LLM call reformulates the sentence into a standalone claim
          (pronouns resolved from rolling context, speaker assigned) and writes search
-         queries for the fast checker. Jev already
-         decided check-worthiness — this step does not re-judge it.
+         queries for the fast checker. Check-worthiness is decided by then — this step
+         does not re-judge it.
     """
 
     def __init__(self, extractor: ClaimExtractor, scorer: JevScorer | None = None):
         self._extractor = extractor
         self._scorer = scorer or JevScorer()
         self.check_hi = float(os.getenv("JEV_CHECK_THRESHOLD", "0.80"))
-        self.skip_lo = float(os.getenv("JEV_SKIP_THRESHOLD", "0.30"))
+        # Below this check prob a sentence is skipped outright; between it and check_hi lies
+        # the grey zone.
+        self.skip_lo = float(os.getenv("JEV_SKIP_THRESHOLD", "0.40"))
         # A checkable sentence still needs this importance prob to be worth checking on air
         # (filters trivial/procedural facts). Fail-open: a missing importance score never
         # drops an otherwise-good claim.
@@ -230,17 +234,43 @@ class JevGate:
         # Opt-in per-sentence trace (sentence, p, band) — for reviewing a live run, since
         # the DB keeps only the claims that passed, not scores or skipped sentences.
         self._debug = os.getenv("JEV_GATE_DEBUG", "").strip().lower() in ("1", "true", "yes")
+        # Grey zone: neither a clear hit nor clearly nothing. Talk-show claims are often
+        # wrapped in an assessment ("Der Staat gibt immer mehr Geld aus" scored 0.82 check
+        # but 0.54 importance; "Steuererhöhungen führen zu keinem Wachstum" 0.49 check), so
+        # a sentence with check >= JEV_SKIP_THRESHOLD and importance >=
+        # JEV_GREY_IMPORTANCE_THRESHOLD that is not a hit goes to a fast LLM for a second
+        # opinion; only on yes is it reformulated and checked.
+        self.grey_zone = os.getenv("JEV_GREY_ZONE", "true").strip().lower() in ("1", "true", "yes")
+        self.grey_imp = float(os.getenv("JEV_GREY_IMPORTANCE_THRESHOLD", "0.40"))
         # How many preceding sentences the reformulator sees to resolve "er", "das", …
         self.context_sentences = int(os.getenv("REFORMULATE_CONTEXT_SENTENCES", "4"))
 
-    def _band(self, p: float | None) -> str:
-        if p is None:
+    def _verdict(self, sc: JevScore) -> str:
+        """``CHECK`` (a hit), ``grey`` (ask the second opinion), or why it is skipped."""
+        if sc.check is None:
             return "err"
-        if p >= self.check_hi:
+        # A missing importance score never drops an otherwise-good claim (fail-open).
+        imp = 1.0 if sc.important is None else sc.important
+        if sc.check >= self.check_hi and imp >= self.imp_hi:
             return "CHECK"
-        if p <= self.skip_lo:
-            return "skip"
-        return "grey"
+        if self.grey_zone and sc.check >= self.skip_lo and imp >= self.grey_imp:
+            return "grey"
+        if sc.check >= self.check_hi:
+            return "unwichtig"
+        return "skip"
+
+    async def _second_opinion(self, sentence: str, speaker: str, context: str,
+                              previous_context: str | None) -> str:
+        """Ask the grey-zone judge; ``CHECK`` on yes. A failed call skips the sentence."""
+        try:
+            yes = await self._extractor.judge_grey_zone_async(
+                sentence, speaker=speaker, context=context, previous_context=previous_context)
+        except Exception:
+            logger.exception("Grey-zone judge failed; skipping sentence")
+            return "err"
+        if self._debug:
+            logger.info(f"JevGate[grey -> {'CHECK' if yes else 'skip'}] {sentence}")
+        return "CHECK" if yes else "grey-no"
 
     async def gate(
         self,
@@ -280,39 +310,48 @@ class JevGate:
         def line(speaker: str, sentence: str) -> str:
             return f"{names.get(speaker, speaker)}: {sentence}" if speaker else sentence
 
-        claims: List[GatedClaim] = []
+        # Every sentence (hit or not) extends the rolling context for the ones after it.
         rolling = [ln for ln in (previous_context or "").splitlines() if ln.strip()]
-        for (speaker, sentence), sc in zip(pairs, scores):
+        lines = rolling + [line(spk, sent) for spk, sent in pairs]
+
+        def context_before(i: int) -> str | None:
+            end = len(rolling) + i
+            return "\n".join(lines[max(0, end - self.context_sentences):end]) or None
+
+        async def handle(i: int) -> GatedClaim | None:
+            (speaker, sentence), sc = pairs[i], scores[i]
+            verdict = self._verdict(sc)
             if self._debug:
                 c_str = "  ? " if sc.check is None else f"{sc.check:.2f}"
                 i_str = " ? " if sc.important is None else f"{sc.important:.2f}"
-                logger.info(f"JevGate[{self._band(sc.check):5} p={c_str} imp={i_str}] {speaker or '—'}: {sentence}")
-            if sc.check is not None and sc.check >= self.check_hi:
-                # Checkable — but skip if Jev judged it not important enough (fail-open on None).
-                if sc.important is not None and sc.important < self.imp_hi:
-                    if self._debug:
-                        logger.info(f"JevGate[drop  unwichtig imp={sc.important:.2f}] {sentence}")
-                    rolling.append(line(speaker, sentence))
-                    continue
-                try:
-                    claim = await self._extractor.reformulate_claim_async(
-                        sentence,
-                        speaker=names.get(speaker, speaker),
-                        guests=guests,
-                        context=context,
-                        previous_context="\n".join(rolling[-self.context_sentences:]) or None,
-                    )
-                except Exception:
-                    logger.exception("Reformulation failed for gated sentence")
-                    claim = None
-                if claim and (claim.claim or "").strip():
-                    # Keep the original sentence as the highlight anchor for the UI.
-                    claims.append(GatedClaim(
-                        name=claim.name or names.get(speaker, speaker), claim=claim.claim, source=sentence,
-                        search_queries=list(getattr(claim, "search_queries", None) or []),
-                    ))
-            # Every sentence (hit or not) extends the rolling context for the next one.
-            rolling.append(line(speaker, sentence))
+                logger.info(f"JevGate[{verdict:7} p={c_str} imp={i_str}] {speaker or '—'}: {sentence}")
+            if verdict == "grey":
+                verdict = await self._second_opinion(sentence, names.get(speaker, speaker), context, context_before(i))
+            if verdict != "CHECK":
+                return None
+            try:
+                claim = await self._extractor.reformulate_claim_async(
+                    sentence,
+                    speaker=names.get(speaker, speaker),
+                    guests=guests,
+                    context=context,
+                    previous_context=context_before(i),
+                )
+            except Exception:
+                logger.exception("Reformulation failed for gated sentence")
+                return None
+            if not claim or not (claim.claim or "").strip():
+                return None
+            # Keep the original sentence as the highlight anchor for the UI.
+            return GatedClaim(
+                name=claim.name or names.get(speaker, speaker), claim=claim.claim, source=sentence,
+                search_queries=list(getattr(claim, "search_queries", None) or []),
+            )
+
+        # Hits are reformulated and grey sentences judged concurrently; claims keep the
+        # order of their sentences.
+        results = await asyncio.gather(*(handle(i) for i in range(len(pairs))))
+        claims: List[GatedClaim] = [c for c in results if c is not None]
 
         logger.info(
             f"JevGate: {len(claims)} claim(s) from {len(pairs)} sentence(s) "

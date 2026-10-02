@@ -4,6 +4,6 @@ import pytest
 from backend.utils import load_prompt
 
 
-@pytest.mark.parametrize("name", ["claim_extraction_streaming.md", "claim_reformulation.md"])
+@pytest.mark.parametrize("name", ["claim_extraction_streaming.md", "claim_reformulation.md", "claim_grey_zone.md"])
 def test_extraction_prompts_are_conversation_neutral(name):
     assert "Talkshow" not in load_prompt(name)

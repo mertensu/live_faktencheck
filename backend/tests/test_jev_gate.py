@@ -4,7 +4,7 @@ Tests for the Jev per-sentence claim gate (JevGate) and its wiring.
 Covered:
 - JevGate satisfies the ClaimGate protocol.
 - A window is split per sentence; only sentences scoring >= CHECK_HI are reformulated
-  into claims, and the grey zone / misses are skipped.
+  into claims, misses are skipped, and the grey zone goes to a second opinion.
 - Reformulation only runs on hits (the scorer, not the LLM, decides check-worthiness).
 - Speaker prefixes are parsed and excluded_speakers are dropped before scoring.
 - An empty / whitespace window short-circuits without scoring.
@@ -12,7 +12,7 @@ Covered:
   otherwise falls back to ExtractorGate.
 """
 
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 from pydantic_ai import models
 from pydantic_ai.models.test import TestModel
@@ -62,6 +62,7 @@ class TestJevGate:
         ex = _make_extractor()
         scorer = FakeScorer({"NATO": 0.97, "zu hoch": 0.10, "zu wenig": 0.55})
         gate = JevGate(ex, scorer)
+        ex.judge_grey_zone_async = AsyncMock(return_value=False)
         window = (
             "Anna: Deutschland ist Mitglied der NATO. "
             "Die Steuern sind zu hoch. "
@@ -110,12 +111,73 @@ class TestJevGate:
         assert out == []
         assert len(scorer.calls) == 2  # both sentences were scored
 
-    async def test_grey_zone_is_skipped(self):
+    async def test_grey_zone_yes_is_reformulated(self):
+        """Jev unsure (check 0.49) — the second opinion says yes, so it is checked."""
         ex = _make_extractor()
-        scorer = FakeScorer({"innovativste": 0.63})  # grey zone (0.30..0.80)
-        gate = JevGate(ex, scorer)
+        ex.judge_grey_zone_async = AsyncMock(return_value=True)
+        ex.reformulate_claim_async = AsyncMock(return_value=ExtractedClaim(name="Amthor", claim="X."))
+        gate = JevGate(ex, FakeScorer({"Wachstum": 0.49}, importance={"Wachstum": 0.85}))
+        out = await gate.gate("A: Steuererhöhungen führen zu keinem Wachstum.", guests=["Amthor"],
+                              context="Steuern", speaker_names={"A": "Amthor"}, previous_context="B: Frage.")
+        assert [c.source for c in out] == ["Steuererhöhungen führen zu keinem Wachstum."]
+        kw = ex.judge_grey_zone_async.await_args.kwargs
+        assert ex.judge_grey_zone_async.await_args.args == ("Steuererhöhungen führen zu keinem Wachstum.",)
+        assert kw == {"speaker": "Amthor", "context": "Steuern", "previous_context": "B: Frage."}
+
+    async def test_grey_zone_no_is_skipped(self):
+        ex = _make_extractor()
+        ex.judge_grey_zone_async = AsyncMock(return_value=False)
+        ex.reformulate_claim_async = AsyncMock()
+        gate = JevGate(ex, FakeScorer({"innovativste": 0.63}))
         out = await gate.gate("Deutschland ist das innovativste Land Europas.", guests=[])
         assert out == []
+        ex.judge_grey_zone_async.assert_awaited_once()
+        ex.reformulate_claim_async.assert_not_awaited()
+
+    async def test_importance_near_miss_is_grey(self):
+        """Checkable, importance just under the threshold (0.82/0.54): second opinion."""
+        ex = _make_extractor()
+        ex.judge_grey_zone_async = AsyncMock(return_value=True)
+        ex.reformulate_claim_async = AsyncMock(return_value=ExtractedClaim(name="A", claim="X."))
+        gate = JevGate(ex, FakeScorer({"Geld": 0.82}, importance={"Geld": 0.54}))
+        out = await gate.gate("A: Der Staat gibt immer mehr Geld aus.", guests=[])
+        assert len(out) == 1
+
+    async def test_below_grey_zone_never_asks(self):
+        ex = _make_extractor()
+        ex.judge_grey_zone_async = AsyncMock(return_value=True)
+        gate = JevGate(ex, FakeScorer({"ungerecht": 0.35}, importance={"ungerecht": 0.9}))
+        assert await gate.gate("Das ist ungerecht.", guests=[]) == []
+        # Low importance keeps a sentence out of the grey zone too.
+        gate = JevGate(ex, FakeScorer({"Kanzler": 0.6}, importance={"Kanzler": 0.2}))
+        assert await gate.gate("Der Kanzler war am Montag in Paris.", guests=[]) == []
+        ex.judge_grey_zone_async.assert_not_awaited()
+
+    async def test_grey_zone_judge_error_skips(self):
+        ex = _make_extractor()
+        ex.judge_grey_zone_async = AsyncMock(side_effect=RuntimeError("down"))
+        gate = JevGate(ex, FakeScorer({"Stagnation": 0.55}, importance={"Stagnation": 0.78}))
+        assert await gate.gate("Wir sind in einer Situation wirtschaftlicher Stagnation.", guests=[]) == []
+
+    async def test_grey_zone_can_be_switched_off(self):
+        ex = _make_extractor()
+        ex.judge_grey_zone_async = AsyncMock(return_value=True)
+        with patch.dict("os.environ", {"JEV_GREY_ZONE": "false"}):
+            gate = JevGate(ex, FakeScorer({"Höchststeuerland": 0.70}, importance={"Höchststeuerland": 0.68}))
+        assert await gate.gate("Deutschland ist ein Höchststeuerland.", guests=[]) == []
+        ex.judge_grey_zone_async.assert_not_awaited()
+
+    async def test_claims_keep_sentence_order(self):
+        """A grey sentence judged after a later hit still comes out in transcript order."""
+        ex = _make_extractor()
+        ex.judge_grey_zone_async = AsyncMock(return_value=True)
+
+        async def reformulate(sentence, **kw):
+            return ExtractedClaim(name="A", claim=f"R: {sentence}")
+        ex.reformulate_claim_async = reformulate
+        gate = JevGate(ex, FakeScorer({"Erstens": 0.5, "Zweitens": 0.95}, importance={"Erstens": 0.7}))
+        out = await gate.gate("A: Erstens sinken die Löhne. Zweitens steigen die Mieten.", guests=[])
+        assert [c.source for c in out] == ["Erstens sinken die Löhne.", "Zweitens steigen die Mieten."]
 
     async def test_excluded_speaker_is_dropped_before_scoring(self):
         ex = _make_extractor()
@@ -128,7 +190,6 @@ class TestJevGate:
 
     async def test_reformulator_sees_last_sentences_by_name(self):
         """Pronouns are resolved from the last few sentences, with names instead of labels."""
-        from unittest.mock import AsyncMock
         ex = _make_extractor()
         ex.reformulate_claim_async = AsyncMock(return_value=ExtractedClaim(name="Dröge", claim="X."))
         gate = JevGate(ex, FakeScorer({"Er hat": 0.9}))
@@ -187,3 +248,15 @@ class TestJevScorer:
             import os
             os.environ.pop("REQUESTY_API_KEY", None)
             assert JevScorer.is_configured() is False
+
+
+class TestGreyZoneJudge:
+    async def test_returns_the_agents_verdict(self):
+        ex = _make_extractor()
+        with ex.grey_zone_judge.override(model=TestModel(custom_output_args={"check_worthy": True})):
+            assert await ex.judge_grey_zone_async("Der Staat gibt immer mehr Geld aus.") is True
+        with ex.grey_zone_judge.override(model=TestModel(custom_output_args={"check_worthy": False})):
+            assert await ex.judge_grey_zone_async("Das ist unanständig.") is False
+
+    async def test_empty_sentence_is_no(self):
+        assert await _make_extractor().judge_grey_zone_async("  ") is False
