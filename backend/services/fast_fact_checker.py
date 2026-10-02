@@ -22,6 +22,7 @@ from backend.lang import (
     SOURCE_URL_DESCRIPTION,
     SOURCE_TITLE_DESCRIPTION,
     CONSISTENCY_DESCRIPTION,
+    EVIDENCE_DESCRIPTION,
     SOURCES_DESCRIPTION,
 )
 from .llm_base import build_model, settings_with_thinking
@@ -67,15 +68,16 @@ class Source(BaseModel):
 
 class FastVerdict(BaseModel):
     """A fast verdict. Field names match what ``build_fact_check_dict`` maps into the
-    stored row (speaker, original_claim, evidence, consistency, sources)."""
+    stored row (speaker, original_claim, evidence, consistency, sources).
+
+    The rules for each field (what the levels mean, how to cite) live in the field
+    descriptions (backend/lang.py), not in the prompt: one definition, sent with the
+    output schema, as the old deep checker did."""
     speaker: str = ""
     original_claim: str = ""
     # evidence before consistency: the model writes the finding first and derives the
     # level from it, instead of committing to a level and justifying it afterwards.
-    evidence: str = Field(
-        description="Kurze deutschsprachige Einschätzung (ein, höchstens zwei Sätze) mit "
-                    "der entscheidenden Zahl und ihrer Quelle."
-    )
+    evidence: str = Field(description=EVIDENCE_DESCRIPTION)
     consistency: Literal["hoch", "niedrig", "unklar", "keine Datenlage"] = Field(
         description=CONSISTENCY_DESCRIPTION
     )
