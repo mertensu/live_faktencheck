@@ -286,6 +286,31 @@ class TestTranscriptFixes:
                 "source": "Hat die Industrie Strompreise hochgebracht."} in events
         await session.stop()
 
+    async def test_run_on_early_sentence_found_across_final_sentences(self, db):
+        """A partial's run-on sentence that the final formatting splits into several: the
+        mark moves to that run of sentences (seen live: the claim ended up "Ohne Textstelle").
+        The claim was held (no label yet) and goes on air when the turn is final."""
+        events, on_event = _collect()
+        early = ("Eine will ich auflösen, weil es richtig ist, dass die Vermögensteuer ausgesetzt wurde "
+                 "wegen der Bemessung, aber wir haben ja Grundlagen für die Erbschaftsteuer.")
+        claim = GatedClaim(name="", claim="Die Vermögensteuer wurde ausgesetzt.", source=early)
+        session = StreamingSession("s1", _gate([[claim]]), _fast_checker(), db, on_event=on_event,
+                                   speakers=["Reichinnek"])
+        await session.assign_speaker("B", "Reichinnek")
+        await session.handle_turn(early + " Das ist so. Also die", end_of_turn=False, turn_order=3)
+        await _drain(session)
+        assert await db.get_fact_checks(session_id="s1") == []  # held: no label yet
+        final = ("Eine will ich auflösen. Weil es richtig ist, dass die Vermögensteuer ausgesetzt wurde "
+                 "wegen der Bemessung. Aber wir haben ja Grundlagen für die Erbschaftsteuer. Das ist so. Also die Grundlagen sind da.")
+        await session.handle_turn(final, end_of_turn=True, speaker_label="B", turn_order=3)
+        types = [e["type"] for e in events if e["type"].startswith("claim_")]
+        assert types[:2] == ["claim_processing", "claim_result"] and types[-1] == "claim_source_update"
+        update = next(e for e in events if e["type"] == "claim_source_update")
+        assert update["source"] == ("Eine will ich auflösen. Weil es richtig ist, dass die Vermögensteuer ausgesetzt "
+                                    "wurde wegen der Bemessung. Aber wir haben ja Grundlagen für die Erbschaftsteuer.")
+        assert update["source"] in final
+        await session.stop()
+
 
 
 def _collect():

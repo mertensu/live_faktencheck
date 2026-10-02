@@ -42,6 +42,8 @@ STREAM_EARLY_SENTENCES = os.getenv("STREAM_EARLY_SENTENCES", "true").lower() in 
 SAME_SENTENCE_RATIO = 0.85
 # How many preceding sentences (across windows) the gate gets as context for pronouns.
 CONTEXT_SENTENCES = int(os.getenv("REFORMULATE_CONTEXT_SENTENCES", "4"))
+# An early sentence re-found in the finalized turn may span this many of its sentences.
+FINAL_SOURCE_MAX_SENTENCES = 3
 # How many recently checked source sentences to remember for duplicate suppression.
 CHECKED_SOURCES_MEMORY = 50
 
@@ -637,16 +639,24 @@ class StreamingSession:
                         if not any(_same_sentence(_norm(s), t) for t in taken))
 
     def _final_source(self, turn_order: int | None, source: str) -> str | None:
-        """The finalized turn's sentence matching an early ``source``, if its wording changed."""
+        """The finalized turn's passage matching an early ``source``, if its wording changed.
+
+        Usually one sentence; but a run-on sentence of a partial may come out of the final
+        formatting as several, so runs of up to ``FINAL_SOURCE_MAX_SENTENCES`` consecutive
+        sentences are candidates too."""
         turn = self._turns.get(turn_order) if turn_order is not None else None
         if not turn or source in turn["text"]:
             return None
         key = _norm(source)
+        text = turn["text"]
+        spans = _sentence_spans(text)
         best, ratio = None, 0.0
-        for sentence in split_sentences(turn["text"]):
-            r = SequenceMatcher(None, key, _norm(sentence)).ratio()
-            if r > ratio:
-                best, ratio = sentence, r
+        for i in range(len(spans)):
+            for j in range(i, min(i + FINAL_SOURCE_MAX_SENTENCES, len(spans))):
+                passage = text[spans[i][0]:spans[j][1]].strip()
+                r = SequenceMatcher(None, key, _norm(passage)).ratio()
+                if r > ratio:
+                    best, ratio = passage, r
         return best if ratio >= 0.6 else None
 
     async def _resend_source(self, old: str, new: str | None) -> None:
