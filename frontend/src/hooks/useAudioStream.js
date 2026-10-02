@@ -11,6 +11,10 @@ const MSG = {
   quota: 'Audio-Kontingent für diesen Code aufgebraucht',
 }
 
+// The operator's pick for a voice that is no guest (a clip, "Einspieler"): its words are
+// not checked, and claims already shown from it are withdrawn. Same string as the backend.
+export const OTHER_VOICE = 'Andere Stimme'
+
 // A turn's transcript lines: one per speaker segment. A turn ends at a pause, not at a
 // change of speaker, so the backend splits it where its words' speakers change.
 export function turnLines(msg) {
@@ -212,6 +216,9 @@ export function useAudioStream(sessionId, { deviceId = '' } = {}) {
       } else if (msg.type === 'claim_error') {
         setClaims((prev) => prev.map((c) =>
           c.id === msg.id ? { ...c, status: 'error' } : c))
+      } else if (msg.type === 'claim_withdrawn') {
+        // Its speaker is no guest (any more): the claim is off air.
+        setClaims((prev) => prev.filter((c) => c.id !== msg.id))
       } else if (msg.type === 'claim_speaker_update') {
         // Label assigned or reclustered: rewrite this claim's speaker retroactively.
         setClaims((prev) => prev.map((c) =>

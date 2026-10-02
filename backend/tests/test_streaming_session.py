@@ -13,11 +13,19 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock
 
 from backend.database import Database
+from backend.lang import OTHER_VOICE
 from backend.services.claim_extraction import ExtractedClaim
 from backend.services import streaming as streaming_mod
 from backend.services.gate import GatedClaim
 from backend.routers.stream import _handle_control
 from backend.services.streaming import StreamingSession
+
+
+@pytest.fixture
+def no_hold(monkeypatch):
+    """Publish claims of unassigned labels right away (the pre-hold behaviour): for tests
+    of how a stored claim follows its label."""
+    monkeypatch.setattr(streaming_mod, "STREAM_HOLD_UNASSIGNED", False)
 
 
 @pytest.fixture
@@ -292,6 +300,7 @@ CLAIM_A = GatedClaim(name="A", claim="Behauptung A.", source="Behauptung A.")
 
 
 class TestSpeakerAssignment:
+    @pytest.mark.usefixtures("no_hold")
     async def test_assignment_rewrites_stored_claims_of_that_label(self, db):
         events, on_event = _collect()
         session = StreamingSession("s1", _gate([[CLAIM_A]]), _fast_checker(), db,
@@ -307,6 +316,7 @@ class TestSpeakerAssignment:
         assert {"type": "claim_speaker_update", "id": pid, "speaker": "Dröge", "label": "A"} in events
         await session.stop()
 
+    @pytest.mark.usefixtures("no_hold")
     async def test_other_labels_untouched(self, db):
         session = StreamingSession("s1", _gate([[CLAIM_A]]), _fast_checker(), db, speakers=["Dröge"])
         await session.handle_turn("Behauptung A. Noch ein Satz.", end_of_turn=True,
@@ -326,6 +336,7 @@ class TestSpeakerAssignment:
         assert checker.check_claim_async.await_args.kwargs["speaker"] == "Dröge"
         assert (await db.get_fact_checks(session_id="s1"))[0]["sprecher"] == "Dröge"
 
+    @pytest.mark.usefixtures("no_hold")
     async def test_reassign_and_clear(self, db):
         session = StreamingSession("s1", _gate([[CLAIM_A]]), _fast_checker(), db,
                                    speakers=["Dröge", "Connemann"])
@@ -674,6 +685,7 @@ class TestPendingLabel:
 class TestEarlySentenceSpeakers:
     """Partials carry no speakers, so an early sentence's claim gets its label from the final turn."""
 
+    @pytest.mark.usefixtures("no_hold")
     async def test_early_claim_labelled_when_turn_is_final(self, db):
         events, on_event = _collect()
         claim = GatedClaim(name="", claim="Strom ist teuer.", source="Der Strom ist teuer.")
@@ -754,6 +766,7 @@ class TestPassageAssignment:
         assert (await db.get_fact_checks(session_id="s1"))[0]["sprecher"] == "Maischberger"
         await session.stop()
 
+    @pytest.mark.usefixtures("no_hold")
     async def test_passage_leaves_claims_outside_it_alone(self, db):
         session = StreamingSession("s1", _gate([[CLAIM_A]]), _fast_checker(), db, speakers=["Maischberger"])
         await session.handle_turn("Behauptung A. Noch ein Satz.", end_of_turn=True,
@@ -841,4 +854,144 @@ class TestControlMessages:
                      json.dumps({"type": "assign_speaker", "label": 5, "speaker": "Dröge"})]:
             await _handle_control(session, text)
         assert session._speaker_map == {}
+        await session.stop()
+
+
+class TestHoldUnassigned:
+    """Only claims of a voice given to a guest go on air; clips ("Einspieler") stay out."""
+
+    async def test_unassigned_claim_is_checked_but_held_until_named(self, db):
+        events, on_event = _collect()
+        checker = _fast_checker()
+        session = StreamingSession("s1", _gate([[CLAIM_A]]), checker, db, on_event=on_event,
+                                   speakers=["Dröge", "Connemann"])
+        await session.handle_turn("Behauptung A. Noch ein Satz.", end_of_turn=True,
+                                  speaker_label="A", turn_order=0)
+        await _drain(session)
+        assert checker.check_claim_async.await_count == 1  # checked in the background
+        assert await db.get_fact_checks(session_id="s1") == []
+        assert not any(e["type"].startswith("claim_") for e in events)
+
+        await session.assign_speaker("A", "Dröge")
+        rows = await db.get_fact_checks(session_id="s1")
+        assert len(rows) == 1 and rows[0]["sprecher"] == "Dröge"
+        assert rows[0]["consistency"] == "hoch" and rows[0]["status"] == ""
+        types = [e["type"] for e in events if e["type"].startswith("claim_")]
+        assert types == ["claim_processing", "claim_result"]
+        assert all(e["id"] == rows[0]["id"] for e in events if e["type"].startswith("claim_"))
+        await session.stop()
+        assert checker.check_claim_async.await_count == 1
+
+    async def test_named_from_a_later_turn_keeps_earlier_claims_held(self, db):
+        session = StreamingSession("s1", _gate([[CLAIM_A]]), _fast_checker(), db, speakers=["Dröge"])
+        await session.handle_turn("Behauptung A. Noch ein Satz.", end_of_turn=True,
+                                  speaker_label="A", turn_order=0)
+        await _drain(session)
+        await session.assign_speaker("A", "Dröge", from_turn=5)
+        assert await db.get_fact_checks(session_id="s1") == []
+        await session.stop()
+
+    async def test_unassigned_at_session_end_is_never_stored(self, db):
+        session = StreamingSession("s1", _gate([[CLAIM_A]]), _fast_checker(), db, speakers=["Dröge"])
+        await session.handle_turn("Behauptung A. Noch ein Satz.", end_of_turn=True,
+                                  speaker_label="A", turn_order=0)
+        await session.stop()
+        assert await db.get_fact_checks(session_id="s1") == []
+
+    async def test_other_voice_withdraws_and_reassigning_republishes(self, db):
+        events, on_event = _collect()
+        checker = _fast_checker()
+        session = StreamingSession("s1", _gate([[CLAIM_A]]), checker, db, on_event=on_event,
+                                   speakers=["Dröge"])
+        await session.assign_speaker("A", "Dröge")
+        await session.handle_turn("Behauptung A. Noch ein Satz.", end_of_turn=True,
+                                  speaker_label="A", turn_order=3)
+        await _drain(session)
+        pid = (await db.get_fact_checks(session_id="s1"))[0]["id"]
+
+        # The voice was a clip all along: from its turn on it is "Andere Stimme".
+        await session.assign_speaker("A", OTHER_VOICE, from_turn=3)
+        assert await db.get_fact_checks(session_id="s1") == []
+        assert {"type": "claim_withdrawn", "id": pid} in events
+
+        # Corrected back: the claim returns with its result, without a second check.
+        await session.assign_speaker("A", "Dröge", from_turn=3)
+        rows = await db.get_fact_checks(session_id="s1")
+        assert len(rows) == 1 and rows[0]["consistency"] == "hoch" and rows[0]["sprecher"] == "Dröge"
+        await session.stop()
+        assert checker.check_claim_async.await_count == 1
+
+    async def test_other_voice_is_neither_gated_nor_checked(self, db):
+        gate, windows = _recording_gate()
+        session = StreamingSession("s1", gate, _fast_checker(), db, speakers=["Dröge"])
+        await session.assign_speaker("D", OTHER_VOICE)
+        await session.handle_turn("Im Einspieler sagt jemand was. Und noch was.", end_of_turn=True,
+                                  speaker_label="D", turn_order=0)
+        await session.handle_turn("Der Strom ist teuer. Punkt.", end_of_turn=True, speaker_label="A", turn_order=1)
+        await session.stop()
+        assert windows == ["A: Der Strom ist teuer. Punkt."]
+        assert "Andere Stimme: Im Einspieler sagt jemand was." in gate.gate.await_args.kwargs["previous_context"]
+
+    async def test_claim_of_other_voice_is_checked_once_given_to_a_guest(self, db):
+        """A claim found while its label already was "Andere Stimme" (the label was named
+        while the gate ran) is not checked — until the operator corrects the label."""
+        checker = _fast_checker()
+        session = StreamingSession("s1", _gate([]), checker, db, speakers=["Dröge"])
+        await session.assign_speaker("A", OTHER_VOICE)
+        await session._check_and_store("Behauptung A.", "Behauptung A.", 0, "A")
+        await _drain(session)
+        assert checker.check_claim_async.await_count == 0
+        await session.assign_speaker("A", "Dröge")
+        await session.stop()
+        assert checker.check_claim_async.await_count == 1
+        assert (await db.get_fact_checks(session_id="s1"))[0]["sprecher"] == "Dröge"
+
+    async def test_passage_given_to_other_voice_is_withdrawn(self, db):
+        events, on_event = _collect()
+        session = StreamingSession("s1", _gate([[CLAIM_A]]), _fast_checker(), db, on_event=on_event,
+                                   speakers=["Dröge"])
+        await session.assign_speaker("A", "Dröge")
+        await session.handle_turn("Noch ein Satz. Behauptung A.", end_of_turn=True,
+                                  speaker_label="A", turn_order=0)
+        await _drain(session)
+        pid = (await db.get_fact_checks(session_id="s1"))[0]["id"]
+        await session.assign_passage("Behauptung A.", OTHER_VOICE)
+        assert await db.get_fact_checks(session_id="s1") == []
+        assert {"type": "claim_withdrawn", "id": pid} in events
+        await session.stop()
+
+    async def test_withdrawn_during_check_gets_no_row(self, db):
+        checker = _fast_checker()
+        release = asyncio.Event()
+        orig = checker.check_claim_async.side_effect
+
+        async def slow_check(**kw):
+            await release.wait()
+            return await orig(**kw)
+
+        checker.check_claim_async.side_effect = slow_check
+        session = StreamingSession("s1", _gate([[CLAIM_A]]), checker, db, speakers=["Dröge"])
+        await session.assign_speaker("A", "Dröge")
+        await session.handle_turn("Behauptung A. Noch ein Satz.", end_of_turn=True,
+                                  speaker_label="A", turn_order=0)
+        await asyncio.sleep(0.01)  # placeholder stored, check pending
+        assert len(await db.get_fact_checks(session_id="s1")) == 1
+        await session.assign_speaker("A", OTHER_VOICE)
+        release.set()
+        await session.stop()
+        assert await db.get_fact_checks(session_id="s1") == []
+
+    async def test_without_speakers_everything_is_published(self, db):
+        """An episode without a speaker list can't be assigned: nothing is held."""
+        session = StreamingSession("s1", _gate([[CLAIM_A]]), _fast_checker(), db)
+        await session.handle_turn("Behauptung A. Noch ein Satz.", end_of_turn=True,
+                                  speaker_label="A", turn_order=0)
+        await session.stop()
+        assert len(await db.get_fact_checks(session_id="s1")) == 1
+
+    async def test_other_voice_message_reaches_session(self, db):
+        session = StreamingSession("s1", _gate([]), _fast_checker(), db, speakers=["Dröge"])
+        await _handle_control(session, json.dumps({"type": "assign_speaker", "label": "D",
+                                                   "speaker": OTHER_VOICE, "from_turn": 4}))
+        assert session._assignments["D"] == [(4, OTHER_VOICE)]
         await session.stop()

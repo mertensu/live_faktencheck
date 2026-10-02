@@ -82,7 +82,9 @@ function NamesStep() {
       <p>
         Das System hört nur, dass <em>verschiedene</em> Stimmen sprechen, und nennt sie
         Sprecher A, B, … <strong>Deine Aufgabe</strong> ist es daher, jede Stimme einmal der
-        richtigen Person zuzuordnen, sobald sie zum ersten Mal spricht.
+        richtigen Person zuzuordnen, sobald sie zum ersten Mal spricht. Geprüft wird nur, was
+        eine Stimme sagt, die einer Person zugeordnet ist. Stimmen aus einem Einspieler ordnest
+        du <em>Andere Stimme – nicht prüfen</em> zu.
       </p>
       <p className="live-tutorial-task">
         Probiere es aus: Klicke oben in einer Sprechblase auf <strong>Sprecher A ▾</strong> und wähle {HOST}.

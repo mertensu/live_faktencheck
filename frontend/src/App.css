@@ -1630,6 +1630,9 @@
 .live-speaker-menu button:hover,
 .live-speaker-menu button:focus-visible { background: #f3f4f6; }
 .live-speaker-menu button[aria-checked="true"] { font-weight: 700; }
+.live-speaker-menu-other { border-top: 1px solid var(--border-light); margin-top: 0.3rem; padding-top: 0.3rem; }
+.live-speaker-menu-other button { color: var(--text-secondary); }
+.live-bubble-hint { margin-left: 0.5rem; color: var(--text-secondary); font-size: 0.72rem; font-style: italic; font-weight: 400; }
 .live-speaker-menu-clear { border-top: 1px solid var(--border-light); margin-top: 0.3rem; padding-top: 0.3rem; }
 .live-speaker-menu-clear button { color: var(--text-secondary); }
 .live-passage-menu { position: fixed; }

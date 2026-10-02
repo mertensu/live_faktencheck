@@ -7,7 +7,9 @@ relays audio to AssemblyAI Universal-Streaming and drives the fast lane via
 ``StreamingSession``. Text frames carry control messages: ``stop``, or JSON
 ``{"type": "assign_speaker", "label": "A", "speaker": "Name" | null, "from_turn": 12}``
 when the operator assigns a diarization label to a guest from that turn on, or ``{"type": "assign_passage", "text": "…",
-"speaker": "Name"}`` when they mark a passage that belongs to another guest.
+"speaker": "Name"}`` when they mark a passage that belongs to another guest. Instead of a
+guest, ``"speaker"`` may be ``"Andere Stimme"`` (a clip voice): not gated, not checked, and
+claims already shown from it are withdrawn (``claim_withdrawn``).
 
 Auth: header-based ``require_code`` can't run on a WS handshake, so the access code is
 passed as a query param and validated here against the same ``codes`` table. Audio

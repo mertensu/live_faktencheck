@@ -18,7 +18,7 @@ import logging
 from datetime import datetime
 from difflib import SequenceMatcher
 
-from backend.lang import UNCLEAR_SPEAKER
+from backend.lang import OTHER_VOICE, UNCLEAR_SPEAKER
 from backend.utils import build_fact_check_dict
 from .gate import NO_SPEAKER, split_sentences
 from .transcription import assemblyai_streaming_host, session_keyterms
@@ -79,6 +79,12 @@ STREAM_MAX_SPEAKERS = os.getenv("STREAM_MAX_SPEAKERS")
 # not the 3.6 the docs call the default.
 STREAM_SPEECH_MODEL = os.getenv("STREAM_SPEECH_MODEL", "universal-3-6-pro")
 STREAM_SPEAKER_REVISION_MS = int(os.getenv("STREAM_SPEAKER_REVISION_MS", "120000"))
+# Only claims of a voice the operator gave to a guest are published. A clip (Einspieler)
+# has many voices, some of them the guests' own; checking every unnamed label put those
+# on air. A claim of an unassigned label is checked in the background but held back, and
+# published as soon as its label (or passage) is given to a guest — or never. Off: every
+# claim not from an excluded speaker or "Andere Stimme" is published right away.
+STREAM_HOLD_UNASSIGNED = os.getenv("STREAM_HOLD_UNASSIGNED", "true").lower() in ("1", "true", "yes")
 
 
 def speaker_runs(words) -> list[tuple[str | None, str]]:
@@ -234,15 +240,25 @@ class StreamingSession:
         # later (SpeakerRevisionEvent, matched by turn_order), so we keep every finalized
         # turn and the claims it produced.
         self._assignments: dict[str, list[tuple[int, str | None]]] = {}  # label -> [(from turn, name)]
+        # Claims are keyed by a session-local id (cid): a claim is checked once, but its row
+        # in fact_checks exists only while its speaker is a guest (see _publishable), and
+        # gets a new DB id each time it is published again.
         self._turns: dict[int, dict] = {}              # turn_order -> {"speaker", "text"}
-        self._turn_claims: dict[int, list[int]] = {}   # turn_order -> [fact_check_id]
-        self._claim_labels: dict[int, str] = {}        # fact_check_id -> current label
-        self._claim_speakers: dict[int, str] = {}      # fact_check_id -> current speaker
-        self._claim_turns: dict[int, int] = {}         # fact_check_id -> turn_order
+        self._turn_claims: dict[int, list[int]] = {}   # turn_order -> [cid]
+        self._claim_labels: dict[int, str] = {}        # cid -> current label
+        self._claim_speakers: dict[int, str] = {}      # cid -> current speaker
+        self._claim_turns: dict[int, int] = {}         # cid -> turn_order
+        self._claim_info: dict[int, dict] = {}         # cid -> {"claim", "source", "queries", "timestamp"}
+        self._results: dict[int, dict] = {}            # cid -> stored row of the finished check
+        self._checking: set[int] = set()               # cids whose check was started
+        self._rows: dict[int, int] = {}                # cid -> fact_check_id while published
+        self._next_cid = 1
+        # Serializes publishing, withdrawing and writing results of claims.
+        self._publish_lock = asyncio.Lock()
         # Passages the operator marked and gave to a guest, overriding their label (the
         # diarization folded one speaker's words into another's turn): [(normalized, name)].
         self._passages: list[tuple[str, str]] = []
-        self._claim_sources: dict[int, str] = {}       # fact_check_id -> normalized source
+        self._claim_sources: dict[int, str] = {}       # cid -> normalized source
         # Turns the operator confirmed: those under a label at the moment they named it. A
         # later reclustering doesn't move them (it did, wrongly, early in a live run).
         self._confirmed_turns: set[int] = set()
@@ -283,6 +299,19 @@ class StreamingSession:
         """True for a speaker the session excludes from checking (e.g. the moderator)."""
         return bool(name) and name.casefold() in {x.strip().casefold() for x in self.excluded_speakers}
 
+    def _suppressed(self, name: str | None) -> bool:
+        """True for a speaker never gated or checked: excluded, or "Andere Stimme"."""
+        return name == OTHER_VOICE or self._excluded(name)
+
+    def _publishable(self, cid: int) -> bool:
+        """A claim is on air only while its speaker is a guest (see STREAM_HOLD_UNASSIGNED)."""
+        speaker = self._claim_speakers.get(cid)
+        if self._suppressed(speaker):
+            return False
+        if not STREAM_HOLD_UNASSIGNED or not self.speakers:
+            return True
+        return speaker in self.speakers
+
     # ---- speakers: operator assignment + reclustering (unit-testable) --------
     @property
     def _speaker_map(self) -> dict[str, str]:
@@ -303,17 +332,18 @@ class StreamingSession:
         return (self._name_at(label, turn_order) or label) if label else label
 
     async def assign_speaker(self, label: str, name: str | None, from_turn: int | None = None) -> None:
-        """The operator assigns a diarization label to a guest, or clears it (``None``),
-        from turn ``from_turn`` on (``None``: from the start).
+        """The operator assigns a diarization label to a guest (or to ``OTHER_VOICE``), or
+        clears it (``None``), from turn ``from_turn`` on (``None``: from the start).
 
         Earlier turns keep the name they had: one label may hold two people. Rewrites the
-        stored claims this changes (DB + ``claim_speaker_update``) and announces the
-        mapping, so the UI renames those transcript lines. A name outside the episode's
-        speakers is ignored.
+        claims this changes — renamed in the DB (``claim_speaker_update``), published once
+        they belong to a guest, withdrawn once they don't (``claim_withdrawn``) — and
+        announces the mapping, so the UI renames those transcript lines. A name outside the
+        episode's speakers is ignored.
         """
         if not _label(label):
             return
-        if name is not None and name not in self.speakers:
+        if name is not None and name not in self.speakers and name != OTHER_VOICE:
             logger.warning(f"[stream:{self.session_id}] assign {label!r} -> unknown speaker {name!r}; ignored")
             return
         start = -1 if from_turn is None else from_turn
@@ -327,31 +357,32 @@ class StreamingSession:
         logger.info(f"[stream:{self.session_id}] speaker {label} -> {name} from turn {from_turn}; "
                     f"map: {self._assignments}")
         await self._emit({"type": "speaker_map_update", "label": label, "speaker": name, "from_turn": from_turn})
-        for pid, claim_label in list(self._claim_labels.items()):
+        for cid, claim_label in list(self._claim_labels.items()):
             if claim_label == label:
-                await self._rewrite_speaker(pid, self._claim_display(pid))
+                await self._rewrite_speaker(cid, self._claim_display(cid) or UNCLEAR_SPEAKER)
 
-    def _claim_display(self, pid: int) -> str | None:
+    def _claim_display(self, cid: int) -> str | None:
         """A claim's speaker from its label, as named at the claim's turn."""
-        return self._display(self._claim_labels.get(pid), self._claim_turns.get(pid))
+        return self._display(self._claim_labels.get(cid), self._claim_turns.get(cid))
 
     async def assign_passage(self, text: str, name: str) -> None:
-        """The operator marks a passage of the transcript and gives it to a guest.
+        """The operator marks a passage of the transcript and gives it to a guest (or to
+        ``OTHER_VOICE``: a clip voice that diarization put under a guest's label).
 
         Every claim whose source sentence lies in it takes that name for good: it leaves its
         label, so later assignments and reclustering no longer touch it. The passage is
         kept, so a claim from it that is still in the gate gets the name as well.
         """
         key = _norm(text)
-        if not key or name not in self.speakers:
+        if not key or (name not in self.speakers and name != OTHER_VOICE):
             logger.warning(f"[stream:{self.session_id}] assign passage -> {name!r}; ignored")
             return
         self._passages.append((key, name))
         logger.info(f"[stream:{self.session_id}] passage -> {name}: {text[:80]!r}")
-        for pid, source in list(self._claim_sources.items()):
+        for cid, source in list(self._claim_sources.items()):
             if _in_passage(source, key):
-                self._detach_label(pid)
-                await self._rewrite_speaker(pid, name)
+                self._detach_label(cid)
+                await self._rewrite_speaker(cid, name)
 
     def _passage_speaker(self, source: str | None) -> str | None:
         """The name of the latest marked passage this source sentence lies in."""
@@ -361,11 +392,11 @@ class StreamingSession:
                 return name
         return None
 
-    def _detach_label(self, pid: int) -> None:
-        self._claim_labels.pop(pid, None)
-        for pids in self._turn_claims.values():
-            if pid in pids:
-                pids.remove(pid)
+    def _detach_label(self, cid: int) -> None:
+        self._claim_labels.pop(cid, None)
+        for cids in self._turn_claims.values():
+            if cid in cids:
+                cids.remove(cid)
 
     async def handle_speaker_revision(self, revisions: list[dict]) -> None:
         """Apply an AssemblyAI online-reclustering revision.
@@ -402,10 +433,10 @@ class StreamingSession:
                 turn["sentences"] = sentence_speakers(turn["text"], rev.get("words"), new_label)
                 await self._emit({"type": "turn_speaker_update", "turn_order": turn_order, "label": new_label,
                                   "segments": self._segment_events(turn["sentences"])})
-            for pid in self._turn_claims.get(turn_order, []):
-                label = self._sentence_label(turn_order, self._claim_sources.get(pid, "")) or new_label
-                self._claim_labels[pid] = label
-                await self._rewrite_speaker(pid, self._claim_display(pid))
+            for cid in list(self._turn_claims.get(turn_order, [])):
+                label = self._sentence_label(turn_order, self._claim_sources.get(cid, "")) or new_label
+                self._claim_labels[cid] = label
+                await self._rewrite_speaker(cid, self._claim_display(cid))
 
     def _merged_label(self, revisions: list[dict]) -> tuple[str, list[str]] | None:
         """(target label, names) if the revision moves turns of two or more differently
@@ -442,26 +473,66 @@ class StreamingSession:
     async def _label_early_claims(self, turn_order: int) -> None:
         """Claims from a turn's early sentences had no label (partials carry no speakers);
         now that the turn is final, each takes the label of its sentence's words."""
-        for pid in self._turn_claims.get(turn_order, []):
-            if pid in self._claim_labels:
+        for cid in list(self._turn_claims.get(turn_order, [])):
+            if cid in self._claim_labels:
                 continue
-            label = self._sentence_label(turn_order, self._claim_sources.get(pid, ""))
+            label = self._sentence_label(turn_order, self._claim_sources.get(cid, ""))
             if label:
-                self._claim_labels[pid] = label
-                await self._rewrite_speaker(pid, self._claim_display(pid))
+                self._claim_labels[cid] = label
+                await self._rewrite_speaker(cid, self._claim_display(cid))
 
-    async def _rewrite_speaker(self, pid: int, name: str) -> None:
-        """Update a stored claim's speaker in place and notify the UI."""
-        self._claim_speakers[pid] = name
-        try:
-            row = await self.db.get_fact_check_by_id(pid)
-            if row and row.get("sprecher") != name:
-                row["sprecher"] = name
-                await self.db.update_fact_check(pid, row)
-                await self._emit({"type": "claim_speaker_update", "id": pid, "speaker": name,
-                                  "label": self._claim_labels.get(pid)})
-        except Exception:
-            logger.exception("Failed to rewrite speaker for claim %s", pid)
+    async def _rewrite_speaker(self, cid: int, name: str) -> None:
+        """Change a claim's speaker: rename its stored row and notify the UI, then publish
+        or withdraw it if that decides whether it belongs on air."""
+        self._claim_speakers[cid] = name
+        pid = self._rows.get(cid)
+        if pid is not None and self._publishable(cid):
+            try:
+                row = await self.db.get_fact_check_by_id(pid)
+                if row and row.get("sprecher") != name:
+                    row["sprecher"] = name
+                    await self.db.update_fact_check(pid, row)
+                    await self._emit({"type": "claim_speaker_update", "id": pid, "speaker": name,
+                                      "label": self._claim_labels.get(cid)})
+            except Exception:
+                logger.exception("Failed to rewrite speaker for claim %s", pid)
+        await self._sync(cid)
+
+    async def _sync(self, cid: int) -> None:
+        """Publish a claim whose speaker is now a guest, withdraw one whose speaker no
+        longer is. A withdrawn claim keeps its check result and comes back with it."""
+        async with self._publish_lock:
+            want, pid = self._publishable(cid), self._rows.get(cid)
+            if want and pid is None:
+                info = self._claim_info[cid]
+                pid = await self.db.add_fact_check({
+                    "sprecher": self._claim_speakers[cid],
+                    "behauptung": info["claim"],
+                    "consistency": "",
+                    "begruendung": "",
+                    "quellen": [],
+                    "timestamp": info["timestamp"],
+                    "session_id": self.session_id,
+                    "status": "processing",
+                    "check_depth": "fast",
+                })
+                self._rows[cid] = pid
+                await self._emit({"type": "claim_processing", "id": pid, "speaker": self._claim_speakers[cid],
+                                  "label": self._claim_labels.get(cid), "claim": info["claim"],
+                                  "source": info["source"]})
+                if cid in self._results:
+                    await self._write_result(cid, pid)
+                else:
+                    self._start_check(cid)
+            elif not want and pid is not None:
+                del self._rows[cid]
+                logger.info(f"[stream:{self.session_id}] withdraw claim {pid} "
+                            f"({self._claim_speakers.get(cid)}): {self._claim_info[cid]['claim'][:80]!r}")
+                try:
+                    await self.db.delete_fact_check(pid)
+                except Exception:
+                    logger.exception("Failed to withdraw claim %s", pid)
+                await self._emit({"type": "claim_withdrawn", "id": pid})
 
     # ---- windowing (unit-testable) ------------------------------------------
     async def handle_turn(
@@ -580,6 +651,9 @@ class StreamingSession:
 
     async def _resend_source(self, old: str, new: str | None) -> None:
         if new:
+            for info in self._claim_info.values():
+                if info["source"] == old:
+                    info["source"] = new
             await self._emit({"type": "claim_source_update", "old": old, "source": new})
 
     def _already_checked(self, source: str | None) -> bool:
@@ -599,9 +673,9 @@ class StreamingSession:
         entries = self._buffer
         self._buffer = []
         self._sentence_count = 0
-        # A speaker the session excludes (the moderator) is not gated once the operator has
-        # named their label; their words still count as context.
-        gated = [e for e in entries if not self._excluded(self._display(e["speaker"], e.get("turn_order")))]
+        # A speaker the session excludes (the moderator) or the operator called "Andere
+        # Stimme" is not gated once their label is named; their words still count as context.
+        gated = [e for e in entries if not self._suppressed(self._display(e["speaker"], e.get("turn_order")))]
         window_text = "\n".join(f"{e['speaker'] or NO_SPEAKER}: {e['text']}" for e in gated)
         # Taken before the gate runs, so a window gated meanwhile already sees this one.
         previous = "\n".join(self._recent_lines) or None
@@ -698,82 +772,91 @@ class StreamingSession:
         speaker_label: str | None = None,
         queries: list[str] | None = None,
     ) -> None:
-        """Insert a spinner placeholder, run the fast check, update in place."""
-        now = datetime.now().isoformat()
+        """Register a gated claim, check it and publish it once its speaker is a guest.
+
+        The check starts right away, also for a claim that is held back (an unassigned
+        label): if the operator names the label a moment later, the result is there.
+        Claims of excluded speakers and of "Andere Stimme" are not checked unless the
+        operator gives them to a guest.
+        """
+        cid = self._next_cid
+        self._next_cid += 1
         # A passage the operator gave to a guest outranks the label.
         passage_speaker = self._passage_speaker(source)
         if passage_speaker:
             speaker_label = None
+        elif not speaker_label and turn_order in self._turns:
+            # An early sentence whose turn became final meanwhile: its words' label.
+            speaker_label = self._sentence_label(turn_order, _norm(source or ""))
         speaker = passage_speaker or self._display(speaker_label, turn_order) or UNCLEAR_SPEAKER
-        if self._excluded(speaker):
-            logger.info(f"[stream:{self.session_id}] skip claim from excluded speaker {speaker}: {claim[:80]!r}")
-            return
-        placeholder = {
-            "sprecher": speaker,
-            "behauptung": claim,
-            "consistency": "",
-            "begruendung": "",
-            "quellen": [],
-            "timestamp": now,
-            "session_id": self.session_id,
-            "status": "processing",
-            "check_depth": "fast",
-        }
-        pid = await self.db.add_fact_check(placeholder)
-        self._claim_speakers[pid] = speaker
+        self._claim_info[cid] = {"claim": claim, "source": source, "queries": queries,
+                                 "timestamp": datetime.now().isoformat()}
+        self._claim_speakers[cid] = speaker
         if turn_order is not None:
-            self._claim_turns[pid] = turn_order
+            self._claim_turns[cid] = turn_order
         if source:
-            self._claim_sources[pid] = _norm(source)
-        # Tracked so an assignment or a revision can rewrite this row later — also without
+            self._claim_sources[cid] = _norm(source)
+        # Tracked so an assignment or a revision can rewrite this claim later — also without
         # a label yet (an early sentence): the final turn will supply it.
         if speaker_label:
-            self._claim_labels[pid] = speaker_label
+            self._claim_labels[cid] = speaker_label
         if turn_order is not None and not passage_speaker:
-            self._turn_claims.setdefault(turn_order, []).append(pid)
-        await self._emit({"type": "claim_processing", "id": pid, "speaker": speaker,
-                          "label": speaker_label, "claim": claim, "source": source})
-        # An assignment may have landed while the placeholder was being inserted.
-        late_passage = self._passage_speaker(source)
-        if late_passage and late_passage != speaker:
-            self._detach_label(pid)
-            await self._rewrite_speaker(pid, late_passage)
-            speaker = late_passage
+            self._turn_claims.setdefault(turn_order, []).append(cid)
+        if self._suppressed(speaker):
+            logger.info(f"[stream:{self.session_id}] hold claim of {speaker} unchecked: {claim[:80]!r}")
         else:
-            # An early sentence whose turn became final meanwhile: its words' label.
-            if not passage_speaker and pid not in self._claim_labels and turn_order in self._turns:
-                late_label = self._sentence_label(turn_order, self._claim_sources.get(pid, ""))
-                if late_label:
-                    self._claim_labels[pid] = late_label
-            label = self._claim_labels.get(pid)
-            if label and self._claim_display(pid) != speaker:
-                await self._rewrite_speaker(pid, self._claim_display(pid))
-                speaker = self._claim_speakers[pid]
+            if not self._publishable(cid):
+                logger.info(f"[stream:{self.session_id}] hold claim of unassigned {speaker}: {claim[:80]!r}")
+            self._start_check(cid)
+        await self._sync(cid)
 
+    def _start_check(self, cid: int) -> None:
+        if cid not in self._checking:
+            self._checking.add(cid)
+            self._track(self._run_check(cid))
+
+    async def _run_check(self, cid: int) -> None:
+        """Run the fast check; write the result into the row if the claim is published."""
+        info = self._claim_info[cid]
+        speaker = self._claim_speakers[cid]
         try:
             result = await self.fast_checker.check_claim_async(
-                speaker=speaker, claim=claim, context=self.context, episode_date=self.episode_date,
-                queries=queries,
+                speaker=speaker, claim=info["claim"], context=self.context, episode_date=self.episode_date,
+                queries=info["queries"],
             )
-            fc = build_fact_check_dict(result, self.session_id, speaker_fallback=speaker, claim_fallback=claim)
-            # A rewrite (assignment, revision) may have landed during the check; don't let
-            # the checker's echo of the old speaker clobber it.
-            fc["sprecher"] = self._claim_speakers.get(pid, fc["sprecher"])
+            fc = build_fact_check_dict(result, self.session_id, speaker_fallback=speaker, claim_fallback=info["claim"])
             fc["check_depth"] = "fast"
+        except Exception:
+            logger.exception("Fast check failed for streamed claim")
+            fc = {
+                "sprecher": speaker, "behauptung": info["claim"], "consistency": "",
+                "begruendung": "Fehler bei der Schnellprüfung", "quellen": [],
+                "timestamp": info["timestamp"], "session_id": self.session_id, "status": "error",
+                "check_depth": "fast",
+            }
+        async with self._publish_lock:
+            self._results[cid] = fc
+            pid = self._rows.get(cid)
+            if pid is not None:
+                await self._write_result(cid, pid)
+
+    async def _write_result(self, cid: int, pid: int) -> None:
+        """Store a finished check in the claim's row and send it to the UI."""
+        # A rewrite (assignment, revision) may have landed during the check; don't let
+        # the checker's echo of the old speaker clobber it.
+        fc = {**self._results[cid], "sprecher": self._claim_speakers[cid]}
+        try:
             await self.db.update_fact_check(pid, fc)
+        except Exception:
+            logger.exception("Failed to store fast check for claim %s", pid)
+            return
+        if fc.get("status") == "error":
+            await self._emit({"type": "claim_error", "id": pid})
+        else:
             await self._emit({
                 "type": "claim_result", "id": pid, "consistency": fc["consistency"],
                 "begruendung": fc["begruendung"], "quellen": fc["quellen"],
             })
-        except Exception:
-            logger.exception("Fast check failed for streamed claim")
-            await self.db.update_fact_check(pid, {
-                "sprecher": self._claim_speakers.get(pid, speaker), "behauptung": claim, "consistency": "",
-                "begruendung": "Fehler bei der Schnellprüfung", "quellen": [],
-                "timestamp": now, "session_id": self.session_id, "status": "error",
-                "check_depth": "fast",
-            })
-            await self._emit({"type": "claim_error", "id": pid})
 
     # ---- AssemblyAI wiring (thin; covered by SG-4 e2e, not unit tests) -------
     def _max_speakers(self) -> int | None:
@@ -857,6 +940,7 @@ class StreamingSession:
                 except Exception:
                     logger.exception("Error disconnecting AssemblyAI stream")
                 self._client = None
-            if self._tasks:
+            # A claim's task starts its check as another task: drain until none is left.
+            while self._tasks:
                 await asyncio.gather(*list(self._tasks), return_exceptions=True)
         logger.info(f"[stream:{self.session_id}] session stopped")

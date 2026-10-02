@@ -14,7 +14,8 @@ AssemblyAI Universal-Streaming ─── live transcript, diarization labels (A,
         ▼
 [1] Claim gate ─────────────────── is there a verifiable, relevant factual claim?
         │   CLAIM_GATE=extractor (default): one flash-lite call decides and extracts
-        │   CLAIM_GATE=jev: Jev scores each sentence, then [1b] reformulates the hits
+        │   CLAIM_GATE=jev: Jev scores each sentence, a fast LLM judges the grey zone,
+        │   then [1b] reformulates the hits
         ▼
 [2] Fast check ─────────────────── parallel Tavily searches → one synthesis call
         │  consistency level + one or two sentences + cited sources
@@ -38,6 +39,14 @@ does not hold its first claim back. A window is flushed once it holds
 
 Speakers are never guessed: the transcript carries AssemblyAI's labels, and the operator
 assigns names by click. A claim that cannot be tied to a label is stored under "Unklar".
+
+Only claims of a voice the operator gave to a guest go on air (`STREAM_HOLD_UNASSIGNED`).
+A clip ("Einspieler") brings many other voices, some of them the guests' own. A claim of a
+label nobody has named yet is checked in the background but held back; once the label (or
+the marked passage) is given to a guest, it appears with its result. The operator marks a
+clip voice as "Andere Stimme – nicht prüfen": that label is no longer gated, and claims
+already published from it from that turn on are withdrawn (deleted, `claim_withdrawn`).
+Correcting it back publishes them again without a second check.
 
 ---
 
@@ -71,8 +80,17 @@ Only active when `REQUESTY_API_KEY` is set; otherwise the extractor gate is used
 
 **Step 1a — Jev** (TypeSafe's calibrated decision model via Requesty) scores every
 sentence for *checkability* and *importance*. Sentences above `JEV_CHECK_THRESHOLD` (and
-`JEV_IMPORTANCE_THRESHOLD`) pass; below `JEV_SKIP_THRESHOLD` they are dropped; the grey
-zone in between is skipped conservatively. See `benchmarks/jev_gate_bench.py`.
+`JEV_IMPORTANCE_THRESHOLD`) pass; below `JEV_SKIP_THRESHOLD` they are dropped. See
+`benchmarks/jev_gate_bench.py`.
+
+**Step 1a' — grey zone.** Claims in a debate are often wrapped in an assessment ("Der Staat
+nimmt den Bürgern immer mehr Geld weg"), which Jev scores around 0.5. A sentence that is
+not a hit, with check ≥ `JEV_SKIP_THRESHOLD` and importance ≥
+`JEV_GREY_IMPORTANCE_THRESHOLD`, goes to `GEMINI_MODEL_GREY_ZONE` (prompt
+`prompts/claim_grey_zone.md`, output `check_worthy: bool`) for a second opinion; on yes it
+is reformulated like a hit. Grey sentences are judged in parallel with the
+reformulation of the hits; a window's claims arrive once its slowest sentence is done
+(≈ +0.5 s). See `benchmarks/grey_zone_bench.py`.
 
 **Step 1b — Reformulation**
 
