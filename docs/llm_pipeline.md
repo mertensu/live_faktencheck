@@ -115,7 +115,7 @@ the hits.
 2. **Filter and rank.** Hits are de-duplicated by URL, bare homepages and plenary
    transcripts are dropped, and the rest are sorted by source tier: federal/EU official
    sources, then research institutes and fact-checkers, then state (Länder) sources, then
-   press, then parties.
+   parties. Press is not on the trusted list: checks never cite newspapers or broadcasters.
 3. **Synthesize.** One call gets the claim, speaker, session context and date plus the
    ranked snippets (`FAST_SNIPPET_CHARS` each). It writes the finding first and derives
    the level from it:

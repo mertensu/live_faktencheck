@@ -129,15 +129,10 @@ TRUSTED_DOMAINS_BY_CATEGORY = {
         "ec.europa.eu",
         "ec.europa.eu/eurostat"
     ],
-    "Qualitätsjournalismus": [
-        "faz.net",
-        "handelsblatt.com",
-        "sueddeutsche.de",
-        "zeit.de",
-        "spiegel.de",
-        "tagesschau.de",
-    ],
 }
+# No press: checks cite primary data, research and fact-checkers only. Dropping the six
+# newspapers/broadcasters cost one hit per claim and no deep-check agreement in the
+# no-press benchmark (02.10.2026).
 
 # Flat list for backward compatibility
 TRUSTED_DOMAINS = [
@@ -147,8 +142,8 @@ TRUSTED_DOMAINS = [
 ]
 
 
-# Source tiers for ranking search hits (lower = more authoritative). Primary data first,
-# press only as a fallback; party sites are statements, not evidence, so they come last.
+# Source tiers for ranking search hits (lower = more authoritative). Primary data first;
+# party sites are statements, not evidence, so they come last.
 # State sources get their own label below research: most claims are about the Bund, and
 # ranked as "amtlich" a state ministry page beat the press on federal questions.
 SOURCE_TIERS = {
@@ -159,14 +154,13 @@ SOURCE_TIERS = {
     "Faktenchecks": (1, "Forschung"),
     "Länder: Statistische Ämter": (2, "Land"),
     "Länder: Regierungen & Parlamente": (2, "Land"),
-    "Qualitätsjournalismus": (3, "Presse"),
     "Parteien": (4, "Partei"),
 }
 _UNKNOWN_TIER = (3, "Sonstige")
 
 
 def source_tier(url: str) -> tuple[int, str]:
-    """(rank, label) of a URL's trusted-domain category; unknown hosts rank with the press."""
+    """(rank, label) of a URL's trusted-domain category; unknown hosts rank before parties."""
     host = urlparse(url or "").netloc.lower().removeprefix("www.")
     for category, domains in TRUSTED_DOMAINS_BY_CATEGORY.items():
         for d in domains:

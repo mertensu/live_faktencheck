@@ -29,7 +29,7 @@ schreiben, mit denen ein Faktenprüfer die Behauptung sofort überprüfen kann.
    "März"), verwende die korrekte Schreibweise aus ``guests``. Erfinde keine Namen, die
    nicht in ``guests`` oder im Kontext vorkommen.
 3. **Suchanfragen (``search_queries``):** genau 5 kurze Anfragen für eine Websuche, die auf
-   vertrauenswürdige Quellen (Behörden, Statistikämter, Forschungsinstitute, Qualitätsmedien)
+   vertrauenswürdige Quellen (Behörden, Statistikämter, Forschungsinstitute)
    beschränkt ist. Stichworte statt ganzer Sätze, je 3–8 Wörter, mit dem Fachbegriff, unter
    dem die Zahl veröffentlicht wird (z. B. „Arbeitslosenquote“ statt „Leute ohne Job“), dazu
    Ort (Bund, Land, EU) und Zeitraum, sofern erkennbar. Jede Anfrage nimmt einen **anderen
