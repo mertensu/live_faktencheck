@@ -38,3 +38,20 @@ async def tavily_search(query: str, search_depth: str = "basic") -> dict:
         max_results=int(os.getenv("TAVILY_MAX_RESULTS", "5")),
         include_domains=TRUSTED_DOMAINS,
     )
+
+
+async def tavily_extract(urls: list[str], query: str, chunks_per_source: int = 5) -> dict[str, str]:
+    """Read deeper in documents already found (PDFs, studies): Tavily Extract returns, per
+    URL, the passages most relevant to ``query`` (up to ``chunks_per_source`` of ≤500 chars).
+
+    Returns ``{url: text}`` for the URLs that could be read. Costs 1 credit per 5 successful
+    URLs (basic); failures are free.
+    """
+    if not urls:
+        return {}
+    result = await _get_client().extract(
+        urls=urls, query=query, chunks_per_source=chunks_per_source,
+        extract_depth="basic", format="text",
+    )
+    return {item.get("url"): item.get("raw_content") or ""
+            for item in result.get("results", []) or [] if item.get("url")}

@@ -187,3 +187,88 @@ class TestSourceTier:
         with patch("backend.services.fast_fact_checker.tavily_search", AsyncMock(return_value=dupes)):
             results = await checker._gather_evidence("claim", ["q"])
         assert [r["title"] for r in results] == ["A", "D"]
+
+
+def _verdicts(*levels):
+    """A FunctionModel answering the given levels in turn; records each prompt it saw."""
+    from pydantic_ai.messages import ModelResponse, ToolCallPart
+    from pydantic_ai.models.function import FunctionModel
+
+    seen: list[str] = []
+
+    def fn(messages, info):
+        seen.append(str(messages[-1].parts[-1].content))
+        level = levels[min(len(seen), len(levels)) - 1]
+        args = {"evidence": f"Stufe {level}.", "consistency": level,
+                "sources": [{"url": "https://destatis.de/x", "title": "Destatis"}]}
+        return ModelResponse(parts=[ToolCallPart(info.output_tools[0].name, args)])
+
+    return FunctionModel(fn), seen
+
+
+DOC_SEARCH = {
+    "results": [
+        {"title": "Destatis", "url": "https://destatis.de/x", "content": "Zahlen ..."},
+        {"title": "Drucksache", "url": "https://dserver.bundestag.de/btd/20/133/2013346.pdf", "content": "Empfänger ..."},
+        {"title": "DIW Wochenbericht", "url": "https://www.diw.de/de/diw_01.c.1.de/wochenbericht.html", "content": "Studie ..."},
+    ]
+}
+
+
+class TestReadDeeper:
+    async def test_undecided_reads_documents_and_judges_again(self):
+        checker = _make_checker()
+        model, seen = _verdicts("keine Datenlage", "hoch")
+        extract = AsyncMock(return_value={"https://dserver.bundestag.de/btd/20/133/2013346.pdf": "Ausgaben 2023: 8,8 Mrd. Euro"})
+        with checker.agent.override(model=model), \
+                patch("backend.services.fast_fact_checker.tavily_search", AsyncMock(return_value=DOC_SEARCH)), \
+                patch("backend.services.fast_fact_checker.tavily_extract", extract):
+            result = await checker.check_claim_async(speaker="X", claim="6 Mrd. pro Jahr.")
+        assert result["consistency"] == "hoch"
+        # Only PDFs and research hits are read, with the claim as the question.
+        urls = extract.await_args.args[0]
+        assert urls == ["https://dserver.bundestag.de/btd/20/133/2013346.pdf",
+                        "https://www.diw.de/de/diw_01.c.1.de/wochenbericht.html"]
+        assert extract.await_args.kwargs["query"] == "6 Mrd. pro Jahr."
+        assert len(seen) == 2 and "Ausgaben 2023: 8,8 Mrd. Euro" in seen[1] and "8,8 Mrd." not in seen[0]
+
+    async def test_decided_verdict_is_not_read_deeper(self):
+        checker = _make_checker()
+        model, seen = _verdicts("hoch")
+        extract = AsyncMock(return_value={})
+        with checker.agent.override(model=model), \
+                patch("backend.services.fast_fact_checker.tavily_search", AsyncMock(return_value=DOC_SEARCH)), \
+                patch("backend.services.fast_fact_checker.tavily_extract", extract):
+            result = await checker.check_claim_async(speaker="X", claim="Y.")
+        assert result["consistency"] == "hoch" and len(seen) == 1
+        extract.assert_not_awaited()
+
+    async def test_extract_failure_keeps_first_verdict(self):
+        checker = _make_checker()
+        model, seen = _verdicts("unklar", "hoch")
+        with checker.agent.override(model=model), \
+                patch("backend.services.fast_fact_checker.tavily_search", AsyncMock(return_value=DOC_SEARCH)), \
+                patch("backend.services.fast_fact_checker.tavily_extract", AsyncMock(side_effect=RuntimeError("down"))):
+            result = await checker.check_claim_async(speaker="X", claim="Y.")
+        assert result["consistency"] == "unklar" and len(seen) == 1
+
+    async def test_no_documents_no_extract(self):
+        checker = _make_checker()
+        model, seen = _verdicts("unklar")
+        extract = AsyncMock(return_value={})
+        with checker.agent.override(model=model), \
+                patch("backend.services.fast_fact_checker.tavily_search", AsyncMock(return_value=FAKE_SEARCH)), \
+                patch("backend.services.fast_fact_checker.tavily_extract", extract):
+            await checker.check_claim_async(speaker="X", claim="Y.")
+        extract.assert_not_awaited()
+
+    async def test_can_be_switched_off(self):
+        with patch.dict("os.environ", {"FAST_EXTRACT": "false"}):
+            checker = _make_checker()
+        model, seen = _verdicts("unklar")
+        extract = AsyncMock(return_value={})
+        with checker.agent.override(model=model), \
+                patch("backend.services.fast_fact_checker.tavily_search", AsyncMock(return_value=DOC_SEARCH)), \
+                patch("backend.services.fast_fact_checker.tavily_extract", extract):
+            await checker.check_claim_async(speaker="X", claim="Y.")
+        extract.assert_not_awaited()
