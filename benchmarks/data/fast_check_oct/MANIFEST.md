@@ -50,3 +50,11 @@ Claim-Sets in `data/`: `claims_unklar.json` (8 Claims, die zuletzt „unklar“ 
 Hinweise zur Vergleichbarkeit: Jeder Lauf sucht neu (Treffer unterscheiden sich zwischen
 Läufen, außer innerhalb eines A/B mit „gleichen Treffern“). Umformulierung läuft in den
 `fast_model_ab`- und `staged`-Läufen jedes Mal neu. Zeiten in Sekunden, gemessen im Container.
+
+## Nachträge 05.10.2026
+| Datei | Skript | Aufbau |
+|---|---|---|
+| `primary.jsonl` | `scripts/primary_bench.py` | Ein Umformulierer-Lauf mit Zusatzfeld `primary_query`; A = Anfragen a–e, B = a,b,d,e + Primärquelle; alle 6 einmal gesucht, volle Treffer gespeichert. 12 Claims mit deep (`claims_primary.json`). |
+| `extract.jsonl` | `scripts/extract_bench.py` | Gespeicherte A-Treffer aus `primary.jsonl`; B = dieselben + Tavily-Extract-Abschnitte für alle PDF-Treffer. |
+| `studie.jsonl` | `scripts/studie_bench.py` | A = gespeicherte Live-Anfragen/Treffer, B = Umformulierer-Prompt aus PR #19 („Studie“), frisch gesucht; beide mit PR-#19-Prüfung (Extract bei unklar). |
+| `englisch.jsonl` | `scripts/englisch_bench.py` | Ein Umformulierer-Lauf (PR #19) mit Zusatzfeld `yardstick_en`; A = a–e, B = a,b,c,yardstick_en,e. 7 Vergleichs-Claims (`claims_vergleich.json`). |
