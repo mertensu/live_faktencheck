@@ -9,6 +9,7 @@ teilen sich das Tavily-Budget mit Produktion und Staging.
 |---|---|
 | `fast_check_ab.py` | Schneller Checker: alter vs. neuer Aufbau (Suchanfragen, Tavily-Tiefe, Snippet-Länge, Prompt) auf echten Claims |
 | `jev_gate_bench.py` | Jev als Satz-Gate: Wahrscheinlichkeit pro Satz, Latenz, Schwellen-Band |
+| `grey_zone_bench.py` | Grauzone: Jev-Band + LLM-Zweitmeinung auf Atalay-Sätzen (sollen durch) und Meinungen (sollen raus); `python -m benchmarks.grey_zone_bench` |
 
 Aufruf und Env-Stellschrauben stehen jeweils im Docstring des Skripts. Als Input
 eignen sich echte Claims aus einem DB-Snapshot (`./scripts/pull-db.sh`).

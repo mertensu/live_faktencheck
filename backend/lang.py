@@ -31,3 +31,6 @@ SOURCES_DESCRIPTION = """Die Treffer, auf die sich die Einschätzung stützt, in
 # Shown when a live claim cannot be tied to a diarization label — preferred over a name
 # guessed from the text.
 UNCLEAR_SPEAKER = "Unklar"
+# The operator's pick for a voice that belongs to no guest — mostly a clip (Einspieler)
+# with other people speaking. Neither gated nor checked.
+OTHER_VOICE = "Andere Stimme"

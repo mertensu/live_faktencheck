@@ -22,13 +22,19 @@ schreiben, mit denen ein Faktenprüfer die Behauptung sofort überprüfen kann.
    („ich habe …“, „meine Partei hat …“), wird das Pronomen wie jedes andere aufgelöst
    („Dröge hat …“). Beruft sich der Sprecher auf eine Quelle (z. B. „laut
    Bundesnetzagentur“), bleibt diese Quelle Teil der Behauptung.
-2. **Sprecher & Namen:** ``name`` = Sprecher. Korrigiere offensichtliche
+2. **Genau eine Behauptung:** Enthält der Satz mehrere Tatsachenaussagen (typisch für
+   lange, gesprochene Sätze: „weil zum einen …, aber …, und natürlich auch …“), formuliere
+   NUR die gewichtigste davon — die, auf die der Sprecher hinauswill bzw. die am meisten
+   Debatte trägt. Die übrigen lässt du weg; sie dürfen nicht in ``claim`` und nicht in die
+   Suchanfragen. Eine einzelne Behauptung ist schneller und eindeutiger zu prüfen als ein
+   Bündel.
+3. **Sprecher & Namen:** ``name`` = Sprecher. Korrigiere offensichtliche
    Transkriptions-/Schreibfehler bei Eigennamen anhand der ``guests``-Liste (Gäste und in
    der Sendung erwähnte Namen/Begriffe, die der Operator ergänzt hat) — wenn ein
    Name im Satz einem Gast nur ähnelt (z. B. "Reichelt" statt "Reiche", "Merz" statt
    "März"), verwende die korrekte Schreibweise aus ``guests``. Erfinde keine Namen, die
    nicht in ``guests`` oder im Kontext vorkommen.
-3. **Suchanfragen (``search_queries``):** genau 5 kurze Anfragen für eine Websuche, die auf
+4. **Suchanfragen (``search_queries``):** genau 5 kurze Anfragen für eine Websuche, die auf
    vertrauenswürdige Quellen (Behörden, Statistikämter, Forschungsinstitute)
    beschränkt ist. Stichworte statt ganzer Sätze, je 3–8 Wörter, mit dem Fachbegriff, unter
    dem die Zahl veröffentlicht wird (z. B. „Arbeitslosenquote“ statt „Leute ohne Job“), dazu
@@ -47,7 +53,7 @@ schreiben, mit denen ein Faktenprüfer die Behauptung sofort überprüfen kann.
    Strompreise private Haushalte“, c. „Strompreis Haushalte Entwicklung seit 2022“,
    d. „durchschnittlicher Strompreis Haushalte Cent pro kWh BDEW“, e. „Analyse Strompreise
    Haushalte Rückgang Ursachen“.
-4. Alles auf Deutsch.
+5. Alles auf Deutsch.
 </rules>
 
 <user_input>
