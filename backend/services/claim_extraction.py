@@ -32,7 +32,7 @@ class ReformulatedClaim(ExtractedClaim):
     search_queries: List[str] = Field(
         default_factory=list,
         description="Genau 5 kurze deutsche Suchanfragen (Stichworte, keine ganzen Sätze), je "
-                    "aus einem anderen Blickwinkel: Kern, Datenquelle, Entwicklung, Maßstab, "
+                    "aus einem anderen Blickwinkel: Kern, Datenquelle, Studie, Maßstab, "
                     "Einordnung.",
     )
 

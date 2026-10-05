@@ -26,7 +26,7 @@ from backend.lang import (
     SOURCES_DESCRIPTION,
 )
 from .llm_base import build_model, settings_with_thinking
-from .search import tavily_search
+from .search import tavily_search, tavily_extract
 from .trusted_domains import source_tier
 from pydantic_ai import Agent
 
@@ -95,6 +95,15 @@ class FastFactChecker:
         self.search_depth = os.getenv("FAST_TAVILY_SEARCH_DEPTH", "basic")
         # The deciding number often sits past the first few hundred characters.
         self.snippet_chars = int(os.getenv("FAST_SNIPPET_CHARS", "1200"))
+
+        # Undecided verdict: read deeper in the documents already found. Search snippets are
+        # passages the search engine picked; the deciding number often sits further inside a
+        # study or PDF (seen: BT-Drs. with the expenditure, snippet with recipients only).
+        # Tavily Extract pulls the passages matching the claim from up to N PDFs/research
+        # hits, then the judge rules once more. No new search; ~3 s and ~2 credits.
+        self.extract_enabled = os.getenv("FAST_EXTRACT", "true").strip().lower() in ("1", "true", "yes")
+        self.extract_max_urls = int(os.getenv("FAST_EXTRACT_MAX_URLS", "10"))
+        self.extract_chars = int(os.getenv("FAST_EXTRACT_CHARS", "2500"))
 
         # Thinking dominates the synthesis latency; "low" cut it from ~7.7 s to ~2.8 s
         # without losing accuracy (benchmarks/fast_check_ab.py).
@@ -170,7 +179,8 @@ class FastFactChecker:
         )
         return merged
 
-    def _format_evidence(self, results: List[dict]) -> str:
+    def _format_evidence(self, results: List[dict], extra: Dict[str, str] | None = None) -> str:
+        """Hits as labelled lines; ``extra`` adds passages read from inside a document."""
         if not results:
             return "(keine Suchergebnisse)"
         lines = []
@@ -178,8 +188,35 @@ class FastFactChecker:
             title = r.get("title", "")
             url = r.get("url", "")
             content = (r.get("content", "") or "")[: self.snippet_chars]
+            if extra and extra.get(url):
+                content += f" [Weitere Stellen im Dokument:] {extra[url][: self.extract_chars]}"
             lines.append(f"- [{source_tier(url)[1]}] {title} ({url}): {content}")
         return "\n".join(lines)
+
+    @staticmethod
+    def _readable(url: str) -> bool:
+        """Documents worth reading deeper: PDFs and research hits (studies, reports)."""
+        return ".pdf" in url.lower() or source_tier(url)[1] == "Forschung"
+
+    async def _read_deeper(self, claim: str, results: List[dict]) -> Dict[str, str]:
+        urls = [r.get("url") for r in results if r.get("url") and self._readable(r["url"])]
+        urls = urls[: self.extract_max_urls]
+        if not urls:
+            return {}
+        try:
+            return await tavily_extract(urls, query=claim)
+        except Exception:
+            logger.exception("Fast check: extract failed; keeping the first verdict")
+            return {}
+
+    async def _judge(self, header: str, results: List[dict], extra: Dict[str, str] | None = None) -> dict:
+        result = await self.agent.run(
+            f"{header}\n\nSuchergebnisse aus vertrauenswürdigen Quellen:\n{self._format_evidence(results, extra)}")
+        parsed = result.output.model_dump()
+        # Only links the model actually saw: drops invented or mangled URLs.
+        found = {r.get("url") for r in results}
+        parsed["sources"] = [src for src in parsed.get("sources", []) if src.get("url") in found]
+        return parsed
 
     async def check_claim_async(
         self,
@@ -197,18 +234,20 @@ class FastFactChecker:
         logger.info(f"Fast-checking claim from {speaker}: {claim[:100]}...")
         try:
             results = await self._gather_evidence(claim, queries)
-            user_message = (
+            header = (
                 f"Kontext der Sendung: {context or '—'}\n"
                 f"Sendedatum: {episode_date or '—'}\n"
                 f"Sprecher: {speaker or '—'}\n"
-                f"Behauptung: {claim}\n\n"
-                f"Suchergebnisse aus vertrauenswürdigen Quellen:\n{self._format_evidence(results)}"
+                f"Behauptung: {claim}"
             )
-            result = await self.agent.run(user_message)
-            parsed = result.output.model_dump()
-            # Only links the model actually saw: drops invented or mangled URLs.
-            found = {r.get("url") for r in results}
-            parsed["sources"] = [src for src in parsed.get("sources", []) if src.get("url") in found]
+            parsed = await self._judge(header, results)
+            if self.extract_enabled and parsed.get("consistency") in ("unklar", "keine Datenlage"):
+                extra = await self._read_deeper(claim, results)
+                if extra:
+                    first = parsed.get("consistency")
+                    parsed = await self._judge(header, results, extra)
+                    logger.info(f"Fast check read deeper in {len(extra)} document(s): "
+                                f"{first} -> {parsed.get('consistency')}")
             if not parsed.get("speaker"):
                 parsed["speaker"] = speaker
             if not parsed.get("original_claim"):

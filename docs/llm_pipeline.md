@@ -110,8 +110,9 @@ ReformulationInput
 
 The reformulator does **not** judge check-worthiness — Jev already did. It resolves
 pronouns, keeps the speaker out of the claim text, and writes exactly five short German
-search queries, each from a different angle (claim, data source, development, yardstick,
-analysis). Those queries decide what the fast check gets to see: covering the topic broadly
+search queries, each from a different angle (claim, data source, study, yardstick, and a
+neutral development/counter-position query without the claim's number). The study query
+always starts with „Studie“: the deciding number often sits in one particular study. Those queries decide what the fast check gets to see: covering the topic broadly
 made verdicts stable across runs, where near-identical rewordings used to flip them.
 
 **Why two steps?** Jev is cheaper per sentence and better calibrated than the flash-lite
@@ -146,7 +147,13 @@ guardrails and how to match evidence to the claim (subject, time, rounding, sour
    - `niedrig` — the data contradicts the claim
    - `unklar` — conflicting evidence without a clear direction
    - `keine Datenlage` — nothing relevant found
-4. **Guard.** Only sources whose URL was actually among the search results are kept, so
+4. **Read deeper (only if undecided).** If the level is `unklar` or `keine Datenlage`, the
+   check reads inside the documents it already found: Tavily Extract returns the passages
+   matching the claim from up to `FAST_EXTRACT_MAX_URLS` PDFs and research hits, and the same
+   call rules once more with those passages added. No new search; ~3 s plus the second call,
+   1 Tavily credit per 5 documents. Seen: a Bundestag paper whose snippet held only the
+   recipient count, while the expenditure sat further inside.
+5. **Guard.** Only sources whose URL was actually among the search results are kept, so
    invented or mangled links never reach the page. On any failure the check returns
    `unklar` with the error, never raising into the stream.
 

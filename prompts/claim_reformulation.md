@@ -43,16 +43,18 @@ schreiben, mit denen ein Faktenprüfer die Behauptung sofort überprüfen kann.
    a. **Kern:** Gegenstand und Zahl bzw. Aussage der Behauptung.
    b. **Datenquelle:** die zuständige Stelle mit ihrer Statistik (z. B. Destatis, Eurostat,
       Bundesagentur für Arbeit, BDEW, Bundesnetzagentur, RKI).
-   c. **Entwicklung:** die tatsächliche Entwicklung, neutral und ohne die Zahl aus der
-      Behauptung — damit auch widersprechende Belege gefunden werden.
+   c. **Studie:** beginnt mit dem Wort „Studie“ — die Studie, das Gutachten oder der Bericht,
+      der genau diese Frage untersucht (Gegenstand, ggf. Institut oder Auftraggeber). Oft
+      steht die entscheidende Zahl in einer einzigen Studie.
    d. **Maßstab:** der Vergleich oder die Definition, an der die Behauptung hängt
       (z. B. Länderranking, Durchschnitt, Abgrenzung der Größe).
-   e. **Einordnung:** Studie, Analyse oder Gegenposition zum Thema.
+   e. **Einordnung:** die tatsächliche Entwicklung oder die Gegenposition, neutral und ohne
+      die Zahl aus der Behauptung — damit auch widersprechende Belege gefunden werden.
    Beispiel: Behauptung „Der Strompreis für Haushalte ist seit 2022 um 30 Prozent
    gesunken.“ → a. „Strompreis Haushalte 30 Prozent gesunken seit 2022“, b. „Destatis
-   Strompreise private Haushalte“, c. „Strompreis Haushalte Entwicklung seit 2022“,
-   d. „durchschnittlicher Strompreis Haushalte Cent pro kWh BDEW“, e. „Analyse Strompreise
-   Haushalte Rückgang Ursachen“.
+   Strompreise private Haushalte“, c. „Studie Strompreise Haushalte Entwicklung seit 2022“,
+   d. „durchschnittlicher Strompreis Haushalte Cent pro kWh BDEW“, e. „Strompreis Haushalte
+   Entwicklung seit 2022“.
 5. Alles auf Deutsch.
 </rules>
 
