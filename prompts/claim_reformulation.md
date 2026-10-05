@@ -47,7 +47,11 @@ schreiben, mit denen ein Faktenprüfer die Behauptung sofort überprüfen kann.
       der genau diese Frage untersucht (Gegenstand, ggf. Institut oder Auftraggeber). Oft
       steht die entscheidende Zahl in einer einzigen Studie.
    d. **Maßstab:** der Vergleich oder die Definition, an der die Behauptung hängt
-      (z. B. Länderranking, Durchschnitt, Abgrenzung der Größe).
+      (z. B. Länderranking, Durchschnitt, Abgrenzung der Größe). Vergleicht die Behauptung
+      mit anderen Ländern, der EU oder international, schreibe diese Anfrage **auf Englisch**
+      — mit dem Fachbegriff, unter dem Eurostat, OECD oder IEA veröffentlichen, und deren
+      Zeitraster (z. B. „Eurostat household electricity prices EU first half 2025“). Diese
+      Statistiken erscheinen auf Englisch; deutsche Anfragen finden sie nicht.
    e. **Einordnung:** die tatsächliche Entwicklung oder die Gegenposition, neutral und ohne
       die Zahl aus der Behauptung — damit auch widersprechende Belege gefunden werden.
    Beispiel: Behauptung „Der Strompreis für Haushalte ist seit 2022 um 30 Prozent
@@ -55,7 +59,7 @@ schreiben, mit denen ein Faktenprüfer die Behauptung sofort überprüfen kann.
    Strompreise private Haushalte“, c. „Studie Strompreise Haushalte Entwicklung seit 2022“,
    d. „durchschnittlicher Strompreis Haushalte Cent pro kWh BDEW“, e. „Strompreis Haushalte
    Entwicklung seit 2022“.
-5. Alles auf Deutsch.
+5. Alles auf Deutsch — einzige Ausnahme: die Maßstab-Anfrage bei internationalen Vergleichen.
 </rules>
 
 <user_input>

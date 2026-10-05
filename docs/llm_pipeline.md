@@ -112,7 +112,9 @@ The reformulator does **not** judge check-worthiness — Jev already did. It res
 pronouns, keeps the speaker out of the claim text, and writes exactly five short German
 search queries, each from a different angle (claim, data source, study, yardstick, and a
 neutral development/counter-position query without the claim's number). The study query
-always starts with „Studie“: the deciding number often sits in one particular study. Those queries decide what the fast check gets to see: covering the topic broadly
+always starts with „Studie“: the deciding number often sits in one particular study. For
+comparisons with other countries, the EU or internationally, the yardstick query is written
+in English: Eurostat, OECD and IEA publish in English, and German queries never surfaced them. Those queries decide what the fast check gets to see: covering the topic broadly
 made verdicts stable across runs, where near-identical rewordings used to flip them.
 
 **Why two steps?** Jev is cheaper per sentence and better calibrated than the flash-lite
