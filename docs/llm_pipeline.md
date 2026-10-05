@@ -108,6 +108,11 @@ the hits.
 **Model:** `GEMINI_MODEL_FAST_CHECK` (default `vertex/gemini-3.8-flash@eu` via Requesty, thinking `low`)
 **Output:** `FastVerdict` — `evidence`, `consistency`, `sources`
 
+The rules for each output field — what the four levels mean (including: a claimed cause
+needs evidence of its own), how to cite — live only in the field descriptions in
+`backend/lang.py`, sent with the output schema. The prompt keeps just the role, the
+guardrails and how to match evidence to the claim (subject, time, rounding, source weight).
+
 1. **Search.** Up to `FAST_SEARCH_MAX_QUERIES` Tavily searches run **in parallel**
    (depth `FAST_TAVILY_SEARCH_DEPTH`), restricted to the trusted domains in
    `backend/services/trusted_domains.py`. Queries come from the reformulator; without
