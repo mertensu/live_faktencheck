@@ -26,6 +26,7 @@ import json
 import time
 import asyncio
 from pathlib import Path
+from typing import Literal
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -41,7 +42,7 @@ from pydantic_ai.providers.openai import OpenAIProvider  # noqa: E402
 
 import backend.services.search as search  # noqa: E402
 from backend.services.claim_extraction import ClaimExtractor, ReformulatedClaim  # noqa: E402
-from backend.services.fast_fact_checker import FastFactChecker, FastVerdict, DEFAULT_MODEL  # noqa: E402
+from backend.services.fast_fact_checker import FastFactChecker, FastVerdict, Source, DEFAULT_MODEL  # noqa: E402
 from backend.utils import load_prompt  # noqa: E402
 from backend.services.llm_base import _provider, settings_with_thinking  # noqa: E402
 from backend.services.trusted_domains import TRUSTED_DOMAINS, TRUSTED_DOMAINS_BY_CATEGORY, source_tier  # noqa: E402
@@ -63,15 +64,22 @@ REFORM_THINKING = os.getenv("REFORM_THINKING", "low")
 REFORM_PROMPT = os.getenv("REFORM_PROMPT", "")
 PROMPT_A = os.getenv("PROMPT_A", "")
 PROMPT_B = os.getenv("PROMPT_B", "")
-UNDECIDED = ("unklar", "keine Datenlage")
+UNDECIDED = tuple(x.strip() for x in os.getenv("MINI_DEEP_ON", "unklar").split(","))
+FOLLOW_DEPTH = os.getenv("FOLLOW_DEPTH", "advanced")
 
-FOLLOW_UP_PROMPT = """Eine schnelle Faktenprüfung hat eine Behauptung aus einer Live-Sendung geprüft und
-kam zu keinem klaren Urteil. Ihre Begründung sagt, was in den Suchergebnissen fehlt oder nicht passt.
+FOLLOW_UP_PROMPT = """Eine schnelle Faktenprüfung hat eine Behauptung aus einer Live-Sendung geprüft und kam
+zu keinem klaren Urteil ('unklar'). Ihre Begründung sagt, was in den Suchergebnissen fehlt oder
+nicht passt. Du planst EINE gezielte Nachrecherche wie ein erfahrener Faktenprüfer.
 
-Schreibe 2 deutsche Suchanfragen (Stichworte, 3–8 Wörter), die gezielt genau diese fehlende
-Angabe finden — z. B. die Vergleichszahl, den Durchschnittswert, den neuesten Stand oder die
-Gesamtsumme. Nenne konkrete Begriffe, die in einer amtlichen Statistik oder Studie stehen
-würden. Wiederhole nicht die bisherigen Suchanfragen."""
+Schreibe 1–2 deutsche Suchanfragen (Stichworte, 3–8 Wörter), die genau die Lücke schließen:
+- Fehlt eine Vergleichszahl, ein Durchschnitt, ein Rang oder eine Gesamtsumme: suche genau diese
+  Größe mit dem Fachbegriff, unter dem sie in einer amtlichen Statistik oder Studie steht.
+- Stützt sich die Begründung nur auf Presse, eine Partei oder einen Verband: suche die
+  Originalquelle dahinter (Statistikamt, Ministerium, Forschungsinstitut, Studie).
+- Fehlen Daten für den genannten Zeitpunkt: suche den nächstliegenden Stand (Quartal, Vorjahr).
+- Hängt das Urteil an einer behaupteten Ursache oder Wirkung: suche Studien oder Daten, die
+  diesen Zusammenhang untersuchen — auch solche, die ihm widersprechen.
+Wiederhole nicht die bisherigen Suchanfragen."""
 
 
 class ReformulatedDiverse(ReformulatedClaim):
@@ -82,10 +90,28 @@ class ReformulatedDiverse(ReformulatedClaim):
     )
 
 
+UNIFIED_CONSISTENCY = """Empirische Konsistenz des Kerns der Behauptung. Wähle genau eine von vier Stufen:
+- 'hoch': Die verfügbaren Daten stützen den Kern — auch wenn die Belege überwiegend stützend, aber nicht vollständig schlüssig sind. Abweichungen im Rahmen der Rundung und Nebenaspekte, zu denen die Treffer nichts sagen, senken die Stufe nicht.
+- 'niedrig': Die verfügbaren Daten widersprechen dem Kern — auch wenn die Belege überwiegend widersprechen, aber nicht vollständig schlüssig sind.
+- 'unklar': Widersprüchliche Studien oder Belege ohne klare Richtung; wirklich nicht bestimmbar. Ausnahme: Behauptet die Aussage ausdrücklich eine Ursache und die Daten belegen nur die Entwicklung, nicht die Ursache, ist das 'unklar', nicht 'hoch'.
+- 'keine Datenlage': Keine relevanten Daten oder empirischen Belege zu diesem Thema gefunden."""
+
+
+class FastVerdictUnified(FastVerdict):
+    consistency: Literal["hoch", "niedrig", "unklar", "keine Datenlage"] = Field(description=UNIFIED_CONSISTENCY)
+
+
+class LegacyVerdict(FastVerdict):
+    """The live schema before the move (descriptions as on main)."""
+    evidence: str = Field(description='Kurze deutschsprachige Einschätzung (ein, höchstens zwei Sätze) mit der entscheidenden Zahl und ihrer Quelle.')
+    consistency: Literal["hoch", "niedrig", "unklar", "keine Datenlage"] = Field(description="Empirische Konsistenz der Behauptung. Wähle genau eine von vier Stufen:\n- 'hoch': Die verfügbaren Daten stützen die Behauptung — auch wenn die Belege überwiegend stützend, aber nicht vollständig schlüssig sind.\n- 'niedrig': Die verfügbaren Daten widersprechen der Behauptung — auch wenn die Belege überwiegend widersprechen, aber nicht vollständig schlüssig sind.\n- 'unklar': Widersprüchliche Studien oder Belege ohne klare Richtung; wirklich nicht bestimmbar.\n- 'keine Datenlage': Keine relevanten Daten oder empirischen Belege zu diesem Thema gefunden.")
+    sources: list[Source] = Field(default_factory=list, description='Primärquellen mit URL und kurzem informativem Titel')
+
+
 class FollowUp(BaseModel):
     queries: list[str]
 
-_PRESS = set(TRUSTED_DOMAINS_BY_CATEGORY["Qualitätsjournalismus"])
+_PRESS = set(TRUSTED_DOMAINS_BY_CATEGORY.get("Qualitätsjournalismus", []))
 DOMAINS_NO_PRESS = [d for d in TRUSTED_DOMAINS if d not in _PRESS]
 
 
@@ -145,12 +171,19 @@ async def _mini_deep(checker, fu: Agent, synth: Agent, c: dict, queries: list[st
         return {**first, "mini_deep": True, "error": repr(e)}
     seen = {x.get("url") for x in res}
     # An empty claim keeps _build_queries from searching the bare claim a second time.
-    hits = await checker._gather_evidence("" if len(follow) >= 2 else c["claim"], follow)
+    depth, checker.search_depth = checker.search_depth, FOLLOW_DEPTH
+    t_s = time.perf_counter()
+    try:
+        hits = await checker._gather_evidence("" if len(follow) >= 2 else c["claim"], follow)
+    finally:
+        checker.search_depth = depth
+    follow_search_s = round(time.perf_counter() - t_s, 2)
     extra = [x for x in hits if x.get("url") not in seen]
     merged = res + extra
     out = await _synth(synth, _message(checker, c, merged), {x.get("url") for x in merged})
     out.update(mini_deep=True, first=first["consistency"], follow_queries=follow,
-               extra_hits=len(extra), mini_deep_s=round(time.perf_counter() - t0, 2))
+               extra_hits=len(extra), follow_search_s=follow_search_s,
+               mini_deep_s=round(time.perf_counter() - t0, 2))
     return out
 
 
@@ -167,8 +200,10 @@ def _message(checker: FastFactChecker, c: dict, results: list[dict]) -> str:
 async def main() -> None:
     claims = json.loads(Path(CLAIMS).read_text())
     checker = FastFactChecker()
-    a = _agent(checker, MODEL_A, THINKING_A, Path(PROMPT_A).read_text() if PROMPT_A else None)
-    b = (_agent(checker, MODEL_B, THINKING_B, Path(PROMPT_B).read_text() if PROMPT_B else None)
+    a = _agent(checker, MODEL_A, THINKING_A, Path(PROMPT_A).read_text() if PROMPT_A else None,
+               LegacyVerdict if os.getenv("FIELD_A") == "legacy" else FastVerdict)
+    b = (_agent(checker, MODEL_B, THINKING_B, Path(PROMPT_B).read_text() if PROMPT_B else None,
+                FastVerdictUnified if os.getenv("FIELD_B") == "unified" else FastVerdict)
          if MODEL_B else None)
     fu = _agent(checker, MODEL_B, THINKING_B, FOLLOW_UP_PROMPT, FollowUp) if MINI_DEEP and b else None
     extractor = ClaimExtractor()
@@ -208,6 +243,7 @@ async def main() -> None:
                 rb.update(search_s=search_b, n_results=len(res_b) + rb.get("extra_hits", 0))
                 row = {
                     "run": run, "id": c.get("id"), "claim": c["claim"], "deep": c.get("deep_consistency", ""),
+                    "prev_live": c.get("prev_live", ""),
                     "queries": queries, "reform_s": reform_s, "A": ra, "B": rb,
                 }
                 rows.append(row)
@@ -218,6 +254,9 @@ async def main() -> None:
                 if b:
                     line += f" | B={rb.get('consistency', 'ERR'):<15} {rb['n_results']:>2} hits {rb['synth_s']:5.1f}s"
                 print(line)
+                if rb.get("mini_deep"):
+                    print(f"      Runde 2 ({rb.get('mini_deep_s', 0):.1f}s, +{rb.get('extra_hits', 0)} Treffer): "
+                          f"{'; '.join(rb.get('follow_queries', []))}")
 
     def avg(xs):
         return sum(xs) / len(xs) if xs else float("nan")

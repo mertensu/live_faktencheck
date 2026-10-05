@@ -1,0 +1,80 @@
+[
+ {
+  "id": 102,
+  "speaker": "Reichinnek",
+  "claim": "Die Vermögensteuer würde bei ungefähr 1,9 Prozent greifen; betroffen wären lediglich etwa 2 Prozent der Unternehmen.",
+  "context": "Wachstum oder Umverteilung, Politik in Ostdeutschland und der Umgang mit der AfD",
+  "guests": "[\"Amthor (CDU)\", \"Reichinnek (Linke)\", \"Atalay (Moderatorin)\"]",
+  "episode_date": "Oktober 2026",
+  "prev_live": "unklar"
+ },
+ {
+  "id": 103,
+  "speaker": "Reichinnek",
+  "claim": "Die zwei reichsten Menschen in Deutschland besitzen zusammen so viel Vermögen wie die ärmere Hälfte der Bevölkerung.",
+  "context": "Wachstum oder Umverteilung, Politik in Ostdeutschland und der Umgang mit der AfD",
+  "guests": "[\"Amthor (CDU)\", \"Reichinnek (Linke)\", \"Atalay (Moderatorin)\"]",
+  "episode_date": "Oktober 2026",
+  "prev_live": "unklar"
+ },
+ {
+  "id": 107,
+  "speaker": "Reichinnek",
+  "claim": "Für Menschen, die aus Deutschland wegziehen, würde die Wegzugsteuer stärker wirken als eine Vermögensteuer.",
+  "context": "Wachstum oder Umverteilung, Politik in Ostdeutschland und der Umgang mit der AfD",
+  "guests": "[\"Amthor (CDU)\", \"Reichinnek (Linke)\", \"Atalay (Moderatorin)\"]",
+  "episode_date": "Oktober 2026",
+  "prev_live": "unklar"
+ },
+ {
+  "id": 108,
+  "speaker": "Reichinnek",
+  "claim": "Die Schweiz erhebt eine Vermögenssteuer und hat weltweit die höchste Dichte an Millionären und Milliardären.",
+  "context": "Wachstum oder Umverteilung, Politik in Ostdeutschland und der Umgang mit der AfD",
+  "guests": "[\"Amthor (CDU)\", \"Reichinnek (Linke)\", \"Atalay (Moderatorin)\"]",
+  "episode_date": "Oktober 2026",
+  "prev_live": "unklar"
+ },
+ {
+  "id": 522,
+  "speaker": "Atalay",
+  "claim": "Die von der Linken vorgeschlagene Vermögensteuer soll dem Staat jährlich 147 Milliarden Euro einbringen.",
+  "context": "Wachstum oder Umverteilung, Politik in Ostdeutschland und der Umgang mit der AfD",
+  "guests": "[\"Amthor (CDU)\", \"Reichinnek (Linke)\", \"Atalay (Moderatorin)\"]",
+  "episode_date": "Oktober 2026",
+  "prev_live": "unklar"
+ },
+ {
+  "id": 98,
+  "speaker": "Gitta Connemann",
+  "claim": "Der Strom ist in Deutschland im September 2025 der teuerste in Europa.",
+  "context": "",
+  "guests": "[\"Sandra Maischberger (Moderatorin)\", \"Gitta Connemann (CDU)\", \"Katharina Dröge (B90/Grüne)\"]",
+  "episode_date": "19. September 2025",
+  "deep_consistency": "niedrig",
+  "deep_evidence": "Für die Überprüfung der Behauptung sind die Daten des Statistischen Amtes der Europäischen Union (Eurostat) zur zweiten Hälfte des Jahres 2025 maßgeblich, da der genannte Monat September in diesen Zeitraum fällt. Eurostat veröffentlicht Strompreise für Haushaltskunden für alle EU-Mitgliedstaaten und einige weitere europäische Länder.\n\nDie Daten für das zweite Halbjahr 2025 zeigen, dass die Strompreise für Haushaltskunden in Deutschland im europäischen Vergleich sehr hoch waren, Deutschland jedoch nicht den Spitzenplatz belegte. Der durchschnittliche Preis für Haushaltsstrom in Deutschland lag in diesem Zeitraum bei 41,62 Cent pro Kilowattstunde (ct/kWh).\n\nHöhere Preise wiesen die Niederlande mit 45,43 ct/kWh, Irland mit 43,01 ct/kWh und Italien mit 42,11 ct/kWh auf. Damit war der Strom in mindestens drei anderen Ländern der Europäischen Union teurer als in Deutschland.\n\nDie Strompreise für Endkunden setzen sich aus mehreren Komponenten zusammen: den Kosten für Energiebeschaffung und Vertrieb, den Netzentgelten sowie staatlich festgelegten Steuern, Abgaben und Umlagen. Insbesondere der letzte Block hat in Deutschland einen traditionell hohen Anteil am Gesamtpreis.",
+  "prev_live": "unklar"
+ },
+ {
+  "id": 142,
+  "speaker": "Philipp Amthor",
+  "claim": "Deutschland ist ein Höchststeuerland.",
+  "context": "Thema: Wachstum vs. Umverteilung, Social-Media-Regeln und Umgang mit der AfD.",
+  "guests": "[\"Pinar Atalay (Moderatorin)\", \"Heidi Reichinnek (Die Linke)\", \"Philipp Amthor (CDU)\"]",
+  "episode_date": "9. Februar 2026",
+  "deep_consistency": "unklar",
+  "deep_evidence": "Die Aussage, Deutschland sei ein „Höchststeuerland”, ist eine häufig wiederkehrende politische Behauptung, deren Gültigkeit von der gewählten Metrik abhängt. Eine differenzierte Betrachtung der Daten der Organisation für wirtschaftliche Zusammenarbeit und Entwicklung (OECD) ist notwendig.\n\n**1. Belastung von Arbeitseinkommen (Steuern und Sozialabgaben):**\nBei der Belastung von Arbeitnehmern durch Steuern und Sozialabgaben gehört Deutschland zur absoluten Spitzengruppe der Industrieländer. Laut den regelmäßigen Erhebungen der OECD (Bericht „Taxing Wages”) lag die Belastung für einen alleinstehenden Durchschnittsverdiener ohne Kinder in den letzten Jahren bei knapp 48 %. Das bedeutet, dass von jedem Euro Bruttolohn fast 48 Cent an den Staat abgeführt werden. In diesem Vergleich belegt Deutschland seit Jahren den zweiten Platz unter allen OECD-Staaten, nur übertroffen von Belgien. Aus der Perspektive eines durchschnittlichen Arbeitnehmers ist die Belastung also tatsächlich eine der höchsten der Welt.\n\n**2. Gesamtstaatliche Steuer- und Abgabenquote:**\nEin anderes Bild ergibt sich, wenn man die Summe aller staatlichen Einnahmen aus Steuern und Sozialabgaben ins Verhältnis zur gesamten Wirtschaftsleistung (Bruttoinlandsprodukt, BIP) setzt. Diese sogenannte Steuer- und Abgabenquote ist ein Maß für die Belastung der Volkswirtschaft als Ganzes. Hier lag Deutschland laut OECD-Daten zuletzt im oberen Mittelfeld, aber nicht an der Spitze. Länder wie Frankreich, Dänemark, Österreich oder Italien wiesen eine höhere gesamtstaatliche Abgabenquote auf.\n\n**Fazit:**\nDie Behauptung ist stark vereinfachend. Während die direkte Belastung von Arbeitseinkommen durch Steuern und insbesondere Sozialabgaben in Deutschland im internationalen Vergleich tatsächlich zu den höchsten zählt, ist Deutschland gemessen an der gesamten Wirtschaftsleistung kein „Höchststeuerland”. Die Aussage ist daher je nach Betrachtungswinkel teilweise zutreffend, aber in ihrer Absolutheit irreführend.",
+  "prev_live": "unklar"
+ },
+ {
+  "id": 39,
+  "speaker": "Dröge",
+  "claim": "Robert Habeck hat die Energieversorgung gesichert und dadurch die Energiepreise wieder gesenkt.",
+  "context": "Sendung vom September 2025 über Energiepolitik und Bürgergeld",
+  "guests": "[\"Dröge\", \"Connemann\", \"Maischberger\"]",
+  "episode_date": "",
+  "live_consistency": "hoch",
+  "live_evidence": "Laut Umweltministerium Baden-Württemberg entspannte sich die Lage bei den Preisen für Erdgas und Strom für Haushalte nach den Höchstständen von 2022 in den Jahren 2023 bis 2025 deutlich, da unter anderem alternative Lieferwege erschlossen wurden.",
+  "prev_live": "unklar"
+ }
+]

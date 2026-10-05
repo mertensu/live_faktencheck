@@ -1,0 +1,53 @@
+[
+ {
+  "id": 35,
+  "speaker": "Connemann",
+  "claim": "Politische Entscheidungen haben dazu geführt, dass Strom in Deutschland heute der teuerste ist.",
+  "context": "Sendung vom September 2025 über Energiepolitik und Bürgergeld",
+  "guests": "[\"Dröge\", \"Connemann\", \"Maischberger\"]",
+  "episode_date": "",
+  "live_consistency": "hoch",
+  "live_evidence": "Laut dem Energiepreisbericht Baden-Württemberg sowie Analysen von Verivox und Eurostat wies Deutschland im europäischen Vergleich und unter den G20-Ländern (beim Haushaltsstrom) die höchsten Strompreise auf, maßgeblich getrieben durch hohe staatliche Steuern, Abgaben und Umlagen."
+ },
+ {
+  "id": 39,
+  "speaker": "Dröge",
+  "claim": "Robert Habeck hat die Energieversorgung gesichert und dadurch die Energiepreise wieder gesenkt.",
+  "context": "Sendung vom September 2025 über Energiepolitik und Bürgergeld",
+  "guests": "[\"Dröge\", \"Connemann\", \"Maischberger\"]",
+  "episode_date": "",
+  "live_consistency": "hoch",
+  "live_evidence": "Laut Umweltministerium Baden-Württemberg entspannte sich die Lage bei den Preisen für Erdgas und Strom für Haushalte nach den Höchstständen von 2022 in den Jahren 2023 bis 2025 deutlich, da unter anderem alternative Lieferwege erschlossen wurden.",
+  "prev_live": "unklar"
+ },
+ {
+  "id": 37,
+  "speaker": "Connemann",
+  "claim": "Deutschland vollzog im Gegensatz zu 12 anderen Mitgliedstaaten den kompletten Ausstieg aus der Kernenergie.",
+  "context": "Sendung vom September 2025 über Energiepolitik und Bürgergeld",
+  "guests": "[\"Dröge\", \"Connemann\", \"Maischberger\"]",
+  "episode_date": "",
+  "live_consistency": "hoch",
+  "live_evidence": "Laut Statistischem Bundesamt betrieben 2024 insgesamt 12 der 27 EU-Staaten Kernkraftwerke, während 15 Staaten (darunter Deutschland und Italien) keinen Atomstrom erzeugten."
+ },
+ {
+  "id": 98,
+  "speaker": "Gitta Connemann",
+  "claim": "Der Strom ist in Deutschland im September 2025 der teuerste in Europa.",
+  "context": "",
+  "guests": "[\"Sandra Maischberger (Moderatorin)\", \"Gitta Connemann (CDU)\", \"Katharina Dröge (B90/Grüne)\"]",
+  "episode_date": "19. September 2025",
+  "deep_consistency": "niedrig",
+  "deep_evidence": "Für die Überprüfung der Behauptung sind die Daten des Statistischen Amtes der Europäischen Union (Eurostat) zur zweiten Hälfte des Jahres 2025 maßgeblich, da der genannte Monat September in diesen Zeitraum fällt. Eurostat veröffentlicht Strompreise für Haushaltskunden für alle EU-Mitgliedstaaten und einige weitere europäische Länder.\n\nDie Daten für das zweite Halbjahr 2025 zeigen, dass die Strompreise für Haushaltskunden in Deutschland im europäischen Vergleich sehr hoch waren, Deutschland jedoch nicht den Spitzenplatz belegte. Der durchschnittliche Preis für Haushaltsstrom in Deutschland lag in diesem Zeitraum bei 41,62 Cent pro Kilowattstunde (ct/kWh).\n\nHöhere Preise wiesen die Niederlande mit 45,43 ct/kWh, Irland mit 43,01 ct/kWh und Italien mit 42,11 ct/kWh auf. Damit war der Strom in mindestens drei anderen Ländern der Europäischen Union teurer als in Deutschland.\n\nDie Strompreise für Endkunden setzen sich aus mehreren Komponenten zusammen: den Kosten für Energiebeschaffung und Vertrieb, den Netzentgelten sowie staatlich festgelegten Steuern, Abgaben und Umlagen. Insbesondere der letzte Block hat in Deutschland einen traditionell hohen Anteil am Gesamtpreis.",
+  "prev_live": "unklar"
+ },
+ {
+  "id": 103,
+  "speaker": "Reichinnek",
+  "claim": "Die zwei reichsten Menschen in Deutschland besitzen zusammen so viel Vermögen wie die ärmere Hälfte der Bevölkerung.",
+  "context": "Wachstum oder Umverteilung, Politik in Ostdeutschland und der Umgang mit der AfD",
+  "guests": "[\"Amthor (CDU)\", \"Reichinnek (Linke)\", \"Atalay (Moderatorin)\"]",
+  "episode_date": "Oktober 2026",
+  "prev_live": "unklar"
+ }
+]
