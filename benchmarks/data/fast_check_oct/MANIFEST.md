@@ -59,3 +59,4 @@ Läufen, außer innerhalb eines A/B mit „gleichen Treffern“). Umformulierung
 | `studie.jsonl` | `scripts/studie_bench.py` | A = gespeicherte Live-Anfragen/Treffer, B = Umformulierer-Prompt aus PR #19 („Studie“), frisch gesucht; beide mit PR-#19-Prüfung (Extract bei unklar). |
 | `englisch.jsonl` | `scripts/englisch_bench.py` | Ein Umformulierer-Lauf (PR #19) mit Zusatzfeld `yardstick_en`; A = a–e, B = a,b,c,yardstick_en,e. 7 Vergleichs-Claims (`claims_vergleich.json`). |
 | `lang.jsonl` | `scripts/lang_decision_bench.py` | Nur Umformulierer (PR #19), 2 Läufe, 20 Claims (`claims_lang.json`, Feld `expect` en/de); keine Suche. |
+| `grimm.jsonl`, `follow.jsonl`, `follow_grimm2.jsonl` | `scripts/single_claim.py`, `scripts/grimm_doc.py`, `scripts/follow_bench.py` | Grimm-Claim live (2 Läufe) vor/nach PR #20; follow.jsonl Teil 2 = 12 Deep-Claims auf gespeicherten Treffern aus `primary.jsonl`. Referenz: Untertitel des Höfgen-Videos (yt-dlp) + Finanzplan 21/601. |
