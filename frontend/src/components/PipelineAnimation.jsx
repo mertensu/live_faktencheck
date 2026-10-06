@@ -3,39 +3,32 @@ import { useEffect, useRef, useState } from 'react'
 // Animated explainer of the live pipeline for the About page. One example sentence travels
 // through all steps. Each scene is plain HTML whose parts fade in via CSS animation delays
 // (--d); the base styles are the final state, so with animations off every scene is complete.
-// The clock is the progress bar of the active step: its animationend advances the scene, so
-// pausing (button, scrolled out of view) is just animation-play-state.
+// The reader moves on by hand; a scene's animation waits until the explainer is in view.
 
 const STEPS = [
   {
     title: 'Zuhören',
     text: 'Der Ton der Sendung wird live transkribiert und erscheint Satz für Satz. Die Transkription unterscheidet nur „Sprecher A“, „Sprecher B“ – Namen ordnet ein Mensch per Klick zu.',
-    ms: 4500,
   },
   {
     title: 'Auswählen',
     text: 'Ein schnelles KI-Modell schätzt für jeden Satz ein, ob er eine überprüfbare und relevante Tatsachenbehauptung enthält. Liegt ein Satz im Graubereich, holt es eine zweite Meinung ein.',
-    ms: 7000,
   },
   {
     title: 'Umformulieren',
     text: 'Ein Sprachmodell macht aus dem Satz eine eigenständige Aussage – mit Blick auf die vorigen Sätze, damit etwa „da“ aufgelöst wird – und leitet Suchanfragen aus fünf Blickwinkeln ab.',
-    ms: 6000,
   },
   {
     title: 'Recherchieren',
     text: 'Die Suchen laufen parallel und nur auf vertrauenswürdigen Seiten: Statistikämter, Ministerien, Forschungsinstitute. Amtliche Quellen haben Vorrang.',
-    ms: 4500,
   },
   {
     title: 'Bewerten',
     text: 'Ein weiteres Sprachmodell wägt die Treffer ab: Wie stark stützen die Daten die Aussage? Erwähnen Treffer nur ein Dokument, wird es bei Bedarf gesucht und nachgelesen.',
-    ms: 6000,
   },
   {
     title: 'Markieren',
     text: 'Nach wenigen Sekunden steht das Ergebnis direkt an der Textstelle im Live-Transkript – mit Begründung und den verwendeten Quellen.',
-    ms: 6500,
   },
 ]
 
@@ -221,9 +214,8 @@ const SCENES = [SceneListen, SceneGate, SceneRewrite, SceneSearch, SceneJudge, S
 
 export function PipelineAnimation() {
   const [step, setStep] = useState(0)
-  // Bumped on every (re)start of a step, so the scene and its progress bar remount.
+  // Bumped on every step change, so the scene remounts and plays from the start.
   const [run, setRun] = useState(0)
-  const [paused, setPaused] = useState(false)
   const [inView, setInView] = useState(false)
   const [reduced, setReduced] = useState(false)
   const rootRef = useRef(null)
@@ -234,7 +226,8 @@ export function PipelineAnimation() {
       setInView(true)
       return
     }
-    const io = new IntersectionObserver(([e]) => setInView(e.isIntersecting), { threshold: 0.35 })
+    // Once seen, the scene keeps playing; it only has to wait for the first scroll-in.
+    const io = new IntersectionObserver(([e]) => e.isIntersecting && setInView(true), { threshold: 0.35 })
     io.observe(rootRef.current)
     return () => io.disconnect()
   }, [])
@@ -244,19 +237,14 @@ export function PipelineAnimation() {
     setRun((r) => r + 1)
   }
 
-  const advance = (e) => {
-    if (e.target !== e.currentTarget) return
-    goTo((step + 1) % STEPS.length)
-  }
-
-  const running = inView && !paused && !reduced
   const Scene = SCENES[step]
   const cur = STEPS[step]
+  const last = step === STEPS.length - 1
 
   return (
     <section
       ref={rootRef}
-      className={`pa${running ? '' : ' pa--halted'}${reduced ? ' pa--still' : ''}`}
+      className={`pa${inView ? '' : ' pa--halted'}${reduced ? ' pa--still' : ''}`}
       aria-label="Ablauf eines Faktenchecks"
     >
       <ol className="pa-rail">
@@ -270,17 +258,6 @@ export function PipelineAnimation() {
             >
               <span className="pa-step-num">{i + 1}</span>
               <span className="pa-step-title">{s.title}</span>
-              <span className="pa-step-bar" aria-hidden="true">
-                {i === step && !reduced && (
-                  <span
-                    key={run}
-                    className="pa-step-fill"
-                    data-testid="pa-clock"
-                    style={{ animationDuration: `${s.ms}ms` }}
-                    onAnimationEnd={advance}
-                  />
-                )}
-              </span>
             </button>
           </li>
         ))}
@@ -295,11 +272,14 @@ export function PipelineAnimation() {
           <p>
             <strong>{step + 1} · {cur.title}.</strong> {cur.text}
           </p>
-          {!reduced && (
-            <button type="button" className="pa-toggle" onClick={() => setPaused((p) => !p)}>
-              {paused ? '▶ Abspielen' : '❚❚ Pause'}
+          <div className="pa-nav">
+            <button type="button" className="pa-btn" onClick={() => goTo(step - 1)} disabled={step === 0}>
+              ← Zurück
             </button>
-          )}
+            <button type="button" className="pa-btn pa-btn--next" onClick={() => goTo(last ? 0 : step + 1)}>
+              {last ? 'Von vorn ↺' : 'Weiter →'}
+            </button>
+          </div>
         </div>
       </div>
     </section>
