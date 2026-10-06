@@ -1,9 +1,6 @@
-import { useState } from 'react'
-import { WorkflowDiagram } from '../components/WorkflowDiagram'
+import { PipelineAnimation } from '../components/PipelineAnimation'
 
 export function AboutPage() {
-  const [diagramOpen, setDiagramOpen] = useState(false)
-
   return (
     <div className="about-page">
       <div className="about-content">
@@ -42,21 +39,7 @@ export function AboutPage() {
         </p>
         <p><small>*mit einer Verzögerung von wenigen Sekunden</small></p>
         <h2>Wie es funktioniert</h2>
-        <div className="diagram-desktop">
-          <WorkflowDiagram />
-        </div>
-        <button className="diagram-show-btn" onClick={() => setDiagramOpen(true)}>
-          Ablauf als Diagramm anzeigen ↗
-        </button>
-
-        {diagramOpen && (
-          <div className="diagram-modal-overlay" onClick={() => setDiagramOpen(false)}>
-            <button className="diagram-modal-close" onClick={() => setDiagramOpen(false)}>✕ Schließen</button>
-            <div className="diagram-modal-inner" onClick={e => e.stopPropagation()}>
-              <WorkflowDiagram />
-            </div>
-          </div>
-        )}
+        <PipelineAnimation />
         <p>
           Der Ton der Sendung wird fortlaufend an einen Transkriptionsdienst gestreamt und erscheint Satz für Satz
           als Live-Transkript. Ein schnelles KI-Modell entscheidet für jeden Satz, ob er eine überprüfbare und
