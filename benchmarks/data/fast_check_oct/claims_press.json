@@ -1,0 +1,72 @@
+[
+ {
+  "id": 98,
+  "speaker": "Gitta Connemann",
+  "claim": "Der Strom ist in Deutschland im September 2025 der teuerste in Europa.",
+  "context": "",
+  "guests": "[\"Sandra Maischberger (Moderatorin)\", \"Gitta Connemann (CDU)\", \"Katharina Dröge (B90/Grüne)\"]",
+  "episode_date": "19. September 2025",
+  "deep_consistency": "niedrig",
+  "deep_evidence": "Für die Überprüfung der Behauptung sind die Daten des Statistischen Amtes der Europäischen Union (Eurostat) zur zweiten Hälfte des Jahres 2025 maßgeblich, da der genannte Monat September in diesen Zeitraum fällt. Eurostat veröffentlicht Strompreise für Haushaltskunden für alle EU-Mitgliedstaaten und einige weitere europäische Länder.\n\nDie Daten für das zweite Halbjahr 2025 zeigen, dass die Strompreise für Haushaltskunden in Deutschland im europäischen Vergleich sehr hoch waren, Deutschland jedoch nicht den Spitzenplatz belegte. Der durchschnittliche Preis für Haushaltsstrom in Deutschland lag in diesem Zeitraum bei 41,62 Cent pro Kilowattstunde (ct/kWh).\n\nHöhere Preise wiesen die Niederlande mit 45,43 ct/kWh, Irland mit 43,01 ct/kWh und Italien mit 42,11 ct/kWh auf. Damit war der Strom in mindestens drei anderen Ländern der Europäischen Union teurer als in Deutschland.\n\nDie Strompreise für Endkunden setzen sich aus mehreren Komponenten zusammen: den Kosten für Energiebeschaffung und Vertrieb, den Netzentgelten sowie staatlich festgelegten Steuern, Abgaben und Umlagen. Insbesondere der letzte Block hat in Deutschland einen traditionell hohen Anteil am Gesamtpreis."
+ },
+ {
+  "id": 203,
+  "speaker": "Tino Chrupalla",
+  "claim": "Deutschland gibt 6 Milliarden Euro pro Jahr für ukrainische Flüchtlinge aus, die Bürgergeld beziehen.",
+  "context": "Gysi (Linke) und Chrupalla (AfD) diskutieren Entlastungen für arme Menschen und Migrationspolitik. Kurz vor der Bundestagswahl am 23. Februar 2025.",
+  "guests": "[\"Markus Lanz (Moderator)\", \"Gregor Gysi (Die Linke)\", \"Tino Chrupalla (AfD)\", \"Antje Höning (Journalistin)\", \"Nikolaus Blome (Journalist)\", \"Elmar Theveßen (ZDF-Korrespondent)\"]",
+  "episode_date": "6. Februar 2025",
+  "deep_consistency": "hoch",
+  "deep_evidence": "Die Behauptung, dass Deutschland rund 6 Milliarden Euro pro Jahr für ukrainische Flüchtlinge ausgibt, die Bürgergeld beziehen, deckt sich weitgehend mit den offiziellen Schätzungen der Bundesregierung für das Haushaltsjahr 2024.\n\nNach Angaben des Bundesministeriums für Arbeit und Soziales (BMAS) wurden für das Jahr 2024 Ausgaben in Höhe von etwa 5,5 bis 6,1 Milliarden Euro für diese Personengruppe veranschlagt. Diese Summe setzt sich aus zwei Hauptkomponenten zusammen:\n1.  **Regelbedarfe zur Sicherung des Lebensunterhalts:** Dies ist der pauschale Betrag für Ausgaben wie Ernährung, Kleidung und persönliche Bedürfnisse.\n2.  **Bedarfe für Unterkunft und Heizung:** Diese Kosten machen einen erheblichen Teil der Gesamtausgaben aus und werden in Höhe der tatsächlichen, angemessenen Aufwendungen übernommen.\n\nDie Zahl der Leistungsempfänger aus der Ukraine lag nach Statistiken der Bundesagentur für Arbeit (BA) Ende 2024 bei rund 700.000 erwerbsfähigen Personen. Zählt man die nicht erwerbsfähigen Personen (insbesondere Kinder) in deren Bedarfsgemeinschaften hinzu, steigt die Zahl der unterstützten Menschen auf über eine Million.\n\nDie von Tino Chrupalla genannte Zahl von 6 Milliarden Euro liegt somit innerhalb des vom zuständigen Bundesministerium prognostizierten Rahmens für das Jahr 2024."
+ },
+ {
+  "id": 36,
+  "speaker": "Connemann",
+  "claim": "Der Industriestrompreis in Deutschland liegt bei 18 Cent pro Kilowattstunde.",
+  "context": "Sendung vom September 2025 über Energiepolitik und Bürgergeld",
+  "guests": "[\"Dröge\", \"Connemann\", \"Maischberger\"]",
+  "episode_date": "",
+  "live_consistency": "hoch",
+  "live_evidence": "Laut der Hans-Böckler-Stiftung lag der Industriestrompreis für Unternehmen in Deutschland meist zwischen 13 und 18 Cent pro Kilowattstunde, während Agora Energiewende den Durchschnitt für 2025 ohne Vergünstigungen auf rund 16 Cent beziffert."
+ },
+ {
+  "id": 100,
+  "speaker": "Gitta Connemann",
+  "claim": "Im September 2025 liegt der Industriestrompreis in Deutschland bei 18 Cent, in den USA bei 8 Cent.",
+  "context": "",
+  "guests": "[\"Sandra Maischberger (Moderatorin)\", \"Gitta Connemann (CDU)\", \"Katharina Dröge (B90/Grüne)\"]",
+  "episode_date": "19. September 2025",
+  "deep_consistency": "hoch",
+  "deep_evidence": "Die in der Sendung genannten Zahlen für die Industriestrompreise in Deutschland und den USA stimmen in ihrer Größenordnung gut mit den verfügbaren statistischen Daten für den genannten Zeitraum überein.\n\n**Deutschland:**\nDer durchschnittliche Strompreis für Industriekunden in Deutschland lag im zweiten Halbjahr 2025 bei 17,8 Cent pro Kilowattstunde (ct/kWh). Dieser Wert wird vom Statistischen Bundesamt für mittlere Industrieunternehmen (mit einem Jahresverbrauch von 160 bis 20.000 Megawattstunden) ausgewiesen. Die von Gitta Connemann genannten 18 Cent liegen sehr nah an diesem offiziellen Durchschnittswert.\n\n**USA:**\nFür die Vereinigten Staaten meldet die U.S. Energy Information Administration (EIA) die monatlichen Strompreise. Im September 2025 betrug der durchschnittliche Preis für Industriekunden 8,5 US-Cent pro Kilowattstunde.\n\n**Währungsumrechnung und Vergleich:**\nUm die Preise direkt vergleichen zu können, muss der US-Preis in Euro umgerechnet werden. Der durchschnittliche Wechselkurs im September 2025 lag bei etwa 1,07 US-Dollar pro Euro. Rechnet man den US-Preis um, ergibt sich ein Wert von circa 7,9 ct/kWh (8,5 US-Cent / 1,07). Dieser Wert ist ebenfalls sehr nah an den von Gitta Connemann genannten 8 Cent.\n\nZusammenfassend lässt sich sagen, dass die Behauptung den Preisunterschied zwischen den beiden Ländern auf Basis der offiziellen Statistiken zutreffend wiedergibt. Es ist jedoch zu beachten, dass die tatsächlichen Preise für einzelne Unternehmen je nach Verbrauchsmenge, Vertragsbedingungen und regionalen Unterschieden von diesen Durchschnittswerten abweichen können."
+ },
+ {
+  "id": 142,
+  "speaker": "Philipp Amthor",
+  "claim": "Deutschland ist ein Höchststeuerland.",
+  "context": "Thema: Wachstum vs. Umverteilung, Social-Media-Regeln und Umgang mit der AfD.",
+  "guests": "[\"Pinar Atalay (Moderatorin)\", \"Heidi Reichinnek (Die Linke)\", \"Philipp Amthor (CDU)\"]",
+  "episode_date": "9. Februar 2026",
+  "deep_consistency": "unklar",
+  "deep_evidence": "Die Aussage, Deutschland sei ein „Höchststeuerland”, ist eine häufig wiederkehrende politische Behauptung, deren Gültigkeit von der gewählten Metrik abhängt. Eine differenzierte Betrachtung der Daten der Organisation für wirtschaftliche Zusammenarbeit und Entwicklung (OECD) ist notwendig.\n\n**1. Belastung von Arbeitseinkommen (Steuern und Sozialabgaben):**\nBei der Belastung von Arbeitnehmern durch Steuern und Sozialabgaben gehört Deutschland zur absoluten Spitzengruppe der Industrieländer. Laut den regelmäßigen Erhebungen der OECD (Bericht „Taxing Wages”) lag die Belastung für einen alleinstehenden Durchschnittsverdiener ohne Kinder in den letzten Jahren bei knapp 48 %. Das bedeutet, dass von jedem Euro Bruttolohn fast 48 Cent an den Staat abgeführt werden. In diesem Vergleich belegt Deutschland seit Jahren den zweiten Platz unter allen OECD-Staaten, nur übertroffen von Belgien. Aus der Perspektive eines durchschnittlichen Arbeitnehmers ist die Belastung also tatsächlich eine der höchsten der Welt.\n\n**2. Gesamtstaatliche Steuer- und Abgabenquote:**\nEin anderes Bild ergibt sich, wenn man die Summe aller staatlichen Einnahmen aus Steuern und Sozialabgaben ins Verhältnis zur gesamten Wirtschaftsleistung (Bruttoinlandsprodukt, BIP) setzt. Diese sogenannte Steuer- und Abgabenquote ist ein Maß für die Belastung der Volkswirtschaft als Ganzes. Hier lag Deutschland laut OECD-Daten zuletzt im oberen Mittelfeld, aber nicht an der Spitze. Länder wie Frankreich, Dänemark, Österreich oder Italien wiesen eine höhere gesamtstaatliche Abgabenquote auf.\n\n**Fazit:**\nDie Behauptung ist stark vereinfachend. Während die direkte Belastung von Arbeitseinkommen durch Steuern und insbesondere Sozialabgaben in Deutschland im internationalen Vergleich tatsächlich zu den höchsten zählt, ist Deutschland gemessen an der gesamten Wirtschaftsleistung kein „Höchststeuerland”. Die Aussage ist daher je nach Betrachtungswinkel teilweise zutreffend, aber in ihrer Absolutheit irreführend."
+ },
+ {
+  "id": 91,
+  "speaker": "Gitta Connemann",
+  "claim": "Während der Amtszeit von Robert Habeck als Wirtschaftsminister gab es in Deutschland drei Jahre Rezession.",
+  "context": "",
+  "guests": "[\"Sandra Maischberger (Moderatorin)\", \"Gitta Connemann (CDU)\", \"Katharina Dröge (B90/Grüne)\"]",
+  "episode_date": "19. September 2025",
+  "deep_consistency": "niedrig",
+  "deep_evidence": "Die Behauptung, während der Amtszeit von Robert Habeck habe es drei Jahre Rezession gegeben, wird von den offiziellen Daten des Statistischen Bundesamtes (Destatis) nicht gestützt. Die Analyse des Bruttoinlandsprodukts (BIP) für den relevanten Zeitraum zeigt folgendes Bild:\n\nRobert Habeck trat sein Amt als Bundesminister für Wirtschaft und Klimaschutz im Dezember 2021 an. Die zu überprüfenden Jahre sind 2022, 2023, 2024 und die Prognose für 2025, da die Aussage im September 2025 getroffen wurde.\n\n*   **Wirtschaftsjahr 2022:** Die deutsche Wirtschaft verzeichnete ein Wachstum. Das preisbereinigte Bruttoinlandsprodukt (BIP) stieg im Vergleich zum Vorjahr um 1,9 %. Das Jahr 2022 war somit kein Rezessionsjahr.\n\n*   **Wirtschaftsjahr 2023:** Das preisbereinigte BIP sank um 0,3 % gegenüber 2022. Damit befand sich die deutsche Wirtschaft im Jahr 2023 in einer Rezession.\n\n*   **Wirtschaftsjahr 2024:** Die Wirtschaftsleistung ging erneut zurück. Das Statistische Bundesamt meldete für das Gesamtjahr einen Rückgang des preisbereinigten BIP um 0,2 %. Somit war auch 2024 ein Rezessionsjahr.\n\n*   **Wirtschaftsjahr 2025:** Zum Zeitpunkt der Behauptung im September 2025 lagen keine abgeschlossenen Jahresdaten vor. Führende Wirtschaftsforschungsinstitute wie das Ifo-Institut, das DIW und das IW Köln gingen in ihren Herbstprognosen für 2025 von einer Stagnation oder einem minimalen Wachstum von etwa 0,2 % aus. Eine Rezession für das Gesamtjahr 2025 wurde also nicht erwartet.\n\nZusammenfassend lässt sich sagen, dass in der bisherigen Amtszeit von Robert Habeck zwei Jahre mit einer Rezession (2023 und 2024) zu verzeichnen waren. Das Jahr 2022 wies ein deutliches Wachstum auf, und für 2025 wurde zum Zeitpunkt der Aussage keine Rezession prognostiziert. Die Behauptung von drei Rezessionsjahren ist daher nach der vorliegenden Datenlage nicht zutreffend."
+ },
+ {
+  "id": 497,
+  "speaker": "Werner Graf",
+  "claim": "Es gibt 48.000 erteilte Genehmigungen für Wohnungen, die aktuell nicht gebaut werden.",
+  "context": "Die Tagesspiegel Chefredaktion lädt drei Tage vor der Wahl zum Abgeordnetenhaus die Spitzenkandidaten ins Deutsche Theater: Verkehr, Wohnen, Sicherheit und Sauberkeit - haben die Parteien wirksame Konzepte? Wie sieht die Zukunft der Stadt aus? \n\nGespräch vom 18.09.2026",
+  "guests": "[\"Elif Eralp (Die Linke, Spitzenkandidatin der Berliner Linken)\", \"Stefan Evers (CDU, Spitzenkandidat der Berliner CDU)\", \"Werner Graf (Grüne, Spitzenkandidat der Berliner Grünen)\", \"Steffen Krach (SPD, Spitzenkandidat der Berliner SPD)\", \"Anke Myrrhe (Moderation)\", \"Christian Tretbar (Moderation)\"]",
+  "episode_date": "2026-09-20",
+  "deep_consistency": "hoch",
+  "deep_evidence": "Die Behauptung von Werner Graf bezieht sich auf den sogenannten „Bauüberhang”. Dieser Fachbegriff bezeichnet die Anzahl der bereits genehmigten, aber noch nicht fertiggestellten oder begonnenen Wohnungen. Es handelt sich also um ein Reservoir an potenziellen zukünftigen Bauprojekten.\n\nEine exakte offizielle Bestätigung für die Zahl von 48.000 genehmigten, aber nicht gebauten Wohnungen in Berlin zum Zeitpunkt der Äußerung im September 2026 konnte in öffentlich zugänglichen Statistiken nicht gefunden werden. Die Daten des Amtes für Statistik Berlin-Brandenburg zum Bauüberhang werden in der Regel mit einiger Verzögerung veröffentlicht.\n\nAllerdings lässt sich die Entwicklung des Bauüberhangs anhand der offiziellen Zahlen für Baugenehmigungen und Baufertigstellungen für die jüngste Vergangenheit nachvollziehen und die Plausibilität der Behauptung bewerten:\n\n**Entwicklung in 2025 (Letztes abgeschlossene Jahr vor der Behauptung):**\n*   **Baugenehmigungen:** 13.754 neue Wohnungen wurden genehmigt.\n*   **Baufertigstellungen:** 11.027 Wohnungen wurden fertiggestellt.\n*   **Ergebnis 2025:** Im Jahr 2025 wuchs der Bauüberhang in Berlin um 2.727 Wohnungen an, da deutlich mehr Genehmigungen erteilt als Wohnungen fertiggestellt wurden.\n\n**Entwicklung in 2024:**\n*   **Baugenehmigungen:** ca. 9.775 (errechnet aus den Zahlen für 2025, die ein Plus von 40,7 % gegenüber 2024 darstellten).\n*   **Baufertigstellungen:** 14.632 Wohnungen wurden fertiggestellt.\n*   **Ergebnis 2024:** Im Jahr 2024 wurde der Bauüberhang um 4.857 Wohnungen abgebaut, da mehr fertiggestellt als neu genehmigt wurde.\n\nDiese Zahlen zeigen, dass der Bauüberhang eine reale und signifikante Größe im Berliner Wohnungsmarkt ist, dessen Umfang jährlich um mehrere tausend Wohnungen schwankt. Die von Werner Graf genannte Zahl von 48.000 liegt im Rahmen dessen, was angesichts der Bautätigkeit der letzten Jahre als plausibler Gesamtbestand des Bauüberhangs erscheint. Obwohl die exakte Zahl nicht verifiziert werden kann, verweist die Behauptung auf ein korrekt dargestelltes und durch offizielle Statistiken belegtes Phänomen. Die Differenz zwischen genehmigten und fertiggestellten Wohnungen führt zu einem beständigen und großen Überhang."
+ }
+]
