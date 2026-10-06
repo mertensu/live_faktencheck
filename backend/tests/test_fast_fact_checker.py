@@ -272,3 +272,85 @@ class TestReadDeeper:
                 patch("backend.services.fast_fact_checker.tavily_extract", extract):
             await checker.check_claim_async(speaker="X", claim="Y.")
         extract.assert_not_awaited()
+
+
+def _verdicts_with_docs(first_level, first_docs, second_level="hoch"):
+    """Like _verdicts, but the first verdict names referenced documents."""
+    from pydantic_ai.messages import ModelResponse, ToolCallPart
+    from pydantic_ai.models.function import FunctionModel
+
+    seen: list[str] = []
+
+    def fn(messages, info):
+        seen.append(str(messages[-1].parts[-1].content))
+        first = len(seen) == 1
+        args = {"evidence": "…", "consistency": first_level if first else second_level,
+                "sources": [{"url": "https://destatis.de/x", "title": "Destatis"}],
+                "referenced_documents": first_docs if first else []}
+        return ModelResponse(parts=[ToolCallPart(info.output_tools[0].name, args)])
+
+    return FunctionModel(fn), seen
+
+
+PLAN = {"title": "Finanzplan des Bundes 2025 bis 2029", "url": "https://dserver.bundestag.de/btd/21/006/2100601.pdf",
+        "content": "Finanzplan …"}
+
+
+def _search_by_query(query, **kw):
+    if query.startswith("Finanzplan des Bundes"):
+        return {"results": [{"title": "Destatis", "url": "https://destatis.de/x", "content": "schon bekannt"},
+                            {"title": "Meldung", "url": "https://www.bundestag.de/meldung", "content": "über den Plan"},
+                            PLAN,
+                            {"title": "Dritter", "url": "https://www.bundestag.de/dritter", "content": "…"}]}
+    return FAKE_SEARCH
+
+
+class TestFollowDocuments:
+    async def test_named_document_is_searched_read_and_judged(self):
+        checker = _make_checker()
+        model, seen = _verdicts_with_docs("niedrig", ["Finanzplan des Bundes 2025 bis 2029"], "niedrig")
+        search = AsyncMock(side_effect=_search_by_query)
+        extract = AsyncMock(return_value={PLAN["url"]: "Gesamtausgaben 2029: 572,1 Mrd. €"})
+        with checker.agent.override(model=model), \
+                patch("backend.services.fast_fact_checker.tavily_search", search), \
+                patch("backend.services.fast_fact_checker.tavily_extract", extract):
+            result = await checker.check_claim_async(speaker="Grimm", claim="2029 fressen … den Haushalt auf.")
+        assert result["consistency"] == "niedrig"
+        assert any(c.args[0] == "Finanzplan des Bundes 2025 bis 2029" for c in search.await_args_list)
+        # Two new hits per title are read, the PDF first; known hits are skipped.
+        assert extract.await_args.args[0] == [PLAN["url"], "https://www.bundestag.de/meldung"]
+        # …and the second verdict sees the document and what was read from it.
+        assert len(seen) == 2 and PLAN["url"] in seen[1] and "572,1 Mrd." in seen[1]
+
+    async def test_no_named_document_no_follow_up(self):
+        checker = _make_checker()
+        model, seen = _verdicts_with_docs("hoch", [])
+        search = AsyncMock(side_effect=_search_by_query)
+        with checker.agent.override(model=model), \
+                patch("backend.services.fast_fact_checker.tavily_search", search), \
+                patch("backend.services.fast_fact_checker.tavily_extract", AsyncMock(return_value={})):
+            await checker.check_claim_async(speaker="X", claim="Y.")
+        assert len(seen) == 1
+        assert not any(c.args[0].startswith("Finanzplan") for c in search.await_args_list)
+
+    async def test_at_most_two_documents(self):
+        checker = _make_checker()
+        model, _ = _verdicts_with_docs("unklar", ["Finanzplan des Bundes A", "Finanzplan des Bundes B", "Finanzplan des Bundes C"])
+        search = AsyncMock(side_effect=_search_by_query)
+        with checker.agent.override(model=model), \
+                patch("backend.services.fast_fact_checker.tavily_search", search), \
+                patch("backend.services.fast_fact_checker.tavily_extract", AsyncMock(return_value={})):
+            await checker.check_claim_async(speaker="X", claim="Y.")
+        assert sum(c.args[0].startswith("Finanzplan") for c in search.await_args_list) == 2
+
+    async def test_can_be_switched_off(self):
+        with patch.dict("os.environ", {"FAST_FOLLOW_DOCS": "false"}):
+            checker = _make_checker()
+        model, seen = _verdicts_with_docs("hoch", ["Finanzplan des Bundes 2025 bis 2029"])
+        search = AsyncMock(side_effect=_search_by_query)
+        with checker.agent.override(model=model), \
+                patch("backend.services.fast_fact_checker.tavily_search", search), \
+                patch("backend.services.fast_fact_checker.tavily_extract", AsyncMock(return_value={})):
+            await checker.check_claim_async(speaker="X", claim="Y.")
+        assert len(seen) == 1
+        assert not any(c.args[0].startswith("Finanzplan") for c in search.await_args_list)

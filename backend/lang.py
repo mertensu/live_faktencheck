@@ -27,6 +27,8 @@ SOURCES_DESCRIPTION = """Die Treffer, auf die sich die Einschätzung stützt, in
 - [Land] sind Landesbehörden, -statistikämter und Landtage: erste Wahl, wenn die Behauptung ein bestimmtes Bundesland betrifft; bei Deutschland insgesamt oder der EU nur, wenn kein [amtlich]- oder [Forschung]-Treffer die Aussage trägt.
 - [Partei]-Treffer sind Positionen, keine Belege — nur aufführen, wenn die Behauptung selbst eine Parteiposition betrifft."""
 
+REFERENCED_DOCUMENTS_DESCRIPTION = """Offizielle Dokumente, Studien oder Berichte, die in den Suchergebnissen genannt oder zitiert werden und die Behauptung direkt beantworten würden, deren Inhalt aber nicht (oder nur angerissen) in den Treffern steht — z. B. ein Finanzplan, ein amtlicher Bericht, ein Gutachten, eine Studie. Je Eintrag der Titel so, wie er genannt wird, mit Herausgeber und Jahr (z. B. „Finanzplan des Bundes 2025 bis 2029“, „Monitoringbericht 2025 Bundesnetzagentur“); Dokumente internationaler Stellen (Eurostat, OECD, IEA, EU-Kommission) mit ihrem englischen Titel. Höchstens 2; leere Liste, wenn keins genannt wird oder die Treffer die Behauptung schon beantworten."""
+
 # --- Live speakers ---
 # Shown when a live claim cannot be tied to a diarization label — preferred over a name
 # guessed from the text.

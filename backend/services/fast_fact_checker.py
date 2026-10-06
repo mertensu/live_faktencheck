@@ -23,6 +23,7 @@ from backend.lang import (
     SOURCE_TITLE_DESCRIPTION,
     CONSISTENCY_DESCRIPTION,
     EVIDENCE_DESCRIPTION,
+    REFERENCED_DOCUMENTS_DESCRIPTION,
     SOURCES_DESCRIPTION,
 )
 from .llm_base import build_model, settings_with_thinking
@@ -82,6 +83,9 @@ class FastVerdict(BaseModel):
         description=CONSISTENCY_DESCRIPTION
     )
     sources: List[Source] = Field(default_factory=list, description=SOURCES_DESCRIPTION)
+    # Official documents/studies the hits mention but don't contain: searched by title and
+    # read before a second verdict (see FastFactChecker._follow_documents).
+    referenced_documents: List[str] = Field(default_factory=list, description=REFERENCED_DOCUMENTS_DESCRIPTION)
 
 
 class FastFactChecker:
@@ -104,6 +108,13 @@ class FastFactChecker:
         self.extract_enabled = os.getenv("FAST_EXTRACT", "true").strip().lower() in ("1", "true", "yes")
         self.extract_max_urls = int(os.getenv("FAST_EXTRACT_MAX_URLS", "10"))
         self.extract_chars = int(os.getenv("FAST_EXTRACT_CHARS", "2500"))
+        # Documents the hits only mention (a budget plan, a report, a study) are often the
+        # one source that answers the claim. The first verdict names them; each is searched
+        # by its title and read, then the judge rules once more. Seen: hits citing the
+        # "Finanzplan des Bundes 2025 bis 2029" while none contained it; searching that
+        # title found it at once. ~+10 s and 1 credit per title, only when one is named.
+        self.follow_docs = os.getenv("FAST_FOLLOW_DOCS", "true").strip().lower() in ("1", "true", "yes")
+        self.follow_docs_max = int(os.getenv("FAST_FOLLOW_DOCS_MAX", "2"))
 
         # Thinking dominates the synthesis latency; "low" cut it from ~7.7 s to ~2.8 s
         # without losing accuracy (benchmarks/fast_check_ab.py).
@@ -198,9 +209,38 @@ class FastFactChecker:
         """Documents worth reading deeper: PDFs and research hits (studies, reports)."""
         return ".pdf" in url.lower() or source_tier(url)[1] == "Forschung"
 
+    async def _follow_documents(self, titles: List[str], results: List[dict]) -> List[dict]:
+        """Search each named document by its title; up to two new hits per title, PDFs
+        first — the first hit is often a page *about* the document, not the document."""
+        known = {_url_key(r.get("url") or "") for r in results}
+
+        async def one(title: str) -> List[dict]:
+            try:
+                res = await tavily_search(title, search_depth=self.search_depth)
+            except Exception:
+                logger.exception("Fast check: search for document %r failed", title)
+                return []
+            new = [item for item in res.get("results", []) or []
+                   if item.get("url") and not _is_noise(item["url"]) and _url_key(item["url"]) not in known]
+            new.sort(key=lambda item: ".pdf" not in item["url"].lower())  # stable: PDFs first
+            return new[:2]
+
+        titles = [t.strip() for t in titles if t and t.strip()][: self.follow_docs_max]
+        found = await asyncio.gather(*(one(t) for t in titles))
+        docs, seen = [], set()
+        for items in found:
+            for item in items:
+                if _url_key(item["url"]) not in seen:
+                    seen.add(_url_key(item["url"]))
+                    docs.append(item)
+        return docs
+
     async def _read_deeper(self, claim: str, results: List[dict]) -> Dict[str, str]:
         urls = [r.get("url") for r in results if r.get("url") and self._readable(r["url"])]
-        urls = urls[: self.extract_max_urls]
+        return await self._read(claim, urls)
+
+    async def _read(self, claim: str, urls: List[str]) -> Dict[str, str]:
+        urls = list(dict.fromkeys(u for u in urls if u))[: self.extract_max_urls]
         if not urls:
             return {}
         try:
@@ -241,13 +281,19 @@ class FastFactChecker:
                 f"Behauptung: {claim}"
             )
             parsed = await self._judge(header, results)
-            if self.extract_enabled and parsed.get("consistency") in ("unklar", "keine Datenlage"):
-                extra = await self._read_deeper(claim, results)
-                if extra:
-                    first = parsed.get("consistency")
-                    parsed = await self._judge(header, results, extra)
-                    logger.info(f"Fast check read deeper in {len(extra)} document(s): "
-                                f"{first} -> {parsed.get('consistency')}")
+            first = parsed.get("consistency")
+            titles = parsed.get("referenced_documents") or []
+            # Documents the hits only mention: search by title, read what was found.
+            docs = await self._follow_documents(titles, results) if self.follow_docs and titles else []
+            to_read = [d["url"] for d in docs]
+            # Undecided: also read deeper in the PDFs/studies already found.
+            if self.extract_enabled and first in ("unklar", "keine Datenlage"):
+                to_read += [r["url"] for r in results if r.get("url") and self._readable(r["url"])]
+            extra = await self._read(claim, to_read) if to_read and self.extract_enabled else {}
+            if docs or extra:
+                parsed = await self._judge(header, results + docs, extra)
+                logger.info(f"Fast check followed {titles} -> {len(docs)} document(s), read "
+                            f"{len(extra)}: {first} -> {parsed.get('consistency')}")
             if not parsed.get("speaker"):
                 parsed["speaker"] = speaker
             if not parsed.get("original_claim"):
