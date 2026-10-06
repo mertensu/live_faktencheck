@@ -58,3 +58,4 @@ Läufen, außer innerhalb eines A/B mit „gleichen Treffern“). Umformulierung
 | `extract.jsonl` | `scripts/extract_bench.py` | Gespeicherte A-Treffer aus `primary.jsonl`; B = dieselben + Tavily-Extract-Abschnitte für alle PDF-Treffer. |
 | `studie.jsonl` | `scripts/studie_bench.py` | A = gespeicherte Live-Anfragen/Treffer, B = Umformulierer-Prompt aus PR #19 („Studie“), frisch gesucht; beide mit PR-#19-Prüfung (Extract bei unklar). |
 | `englisch.jsonl` | `scripts/englisch_bench.py` | Ein Umformulierer-Lauf (PR #19) mit Zusatzfeld `yardstick_en`; A = a–e, B = a,b,c,yardstick_en,e. 7 Vergleichs-Claims (`claims_vergleich.json`). |
+| `lang.jsonl` | `scripts/lang_decision_bench.py` | Nur Umformulierer (PR #19), 2 Läufe, 20 Claims (`claims_lang.json`, Feld `expect` en/de); keine Suche. |

@@ -1,0 +1,162 @@
+[
+ {
+  "id": 98,
+  "speaker": "Gitta Connemann",
+  "claim": "Der Strom ist in Deutschland im September 2025 der teuerste in Europa.",
+  "context": "",
+  "guests": "[\"Sandra Maischberger (Moderatorin)\", \"Gitta Connemann (CDU)\", \"Katharina Dröge (B90/Grüne)\"]",
+  "expect": "en"
+ },
+ {
+  "id": 390,
+  "speaker": "",
+  "claim": "Deutchland hat die höchsten Energiepreise Europas",
+  "context": "",
+  "guests": "[]",
+  "expect": "en"
+ },
+ {
+  "id": 100,
+  "speaker": "Gitta Connemann",
+  "claim": "Im September 2025 liegt der Industriestrompreis in Deutschland bei 18 Cent, in den USA bei 8 Cent.",
+  "context": "",
+  "guests": "[\"Sandra Maischberger (Moderatorin)\", \"Gitta Connemann (CDU)\", \"Katharina Dröge (B90/Grüne)\"]",
+  "expect": "en"
+ },
+ {
+  "id": 102,
+  "speaker": "Gitta Connemann",
+  "claim": "Deutschland hat einen kompletten Ausstieg aus der Kernenergie vollzogen, anders als zwölf Mitgliedstaaten in der Welt.",
+  "context": "",
+  "guests": "[\"Sandra Maischberger (Moderatorin)\", \"Gitta Connemann (CDU)\", \"Katharina Dröge (B90/Grüne)\"]",
+  "expect": "en"
+ },
+ {
+  "id": 142,
+  "speaker": "Philipp Amthor",
+  "claim": "Deutschland ist ein Höchststeuerland.",
+  "context": "Thema: Wachstum vs. Umverteilung, Social-Media-Regeln und Umgang mit der AfD.",
+  "guests": "[\"Pinar Atalay (Moderatorin)\", \"Heidi Reichinnek (Die Linke)\", \"Philipp Amthor (CDU)\"]",
+  "expect": "en"
+ },
+ {
+  "id": 272,
+  "speaker": "Bernd Baumann",
+  "claim": "Deutschland zahlt das Dreifache an Nettobeitrag an die EU wie die Franzosen.",
+  "context": "Hintergrund Iran-Krieg: Am 28. Februar 2026 griffen USA und Israel den Iran mit rund 900 Angriffen an. Irans Oberster Führer Ali Chamenei sowie mehrere Militärführer wurden getötet. Iran blockierte die Straße von Hormus und startete Gegenschläge auf Israel und US-Ziele in der Region. Über 1.900 Tote im Iran, der Konflikt belastet globale Energiemärkte und treibt Spritpreise hoch. Hintergrund Steuern: Baumann (AfD) lehnt Steuererhöhungen ab, fordert Einsparungen bei Migration und Klima, langfristig einheitlicher Steuersatz. Stegner (SPD) besteht auf Besteuerung nach Leistungsfähigkeit und höheren Erbschaftssteuern für große Vermögen. SPD-Krise: Stegner sieht strukturelle Defizite jenseits von Personalfragen, kein 'Messias' in Sicht. Zusammenarbeit mit demokratiefeindlichen Kräften ausgeschlossen.",
+  "guests": "[\"Sandra Maischberger (Moderatorin)\", \"Ralf Stegner (SPD, linker Flügel, MdB seit 2021, ehem. Innenminister Schleswig-Holstein, bekannt für scharfe Kritik an rechten Parteien)\", \"Bernd Baumann (AfD, Erster Parlamentarischer Geschäftsführer der AfD-Bundestagsfraktion, Ökonom, MdB seit 2017)\"]",
+  "expect": "en"
+ },
+ {
+  "id": 276,
+  "speaker": "Ralf Stegner",
+  "claim": "Kein Land profitiert mehr von Europa als Deutschland.",
+  "context": "Hintergrund Iran-Krieg: Am 28. Februar 2026 griffen USA und Israel den Iran mit rund 900 Angriffen an. Irans Oberster Führer Ali Chamenei sowie mehrere Militärführer wurden getötet. Iran blockierte die Straße von Hormus und startete Gegenschläge auf Israel und US-Ziele in der Region. Über 1.900 Tote im Iran, der Konflikt belastet globale Energiemärkte und treibt Spritpreise hoch. Hintergrund Steuern: Baumann (AfD) lehnt Steuererhöhungen ab, fordert Einsparungen bei Migration und Klima, langfristig einheitlicher Steuersatz. Stegner (SPD) besteht auf Besteuerung nach Leistungsfähigkeit und höheren Erbschaftssteuern für große Vermögen. SPD-Krise: Stegner sieht strukturelle Defizite jenseits von Personalfragen, kein 'Messias' in Sicht. Zusammenarbeit mit demokratiefeindlichen Kräften ausgeschlossen.",
+  "guests": "[\"Sandra Maischberger (Moderatorin)\", \"Ralf Stegner (SPD, linker Flügel, MdB seit 2021, ehem. Innenminister Schleswig-Holstein, bekannt für scharfe Kritik an rechten Parteien)\", \"Bernd Baumann (AfD, Erster Parlamentarischer Geschäftsführer der AfD-Bundestagsfraktion, Ökonom, MdB seit 2017)\"]",
+  "expect": "en"
+ },
+ {
+  "id": 318,
+  "speaker": "Ralf Stegner",
+  "claim": "In allen anderen, nicht-sozialistischen Ländern, werden Vermögen und Erbschaften höher besteuert als in Deutschland.",
+  "context": "Hintergrund Iran-Krieg: Am 28. Februar 2026 griffen USA und Israel den Iran mit rund 900 Angriffen an. Irans Oberster Führer Ali Chamenei sowie mehrere Militärführer wurden getötet. Iran blockierte die Straße von Hormus und startete Gegenschläge auf Israel und US-Ziele in der Region. Über 1.900 Tote im Iran, der Konflikt belastet globale Energiemärkte und treibt Spritpreise hoch. Hintergrund Steuern: Baumann (AfD) lehnt Steuererhöhungen ab, fordert Einsparungen bei Migration und Klima, langfristig einheitlicher Steuersatz. Stegner (SPD) besteht auf Besteuerung nach Leistungsfähigkeit und höheren Erbschaftssteuern für große Vermögen. SPD-Krise: Stegner sieht strukturelle Defizite jenseits von Personalfragen, kein 'Messias' in Sicht. Zusammenarbeit mit demokratiefeindlichen Kräften ausgeschlossen.",
+  "guests": "[\"Sandra Maischberger (Moderatorin)\", \"Ralf Stegner (SPD, linker Flügel, MdB seit 2021, ehem. Innenminister Schleswig-Holstein, bekannt für scharfe Kritik an rechten Parteien)\", \"Bernd Baumann (AfD, Erster Parlamentarischer Geschäftsführer der AfD-Bundestagsfraktion, Ökonom, MdB seit 2017)\"]",
+  "expect": "en"
+ },
+ {
+  "id": 345,
+  "speaker": "Bernd Baumann",
+  "claim": "Deutschland bezahlt für Gas und Öl aus den USA das Doppelte [im Vergleich zu russischem Gas und Öl].",
+  "context": "Hintergrund Iran-Krieg: Am 28. Februar 2026 griffen USA und Israel den Iran mit rund 900 Angriffen an. Irans Oberster Führer Ali Chamenei sowie mehrere Militärführer wurden getötet. Iran blockierte die Straße von Hormus und startete Gegenschläge auf Israel und US-Ziele in der Region. Über 1.900 Tote im Iran, der Konflikt belastet globale Energiemärkte und treibt Spritpreise hoch. Hintergrund Steuern: Baumann (AfD) lehnt Steuererhöhungen ab, fordert Einsparungen bei Migration und Klima, langfristig einheitlicher Steuersatz. Stegner (SPD) besteht auf Besteuerung nach Leistungsfähigkeit und höheren Erbschaftssteuern für große Vermögen. SPD-Krise: Stegner sieht strukturelle Defizite jenseits von Personalfragen, kein 'Messias' in Sicht. Zusammenarbeit mit demokratiefeindlichen Kräften ausgeschlossen.",
+  "guests": "[\"Sandra Maischberger (Moderatorin)\", \"Ralf Stegner (SPD, linker Flügel, MdB seit 2021, ehem. Innenminister Schleswig-Holstein, bekannt für scharfe Kritik an rechten Parteien)\", \"Bernd Baumann (AfD, Erster Parlamentarischer Geschäftsführer der AfD-Bundestagsfraktion, Ökonom, MdB seit 2017)\"]",
+  "expect": "en"
+ },
+ {
+  "id": 374,
+  "speaker": "Bernd Baumann",
+  "claim": "Die Marine der USA ist die mit Abstand größte Navy der Welt.",
+  "context": "Hintergrund Iran-Krieg: Am 28. Februar 2026 griffen USA und Israel den Iran mit rund 900 Angriffen an. Irans Oberster Führer Ali Chamenei sowie mehrere Militärführer wurden getötet. Iran blockierte die Straße von Hormus und startete Gegenschläge auf Israel und US-Ziele in der Region. Über 1.900 Tote im Iran, der Konflikt belastet globale Energiemärkte und treibt Spritpreise hoch. Hintergrund Steuern: Baumann (AfD) lehnt Steuererhöhungen ab, fordert Einsparungen bei Migration und Klima, langfristig einheitlicher Steuersatz. Stegner (SPD) besteht auf Besteuerung nach Leistungsfähigkeit und höheren Erbschaftssteuern für große Vermögen. SPD-Krise: Stegner sieht strukturelle Defizite jenseits von Personalfragen, kein 'Messias' in Sicht. Zusammenarbeit mit demokratiefeindlichen Kräften ausgeschlossen.",
+  "guests": "[\"Sandra Maischberger (Moderatorin)\", \"Ralf Stegner (SPD, linker Flügel, MdB seit 2021, ehem. Innenminister Schleswig-Holstein, bekannt für scharfe Kritik an rechten Parteien)\", \"Bernd Baumann (AfD, Erster Parlamentarischer Geschäftsführer der AfD-Bundestagsfraktion, Ökonom, MdB seit 2017)\"]",
+  "expect": "en"
+ },
+ {
+  "id": 393,
+  "speaker": "Theo",
+  "claim": "Die Inflation beträgt momentan 2%.",
+  "context": "",
+  "guests": "[\"Theo\"]",
+  "expect": "de"
+ },
+ {
+  "id": 495,
+  "speaker": "Stefan Evers",
+  "claim": "Im letzten Jahr ist die Zahl der Baugenehmigungen in Berlin auf 9.000 gesunken.",
+  "context": "Die Tagesspiegel Chefredaktion lädt drei Tage vor der Wahl zum Abgeordnetenhaus die Spitzenkandidaten ins Deutsche Theater: Verkehr, Wohnen, Sicherheit und Sauberkeit - haben die Parteien wirksame Konzepte? Wie sieht die Zukunft der Stadt aus? \n\nGespräch vom 18.09.2026",
+  "guests": "[\"Elif Eralp (Die Linke, Spitzenkandidatin der Berliner Linken)\", \"Stefan Evers (CDU, Spitzenkandidat der Berliner CDU)\", \"Werner Graf (Grüne, Spitzenkandidat der Berliner Grünen)\", \"Steffen Krach (SPD, Spitzenkandidat der Berliner SPD)\", \"Anke Myrrhe (Moderation)\", \"Christian Tretbar (Moderation)\"]",
+  "expect": "de"
+ },
+ {
+  "id": 426,
+  "speaker": "Grüne",
+  "claim": "In Berlin gibt es 1,9 Millionen Quadratmeter Büroräume.",
+  "context": "Wahlforum Berlin",
+  "guests": "[\"Grüne (Grüne, Sprecherin)\", \"SPD (SPD, Sprecher)\", \"CDU (CDU, Sprecher)\", \"AfD (AfD, Sprecherin)\", \"Linke (Linke, Sprecher)\"]",
+  "expect": "de"
+ },
+ {
+  "id": 501,
+  "speaker": "Elif Eralp",
+  "claim": "Aktuell gehören 23% des Wohnungsmarktes dem Staat.",
+  "context": "Die Tagesspiegel Chefredaktion lädt drei Tage vor der Wahl zum Abgeordnetenhaus die Spitzenkandidaten ins Deutsche Theater: Verkehr, Wohnen, Sicherheit und Sauberkeit - haben die Parteien wirksame Konzepte? Wie sieht die Zukunft der Stadt aus? \n\nGespräch vom 18.09.2026",
+  "guests": "[\"Elif Eralp (Die Linke, Spitzenkandidatin der Berliner Linken)\", \"Stefan Evers (CDU, Spitzenkandidat der Berliner CDU)\", \"Werner Graf (Grüne, Spitzenkandidat der Berliner Grünen)\", \"Steffen Krach (SPD, Spitzenkandidat der Berliner SPD)\", \"Anke Myrrhe (Moderation)\", \"Christian Tretbar (Moderation)\"]",
+  "expect": "de"
+ },
+ {
+  "id": 324,
+  "speaker": "Bernd Baumann",
+  "claim": "Die SPD liegt in Baden-Württemberg bei 5 Prozent.",
+  "context": "Hintergrund Iran-Krieg: Am 28. Februar 2026 griffen USA und Israel den Iran mit rund 900 Angriffen an. Irans Oberster Führer Ali Chamenei sowie mehrere Militärführer wurden getötet. Iran blockierte die Straße von Hormus und startete Gegenschläge auf Israel und US-Ziele in der Region. Über 1.900 Tote im Iran, der Konflikt belastet globale Energiemärkte und treibt Spritpreise hoch. Hintergrund Steuern: Baumann (AfD) lehnt Steuererhöhungen ab, fordert Einsparungen bei Migration und Klima, langfristig einheitlicher Steuersatz. Stegner (SPD) besteht auf Besteuerung nach Leistungsfähigkeit und höheren Erbschaftssteuern für große Vermögen. SPD-Krise: Stegner sieht strukturelle Defizite jenseits von Personalfragen, kein 'Messias' in Sicht. Zusammenarbeit mit demokratiefeindlichen Kräften ausgeschlossen.",
+  "guests": "[\"Sandra Maischberger (Moderatorin)\", \"Ralf Stegner (SPD, linker Flügel, MdB seit 2021, ehem. Innenminister Schleswig-Holstein, bekannt für scharfe Kritik an rechten Parteien)\", \"Bernd Baumann (AfD, Erster Parlamentarischer Geschäftsführer der AfD-Bundestagsfraktion, Ökonom, MdB seit 2017)\"]",
+  "expect": "de"
+ },
+ {
+  "id": 424,
+  "speaker": "AfD, Sprecherin",
+  "claim": "In den 2000er Jahren gab es 10% Wohnungsleerstand in Berlin.",
+  "context": "Wahlforum Berlin",
+  "guests": "[\"Grüne (Grüne, Sprecherin)\", \"SPD (SPD, Sprecher)\", \"CDU (CDU, Sprecher)\", \"AfD (AfD, Sprecherin)\", \"Linke (Linke, Sprecher)\"]",
+  "expect": "de"
+ },
+ {
+  "id": 513,
+  "speaker": "Elif Eralp",
+  "claim": "Bei drei Vierteln der Beschwerden über die Mietwucher-App lag die Miete 50% über der ortsüblichen Vergleichsmiete.",
+  "context": "Die Tagesspiegel Chefredaktion lädt drei Tage vor der Wahl zum Abgeordnetenhaus die Spitzenkandidaten ins Deutsche Theater: Verkehr, Wohnen, Sicherheit und Sauberkeit - haben die Parteien wirksame Konzepte? Wie sieht die Zukunft der Stadt aus? \n\nGespräch vom 18.09.2026",
+  "guests": "[\"Elif Eralp (Die Linke, Spitzenkandidatin der Berliner Linken)\", \"Stefan Evers (CDU, Spitzenkandidat der Berliner CDU)\", \"Werner Graf (Grüne, Spitzenkandidat der Berliner Grünen)\", \"Steffen Krach (SPD, Spitzenkandidat der Berliner SPD)\", \"Anke Myrrhe (Moderation)\", \"Christian Tretbar (Moderation)\"]",
+  "expect": "de"
+ },
+ {
+  "id": 502,
+  "speaker": "Elif Eralp",
+  "claim": "Nach einer Vergesellschaftung würde der Anteil der landeseigenen Wohnungsunternehmen am Markt knapp 40% betragen.",
+  "context": "Die Tagesspiegel Chefredaktion lädt drei Tage vor der Wahl zum Abgeordnetenhaus die Spitzenkandidaten ins Deutsche Theater: Verkehr, Wohnen, Sicherheit und Sauberkeit - haben die Parteien wirksame Konzepte? Wie sieht die Zukunft der Stadt aus? \n\nGespräch vom 18.09.2026",
+  "guests": "[\"Elif Eralp (Die Linke, Spitzenkandidatin der Berliner Linken)\", \"Stefan Evers (CDU, Spitzenkandidat der Berliner CDU)\", \"Werner Graf (Grüne, Spitzenkandidat der Berliner Grünen)\", \"Steffen Krach (SPD, Spitzenkandidat der Berliner SPD)\", \"Anke Myrrhe (Moderation)\", \"Christian Tretbar (Moderation)\"]",
+  "expect": "de"
+ },
+ {
+  "id": 484,
+  "speaker": "Stefan Evers",
+  "claim": "Die Planung von Stadtquartieren dauert 8, 9 oder 12 Jahre.",
+  "context": "Die Tagesspiegel Chefredaktion lädt drei Tage vor der Wahl zum Abgeordnetenhaus die Spitzenkandidaten ins Deutsche Theater: Verkehr, Wohnen, Sicherheit und Sauberkeit - haben die Parteien wirksame Konzepte? Wie sieht die Zukunft der Stadt aus? \n\nGespräch vom 18.09.2026",
+  "guests": "[\"Elif Eralp (Die Linke, Spitzenkandidatin der Berliner Linken)\", \"Stefan Evers (CDU, Spitzenkandidat der Berliner CDU)\", \"Werner Graf (Grüne, Spitzenkandidat der Berliner Grünen)\", \"Steffen Krach (SPD, Spitzenkandidat der Berliner SPD)\", \"Anke Myrrhe (Moderation)\", \"Christian Tretbar (Moderation)\"]",
+  "expect": "de"
+ },
+ {
+  "id": 209,
+  "speaker": "Gregor Gysi",
+  "claim": "Im Wahlprogramm der AfD steht der Vorschlag, 5 Prozent des Bruttoinlandsprodukts für Verteidigung auszugeben.",
+  "context": "Gysi (Linke) und Chrupalla (AfD) diskutieren Entlastungen für arme Menschen und Migrationspolitik. Kurz vor der Bundestagswahl am 23. Februar 2025.",
+  "guests": "[\"Markus Lanz (Moderator)\", \"Gregor Gysi (Die Linke)\", \"Tino Chrupalla (AfD)\", \"Antje Höning (Journalistin)\", \"Nikolaus Blome (Journalist)\", \"Elmar Theveßen (ZDF-Korrespondent)\"]",
+  "expect": "de"
+ }
+]

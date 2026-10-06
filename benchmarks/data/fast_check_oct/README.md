@@ -19,6 +19,7 @@ Urteil des alten ReAct-Tiefchecks (Referenz, keine Wahrheit).
 | `extract` | Tavily Extract auf die PDF-Treffer (Abschnitte passend zur Behauptung), neu urteilen | 11/12 gleich; #203 keine Datenlage → hoch (= deep, Zahl stand in BT-Drs. 20/13346 außerhalb des Ausschnitts); alle 93 PDFs extrahierbar | +1–4 s (Median 3 s) | 1 je 5 URLs (~1,6/Claim) |
 | `studie` | Umformulierer: „Entwicklung“ → Pflicht-Anfrage „Studie“ (PR #19), A auf gespeicherten Treffern, B frisch; beide mit Extract bei „unklar“ | 8/12 gleich; #497 kD → hoch (= deep, „Bauüberhang“ 48.394); #142 unklar → hoch (schlechter, Kennzahl-Rosinenpicken); #224, #511 strittig; Extract änderte diesmal kein Urteil (#203 nur → unklar) | ±0 | 5/Claim |
 | `englisch` | Maßstab-Anfrage auf Englisch bei internationalen Vergleichen, 7 Vergleichs-Claims | B nie schlechter; #37 niedrig → hoch (richtig, Eurostat: 12 EU-Staaten mit Atomstrom); #98 niedrig direkt über Eurostat (= deep); #35 mit Eurostat 1. Hj. 2025 (DE höchster Haushaltspreis); 30/35 Treffer der englischen Anfrage von Eurostat/OECD | ±0 | 6/Claim (Test) |
+| `lang` | Entscheidet der Umformulierer (PR #19) richtig, wann die Maßstab-Anfrage englisch ist? 10 internationale + 10 innerdeutsche Claims × 2, nur Umformulierung | innerdeutsch 20/20 deutsch (nie fälschlich englisch); international 18/20 englisch (#102, #276 je einmal deutsch = bisheriges Verhalten) | – | 0 |
 
 ## Schlüsse
 
