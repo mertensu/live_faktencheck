@@ -45,6 +45,7 @@ covered in the [development workflow](development-workflow.md#setup); this is th
 | `FAST_TAVILY_SEARCH_DEPTH` | Tavily depth for the fast check | `basic` |
 | `FAST_SNIPPET_CHARS` | Characters kept per search hit | `1200` |
 | `FAST_EXTRACT` | On `unklar`/`keine Datenlage`, read passages inside the PDFs and research hits found (Tavily Extract) and judge again | `true` |
+| `FAST_FOLLOW_DOCS` / `FAST_FOLLOW_DOCS_MAX` | Search and read official documents the hits only mention (named by the first verdict), then judge again / max. documents per claim | `true` / `2` |
 | `FAST_EXTRACT_MAX_URLS` / `FAST_EXTRACT_CHARS` | Documents read per claim / characters kept from each | `10` / `2500` |
 | `TAVILY_MAX_RESULTS` | Results per search | `5` |
 

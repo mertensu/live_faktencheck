@@ -149,13 +149,18 @@ guardrails and how to match evidence to the claim (subject, time, rounding, sour
    - `niedrig` — the data contradicts the claim
    - `unklar` — conflicting evidence without a clear direction
    - `keine Datenlage` — nothing relevant found
-4. **Read deeper (only if undecided).** If the level is `unklar` or `keine Datenlage`, the
+4. **Follow named documents.** The verdict also lists up to `FAST_FOLLOW_DOCS_MAX` official
+   documents, studies or reports that the hits mention but don't contain (e.g. "Finanzplan
+   des Bundes 2025 bis 2029"). Each is searched by its title; up to two new hits per title,
+   PDFs first, are read (Tavily Extract, passages matching the claim) and the judge rules
+   once more with them. Only runs when a document is named: ~+10 s, 1 credit per title.
+5. **Read deeper (only if undecided).** If the level is `unklar` or `keine Datenlage`, the
    check reads inside the documents it already found: Tavily Extract returns the passages
    matching the claim from up to `FAST_EXTRACT_MAX_URLS` PDFs and research hits, and the same
    call rules once more with those passages added. No new search; ~3 s plus the second call,
    1 Tavily credit per 5 documents. Seen: a Bundestag paper whose snippet held only the
    recipient count, while the expenditure sat further inside.
-5. **Guard.** Only sources whose URL was actually among the search results are kept, so
+6. **Guard.** Only sources whose URL was actually among the search results are kept, so
    invented or mangled links never reach the page. On any failure the check returns
    `unklar` with the error, never raising into the stream.
 
