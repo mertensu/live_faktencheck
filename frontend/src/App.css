@@ -1421,6 +1421,12 @@
   text-align: center; padding: 3rem 1rem;
 }
 .review-start-info { color: var(--text-secondary); font-size: 1rem; line-height: 1.5; max-width: 30rem; margin: 0; }
+/* Setup warning: playback and recording must not share one device. */
+.review-start-hint {
+  max-width: 30rem; margin: 0; padding: 0.75rem 1rem; text-align: left;
+  font-size: 0.9rem; line-height: 1.5; color: #78350f;
+  background: #fffbeb; border: 1px solid #fcd34d; border-radius: 8px;
+}
 
 /* Mic input picker (pre-live panel). */
 .mic-select {
