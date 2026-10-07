@@ -44,8 +44,9 @@ export function AboutPage() {
           Der Ton der Sendung wird fortlaufend an einen Transkriptionsdienst gestreamt und erscheint Satz für Satz
           als Live-Transkript. Ein schnelles KI-Modell entscheidet für jeden Satz, ob er eine überprüfbare und
           relevante Tatsachenbehauptung enthält. Ist das der Fall, formuliert ein Sprachmodell (LLM) den Satz
-          als eigenständige Aussage um – mit Blick auf die vorangegangenen Sätze, damit etwa „das“ oder „dort“
-          aufgelöst werden – und leitet daraus mehrere Suchanfragen ab. Diese laufen parallel im Web, beschränkt auf
+          als eigenständige Aussage um und leitet daraus mehrere Suchanfragen ab. Dabei berücksichtigt es die
+          vorangegangenen Sätze, damit etwa „das“ oder „dort“ aufgelöst werden. Die Suchanfragen laufen parallel
+          im Web, beschränkt auf
           vertrauenswürdige Quellen wie offizielle Statistikämter, Ministerien oder anerkannte Forschungsinstitute,
           wobei amtliche Quellen Vorrang haben. Ein weiteres LLM ordnet die Treffer ein und gibt eine Bewertung ab
           (wie sehr wird die Aussage durch Daten gestützt), zusammen mit einer kurzen Begründung und den verwendeten
@@ -53,7 +54,7 @@ export function AboutPage() {
         </p>
         <p>
           Welcher Gast gerade spricht, erkennt die Transkription nur als „Sprecher A“, „Sprecher B“ usw. Die
-          Zuordnung zu Namen nimmt die Person, die den Faktencheck durchführt, per Klick vor – das System rät keine Namen, denn eine Aussage der
+          Zuordnung zu Namen nimmt die Person, die den Faktencheck durchführt, per Klick vor. Das System rät keine Namen, denn eine Aussage der
           falschen Person zuzuschreiben wäre schlimmer als gar keine Zuordnung.
         </p>
         <p>

@@ -8,7 +8,7 @@ import { useEffect, useRef, useState } from 'react'
 const STEPS = [
   {
     title: 'Zuhören',
-    text: 'Der Ton der Sendung wird live transkribiert und erscheint Satz für Satz. Die Transkription unterscheidet nur „Sprecher A“, „Sprecher B“ – die Namen ordnet die Person zu, die den Faktencheck durchführt.',
+    text: 'Der Ton der Sendung wird live transkribiert und erscheint Satz für Satz. Die Transkription unterscheidet nur „Sprecher A“, „Sprecher B“ usw. Die Namen ordnet die Person zu, die den Faktencheck durchführt.',
   },
   {
     title: 'Auswählen',
@@ -16,7 +16,7 @@ const STEPS = [
   },
   {
     title: 'Umformulieren',
-    text: 'Ein Sprachmodell macht aus dem Satz eine eigenständige Aussage – mit Blick auf die vorigen Sätze, damit etwa „da“ aufgelöst wird – und leitet Suchanfragen aus fünf Blickwinkeln ab.',
+    text: 'Ein Sprachmodell macht aus dem Satz eine eigenständige Aussage und leitet Suchanfragen aus fünf Blickwinkeln ab. Dabei berücksichtigt es die vorigen Sätze, damit etwa „da“ aufgelöst wird.',
   },
   {
     title: 'Recherchieren',
@@ -28,7 +28,7 @@ const STEPS = [
   },
   {
     title: 'Markieren',
-    text: 'Nach wenigen Sekunden steht das Ergebnis direkt an der Textstelle im Live-Transkript – mit Begründung und den verwendeten Quellen.',
+    text: 'Nach wenigen Sekunden steht das Ergebnis direkt an der Textstelle im Live-Transkript, mit Begründung und den verwendeten Quellen.',
   },
 ]
 
