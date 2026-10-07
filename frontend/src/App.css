@@ -1884,6 +1884,9 @@
   .landing-title-line { white-space: nowrap; }
   /* Sit the text near the top of the sketch instead of centred against its full height. */
   .landing-copy { align-self: start; padding-top: 2.5rem; }
+  /* Leave the top of the blue "So funktioniert es" band in the first screen, so it reads as
+     "there is more below" (cf. lab.js.org); tall screens centre the hero in the extra room. */
+  .landing-hero { box-sizing: border-box; min-height: calc(100svh - 8rem); padding-bottom: 2rem; align-content: center; }
 }
 @media (max-width: 900px) {
   .landing-hero { grid-template-columns: 1fr; padding-top: 6rem; }
