@@ -1022,8 +1022,11 @@
   gap: 0.5rem;
 }
 
+.access-unlock-form > button { flex-shrink: 0; }
+
 .access-unlock-input {
   flex: 1;
+  min-width: 0; /* else the input's intrinsic width pushes the button out on narrow screens */
   padding: 0.75rem 1rem;
   border: 1px solid var(--border-light);
   border-radius: var(--radius-lg);
@@ -1840,6 +1843,7 @@
 .landing-code-label { margin: 0 0 0.4rem; font-size: 0.9rem; color: var(--text-secondary); }
 .landing .access-unlock { margin: 0; }
 .early-access-modal { max-width: 440px; }
+@media (max-width: 480px) { .early-access-modal { padding: 1.5rem 1.25rem; } }
 .early-access-code { margin-top: 1.25rem; padding-top: 1.25rem; border-top: 1px solid var(--border-light); }
 
 /* The sketch (LandingIllustration) mirrors the live transcript's look. */
