@@ -8,7 +8,7 @@ import { useEffect, useRef, useState } from 'react'
 const STEPS = [
   {
     title: 'Zuhören',
-    text: 'Der Ton der Sendung wird live transkribiert und erscheint Satz für Satz. Die Transkription unterscheidet nur „Sprecher A“, „Sprecher B“ – Namen ordnet ein Mensch per Klick zu.',
+    text: 'Der Ton der Sendung wird live transkribiert und erscheint Satz für Satz. Die Transkription unterscheidet nur „Sprecher A“, „Sprecher B“ – die Namen ordnet die Person zu, die den Faktencheck durchführt.',
   },
   {
     title: 'Auswählen',

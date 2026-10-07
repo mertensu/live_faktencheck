@@ -53,7 +53,7 @@ export function AboutPage() {
         </p>
         <p>
           Welcher Gast gerade spricht, erkennt die Transkription nur als „Sprecher A“, „Sprecher B“ usw. Die
-          Zuordnung zu Namen nimmt ein Mensch per Klick vor – das System rät keine Namen, denn eine Aussage der
+          Zuordnung zu Namen nimmt die Person, die den Faktencheck durchführt, per Klick vor – das System rät keine Namen, denn eine Aussage der
           falschen Person zuzuschreiben wäre schlimmer als gar keine Zuordnung.
         </p>
         <p>
