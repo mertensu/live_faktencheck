@@ -21,7 +21,7 @@ describe('HomePage "Jetzt starten"', () => {
     fireEvent.click(screen.getByRole('button', { name: /jetzt starten/i }))
     const dialog = screen.getByRole('dialog')
     expect(dialog.textContent).toMatch(/Testphase/)
-    expect(screen.getByRole('link', { name: /mail schreiben/i }).getAttribute('href'))
+    expect(screen.getByRole('link', { name: 'info@live-faktencheck.de' }).getAttribute('href'))
       .toMatch(/^mailto:info@live-faktencheck\.de/)
     expect(screen.getByLabelText('Zugangscode')).toBeDefined()
     fireEvent.click(screen.getByRole('button', { name: /schließen/i }))
