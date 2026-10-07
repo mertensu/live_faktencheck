@@ -75,7 +75,7 @@ export function NewSessionPage() {
               Namen sind optional – ohne Namen bleiben die Sprecher:innen <strong>Sprecher A/B/C</strong>.
               Partei oder Organisation der Teilnehmer:innen helfen der KI, Aussagen besser einzuordnen
               (z. B. „meine Partei hat …“). Wessen Aussagen
-              nicht geprüft werden sollen (z. B. Moderation), markierst du mit „Aussagen nicht prüfen“ (Name dafür nötig).
+              nicht geprüft werden sollen (z. B. Moderation), markieren Sie mit „Aussagen nicht prüfen“ (Name dafür nötig).
             </p>
             {state.people.map((p, i) => (
               <PersonFields key={i} person={p} index={i} dispatch={dispatch}
@@ -135,7 +135,7 @@ export function NewSessionPage() {
                 <label htmlFor="wizard-code">Zugangscode</label>
                 <input id="wizard-code" type="password" className="wizard-input" autoComplete="off"
                        value={accessCode} onChange={(e) => setAccessCodeInput(e.target.value)}
-                       placeholder="Dein persönlicher Zugangscode" />
+                       placeholder="Ihr persönlicher Zugangscode" />
               </div>
             )}
             {error && <p className="form-error">{error}</p>}

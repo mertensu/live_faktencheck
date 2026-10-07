@@ -22,8 +22,8 @@ export function MyAreaPage() {
         {hasCode ? (
           <>
             <p className="examples-intro">
-              Unter „Meine Checks“ findest du deine bisherigen Faktenchecks mit allen geprüften
-              Aussagen und Bewertungen. Mit „+ Neuer Check“ legst du einen neuen Faktencheck an.
+              Unter „Meine Checks“ finden Sie Ihre bisherigen Faktenchecks mit allen geprüften
+              Aussagen und Bewertungen. Mit „+ Neuer Check“ legen Sie einen neuen Faktencheck an.
               Das Transkript wird nicht gespeichert.
             </p>
             {/* Narrow screens: the list is a drawer, so offer a direct way to open it. */}
@@ -33,7 +33,7 @@ export function MyAreaPage() {
           </>
         ) : (
           <p className="examples-intro">
-            Mit einem Zugangscode siehst du hier deine eigenen Checks. <Link to="/">Zur Startseite</Link>
+            Mit einem Zugangscode sehen Sie hier Ihre eigenen Checks. <Link to="/">Zur Startseite</Link>
           </p>
         )}
       </section>
