@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { AccessUnlock } from '../components/AccessUnlock'
 import { LandingIllustration } from '../components/LandingIllustration'
+import { PipelineAnimation } from '../components/PipelineAnimation'
 import { getAccessCode } from '../services/api'
 
 export function HomePage() {
@@ -45,6 +46,17 @@ export function HomePage() {
           )}
         </div>
         <LandingIllustration />
+      </section>
+      <section id="so-funktioniert-es" className="landing-how">
+        <div className="landing-how-inner">
+          <p className="landing-how-eyebrow">So funktioniert es</p>
+          <h2 className="landing-how-title">Vom gesprochenen Satz zur Bewertung</h2>
+          <p className="landing-how-lead">Klicken Sie sich an einem Beispiel durch die sechs Schritte.</p>
+          <div className="landing-how-card">
+            <PipelineAnimation />
+          </div>
+          <Link className="landing-how-more" to="/about">Mehr zum Projekt →</Link>
+        </div>
       </section>
     </div>
   )
