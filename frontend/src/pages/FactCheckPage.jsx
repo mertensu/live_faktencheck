@@ -218,6 +218,12 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
         <ShareLink sessionId={episodeKey} />
         <div className="review-start">
           <MicSelect mic={mic} className="review-start-mic" />
+          <p className="review-start-hint" role="note">
+            <strong>Hinweis:</strong> Willst du ein Video oder einen Livestream prüfen, verwende
+            bitte nicht dasselbe Gerät (Laptop, Smartphone, Tablet) zum Abspielen und zur
+            Aufnahme des Tons. Viele Geräte filtern den eigenen Ton aus dem Mikrofon heraus.
+            Das Transkript bleibt dann leer oder lückenhaft.
+          </p>
           <p className="review-start-info">
             Mit <strong>◉ Live-Check</strong> oben startest du Transkript und Prüfung.
           </p>
