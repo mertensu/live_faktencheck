@@ -15,11 +15,17 @@ const renderHome = () => render(
 describe('HomePage "Jetzt starten"', () => {
   beforeEach(() => localStorage.clear())
 
-  it('asks for a code when none is stored', () => {
+  it('opens the early-access dialog when no code is stored', () => {
     renderHome()
-    expect(screen.queryByLabelText('Zugangscode')).toBeNull()
+    expect(screen.queryByRole('dialog')).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: /jetzt starten/i }))
+    const dialog = screen.getByRole('dialog')
+    expect(dialog.textContent).toMatch(/Testphase/)
+    expect(screen.getByRole('link', { name: /mail schreiben/i }).getAttribute('href'))
+      .toMatch(/^mailto:info@live-faktencheck\.de/)
     expect(screen.getByLabelText('Zugangscode')).toBeDefined()
+    fireEvent.click(screen.getByRole('button', { name: /schließen/i }))
+    expect(screen.queryByRole('dialog')).toBeNull()
   })
 
   it('goes straight into "Mein Bereich" with a stored code', () => {

@@ -81,13 +81,13 @@ function NamesStep() {
     <>
       <p>
         Das System hört nur, dass <em>verschiedene</em> Stimmen sprechen, und nennt sie
-        Sprecher A, B, … <strong>Deine Aufgabe</strong> ist es daher, jede Stimme einmal der
+        Sprecher A, B, … <strong>Ihre Aufgabe</strong> ist es daher, jede Stimme einmal der
         richtigen Person zuzuordnen, sobald sie zum ersten Mal spricht. Geprüft wird nur, was
-        eine Stimme sagt, die einer Person zugeordnet ist. Stimmen aus einem Einspieler ordnest
-        du <em>Andere Stimme – nicht prüfen</em> zu.
+        eine Stimme sagt, die einer Person zugeordnet ist. Stimmen aus einem Einspieler ordnen
+        Sie <em>Andere Stimme – nicht prüfen</em> zu.
       </p>
       <p className="live-tutorial-task">
-        Probiere es aus: Klicke oben in einer Sprechblase auf <strong>Sprecher A ▾</strong> und wähle {HOST}.
+        Probieren Sie es aus: Klicken Sie oben in einer Sprechblase auf <strong>Sprecher A ▾</strong> und wählen Sie {HOST}.
       </p>
       <LiveTranscript live={live} speakers={SPEAKERS} />
       {named && (
@@ -116,7 +116,7 @@ function PassagePractice({ onReset }) {
         Aufnahme vorkommen, dass ähnliche Stimmen unter einem Sprecher landen. Hier steckt {GUEST_C} mit in der Sprechblase von {HOST}.
       </p>
       <p className="live-tutorial-task">
-        Markiere mit der Maus ihre Antwort „Ganz anders. … stabil geblieben.“ und wähle im Menü {GUEST_C}. Achte auf
+        Markieren Sie mit der Maus ihre Antwort „Ganz anders. … stabil geblieben.“ und wählen Sie im Menü {GUEST_C}. Achten Sie auf
         die Option <em>auch alles Weitere von Sprecher A</em>.
       </p>
       <LiveTranscript live={live} speakers={SPEAKERS} />
@@ -126,7 +126,7 @@ function PassagePractice({ onReset }) {
             <p>
               ✓ <strong>„auch alles Weitere“ aktiviert:</strong> Auch die spätere Zeile von Sprecher A heißt jetzt {GUEST_C}.
               Richtig, wenn die zwei Stimmen weiter vermischt sind. Spricht später wieder {HOST},
-              klick in ihrer Sprechblase auf den Namen ({GUEST_C} ▾) und wähle {HOST}. Ab dieser
+              klicken Sie in ihrer Sprechblase auf den Namen ({GUEST_C} ▾) und wählen Sie {HOST}. Ab dieser
               Sprechblase stimmt der Name dann wieder.
             </p>
           ) : (
@@ -157,20 +157,20 @@ function ResultsStep() {
         <span className="live-tutorial-chip verdict-niedrig">rot</span> widerspricht ihnen,{' '}
         <span className="live-tutorial-chip verdict-unklar">orange</span> unklar.
       </p>
-      <p className="live-tutorial-task">Klick auf eine Markierung, um Begründung und Quellen zu sehen.</p>
+      <p className="live-tutorial-task">Klicken Sie auf eine Markierung, um Begründung und Quellen zu sehen.</p>
       <div onClickCapture={onClickCapture}>
         <LiveTranscript live={live} speakers={SPEAKERS} />
       </div>
-      {opened && <Done>So öffnest du im Live-Check jedes Ergebnis.</Done>}
+      {opened && <Done>So öffnen Sie im Live-Check jedes Ergebnis.</Done>}
       <p className="live-tutorial-tip">
-        Du kannst nun den Live-Faktencheck starten.
+        Sie können nun den Live-Faktencheck starten.
       </p>
     </>
   )
 }
 
 const STEPS = [
-  { title: 'Namen vergibst du', Body: NamesStep },
+  { title: 'Namen vergeben', Body: NamesStep },
   { title: 'Korrektur', Body: PassageStep },
   { title: 'Ergebnisse lesen', Body: ResultsStep },
 ]

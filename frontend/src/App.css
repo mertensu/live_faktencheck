@@ -1831,9 +1831,11 @@
 .landing-cta:hover { background: #1976D2; }
 .landing-cta:hover span { transform: translateX(3px); }
 .landing-cta:focus-visible { outline: none; box-shadow: var(--focus-ring), 0 4px 14px rgba(33, 150, 243, 0.3); }
-.landing-code { width: 100%; max-width: 420px; }
 .landing-code-label { margin: 0 0 0.4rem; font-size: 0.9rem; color: var(--text-secondary); }
 .landing .access-unlock { margin: 0; }
+.early-access-modal { max-width: 440px; }
+.early-access-mail { display: inline-block; text-decoration: none; }
+.early-access-code { margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border-light); }
 
 /* The sketch (LandingIllustration) mirrors the live transcript's look. */
 .li { width: 100%; max-width: 540px; justify-self: center; }

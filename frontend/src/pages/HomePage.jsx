@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { AccessUnlock } from '../components/AccessUnlock'
+import { EarlyAccessModal } from '../components/EarlyAccessModal'
 import { LandingIllustration } from '../components/LandingIllustration'
 import { PipelineAnimation } from '../components/PipelineAnimation'
 import { getAccessCode } from '../services/api'
@@ -8,15 +8,13 @@ import { getAccessCode } from '../services/api'
 export function HomePage() {
   const navigate = useNavigate()
   const [askCode, setAskCode] = useState(false)
-  const unlockRef = useRef(null)
+  const closeAsk = useCallback(() => setAskCode(false), [])
 
-  // "Jetzt starten": with a stored code straight into "Mein Bereich"; otherwise ask for one.
+  // "Jetzt starten": with a stored code straight into "Mein Bereich"; otherwise the early-access dialog.
   const start = () => {
     if (getAccessCode()) navigate('/mein-bereich')
     else setAskCode(true)
   }
-
-  useEffect(() => { if (askCode) unlockRef.current?.focus() }, [askCode])
 
   // After entering a code, go on into "Mein Bereich"; it shows the limit popup there.
   const handleUnlock = useCallback((_code, _name, data) => {
@@ -35,15 +33,10 @@ export function HomePage() {
               vertrauenswürdigen Quellen bewertet, in wenigen Sekunden.
             </p>
           </div>
-          <button type="button" className="landing-cta" onClick={start} aria-expanded={askCode}>
+          <button type="button" className="landing-cta" onClick={start} aria-haspopup="dialog">
             Jetzt starten <span aria-hidden="true">→</span>
           </button>
-          {askCode && (
-            <div className="landing-code">
-              <p className="landing-code-label">Zugangscode eingeben:</p>
-              <AccessUnlock ref={unlockRef} unlocked={false} onUnlock={handleUnlock} />
-            </div>
-          )}
+          {askCode && <EarlyAccessModal onClose={closeAsk} onUnlock={handleUnlock} />}
         </div>
         <LandingIllustration />
       </section>

@@ -29,7 +29,7 @@ export function LimitInfoModal({ info, onClose }) {
         <h2 id="limit-info-title">
           Freigeschaltet{info?.name ? ` als ${info.name}` : ''}
         </h2>
-        <p>Für deinen Zugang gelten folgende Limits:</p>
+        <p>Für Ihren Zugang gelten folgende Limits:</p>
 
         <ul className="limit-info-list">
           <li className="limit-info-item">

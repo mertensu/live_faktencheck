@@ -219,7 +219,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
         <div className="review-start">
           <MicSelect mic={mic} className="review-start-mic" />
           <p className="review-start-info">
-            Mit <strong>◉ Live-Check</strong> oben startest du Transkript und Prüfung.
+            Mit <strong>◉ Live-Check</strong> oben starten Sie Transkript und Prüfung.
           </p>
         </div>
       </div>
