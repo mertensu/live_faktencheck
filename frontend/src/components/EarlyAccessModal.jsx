@@ -28,8 +28,8 @@ export function EarlyAccessModal({ onClose, onUnlock }) {
         <button className="impressum-close" onClick={onClose} aria-label="Schließen">×</button>
         <h2 id="early-access-title">Early Access</h2>
         <p>
-          Der Live-Faktencheck befindet sich aktuell noch in der Testphase. Wir freuen uns aber schon
-          jetzt über alle, die ihn ausprobieren möchten: Schreiben Sie dafür einfach eine kurze Mail
+          Wir befinden uns aktuell noch in der Testphase. Sie können den Live-Faktencheck aber gerne
+          schon vorab testen. Schreiben Sie dafür einfach eine kurze Mail
           an <a href={MAILTO}>{CONTACT}</a>. Im Anschluss erhalten Sie einen Zugangscode.
         </p>
 
