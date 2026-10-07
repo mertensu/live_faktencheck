@@ -29,7 +29,7 @@ export function EarlyAccessModal({ onClose, onUnlock }) {
         <h2 id="early-access-title">Early Access</h2>
         <p>
           Wir befinden uns aktuell noch in der Testphase. Sie können den Live-Faktencheck aber gerne
-          schon vorab testen. Schreiben Sie dafür einfach eine kurze Mail
+          schon vorab nutzen. Schreiben Sie dafür einfach eine kurze Mail
           an <a href={MAILTO}>{CONTACT}</a>. Im Anschluss erhalten Sie einen Zugangscode.
         </p>
 
