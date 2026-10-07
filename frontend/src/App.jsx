@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate, useParams, useLocation } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useParams, useLocation, useNavigationType } from 'react-router-dom'
 import { useEffect } from 'react'
 import './App.css'
 
@@ -15,15 +15,19 @@ import { ExamplesPage } from './pages/ExamplesPage'
 import { MyChecksSidebar, SidebarProvider, sidebarAppClasses, useSidebar } from './components/MyChecksSidebar'
 import { useHasAccessCode } from './hooks/useHasAccessCode'
 
-// Scroll to an in-page anchor (e.g. /about#section); BrowserRouter
-// does not do this natively.
-function ScrollToHash() {
-  const { hash } = useLocation()
+// Scroll to an in-page anchor (e.g. /about#section), or to the top when a link opens a new
+// page; BrowserRouter does neither natively. Back/forward (POP) keeps the browser's position.
+function ScrollOnNavigate() {
+  const { pathname, hash } = useLocation()
+  const navType = useNavigationType()
   useEffect(() => {
-    if (!hash) return
-    const el = document.getElementById(hash.slice(1))
-    if (el) el.scrollIntoView({ behavior: 'smooth' })
-  }, [hash])
+    if (hash) {
+      const el = document.getElementById(hash.slice(1))
+      if (el) el.scrollIntoView({ behavior: 'smooth' })
+    } else if (navType !== 'POP') {
+      window.scrollTo(0, 0)
+    }
+  }, [pathname, hash, navType])
   return null
 }
 
@@ -64,7 +68,7 @@ function AppShell({ viewerMinimal }) {
     <div className={`app${viewerMinimal ? ' app--viewer' : ''}${sidebarAppClasses(sb)}`}>
       {!viewerMinimal && <Navigation />}
       <MyChecksSidebar />
-      <ScrollToHash />
+      <ScrollOnNavigate />
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/about" element={<AboutPage />} />
