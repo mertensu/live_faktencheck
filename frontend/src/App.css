@@ -979,6 +979,11 @@
   .action-button {
     width: 100%;
   }
+
+  /* Full-width button (above) under the code field rather than squeezing it. */
+  .access-unlock-form {
+    flex-direction: column;
+  }
 }
 
 /* Claim Detail Overlay */
@@ -1021,8 +1026,6 @@
   display: flex;
   gap: 0.5rem;
 }
-
-.access-unlock-form > button { flex-shrink: 0; }
 
 .access-unlock-input {
   flex: 1;
