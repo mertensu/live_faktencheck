@@ -17,7 +17,7 @@ from urllib.parse import urlparse
 
 from pydantic import BaseModel, Field
 
-from backend.utils import load_prompt
+from backend.utils import load_prompt, log_text
 from backend.lang import (
     SOURCE_URL_DESCRIPTION,
     SOURCE_TITLE_DESCRIPTION,
@@ -271,7 +271,7 @@ class FastFactChecker:
         ``queries``: optional search queries (from the reformulator); falls back to
         heuristic variants of the claim.
         """
-        logger.info(f"Fast-checking claim from {speaker}: {claim[:100]}...")
+        logger.info(f"Fast-checking claim from {speaker}: {log_text(claim, 100)}")
         try:
             results = await self._gather_evidence(claim, queries)
             header = (
