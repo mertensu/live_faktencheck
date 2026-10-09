@@ -19,7 +19,7 @@ from datetime import datetime
 from difflib import SequenceMatcher
 
 from backend.lang import OTHER_VOICE, UNCLEAR_SPEAKER
-from backend.utils import build_fact_check_dict
+from backend.utils import build_fact_check_dict, log_text
 from .gate import NO_SPEAKER, split_sentences
 from .transcription import assemblyai_streaming_host, session_keyterms
 
@@ -380,7 +380,7 @@ class StreamingSession:
             logger.warning(f"[stream:{self.session_id}] assign passage -> {name!r}; ignored")
             return
         self._passages.append((key, name))
-        logger.info(f"[stream:{self.session_id}] passage -> {name}: {text[:80]!r}")
+        logger.info(f"[stream:{self.session_id}] passage -> {name}: {log_text(text, 80)}")
         for cid, source in list(self._claim_sources.items()):
             if _in_passage(source, key):
                 self._detach_label(cid)
@@ -529,7 +529,7 @@ class StreamingSession:
             elif not want and pid is not None:
                 del self._rows[cid]
                 logger.info(f"[stream:{self.session_id}] withdraw claim {pid} "
-                            f"({self._claim_speakers.get(cid)}): {self._claim_info[cid]['claim'][:80]!r}")
+                            f"({self._claim_speakers.get(cid)}): {log_text(self._claim_info[cid]['claim'], 80)}")
                 try:
                     await self.db.delete_fact_check(pid)
                 except Exception:
@@ -723,7 +723,7 @@ class StreamingSession:
             # Safety net for early sentences: a sentence taken from a partial and again,
             # slightly re-rendered, from the final turn must not be checked twice.
             if self._already_checked(source):
-                logger.info(f"[stream:{self.session_id}] skip duplicate claim source: {source!r}")
+                logger.info(f"[stream:{self.session_id}] skip duplicate claim source: {log_text(source)}")
                 continue
             # Tie the claim to the turn and label it came from. The speaker is that label
             # (or the operator's name for it) — never a name the gate guessed from the text.
@@ -813,10 +813,10 @@ class StreamingSession:
         if turn_order is not None and not passage_speaker:
             self._turn_claims.setdefault(turn_order, []).append(cid)
         if self._suppressed(speaker):
-            logger.info(f"[stream:{self.session_id}] hold claim of {speaker} unchecked: {claim[:80]!r}")
+            logger.info(f"[stream:{self.session_id}] hold claim of {speaker} unchecked: {log_text(claim, 80)}")
         else:
             if not self._publishable(cid):
-                logger.info(f"[stream:{self.session_id}] hold claim of unassigned {speaker}: {claim[:80]!r}")
+                logger.info(f"[stream:{self.session_id}] hold claim of unassigned {speaker}: {log_text(claim, 80)}")
             self._start_check(cid)
         await self._sync(cid)
 

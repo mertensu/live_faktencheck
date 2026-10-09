@@ -24,6 +24,8 @@ import logging
 from dataclasses import dataclass, field
 from typing import List, Protocol, runtime_checkable
 
+from backend.utils import log_text
+
 from .claim_extraction import ExtractedClaim, ClaimExtractor
 
 logger = logging.getLogger(__name__)
@@ -269,7 +271,7 @@ class JevGate:
             logger.exception("Grey-zone judge failed; skipping sentence")
             return "err"
         if self._debug:
-            logger.info(f"JevGate[grey -> {'CHECK' if yes else 'skip'}] {sentence}")
+            logger.info(f"JevGate[grey -> {'CHECK' if yes else 'skip'}] {log_text(sentence)}")
         return "CHECK" if yes else "grey-no"
 
     async def gate(
@@ -324,7 +326,7 @@ class JevGate:
             if self._debug:
                 c_str = "  ? " if sc.check is None else f"{sc.check:.2f}"
                 i_str = " ? " if sc.important is None else f"{sc.important:.2f}"
-                logger.info(f"JevGate[{verdict:7} p={c_str} imp={i_str}] {speaker or '—'}: {sentence}")
+                logger.info(f"JevGate[{verdict:7} p={c_str} imp={i_str}] {speaker or '—'}: {log_text(sentence)}")
             if verdict == "grey":
                 verdict = await self._second_opinion(sentence, names.get(speaker, speaker), context, context_before(i))
             if verdict != "CHECK":

@@ -92,4 +92,5 @@ check.)
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `LOGFIRE_TOKEN` | Enables Logfire tracing when present | — |
+| `LOG_SENTENCE_TEXT` | Write transcript sentences and claims into the logs (staging/debugging only; prod logs show only their length) | off |
 | `VITE_BACKEND_URL` | Backend URL for the production frontend | — |

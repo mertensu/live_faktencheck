@@ -2,6 +2,7 @@
 Shared utility functions for the backend.
 """
 
+import os
 from datetime import datetime
 from pathlib import Path
 
@@ -31,6 +32,18 @@ def build_fact_check_dict(
         "double_check": result_dict.get("double_check", False),
         "critique_note": result_dict.get("critique_note", ""),
     }
+
+
+def log_text(text: str | None, limit: int | None = None) -> str:
+    """Spoken content for a log line: only its length, unless LOG_SENTENCE_TEXT is set.
+
+    Transcript sentences and claims are personal data; the logs keep them out by default
+    (see the privacy policy). Set LOG_SENTENCE_TEXT=true on staging to debug with text.
+    """
+    text = text or ""
+    if os.getenv("LOG_SENTENCE_TEXT", "").strip().lower() in ("1", "true", "yes"):
+        return repr(text[:limit] if limit else text)
+    return f"<{len(text)} chars>"
 
 
 def load_prompt(filename: str, fallback: str | None = None) -> str:
