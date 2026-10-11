@@ -275,6 +275,45 @@
   margin-bottom: 1rem;
 }
 
+/* Datenschutz: lists and tables in the about layout */
+.legal-content ul {
+  color: var(--text-secondary);
+  line-height: 1.7;
+  margin-bottom: 1rem;
+  padding-left: 1.25rem;
+}
+
+.legal-table-wrap {
+  overflow-x: auto;
+  margin-bottom: 1rem;
+}
+
+.legal-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.legal-table th,
+.legal-table td {
+  text-align: left;
+  vertical-align: top;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.legal-table th {
+  color: var(--text-main);
+  font-weight: 500;
+}
+
+.legal-content .legal-asof {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  margin-top: 2rem;
+}
+
 /* New Session Form */
 .new-session-form {
   margin-top: 1.5rem;
@@ -845,6 +884,12 @@
 
 .impressum-button:hover {
   color: var(--text-secondary);
+}
+
+.footer-legal {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
 }
 
 .impressum-overlay {
