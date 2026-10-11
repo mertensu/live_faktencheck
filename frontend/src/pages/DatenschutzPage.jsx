@@ -144,8 +144,8 @@ export function DatenschutzPage() {
           öffentliche Einordnung politischer Aussagen in Fernsehsendungen. Soweit Aussagen politische Meinungen
           erkennen lassen (Art. 9 Abs. 1 DSGVO), stützen wir uns zusätzlich auf Art. 9 Abs. 2 lit. e DSGVO: Die
           Gäste haben diese Aussagen in einer öffentlich ausgestrahlten Sendung offensichtlich selbst öffentlich
-          gemacht. Soweit die Faktenprüfung journalistischen Zwecken dient, gilt zusätzlich das Medienprivileg
-          (Art. 85 DSGVO, § 23 MStV).
+          gemacht. Soweit die Faktenprüfung journalistischen Zwecken dient, können zusätzlich die Regeln zum
+          Medienprivileg gelten (Art. 85 DSGVO in Verbindung mit dem jeweiligen Landesrecht).
         </p>
 
         <h2>6. Faktenprüfung mit KI-Modellen und Websuche</h2>
@@ -239,7 +239,8 @@ export function DatenschutzPage() {
         <h2>10. Ihre Rechte</h2>
         <p>
           Sie haben das Recht auf Auskunft (Art. 15 DSGVO), Berichtigung (Art. 16), Löschung (Art. 17),
-          Einschränkung der Verarbeitung (Art. 18) und Datenübertragbarkeit (Art. 20). Eine Nachricht an
+          Einschränkung der Verarbeitung (Art. 18) und, soweit die Verarbeitung auf Art. 6 Abs. 1 lit. b DSGVO
+          beruht, Datenübertragbarkeit (Art. 20). Eine Nachricht an
           info@live-faktencheck.de genügt.
         </p>
         <p>
