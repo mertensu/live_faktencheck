@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { Link } from "react-router-dom"
 
 export function Footer({ slim = false }) {
   const [showImpressum, setShowImpressum] = useState(false)
@@ -22,7 +23,7 @@ export function Footer({ slim = false }) {
   )
 
   // Slim variant for the viewer (shared-link) page: a single-line KI hint plus
-  // the Impressum link — enough to meet the legal duty without site chrome.
+  // the Impressum and Datenschutz links — enough to meet the legal duty without site chrome.
   if (slim) {
     return (
       <footer className="app-footer app-footer--slim">
@@ -31,6 +32,7 @@ export function Footer({ slim = false }) {
           <button className="impressum-button" onClick={() => setShowImpressum(true)}>
             Impressum
           </button>
+          <Link className="impressum-button" to="/datenschutz">Datenschutz</Link>
         </p>
         {impressumModal}
       </footer>
@@ -49,10 +51,11 @@ export function Footer({ slim = false }) {
         <p className="footer-meta">
           Diese Seite dient ausschließlich zu Informationszwecken. Bei Fragen oder Anmerkungen wenden Sie sich bitte an info@live-faktencheck.de.
         </p>
-        <p className="footer-meta">
+        <p className="footer-meta footer-legal">
           <button className="impressum-button" onClick={() => setShowImpressum(true)}>
             Impressum
           </button>
+          <Link className="impressum-button" to="/datenschutz">Datenschutz</Link>
         </p>
       </div>
 

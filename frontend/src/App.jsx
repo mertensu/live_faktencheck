@@ -12,6 +12,7 @@ import { TrustedDomainsPage } from './pages/TrustedDomainsPage'
 import { FactCheckPage } from './pages/FactCheckPage'
 import { NewSessionPage } from './pages/NewSessionPage'
 import { ExamplesPage } from './pages/ExamplesPage'
+import { DatenschutzPage } from './pages/DatenschutzPage'
 import { MyChecksSidebar, SidebarProvider, sidebarAppClasses, useSidebar } from './components/MyChecksSidebar'
 import { useHasAccessCode } from './hooks/useHasAccessCode'
 
@@ -40,7 +41,7 @@ function EpisodeRoute() {
 }
 
 // Static top-level routes; anything else is an episode/session page.
-const STATIC_ROUTES = new Set(['/', '/about', '/trusted-domains', '/new', '/beispiele', '/meine-checks', '/mein-bereich'])
+const STATIC_ROUTES = new Set(['/', '/about', '/trusted-domains', '/new', '/beispiele', '/meine-checks', '/mein-bereich', '/datenschutz'])
 
 // Operator pages that show the "Meine Checks" sidebar (besides every session page).
 const SIDEBAR_ROUTES = new Set(['/mein-bereich', '/new'])
@@ -76,6 +77,7 @@ function AppShell({ viewerMinimal }) {
         <Route path="/new" element={<NewSessionPage />} />
         <Route path="/beispiele" element={<ExamplesPage />} />
         <Route path="/mein-bereich" element={<MyAreaPage />} />
+        <Route path="/datenschutz" element={<DatenschutzPage />} />
         {/* The list lives in the sidebar of "Mein Bereich" now; keep old links working. */}
         <Route path="/meine-checks" element={<Navigate to="/mein-bereich" replace />} />
         <Route path="/:episodeKey" element={<EpisodeRoute />} />

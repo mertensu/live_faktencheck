@@ -275,10 +275,9 @@ sqlite3 /tmp/probe.db "PRAGMA integrity_check; SELECT COUNT(*) FROM fact_checks;
 from your `.env`, no SSH required. It is the same restore path as above, so routine use
 keeps recovery exercised. Optional argument: an ISO timestamp for point-in-time restore.
 
-**Archive:** the 96 pre-Litestream daily backups (June–September 2026) live under the
-`archive/` prefix of the same bucket. They are not reachable via `litestream restore` —
-fetch them with any S3 client, e.g.
-`rclone copy r2:factcheck-backup/archive/backup-2026-06-09.db .`
+**Archive:** the 96 pre-Litestream daily backups (June–September 2026) that lived under
+`archive/` were deleted on 11.10.2026, so the 30-day retention stated in the privacy policy
+holds. The bucket now only holds Litestream's `factcheck/` prefix.
 
 The old nightly cron has been removed; the previous crontab is saved at
 `/root/crontab.backup-2026-09-10`.
