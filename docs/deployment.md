@@ -255,11 +255,14 @@ This is the image production runs — see "Updating the backend" above.
 ## DB backup (Litestream → Cloudflare R2)
 
 Litestream continuously replicates `backend/data/factcheck.db` to the R2 bucket
-`factcheck-backup` (prefix `factcheck/`). It reads the SQLite WAL, so the loss window is
+`factcheck-backup-eu` (prefix `factcheck/`). The bucket has EU jurisdiction, so the data
+stays in the EU by contract and is only reachable through the
+`<account>.eu.r2.cloudflarestorage.com` endpoint. It reads the SQLite WAL, so the loss window is
 seconds rather than the up-to-24h of the nightly cron it replaced — and it supports
 point-in-time restores.
 
-- Service: `litestream.service` (config `/etc/litestream.yml`, mode 600, root only).
+- Service: `litestream.service` (config `/etc/litestream.yml`, mode 600, root only),
+  token `faktencheck-backup-eu-write` (Object Read & Write, this bucket only).
   The annotated upstream template is kept at `/etc/litestream.yml.dist`.
 - Retention: snapshot every 6h, kept 30 days; 24h of fine-grained history. Litestream 0.5
   defaults to 24h / 5m, which is too short to recover from a delete noticed days later.
@@ -275,10 +278,9 @@ sqlite3 /tmp/probe.db "PRAGMA integrity_check; SELECT COUNT(*) FROM fact_checks;
 from your `.env`, no SSH required. It is the same restore path as above, so routine use
 keeps recovery exercised. Optional argument: an ISO timestamp for point-in-time restore.
 
-**Archive:** the 96 pre-Litestream daily backups (June–September 2026) live under the
-`archive/` prefix of the same bucket. They are not reachable via `litestream restore` —
-fetch them with any S3 client, e.g.
-`rclone copy r2:factcheck-backup/archive/backup-2026-06-09.db .`
+**Archive:** the 96 pre-Litestream daily backups (June–September 2026) that lived under
+`archive/` were deleted on 11.10.2026, so the 30-day retention stated in the privacy policy
+holds. The bucket now only holds Litestream's `factcheck/` prefix.
 
 The old nightly cron has been removed; the previous crontab is saved at
 `/root/crontab.backup-2026-09-10`.

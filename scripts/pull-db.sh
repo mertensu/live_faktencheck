@@ -53,7 +53,8 @@ fi
 
 export LITESTREAM_ACCESS_KEY_ID="$R2_ACCESS_KEY_ID"
 export LITESTREAM_SECRET_ACCESS_KEY="$R2_SECRET_ACCESS_KEY"
-REPLICA_URL="s3://${R2_BUCKET}/factcheck?endpoint=${R2_ACCOUNT_ID}.r2.cloudflarestorage.com&region=auto"
+# The bucket has EU jurisdiction, so it is only reachable through the .eu endpoint.
+REPLICA_URL="s3://${R2_BUCKET}/factcheck?endpoint=${R2_ACCOUNT_ID}.eu.r2.cloudflarestorage.com&region=auto"
 
 # Restore into a temporary file first and only swap it in once it is verified, so a
 # failed or interrupted download never leaves you without a working local database.
