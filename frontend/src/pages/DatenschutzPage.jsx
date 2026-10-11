@@ -48,7 +48,6 @@ export function DatenschutzPage() {
           48268 Greven<br />
           E-Mail: <a href="mailto:info@live-faktencheck.de">info@live-faktencheck.de</a>
         </p>
-        <p>Ein Datenschutzbeauftragter ist nicht bestellt, da keine Pflicht dazu besteht.</p>
 
         <h2>2. Überblick</h2>
         <p>
