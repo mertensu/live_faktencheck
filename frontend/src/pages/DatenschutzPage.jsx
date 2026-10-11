@@ -141,8 +141,11 @@ export function DatenschutzPage() {
         </p>
         <p>
           <strong>Rechtsgrundlage:</strong> Art. 6 Abs. 1 lit. f DSGVO. Unser berechtigtes Interesse ist die
-          öffentliche Einordnung politischer Aussagen in Fernsehsendungen. Soweit die Faktenprüfung journalistischen
-          Zwecken dient, gilt zusätzlich das Medienprivileg (Art. 85 DSGVO, § 23 MStV).
+          öffentliche Einordnung politischer Aussagen in Fernsehsendungen. Soweit Aussagen politische Meinungen
+          erkennen lassen (Art. 9 Abs. 1 DSGVO), stützen wir uns zusätzlich auf Art. 9 Abs. 2 lit. e DSGVO: Die
+          Gäste haben diese Aussagen in einer öffentlich ausgestrahlten Sendung offensichtlich selbst öffentlich
+          gemacht. Soweit die Faktenprüfung journalistischen Zwecken dient, gilt zusätzlich das Medienprivileg
+          (Art. 85 DSGVO, § 23 MStV).
         </p>
 
         <h2>6. Faktenprüfung mit KI-Modellen und Websuche</h2>
@@ -228,9 +231,9 @@ export function DatenschutzPage() {
           Die Transkription läuft über den EU-Endpunkt von AssemblyAI; Audio und Transkript werden dort in der EU
           verarbeitet. Die Sprachmodelle rufen wir über den EU-Router von Requesty auf. Cloudflare, AssemblyAI,
           Tavily, Google, OpenAI und Anthropic sind US-Unternehmen oder gehören zu US-Konzernen; ein Zugriff aus den
-          USA ist daher nicht ausgeschlossen. Eine Übermittlung in die USA stützen wir auf das EU-US Data Privacy
-          Framework, soweit der Anbieter dort zertifiziert ist, sonst auf EU-Standardvertragsklauseln (Art. 46 Abs. 2
-          lit. c DSGVO).
+          USA ist daher nicht ausgeschlossen. Eine Übermittlung in die USA stützen wir auf den Angemessenheitsbeschluss
+          der EU-Kommission zum EU-US Data Privacy Framework (Art. 45 DSGVO), soweit der Anbieter dort zertifiziert
+          ist, sonst auf EU-Standardvertragsklauseln (Art. 46 Abs. 2 lit. c DSGVO).
         </p>
 
         <h2>10. Ihre Rechte</h2>
