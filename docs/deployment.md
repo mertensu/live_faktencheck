@@ -255,11 +255,14 @@ This is the image production runs — see "Updating the backend" above.
 ## DB backup (Litestream → Cloudflare R2)
 
 Litestream continuously replicates `backend/data/factcheck.db` to the R2 bucket
-`factcheck-backup` (prefix `factcheck/`). It reads the SQLite WAL, so the loss window is
+`factcheck-backup-eu` (prefix `factcheck/`). The bucket has EU jurisdiction, so the data
+stays in the EU by contract and is only reachable through the
+`<account>.eu.r2.cloudflarestorage.com` endpoint. It reads the SQLite WAL, so the loss window is
 seconds rather than the up-to-24h of the nightly cron it replaced — and it supports
 point-in-time restores.
 
-- Service: `litestream.service` (config `/etc/litestream.yml`, mode 600, root only).
+- Service: `litestream.service` (config `/etc/litestream.yml`, mode 600, root only),
+  token `faktencheck-backup-eu-write` (Object Read & Write, this bucket only).
   The annotated upstream template is kept at `/etc/litestream.yml.dist`.
 - Retention: snapshot every 6h, kept 30 days; 24h of fine-grained history. Litestream 0.5
   defaults to 24h / 5m, which is too short to recover from a delete noticed days later.
