@@ -245,9 +245,9 @@ export function DatenschutzPage() {
           widersprechen. Das gilt auch für Personen, deren Aussagen in einer Sendung geprüft wurden.
         </p>
         <p>
-          <strong>Beschwerderecht:</strong> Sie können sich bei einer Datenschutz-Aufsichtsbehörde beschweren.
-          Zuständig für uns ist die Landesbeauftragte für Datenschutz und Informationsfreiheit Nordrhein-Westfalen,
-          Kavalleriestraße 2–4, 40213 Düsseldorf.
+          <strong>Beschwerderecht:</strong> Sie können sich bei einer Datenschutz-Aufsichtsbehörde beschweren
+          (Art. 77 DSGVO), insbesondere bei der Behörde an Ihrem Wohnort, Ihrem Arbeitsplatz oder dem Ort des
+          mutmaßlichen Verstoßes.
         </p>
         <p className="legal-asof">Stand: 11. Oktober 2026</p>
       </div>
