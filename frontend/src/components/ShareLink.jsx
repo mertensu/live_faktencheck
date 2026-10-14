@@ -3,7 +3,8 @@ import { useState } from 'react'
 // Shareable public link to the live stream, shown to the moderator so they can
 // hand the view-only URL to others. The link is just the session page without
 // any admin flag — anyone opening it sees the read-only Fokus-Stream.
-export function ShareLink({ sessionId }) {
+// The heading comes from the caller (step 3 of the start panel); onCopied tells it.
+export function ShareLink({ sessionId, onCopied }) {
   const [copied, setCopied] = useState(false)
   const url = `${window.location.origin}/${sessionId}`
   const shown = url.replace(/^https?:\/\//, '')
@@ -23,12 +24,12 @@ export function ShareLink({ sessionId }) {
       document.body.removeChild(ta)
     }
     setCopied(true)
+    onCopied?.()
     setTimeout(() => setCopied(false), 2000)
   }
 
   return (
     <div className="share-link">
-      <span className="share-link-label">Live-Link teilen</span>
       <button
         type="button"
         className="share-link-btn"
@@ -50,6 +51,10 @@ export function ShareLink({ sessionId }) {
           </svg>
         )}
       </button>
+      <p className="share-link-note">
+        Über diesen Link können andere den Faktencheck live verfolgen. Sie sehen nur die
+        geprüften Behauptungen mit Erklärung und Quellen, nicht das Transkript.
+      </p>
       <span className={`share-link-copied${copied ? ' share-link-copied--show' : ''}`} role="status" aria-live="polite">
         {copied ? 'Kopiert!' : ''}
       </span>

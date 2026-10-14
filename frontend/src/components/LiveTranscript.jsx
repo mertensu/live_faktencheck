@@ -76,7 +76,8 @@ function selectedPassage(transcript, root) {
   })
   if (parts.length === 0) return null
   const r = (range.getBoundingClientRect ? range : lines[lines.length - 1]).getBoundingClientRect()
-  return { parts, left: r.left, top: r.bottom }
+  // The range itself too, so the menu can follow the passage when the page scrolls.
+  return { parts, left: r.left, top: r.bottom, range: range.cloneRange?.() }
 }
 
 // Floating menu at a marked passage: which guest said it. When the marked lines share one
@@ -95,14 +96,33 @@ function PassageMenu({ at, speakers, followLabel, onPick, onClose }) {
       document.removeEventListener('keydown', onKey)
     }
   }, [onClose])
-  const left = Math.max(8, Math.min(at.left, window.innerWidth - 240))
+  // Fixed to the window, so it is placed anew on every scroll (page or dialog) to stay at
+  // the passage; below it, or above when the window has no room left underneath.
+  const [pos, setPos] = useState({ left: at.left, top: at.top + 6 })
+  useLayoutEffect(() => {
+    const place = () => {
+      const r = at.range?.getBoundingClientRect?.()
+      const anchor = r && (r.width || r.height) ? r : { left: at.left, top: at.top, bottom: at.top }
+      const h = ref.current?.offsetHeight || 0
+      let top = anchor.bottom + 6
+      if (top + h > window.innerHeight - 8 && anchor.top - h - 6 >= 8) top = anchor.top - h - 6
+      setPos({ left: Math.max(8, Math.min(anchor.left, window.innerWidth - 240)), top })
+    }
+    place()
+    window.addEventListener('scroll', place, true)
+    window.addEventListener('resize', place)
+    return () => {
+      window.removeEventListener('scroll', place, true)
+      window.removeEventListener('resize', place)
+    }
+  }, [at])
   return (
     <ul
       ref={ref}
       className="live-speaker-menu live-passage-menu"
       role="menu"
       aria-label="Textstelle zuordnen"
-      style={{ left, top: at.top + 6 }}
+      style={pos}
     >
       <li className="live-passage-menu-head">Textstelle gesagt von</li>
       {speakers.map((name) => (
@@ -289,7 +309,8 @@ function ClaimPopover({ claim, speaker, anchor, onEnter, onLeave }) {
 // that diarization label to one of the episode's `speakers` from that bubble on; marking text in a line gives
 // just that passage to a guest (diarization sometimes folds a question into an answer).
 // Only voices given to a guest are checked; "Andere Stimme" marks a clip voice as none.
-export function LiveTranscript({ live, speakers = [] }) {
+// follow: keep the newest line in view (off in the guide, whose dialog scrolls, not the page).
+export function LiveTranscript({ live, speakers = [], follow = true }) {
   const { status, transcript = [], partial = '', claims = [], speakerMap = {}, assignSpeaker, assignPassage } = live || {}
   const rootRef = useRef(null)
   const endRef = useRef(null)
@@ -316,8 +337,8 @@ export function LiveTranscript({ live, speakers = [] }) {
   }, [])
 
   useEffect(() => {
-    if (stickRef.current && !open) endRef.current?.scrollIntoView?.({ block: 'nearest' })
-  }, [transcript, partial, claims, open])
+    if (follow && stickRef.current && !open) endRef.current?.scrollIntoView?.({ block: 'nearest' })
+  }, [follow, transcript, partial, claims, open])
 
   const cancelClose = () => clearTimeout(closeTimer.current)
   const scheduleClose = () => {
