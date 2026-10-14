@@ -289,7 +289,8 @@ function ClaimPopover({ claim, speaker, anchor, onEnter, onLeave }) {
 // that diarization label to one of the episode's `speakers` from that bubble on; marking text in a line gives
 // just that passage to a guest (diarization sometimes folds a question into an answer).
 // Only voices given to a guest are checked; "Andere Stimme" marks a clip voice as none.
-export function LiveTranscript({ live, speakers = [] }) {
+// follow: keep the newest line in view (off in the guide, whose dialog scrolls, not the page).
+export function LiveTranscript({ live, speakers = [], follow = true }) {
   const { status, transcript = [], partial = '', claims = [], speakerMap = {}, assignSpeaker, assignPassage } = live || {}
   const rootRef = useRef(null)
   const endRef = useRef(null)
@@ -316,8 +317,8 @@ export function LiveTranscript({ live, speakers = [] }) {
   }, [])
 
   useEffect(() => {
-    if (stickRef.current && !open) endRef.current?.scrollIntoView?.({ block: 'nearest' })
-  }, [transcript, partial, claims, open])
+    if (follow && stickRef.current && !open) endRef.current?.scrollIntoView?.({ block: 'nearest' })
+  }, [follow, transcript, partial, claims, open])
 
   const cancelClose = () => clearTimeout(closeTimer.current)
   const scheduleClose = () => {
