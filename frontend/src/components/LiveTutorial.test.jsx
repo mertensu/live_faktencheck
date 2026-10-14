@@ -26,33 +26,33 @@ describe('LiveTutorial', () => {
     expect(screen.getByRole('status').textContent).toMatch(/ab dieser Sprechblase/)
   })
 
-  it('practises the correction in two steps: 2a with "everything further", 2b without', () => {
+  it('practises the correction in two steps: 1 with "everything further", 2 without', () => {
     const { container } = render(<LiveTutorial onClose={vi.fn()} />)
     const next = () => fireEvent.click(screen.getByRole('button', { name: /^Weiter:/ }))
     next()
 
-    // 2a, checkbox on (default): the later line of label A goes to Sandra too.
+    // Korrektur 1, checkbox on (default): the later line of label A goes to Sandra too.
     markLine(container, 1)
     fireEvent.click(screen.getByRole('menuitem', { name: 'Sandra Berger' }))
     expect(bubbleNames(container)).toEqual(['Anna Keller', 'Sandra Berger', 'Peter Müller', 'Sandra Berger'])
     expect(screen.getByRole('status').textContent).toMatch(/„auch alles Weitere“ aktiviert/)
-    expect(screen.getByRole('tab', { name: /alles Weitere/ }).textContent).toContain('✓')
+    expect(screen.getByRole('tab', { name: /Korrektur 1/ }).textContent).toContain('✓')
     next()
 
-    // 2b, wrong first (checkbox left on): no tick, a retry instead.
+    // Korrektur 2, wrong first (checkbox left on): no tick, a retry instead.
     markLine(container, 1)
     fireEvent.click(screen.getByRole('menuitem', { name: 'Sandra Berger' }))
-    expect(screen.getByRole('tab', { name: /nur die Stelle/ }).textContent).not.toContain('✓')
+    expect(screen.getByRole('tab', { name: /Korrektur 2/ }).textContent).not.toContain('✓')
     fireEvent.click(screen.getByRole('button', { name: /noch einmal versuchen/ }))
     expect(screen.queryByRole('status')).toBeNull()
 
-    // 2b, checkbox off: only the marked passage.
+    // Korrektur 2, checkbox off: only the marked passage.
     markLine(container, 1)
     fireEvent.click(screen.getByRole('checkbox', { name: /auch alles Weitere von Sprecher A/ }))
     fireEvent.click(screen.getByRole('menuitem', { name: 'Sandra Berger' }))
     expect(bubbleNames(container)).toEqual(['Anna Keller', 'Sandra Berger', 'Peter Müller', 'Anna Keller'])
     expect(screen.getByRole('status').textContent).toMatch(/„auch alles Weitere“ deaktiviert/)
-    expect(screen.getByRole('tab', { name: /nur die Stelle/ }).textContent).toContain('✓')
+    expect(screen.getByRole('tab', { name: /Korrektur 2/ }).textContent).toContain('✓')
   })
 
   it('opens a result from its mark and closes on the last step', () => {
