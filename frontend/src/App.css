@@ -1601,6 +1601,7 @@
 .share-link-btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 .share-link-url { font-variant-numeric: tabular-nums; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .share-link-icon { flex: none; color: #2F5BD3; }
+.share-link-note { order: 3; flex-basis: 100%; margin: 0; font-size: 0.9rem; line-height: 1.5; color: var(--text-secondary); }
 .share-link-copied { font-size: 0.85rem; font-weight: 600; color: #1E7A45; opacity: 0; transition: opacity var(--transition-fast); }
 .share-link-copied--show { opacity: 1; }
 

@@ -25,23 +25,23 @@ function StepMark({ n, done }) {
 // The share link for viewers sits below. Going live from here; the header only stops.
 export function LiveStartPanel({ sessionId, mic, speakers, excludedSpeakers, onStart, connecting, error }) {
   const hasPermission = mic.devices.some((d) => d.label)
-  const { level, hasSignal } = useMicLevel(mic.deviceId, hasPermission)
+  const { level, hasSignal, verified } = useMicLevel(mic.deviceId, hasPermission)
 
   const lit = level === null ? 0 : Math.round(level * METER_BARS)
   const excluded = new Set((excludedSpeakers || []).map((s) => s.trim().toLowerCase()))
 
   let signalText = 'Mikrofone laden, um den Ton zu prüfen'
-  if (hasPermission) signalText = hasSignal ? 'Signal kommt an' : 'Noch kein Ton'
+  if (hasPermission) signalText = hasSignal ? 'Signal kommt an' : verified ? 'Ton geprüft' : 'Noch kein Ton'
 
   return (
     <div className="live-start">
       <section className="live-start-card" aria-label="Live-Check vorbereiten">
         <div className="live-start-step">
-          <StepMark n={1} done={hasSignal} />
+          <StepMark n={1} done={verified} />
           <div className="live-start-body">
             <div className="live-start-row">
               <h2>Ton prüfen</h2>
-              <span className={`live-start-signal${hasSignal ? ' live-start-signal--ok' : ''}`} role="status">
+              <span className={`live-start-signal${verified ? ' live-start-signal--ok' : ''}`} role="status">
                 {signalText}
               </span>
             </div>

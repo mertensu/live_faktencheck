@@ -50,6 +50,10 @@ export function ShareLink({ sessionId }) {
           </svg>
         )}
       </button>
+      <p className="share-link-note">
+        Über diesen Link können andere den Faktencheck live verfolgen. Sie sehen nur die
+        geprüften Behauptungen mit Erklärung und Quellen, nicht das Transkript.
+      </p>
       <span className={`share-link-copied${copied ? ' share-link-copied--show' : ''}`} role="status" aria-live="polite">
         {copied ? 'Kopiert!' : ''}
       </span>
