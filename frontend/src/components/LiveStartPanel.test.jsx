@@ -33,6 +33,11 @@ describe('LiveStartPanel', () => {
     expect(screen.getByText('Jessy Wellmer · nicht geprüft')).toBeTruthy()
   })
 
+  it('says how voices show when no people were given', () => {
+    renderPanel({ speakers: [], excludedSpeakers: [] })
+    expect(screen.getByText(/Sprecher A, B, C/)).toBeTruthy()
+  })
+
   it('starts the live check from the panel', () => {
     const onStart = vi.fn()
     renderPanel({ onStart })

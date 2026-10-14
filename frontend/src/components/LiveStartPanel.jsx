@@ -100,11 +100,11 @@ export function LiveStartPanel({
           </div>
         </div>
 
-        {speakers.length > 0 && (
-          <div className="live-start-step">
-            <StepMark n={2} done />
-            <div className="live-start-body">
-              <h2>Personen</h2>
+        <div className="live-start-step">
+          <StepMark n={2} done={speakers.length > 0} />
+          <div className="live-start-body">
+            <h2>Personen</h2>
+            {speakers.length > 0 ? (
               <ul className="live-start-people">
                 {speakers.map((name) => {
                   const skip = excluded.has(name.trim().toLowerCase())
@@ -115,9 +115,15 @@ export function LiveStartPanel({
                   )
                 })}
               </ul>
-            </div>
+            ) : (
+              // Without names the backend publishes every voice's claims (no hold).
+              <p className="live-start-hint">
+                Keine Personen angegeben. Die Stimmen erscheinen im Transkript als Sprecher A, B, C,
+                und die Aussagen aller Stimmen werden geprüft, auch die der Moderation.
+              </p>
+            )}
           </div>
-        )}
+        </div>
 
         <div className="live-start-go">
           <button type="button" className="live-start-button" onClick={onStart} disabled={connecting}>
