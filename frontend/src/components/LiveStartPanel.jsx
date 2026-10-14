@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { MicSelect } from './MicSelect'
 import { ShareLink } from './ShareLink'
 import { useMicLevel } from '../hooks/useMicLevel'
@@ -23,7 +24,7 @@ function StepMark({ n, done }) {
 }
 
 // Operator's screen before going live: check the sound, see who is checked, start.
-// The share link for viewers sits below. Going live from here; the header only stops.
+// Then the viewers' link (ticked once copied). Going live from here; the header only stops.
 // Sound comes from a mic, or (Chrome, Edge) digitally from another browser tab.
 export function LiveStartPanel({
   sessionId, mic, tab, audioSource, onAudioSource, speakers, excludedSpeakers, onStart, connecting, error,
@@ -32,6 +33,8 @@ export function LiveStartPanel({
   const hasPermission = mic.devices.some((d) => d.label)
   const measuring = fromTab ? !!tab.stream : hasPermission
   const { level, hasSignal, verified } = useMicLevel(mic.deviceId, measuring, fromTab ? tab.stream : null)
+
+  const [linkCopied, setLinkCopied] = useState(false)
 
   const lit = level === null ? 0 : Math.round(level * METER_BARS)
   const excluded = new Set((excludedSpeakers || []).map((s) => s.trim().toLowerCase()))
@@ -125,6 +128,14 @@ export function LiveStartPanel({
           </div>
         </div>
 
+        <div className="live-start-step">
+          <StepMark n={3} done={linkCopied} />
+          <div className="live-start-body">
+            <h2>Link für Zuschauer</h2>
+            <ShareLink sessionId={sessionId} onCopied={() => setLinkCopied(true)} />
+          </div>
+        </div>
+
         <div className="live-start-go">
           <button type="button" className="live-start-button" onClick={onStart} disabled={connecting}>
             <span className="live-start-dot" aria-hidden="true" />
@@ -135,8 +146,6 @@ export function LiveStartPanel({
             : <p className="live-start-note">Startet Transkript und Prüfung. Stoppen jederzeit oben rechts.</p>}
         </div>
       </section>
-
-      <ShareLink sessionId={sessionId} />
     </div>
   )
 }

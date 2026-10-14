@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, act } from '@testing-library/react'
 import { LiveStartPanel } from './LiveStartPanel'
 
 const mic = (devices = []) => ({
@@ -36,6 +36,14 @@ describe('LiveStartPanel', () => {
   it('says how voices show when no people were given', () => {
     renderPanel({ speakers: [], excludedSpeakers: [] })
     expect(screen.getByText(/Sprecher A, B, C/)).toBeTruthy()
+  })
+
+  it('ticks the link step once the link is copied', async () => {
+    navigator.clipboard = { writeText: vi.fn(() => Promise.resolve()) }
+    const { container } = renderPanel()
+    expect(container.querySelectorAll('.live-start-mark--done')).toHaveLength(1)  // people only
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: /Live-Link kopieren/ })) })
+    expect(container.querySelectorAll('.live-start-mark--done')).toHaveLength(2)
   })
 
   it('starts the live check from the panel', () => {
