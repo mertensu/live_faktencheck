@@ -1789,6 +1789,9 @@
 .live-tutorial-body .live-bubble { width: 92%; }
 .live-tutorial-done { margin: 0 0 0.6rem; padding: 0.5rem 0.75rem; border-radius: 8px; background: var(--verdict-true-bg); color: #166534; font-size: 0.9rem; }
 .live-tutorial-done p { margin: 0 0 0.4rem; }
+.live-tutorial-retry { margin: 0 0 0.6rem; padding: 0.5rem 0.75rem; border-radius: 8px; background: var(--verdict-unklar-bg); color: #78350f; font-size: 0.9rem; }
+.live-tutorial-retry p { margin: 0 0 0.4rem; }
+.live-tutorial-retry .live-tutorial-reset { color: #78350f; }
 .live-tutorial-reset { padding: 0; border: 0; background: none; color: #166534; font: inherit; font-size: 0.85rem; font-weight: 600; text-decoration: underline; cursor: pointer; }
 .live-tutorial-tip { margin-top: 0.9rem !important; font-size: 0.9rem !important; color: var(--text-secondary); }
 .live-tutorial-chip { padding: 0 0.3em; border-radius: 3px; border-bottom: 3px solid; }

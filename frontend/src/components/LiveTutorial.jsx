@@ -106,45 +106,58 @@ function NamesStep({ onSolved }) {
   )
 }
 
-function PassageStep({ onSolved }) {
+// Correction in two parts: 2a with "auch alles Weitere" (the default), 2b without it.
+function PassageStep({ onSolved, follow }) {
   const [round, setRound] = useState(0)
-  return <PassagePractice key={round} onReset={() => setRound((r) => r + 1)} onSolved={onSolved} />
+  return <PassagePractice key={round} follow={follow} onReset={() => setRound((r) => r + 1)} onSolved={onSolved} />
 }
 
-function PassagePractice({ onReset, onSolved }) {
+function PassagePractice({ follow, onReset, onSolved }) {
   const live = usePracticeLive(SCENES.passage)
   const assigned = live.transcript.some((t) => t.speaker)
-  useSolved(assigned, onSolved)
   const followed = nameAt(live.speakerMap, 'A', 3) === GUEST_C
+  const right = assigned && followed === follow
+  useSolved(right, onSolved)
   return (
     <>
-      <p>
-        Das System ist nicht perfekt, und so kann es besonders in den ersten Minuten einer
-        Aufnahme vorkommen, dass ähnliche Stimmen unter einem Sprecher landen. Hier steckt {GUEST_C} mit in der Sprechblase von {HOST}.
-      </p>
+      {follow ? (
+        <p>
+          Das System ist nicht perfekt, und so kann es besonders in den ersten Minuten einer
+          Aufnahme vorkommen, dass ähnliche Stimmen unter einem Sprecher landen. Hier steckt {GUEST_C} mit
+          in der Sprechblase von {HOST}, und zwar nicht nur einmal.
+        </p>
+      ) : (
+        <p>
+          Dieselbe Stelle, aber diesmal ein einzelner Ausrutscher: Nur diese eine Antwort von {GUEST_C} ist
+          bei {HOST} gelandet, danach stimmt die Zuordnung wieder.
+        </p>
+      )}
       <p className="live-tutorial-task">
-        Markieren Sie mit der Maus ihre Antwort „Ganz anders. … stabil geblieben.“ und wählen Sie im Menü {GUEST_C}. Achten Sie auf
-        die Option <em>auch alles Weitere von Sprecher A</em>.
+        Markieren Sie mit der Maus ihre Antwort „Ganz anders. … stabil geblieben.“, {follow
+          ? <>lassen Sie <em>auch alles Weitere von Sprecher A</em> angehakt</>
+          : <>entfernen Sie den Haken bei <em>auch alles Weitere von Sprecher A</em></>} und wählen Sie im Menü {GUEST_C}.
       </p>
       <LiveTranscript live={live} speakers={SPEAKERS} follow={false} />
       {assigned && (
-        <div className="live-tutorial-done" role="status">
+        <div className={right ? 'live-tutorial-done' : 'live-tutorial-retry'} role="status">
           {followed ? (
             <p>
-              ✓ <strong>„auch alles Weitere“ aktiviert:</strong> Auch die spätere Zeile von Sprecher A heißt jetzt {GUEST_C}.
+              {right ? '✓ ' : ''}<strong>„auch alles Weitere“ aktiviert:</strong> Auch die spätere Zeile von Sprecher A heißt jetzt {GUEST_C}.
               Richtig, wenn die zwei Stimmen weiter vermischt sind. Spricht später wieder {HOST},
               klicken Sie in ihrer Sprechblase auf den Namen ({GUEST_C} ▾) und wählen Sie {HOST}. Ab dieser
               Sprechblase stimmt der Name dann wieder.
             </p>
           ) : (
             <p>
-              ✓ <strong>„auch alles Weitere“ deaktiviert:</strong> Nur die markierte Stelle heißt {GUEST_C}; die spätere
+              {right ? '✓ ' : ''}<strong>„auch alles Weitere“ deaktiviert:</strong> Nur die markierte Stelle heißt {GUEST_C}; die spätere
               Zeile bleibt bei {HOST}. Richtig für einen einzelnen Ausrutscher.
             </p>
           )}
-          <button type="button" className="live-tutorial-reset" onClick={onReset}>
-            Zurücksetzen und „auch alles Weitere“ {followed ? 'deaktiviert' : 'aktiviert'} testen
-          </button>
+          {!right && (
+            <button type="button" className="live-tutorial-reset" onClick={onReset}>
+              Zurücksetzen und noch einmal versuchen
+            </button>
+          )}
         </div>
       )}
     </>
@@ -178,12 +191,13 @@ function ResultsStep({ onSolved }) {
 }
 
 const STEPS = [
-  { title: 'Namen vergeben', Body: NamesStep },
-  { title: 'Korrektur', Body: PassageStep },
-  { title: 'Ergebnisse lesen', Body: ResultsStep },
+  { n: '1', title: 'Namen vergeben', Body: NamesStep },
+  { n: '2a', title: 'Korrektur: alles Weitere', Body: (p) => <PassageStep {...p} follow /> },
+  { n: '2b', title: 'Korrektur: nur die Stelle', Body: (p) => <PassageStep {...p} follow={false} /> },
+  { n: '3', title: 'Ergebnisse lesen', Body: ResultsStep },
 ]
 
-// The practice: three steps on the real LiveTranscript with made-up data, as tabs with a
+// The practice: steps 1, 2a, 2b, 3 on the real LiveTranscript with made-up data, as tabs with a
 // "Weiter" button. Inline in the start panel before going live; onDone after the last step.
 export function LivePractice({ onDone }) {
   const [step, setStep] = useState(0)
@@ -205,7 +219,7 @@ export function LivePractice({ onDone }) {
             onClick={() => setStep(i)}
           >
             <span className={`live-practice-mark${solved.includes(i) ? ' live-practice-mark--done' : ''}`}>
-              {solved.includes(i) ? '✓' : i + 1}
+              {solved.includes(i) ? '✓' : s.n}
             </span>
             {s.title}
           </button>
@@ -215,7 +229,7 @@ export function LivePractice({ onDone }) {
         <Body key={step} onSolved={solve} />
       </div>
       <div className="live-practice-foot">
-        <span>Schritt {step + 1} von {STEPS.length}</span>
+        <span>Schritt {STEPS[step].n} von 3</span>
         <button type="button" className="live-practice-next" onClick={() => (last ? onDone() : setStep(step + 1))}>
           {last ? 'Fertig – Übung schließen' : `Weiter: ${STEPS[step + 1].title}`}
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
