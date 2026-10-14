@@ -28,7 +28,7 @@ describe('LiveTutorial', () => {
 
   it('shows the difference of the "everything further" checkbox, and resets', () => {
     const { container } = render(<LiveTutorial onClose={vi.fn()} />)
-    fireEvent.click(screen.getByRole('button', { name: 'Weiter' }))
+    fireEvent.click(screen.getByRole('button', { name: /^Weiter:/ }))
 
     // Checkbox on (default): the later line of label A goes to Sandra too.
     markLine(container, 1)
@@ -49,18 +49,30 @@ describe('LiveTutorial', () => {
   it('opens a result from its mark and closes on the last step', () => {
     const onClose = vi.fn()
     const { container } = render(<LiveTutorial onClose={onClose} />)
-    fireEvent.click(screen.getByRole('button', { name: 'Weiter' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Weiter' }))
+    fireEvent.click(screen.getByRole('button', { name: /^Weiter:/ }))
+    fireEvent.click(screen.getByRole('button', { name: /^Weiter:/ }))
     fireEvent.click(container.querySelector('.live-transcript-mark.verdict-niedrig'))
     expect(screen.getByRole('dialog', { name: 'Prüfergebnis' }).textContent).toContain('Die Renten sind seit 2010 real gesunken.')
-    fireEvent.click(screen.getByRole('button', { name: 'Los geht’s' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Fertig – Übung schließen' }))
     expect(onClose).toHaveBeenCalled()
+  })
+
+  it('ticks the tab of a step once its task is done, and jumps between tabs', () => {
+    render(<LiveTutorial onClose={vi.fn()} />)
+    const tab = (name) => screen.getByRole('tab', { name: new RegExp(name) })
+    expect(tab('Namen vergeben').textContent).not.toContain('✓')
+    fireEvent.click(screen.getAllByRole('button', { name: /Sprecher A/ })[0])
+    fireEvent.click(screen.getByRole('menuitemradio', { name: 'Anna Keller' }))
+    expect(tab('Namen vergeben').textContent).toContain('✓')
+    fireEvent.click(tab('Ergebnisse lesen'))
+    expect(tab('Ergebnisse lesen').getAttribute('aria-selected')).toBe('true')
+    expect(screen.getByRole('button', { name: 'Fertig – Übung schließen' })).toBeTruthy()
   })
 
   it('can be skipped at any step, also with Escape', () => {
     const onClose = vi.fn()
     render(<LiveTutorial onClose={onClose} />)
-    fireEvent.click(screen.getByRole('button', { name: 'Überspringen' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Schließen' }))
     fireEvent.keyDown(window, { key: 'Escape' })
     expect(onClose).toHaveBeenCalledTimes(2)
   })
