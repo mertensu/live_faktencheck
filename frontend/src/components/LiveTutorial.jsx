@@ -131,6 +131,11 @@ function PassagePractice({ follow, onReset, onSolved }) {
           bei {HOST} gelandet, danach stimmt die Zuordnung wieder.
         </p>
       )}
+      {/* Shown on touch screens only (CSS): marking opens no menu there. */}
+      <p className="live-tutorial-touch-note" role="note">
+        Korrekturen durch Markieren sind am Smartphone und Tablet nicht möglich, nur am Computer
+        mit Maus oder Trackpad. Mit „Weiter“ geht es zur nächsten Übung.
+      </p>
       <p className="live-tutorial-task">
         Markieren Sie mit der Maus ihre Antwort „Ganz anders. … stabil geblieben.“, {follow
           ? <>lassen Sie <em>auch alles Weitere von Sprecher A</em> angehakt</>

@@ -1791,6 +1791,13 @@
 .live-tutorial-body .live-bubble { width: 92%; }
 .live-tutorial-done { margin: 0 0 0.6rem; padding: 0.5rem 0.75rem; border-radius: 8px; background: var(--verdict-true-bg); color: #166534; font-size: 0.9rem; }
 .live-tutorial-done p { margin: 0 0 0.4rem; }
+.live-tutorial-touch-note { display: none; }
+@media (pointer: coarse) {
+  .live-tutorial-touch-note {
+    display: block; margin: 0 0 0.6rem; padding: 0.5rem 0.75rem; border-radius: 8px;
+    background: var(--verdict-unklar-bg); color: #78350f; font-size: 0.9rem;
+  }
+}
 .live-tutorial-retry { margin: 0 0 0.6rem; padding: 0.5rem 0.75rem; border-radius: 8px; background: var(--verdict-unklar-bg); color: #78350f; font-size: 0.9rem; }
 .live-tutorial-retry p { margin: 0 0 0.4rem; }
 .live-tutorial-retry .live-tutorial-reset { color: #78350f; }
