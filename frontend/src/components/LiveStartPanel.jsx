@@ -197,10 +197,13 @@ export function isTouchOnly() {
 export function LiveStartDesktopOnly() {
   return (
     <div className="live-start">
-      <p className="live-start-card live-start-desktop" role="note">
-        Am Smartphone lassen sich Sprecher nicht zuverlässig zuordnen und korrigieren. Öffnen Sie
-        diesen Faktencheck bitte an einem Laptop oder PC, um fortzufahren.
-      </p>
+      <section className="live-start-card live-start-desktop" role="note" aria-labelledby="live-start-desktop-title">
+        <h2 id="live-start-desktop-title">Kein Faktencheck möglich</h2>
+        <p>
+          Am Smartphone lassen sich Sprecher nicht zuverlässig zuordnen und korrigieren. Öffnen Sie
+          diesen Faktencheck bitte an einem Laptop oder PC, um fortzufahren.
+        </p>
+      </section>
     </div>
   )
 }
