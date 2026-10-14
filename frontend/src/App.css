@@ -1493,6 +1493,16 @@
 .live-start-meter { display: flex; align-items: flex-end; gap: 4px; height: 28px; }
 .live-start-meter span { width: 10px; border-radius: 2px; background: #D5DCE3; transition: background 0.08s linear; }
 .live-start-meter span.on { background: #2F9E5B; }
+.live-start-source { display: inline-flex; align-self: flex-start; padding: 3px; gap: 3px; background: #EEF1F5; border-radius: 9px; }
+.live-start-source button {
+  min-height: 38px; padding: 0 1rem; border: 0; border-radius: 7px; cursor: pointer;
+  background: transparent; color: var(--text-secondary); font: inherit; font-size: 0.9rem; font-weight: 500;
+}
+.live-start-source button.active { background: #fff; color: var(--text-main); box-shadow: 0 1px 2px rgba(16, 24, 40, 0.12); }
+.live-start-source button:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.live-start-tab { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+.live-start-tab-ok { font-size: 0.9rem; color: #1E7A45; font-weight: 500; }
+.live-start-body .live-start-error { text-align: left; }
 .live-start-hint { margin: 0; font-size: 0.9rem; line-height: 1.5; color: var(--text-secondary); }
 .live-start-people { list-style: none; margin: 0; padding: 0; display: flex; gap: 0.5rem; flex-wrap: wrap; }
 .live-start-people li {

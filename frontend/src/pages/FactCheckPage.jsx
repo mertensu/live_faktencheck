@@ -7,6 +7,7 @@ import { LiveTutorial } from '../components/LiveTutorial'
 import { LiveStartPanel } from '../components/LiveStartPanel'
 import { useAudioStream } from '../hooks/useAudioStream'
 import { useMicDevices } from '../hooks/useMicDevices'
+import { useTabAudio } from '../hooks/useTabAudio'
 import { useSidebar } from '../components/MyChecksSidebar'
 
 // Default speakers as fallback
@@ -31,7 +32,20 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
   const POLL_FAILURE_THRESHOLD = 3  // ~6s of continuous failure before we alarm
 
   const mic = useMicDevices()
+  const tab = useTabAudio()
+  const [audioSource, setAudioSource] = useState('mic')  // 'mic' | 'tab'
   const liveStream = useAudioStream(episodeKey, { deviceId: mic.deviceId })
+  // Back to the mic ends a tab share, so the browser's "sharing" bar goes away.
+  const chooseAudioSource = useCallback((source) => {
+    setAudioSource(source)
+    if (source !== 'tab') tab.release()
+  }, [tab])
+  // A tab is shared on the first start if none was picked yet (the click allows the prompt).
+  const startLive = useCallback(async () => {
+    if (audioSource !== 'tab') return liveStream.start()
+    const stream = tab.stream || await tab.pick()
+    if (stream) liveStream.start(stream)
+  }, [audioSource, tab, liveStream])
   const isLive = liveStream.status === 'streaming' || liveStream.status === 'connecting'
   // The "Meine Checks" sidebar folds to a rail while live, so the transcript gets the width.
   const { setLive: setSidebarLive } = useSidebar()
@@ -221,9 +235,12 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
       <LiveStartPanel
         sessionId={episodeKey}
         mic={mic}
+        tab={tab}
+        audioSource={audioSource}
+        onAudioSource={chooseAudioSource}
         speakers={speakers}
         excludedSpeakers={excludedSpeakers}
-        onStart={() => liveStream.start()}
+        onStart={startLive}
         connecting={liveStream.status === 'connecting'}
         error={liveStream.error}
       />
@@ -248,7 +265,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
               <button
                 type="button"
                 className="header-rec-start"
-                onClick={() => liveStream.start()}
+                onClick={startLive}
                 title="Live-Check starten (Streaming)"
               >
                 ◉ Live-Check

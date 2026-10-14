@@ -9,6 +9,7 @@ const MSG = {
   unsupported: 'Live-Streaming wird von diesem Browser nicht unterstützt',
   connectFailed: 'Verbindung zum Server fehlgeschlagen',
   quota: 'Audio-Kontingent für diesen Code aufgebraucht',
+  sourceEnded: 'Tonquelle beendet – Live-Check gestoppt',
 }
 
 // The operator's pick for a voice that is no guest (a clip, "Einspieler"): its words are
@@ -130,21 +131,29 @@ export function useAudioStream(sessionId, { deviceId = '' } = {}) {
     setPartial('')
   }, [cleanup])
 
-  const start = useCallback(async () => {
+  // `given`: a ready stream (a shared tab's audio) instead of the mic; it is stopped with
+  // the live check like the mic.
+  const start = useCallback(async (given = null) => {
     if (typeof AudioWorkletNode === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
       setStatus('error'); setError(MSG.unsupported); return
     }
     setStatus('connecting'); setError(null); stoppingRef.current = false
     setTranscript([]); setPartial(''); setClaims([]); setSpeakerMap({})
 
-    // 1. Mic
+    // 1. Mic (or the given stream)
     try {
-      streamRef.current = await navigator.mediaDevices.getUserMedia(audioConstraints(deviceId))
+      streamRef.current = given || await navigator.mediaDevices.getUserMedia(audioConstraints(deviceId))
     } catch (e) {
       setStatus('error')
       setError(e && e.name === 'NotFoundError' ? MSG.noMic : MSG.denied)
       return
     }
+    // The source went away (tab sharing ended, mic unplugged): stop rather than stream silence.
+    streamRef.current.getAudioTracks()[0]?.addEventListener('ended', () => {
+      if (stoppingRef.current || !wsRef.current) return
+      stop()
+      setError(MSG.sourceEnded)
+    })
 
     // 2. Audio graph: mic -> worklet (PCM16 @ 16kHz) -> ws
     try {
@@ -232,7 +241,7 @@ export function useAudioStream(sessionId, { deviceId = '' } = {}) {
       if (evt.code === 1013 && (evt.reason || '').includes('Kontingent')) setError(MSG.quota)
       cleanup(); setStatus('idle')
     }
-  }, [sessionId, deviceId, cleanup])
+  }, [sessionId, deviceId, cleanup, stop])
 
   // Name a diarization label (or clear it with null) from turn `fromTurn` on. The backend
   // rewrites the stored claims and answers with speaker_map_update, which updates speakerMap.

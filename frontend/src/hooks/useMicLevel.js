@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 
-// Input level of the chosen mic before going live, so the operator sees that sound
-// arrives (playback and recording on one device often filters the sound out).
+// Input level of the chosen mic (or of a shared tab's `stream`) before going live, so the
+// operator sees that sound arrives (playback and recording on one device often filters
+// the sound out). A given stream belongs to the caller and is not stopped here.
 // Opens its own short-lived stream only while `enabled` — the caller enables it once
 // mic permission exists, so it never triggers a prompt of its own — and closes it
 // when disabled (going live opens the stream useAudioStream needs).
@@ -10,7 +11,7 @@ import { useState, useEffect } from 'react'
 const SIGNAL_LEVEL = 0.08
 const SIGNAL_HOLD_MS = 3000
 
-export function useMicLevel(deviceId, enabled) {
+export function useMicLevel(deviceId, enabled, given = null) {
   const [level, setLevel] = useState(null)
   const [hasSignal, setHasSignal] = useState(false)
 
@@ -27,7 +28,7 @@ export function useMicLevel(deviceId, enabled) {
 
     const start = async () => {
       try {
-        stream = await navigator.mediaDevices.getUserMedia({
+        stream = given || await navigator.mediaDevices.getUserMedia({
           audio: deviceId ? { deviceId: { exact: deviceId } } : true,
         })
         if (cancelled) return
@@ -64,10 +65,10 @@ export function useMicLevel(deviceId, enabled) {
     return () => {
       cancelled = true
       cancelAnimationFrame(raf)
-      stream?.getTracks().forEach((tr) => tr.stop())
+      if (!given) stream?.getTracks().forEach((tr) => tr.stop())
       ctx?.close().catch(() => {})
     }
-  }, [deviceId, enabled])
+  }, [deviceId, enabled, given])
 
   return { level, hasSignal }
 }
