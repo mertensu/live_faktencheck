@@ -79,6 +79,7 @@ describe('LiveStartPanel', () => {
 
   it('sends phones to a computer, and nothing else', () => {
     render(<LiveStartDesktopOnly />)
+    expect(screen.getByRole('heading', { name: 'Kein Faktencheck möglich' })).toBeTruthy()
     expect(screen.getByRole('note').textContent).toMatch(/an einem Laptop oder PC, um fortzufahren/)
     expect(screen.queryByRole('button')).toBeNull()
   })

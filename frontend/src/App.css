@@ -1558,7 +1558,9 @@
 .live-start-note, .live-start-error { margin: 0; text-align: center; font-size: 0.9rem; }
 .live-start-note { color: var(--text-secondary); }
 .live-start-error { color: #b91c1c; }
-.live-start-desktop { margin: 0; padding: 1.5rem 1.75rem; font-size: 1rem; line-height: 1.55; color: var(--text-main); }
+.live-start-desktop { padding: 1.5rem 1.75rem; display: flex; flex-direction: column; gap: 0.5rem; }
+.live-start-desktop h2 { margin: 0; font-size: 1.15rem; font-weight: 600; color: var(--text-main); }
+.live-start-desktop p { margin: 0; font-size: 1rem; line-height: 1.55; color: var(--text-secondary); }
 @media (max-width: 520px) { .live-start-desktop { padding: 1.25rem 1rem; } }
 @media (max-width: 520px) {
   .live-start-step, .live-start-go { padding: 1.25rem 1rem; }
