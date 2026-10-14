@@ -46,12 +46,16 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
   // Before going live the start panel holds the start button (and its error); the
   // header button only resumes a session that already has a transcript or results.
   const showStartPanel = !isViewer && !notFound && !showLiveTranscript && factChecks.length === 0
-  // The live-check guide opens every time an operator opens a session that has no
-  // results yet (before the show starts) — not when reopening a finished check.
-  // Decided once, after the first results fetch, so it doesn't flash open.
+  // The practice: folded into the start panel before going live; once the panel is gone
+  // (live, or a session with results) "Kurzanleitung" opens it as a dialog instead.
+  const [practiceOpen, setPracticeOpen] = useState(false)
   const [tutorialOpen, setTutorialOpen] = useState(false)
-  const tutorialDecidedRef = useRef(false)
   const closeTutorial = useCallback(() => setTutorialOpen(false), [])
+  const openGuide = useCallback(() => {
+    if (!showStartPanel) { setTutorialOpen(true); return }
+    setPracticeOpen(true)
+    requestAnimationFrame(() => document.getElementById('live-practice')?.scrollIntoView?.({ block: 'start', behavior: 'smooth' }))
+  }, [showStartPanel])
 
   // Load episode configuration from backend
   useEffect(() => {
@@ -100,7 +104,6 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
   useEffect(() => {
     let isMounted = true
     let currentController = null
-    tutorialDecidedRef.current = false
 
     const fetchFactChecks = async () => {
       const controller = new AbortController()
@@ -139,10 +142,6 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
         debug.log(`Loaded fact-checks (Live): ${data.length}`, data)
         const visible = data.filter((fc) => fc.status !== 'discarded')
         setFactChecks(visible)
-        if (!tutorialDecidedRef.current) {
-          tutorialDecidedRef.current = true
-          if (!isViewer && visible.length === 0) setTutorialOpen(true)
-        }
         pollFailuresRef.current = 0
         setBackendError(null)  // Clear error on success
       } catch (error) {
@@ -178,7 +177,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
       if (currentController) currentController.abort()
       clearInterval(interval)
     }
-  }, [episodeKey, isViewer])
+  }, [episodeKey])
 
   // What sits below the header when no live transcript is showing:
   // - viewer: the results stream, or a "starts soon" note until the first result
@@ -226,6 +225,8 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
         onStart={() => liveStream.start()}
         connecting={liveStream.status === 'connecting'}
         error={liveStream.error}
+        practiceOpen={practiceOpen}
+        onPracticeOpen={setPracticeOpen}
       />
     )
   }
@@ -254,7 +255,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
                 ◉ Live-Check
               </button>
             )}
-            <button type="button" className="header-help-link" onClick={() => setTutorialOpen(true)}>
+            <button type="button" className="header-help-link" onClick={openGuide}>
               Kurzanleitung
             </button>
             {liveStream.error && !showStartPanel && (

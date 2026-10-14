@@ -46,6 +46,19 @@ describe('LiveStartPanel', () => {
     expect(container.querySelectorAll('.live-start-mark--done')).toHaveLength(2)
   })
 
+  it('folds the practice open and closed', () => {
+    const onPracticeOpen = vi.fn()
+    const { rerender } = renderPanel({ practiceOpen: false, onPracticeOpen })
+    expect(screen.queryByRole('tablist', { name: 'Übungsschritte' })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: /Bedienung üben/ }))
+    expect(onPracticeOpen).toHaveBeenCalledWith(true)
+    rerender(
+      <LiveStartPanel sessionId="abc123" mic={mic()} speakers={[]} excludedSpeakers={[]}
+        onStart={vi.fn()} connecting={false} error={null} practiceOpen onPracticeOpen={onPracticeOpen} />,
+    )
+    expect(screen.getByRole('tablist', { name: 'Übungsschritte' })).toBeTruthy()
+  })
+
   it('starts the live check from the panel', () => {
     const onStart = vi.fn()
     renderPanel({ onStart })

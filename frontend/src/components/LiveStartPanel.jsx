@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { MicSelect } from './MicSelect'
 import { ShareLink } from './ShareLink'
+import { LivePractice } from './LiveTutorial'
 import { useMicLevel } from '../hooks/useMicLevel'
 
 const METER_BARS = 10
@@ -22,9 +23,12 @@ function StepMark({ n, done }) {
   )
 }
 
-// Operator's screen before going live: check the sound, see who is checked, start.
+// Operator's screen before going live: an optional practice on made-up data (folded),
+// then check the sound, see who is checked, start.
 // Then the viewers' link (ticked once copied). Going live from here; the header only stops.
-export function LiveStartPanel({ sessionId, mic, speakers, excludedSpeakers, onStart, connecting, error }) {
+export function LiveStartPanel({
+  sessionId, mic, speakers, excludedSpeakers, onStart, connecting, error, practiceOpen, onPracticeOpen,
+}) {
   const hasPermission = mic.devices.some((d) => d.label)
   const { level, hasSignal, verified } = useMicLevel(mic.deviceId, hasPermission)
 
@@ -39,6 +43,31 @@ export function LiveStartPanel({ sessionId, mic, speakers, excludedSpeakers, onS
   return (
     <div className="live-start">
       <section className="live-start-card" aria-label="Live-Check vorbereiten">
+        <div className={`live-start-practice${practiceOpen ? ' live-start-practice--open' : ''}`} id="live-practice">
+          <button
+            type="button"
+            className="live-start-practice-head"
+            aria-expanded={practiceOpen}
+            onClick={() => onPracticeOpen(!practiceOpen)}
+          >
+            <span className="live-start-mark live-start-mark--practice" aria-hidden="true">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="6 4 20 12 6 20 6 4" /></svg>
+            </span>
+            <span className="live-start-practice-title">
+              <strong>Bedienung üben</strong>
+              <span>Optional · 2 Minuten · mit Beispieldaten, nichts wird veröffentlicht</span>
+            </span>
+            <svg className="live-start-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9" /></svg>
+          </button>
+          {practiceOpen && (
+            <div className="live-start-practice-body">
+              <LivePractice onDone={() => onPracticeOpen(false)} />
+            </div>
+          )}
+        </div>
+
         <div className="live-start-step">
           <StepMark n={1} done={verified} />
           <div className="live-start-body">
