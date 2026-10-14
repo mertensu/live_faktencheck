@@ -89,7 +89,7 @@ function NamesStep() {
       <p className="live-tutorial-task">
         Probieren Sie es aus: Klicken Sie oben in einer Sprechblase auf <strong>Sprecher A ▾</strong> und wählen Sie {HOST}.
       </p>
-      <LiveTranscript live={live} speakers={SPEAKERS} />
+      <LiveTranscript live={live} speakers={SPEAKERS} follow={false} />
       {named && (
         <Done>
           Die Zuordnung gilt ab dieser Sprechblase für alles, was diese Stimme danach sagt.
@@ -119,7 +119,7 @@ function PassagePractice({ onReset }) {
         Markieren Sie mit der Maus ihre Antwort „Ganz anders. … stabil geblieben.“ und wählen Sie im Menü {GUEST_C}. Achten Sie auf
         die Option <em>auch alles Weitere von Sprecher A</em>.
       </p>
-      <LiveTranscript live={live} speakers={SPEAKERS} />
+      <LiveTranscript live={live} speakers={SPEAKERS} follow={false} />
       {assigned && (
         <div className="live-tutorial-done" role="status">
           {followed ? (
@@ -159,7 +159,7 @@ function ResultsStep() {
       </p>
       <p className="live-tutorial-task">Klicken Sie auf eine Markierung, um Begründung und Quellen zu sehen.</p>
       <div onClickCapture={onClickCapture}>
-        <LiveTranscript live={live} speakers={SPEAKERS} />
+        <LiveTranscript live={live} speakers={SPEAKERS} follow={false} />
       </div>
       {opened && <Done>So öffnen Sie im Live-Check jedes Ergebnis.</Done>}
       <p className="live-tutorial-tip">
