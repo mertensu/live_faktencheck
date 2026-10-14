@@ -232,7 +232,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
         </div>
       )
     }
-    if (touchOnly) return <LiveStartDesktopOnly sessionId={episodeKey} />
+    if (touchOnly) return <LiveStartDesktopOnly />
     return (
       <LiveStartPanel
         sessionId={episodeKey}
