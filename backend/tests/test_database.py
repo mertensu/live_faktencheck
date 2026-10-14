@@ -240,6 +240,21 @@ async def test_autoincrement_ids(db):
 # =============================================================================
 
 
+async def test_search_queries_roundtrip(db):
+    """search_queries are stored as JSON, default to [], and survive an update."""
+    base = {"sprecher": "X", "behauptung": "Y", "timestamp": datetime.now().isoformat()}
+    plain = await db.add_fact_check(base)
+    assert (await db.get_fact_check_by_id(plain))["search_queries"] == []
+
+    queries = ["Arbeitszeit Wochenstunde Berechnung", "Studie Mehrarbeit Wachstum"]
+    fid = await db.add_fact_check({**base, "search_queries": queries})
+    row = await db.get_fact_check_by_id(fid)
+    assert row["search_queries"] == queries
+    # A read-modify-write (e.g. a speaker rename) keeps them.
+    await db.update_fact_check(fid, {**row, "sprecher": "Z"})
+    assert (await db.get_fact_check_by_id(fid))["search_queries"] == queries
+
+
 async def test_json_quellen_roundtrip(db):
     """Complex quellen (sources) survive JSON serialization."""
     sources = [

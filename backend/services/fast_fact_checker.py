@@ -301,6 +301,9 @@ class FastFactChecker:
             # Fast lane does no self-critique; keep the DB fields consistent.
             parsed["double_check"] = False
             parsed["critique_note"] = ""
+            # Stored with the row, so a verdict can be traced back to what was searched.
+            followed = [t.strip() for t in titles if t and t.strip()][: self.follow_docs_max] if self.follow_docs else []
+            parsed["search_queries"] = self._build_queries(claim, queries) + followed
             logger.info(f"Fast check done: consistency = {parsed.get('consistency', 'unknown')}")
             return parsed
         except Exception as e:
