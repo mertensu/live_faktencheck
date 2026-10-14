@@ -77,11 +77,10 @@ describe('LiveStartPanel', () => {
     expect(screen.getByText(/Mikrofone laden, um den Ton zu prüfen/)).toBeTruthy()
   })
 
-  it('sends phones to a computer, with the link to take along', () => {
-    render(<LiveStartDesktopOnly sessionId="abc123" />)
-    expect(screen.getByRole('heading', { name: /am Computer starten/ })).toBeTruthy()
-    expect(screen.getByRole('button', { name: /Live-Link kopieren/ })).toBeTruthy()
-    expect(screen.queryByRole('button', { name: /Live-Check starten/ })).toBeNull()
+  it('sends phones to a computer, and nothing else', () => {
+    render(<LiveStartDesktopOnly />)
+    expect(screen.getByRole('note').textContent).toMatch(/an einem Laptop oder PC, um fortzufahren/)
+    expect(screen.queryByRole('button')).toBeNull()
   })
 })
 

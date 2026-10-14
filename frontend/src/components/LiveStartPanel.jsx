@@ -154,18 +154,14 @@ export function isTouchOnly() {
   return window.matchMedia('(pointer: coarse)').matches && !window.matchMedia('(any-pointer: fine)').matches
 }
 
-// In place of the start panel on a touch-only device: where to go instead, and the link.
-export function LiveStartDesktopOnly({ sessionId }) {
+// In place of the start panel on a touch-only device: just where to go instead.
+export function LiveStartDesktopOnly() {
   return (
     <div className="live-start">
-      <section className="live-start-card live-start-desktop" aria-label="Live-Check am Computer starten">
-        <h2>Live-Check bitte am Computer starten</h2>
-        <p>
-          Am Smartphone lassen sich Sprecher nicht zuverlässig zuordnen und korrigieren. Öffnen Sie
-          diesen Faktencheck am Laptop oder PC, mit demselben Link und Zugangscode.
-        </p>
-        <ShareLink sessionId={sessionId} />
-      </section>
+      <p className="live-start-card live-start-desktop" role="note">
+        Am Smartphone lassen sich Sprecher nicht zuverlässig zuordnen und korrigieren. Öffnen Sie
+        diesen Faktencheck bitte an einem Laptop oder PC, um fortzufahren.
+      </p>
     </div>
   )
 }
