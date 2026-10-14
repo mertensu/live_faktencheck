@@ -3,6 +3,7 @@ import { MicSelect } from './MicSelect'
 import { ShareLink } from './ShareLink'
 import { LivePractice } from './LiveTutorial'
 import { useMicLevel } from '../hooks/useMicLevel'
+import { TAB_AUDIO_SUPPORTED } from '../hooks/useTabAudio'
 
 const METER_BARS = 10
 
@@ -26,11 +27,15 @@ function StepMark({ n, done }) {
 // Operator's screen before going live: an optional practice on made-up data (folded),
 // then check the sound, see who is checked, start.
 // Then the viewers' link (ticked once copied). Going live from here; the header only stops.
+// Sound comes from a mic, or (Chrome, Edge) digitally from another browser tab.
 export function LiveStartPanel({
-  sessionId, mic, speakers, excludedSpeakers, onStart, connecting, error, practiceOpen, onPracticeOpen,
+  sessionId, mic, tab, audioSource, onAudioSource, speakers, excludedSpeakers, onStart, connecting, error,
+  practiceOpen, onPracticeOpen,
 }) {
+  const fromTab = TAB_AUDIO_SUPPORTED && audioSource === 'tab'
   const hasPermission = mic.devices.some((d) => d.label)
-  const { level, hasSignal, verified } = useMicLevel(mic.deviceId, hasPermission)
+  const measuring = fromTab ? !!tab.stream : hasPermission
+  const { level, hasSignal, verified } = useMicLevel(mic.deviceId, measuring, fromTab ? tab.stream : null)
 
   const [linkCopied, setLinkCopied] = useState(false)
   // "Fertig" sits at the bottom of the practice: folding it would leave the view below
@@ -44,8 +49,8 @@ export function LiveStartPanel({
   const lit = level === null ? 0 : Math.round(level * METER_BARS)
   const excluded = new Set((excludedSpeakers || []).map((s) => s.trim().toLowerCase()))
 
-  let signalText = 'Mikrofone laden, um den Ton zu prüfen'
-  if (hasPermission) signalText = hasSignal ? 'Signal kommt an' : verified ? 'Ton geprüft' : 'Noch kein Ton'
+  let signalText = fromTab ? 'Tab mit der Sendung wählen' : 'Mikrofone laden, um den Ton zu prüfen'
+  if (measuring) signalText = hasSignal ? 'Signal kommt an' : verified ? 'Ton geprüft' : 'Noch kein Ton'
 
   return (
     <div className="live-start">
@@ -84,18 +89,52 @@ export function LiveStartPanel({
                 {signalText}
               </span>
             </div>
-            <MicSelect mic={mic} className="live-start-mic" />
-            {hasPermission && (
+            {TAB_AUDIO_SUPPORTED && (
+              <div className="live-start-source" role="radiogroup" aria-label="Tonquelle">
+                {[['mic', 'Mikrofon'], ['tab', 'Browser-Tab']].map(([value, label]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    role="radio"
+                    aria-checked={audioSource === value}
+                    className={audioSource === value ? 'active' : ''}
+                    onClick={() => onAudioSource(value)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            )}
+            {fromTab ? (
+              <div className="live-start-tab">
+                <button type="button" className="mic-select-load" onClick={tab.pick}>
+                  {tab.stream ? 'Anderen Tab wählen' : 'Tab auswählen'}
+                </button>
+                {tab.stream && <span className="live-start-tab-ok">Tab-Ton verbunden</span>}
+              </div>
+            ) : (
+              <MicSelect mic={mic} className="live-start-mic" />
+            )}
+            {measuring && (
               <div className="live-start-meter" aria-hidden="true">
                 {Array.from({ length: METER_BARS }, (_, i) => (
                   <span key={i} className={i < lit ? 'on' : ''} style={{ height: `${8 + ((i * 7) % 5) * 4}px` }} />
                 ))}
               </div>
             )}
-            <p className="live-start-hint">
-              Spielen Sie die Sendung auf einem anderen Gerät ab als dem, das aufnimmt –
-              viele Geräte filtern den eigenen Ton heraus.
-            </p>
+            {fromTab && tab.error && <p className="live-start-error" role="alert">{tab.error}</p>}
+            {fromTab ? (
+              <p className="live-start-hint">
+                Den Tab mit der Sendung offen lassen und beim Teilen „Tab-Audio teilen“ anhaken.
+                Sie hören den Ton weiter. Lautstärke über das System regeln, den Tab nicht stummschalten.
+              </p>
+            ) : (
+              <p className="live-start-hint">
+                Spielen Sie die Sendung auf einem anderen Gerät ab als dem, das aufnimmt –
+                viele Geräte filtern den eigenen Ton heraus.
+                {TAB_AUDIO_SUPPORTED && ' Läuft die Sendung hier im Browser, wählen Sie „Browser-Tab“.'}
+              </p>
+            )}
           </div>
         </div>
 
