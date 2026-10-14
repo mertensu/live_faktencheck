@@ -130,9 +130,22 @@ TRUSTED_DOMAINS_BY_CATEGORY = {
         "ec.europa.eu/eurostat"
     ],
 }
-# No press: checks cite primary data, research and fact-checkers only. Dropping the six
-# newspapers/broadcasters cost one hit per claim and no deep-check agreement in the
-# no-press benchmark (02.10.2026).
+# No press here: checks cite primary data, research and fact-checkers only. With press on
+# this list, press took a third of the result slots and halved the primary sources found
+# (14.10.2026), so it is searched separately (PRESS_DOMAINS).
+
+# Searched in a search of its own, never cited: press shows where a figure comes from (a
+# study, an institute, a ministry's answer) and who disputes it, which the primary sources
+# often don't say. The checker sees press hits as unnamed leads; press URLs never reach
+# the cited sources (is_press).
+PRESS_DOMAINS = [
+    "faz.net",
+    "handelsblatt.com",
+    "sueddeutsche.de",
+    "zeit.de",
+    "spiegel.de",
+    "tagesschau.de",
+]
 
 # Flat list for backward compatibility
 TRUSTED_DOMAINS = [
@@ -157,14 +170,25 @@ SOURCE_TIERS = {
     "Parteien": (4, "Partei"),
 }
 _UNKNOWN_TIER = (3, "Sonstige")
+_PRESS_TIER = (3, "Presse")
+
+
+def _matches(host: str, domain: str) -> bool:
+    d_host = domain.split("/")[0]
+    return host == d_host or host.endswith("." + d_host)
 
 
 def source_tier(url: str) -> tuple[int, str]:
     """(rank, label) of a URL's trusted-domain category; unknown hosts rank before parties."""
     host = urlparse(url or "").netloc.lower().removeprefix("www.")
     for category, domains in TRUSTED_DOMAINS_BY_CATEGORY.items():
-        for d in domains:
-            d_host = d.split("/")[0]
-            if host == d_host or host.endswith("." + d_host):
-                return SOURCE_TIERS.get(category, _UNKNOWN_TIER)
+        if any(_matches(host, d) for d in domains):
+            return SOURCE_TIERS.get(category, _UNKNOWN_TIER)
+    if any(_matches(host, d) for d in PRESS_DOMAINS):
+        return _PRESS_TIER
     return _UNKNOWN_TIER
+
+
+def is_press(url: str) -> bool:
+    """Press hits are leads, not evidence: they may inform a verdict but are never cited."""
+    return source_tier(url) == _PRESS_TIER

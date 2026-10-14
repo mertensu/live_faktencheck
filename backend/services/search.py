@@ -24,19 +24,20 @@ def _get_client() -> AsyncTavilyClient:
     return _client
 
 
-async def tavily_search(query: str, search_depth: str = "basic") -> dict:
+async def tavily_search(query: str, search_depth: str = "basic", include_domains: list[str] | None = None) -> dict:
     """Search the web to verify a claim against trusted German sources.
 
     Args:
         query: The search query, in German.
         search_depth: Tavily tier ("fast"/"basic"/"advanced").
+        include_domains: domains to search; the trusted domains by default.
     """
     client = _get_client()
     return await client.search(
         query,
         search_depth=search_depth,
         max_results=int(os.getenv("TAVILY_MAX_RESULTS", "5")),
-        include_domains=TRUSTED_DOMAINS,
+        include_domains=include_domains or TRUSTED_DOMAINS,
     )
 
 

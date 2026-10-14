@@ -13,7 +13,7 @@ SOURCE_TITLE_DESCRIPTION = "Kurze informative Beschreibung der Quelle, z.B. 'Sta
 
 EVIDENCE_DESCRIPTION = """Kurze deutschsprachige Einschätzung, ein, höchstens zwei Sätze: die entscheidende Zahl oder Tatsache mit Stand (Jahr/Monat) und Quelle, z. B. „Laut Destatis lag … 2025 bei …“.
 - Nenne als Quelle nur, wo du die Angabe gelesen hast — einen Treffer, den du unter ``sources`` aufführst. Steht eine Destatis-Zahl nur in einer Studie des IW, schreibe „laut IW (unter Berufung auf Destatis)“, nicht „laut Destatis“.
-- Nenne nie Zeitungen, Zeitschriften oder Sender als Quelle, auch nicht aus eigenem Wissen.
+- Nenne im Text nie Zeitungen, Zeitschriften oder Sender, auch nicht aus eigenem Wissen. [Hinweis]-Treffer sind keine Belege: Sie dürfen zeigen, woher eine Zahl stammt (Studie, Institut, Person) oder wer ihr widerspricht. Nenne dann allein diesen Urheber („nach einer Rechnung von …“), nie den Hinweis als Fundort, und sag, dass dessen Originalquelle nicht vorliegt, falls sie fehlt.
 - Bei 'unklar' oder 'keine Datenlage': sag knapp, was fehlt oder nicht passt."""
 
 CONSISTENCY_DESCRIPTION = """Empirische Konsistenz des Kerns der Behauptung: der zentralen Tatsache oder Zahl. Eine ausdrücklich behauptete Ursache („dadurch“, „wegen“, „hat dazu geführt“) gehört zum Kern; eine Zeitangabe wie „unter Minister X“ beschreibt nur den Zeitraum. Wähle genau eine von vier Stufen:
@@ -23,8 +23,9 @@ CONSISTENCY_DESCRIPTION = """Empirische Konsistenz des Kerns der Behauptung: der
 - 'keine Datenlage': Keine relevanten Daten oder empirischen Belege zu diesem Thema gefunden."""
 
 SOURCES_DESCRIPTION = """Die Treffer, auf die sich die Einschätzung stützt, in der Regel 1–3; keine, die das Thema nur streifen. Nur URLs, die in den Suchergebnissen vorkommen; leere Liste, wenn keine relevanten Quellen vorliegen.
-- Die Treffer sind markiert und in dieser Reihenfolge sortiert: [amtlich], [Forschung], [Land], [Partei].
+- Die Treffer sind markiert und in dieser Reihenfolge sortiert: [amtlich], [Forschung], [Land], [Hinweis], [Partei].
 - [Land] sind Landesbehörden, -statistikämter und Landtage: erste Wahl, wenn die Behauptung ein bestimmtes Bundesland betrifft; bei Deutschland insgesamt oder der EU nur, wenn kein [amtlich]- oder [Forschung]-Treffer die Aussage trägt.
+- [Hinweis]-Treffer haben keine URL und werden nie aufgeführt.
 - [Partei]-Treffer sind Positionen, keine Belege — nur aufführen, wenn die Behauptung selbst eine Parteiposition betrifft."""
 
 REFERENCED_DOCUMENTS_DESCRIPTION = """Offizielle Dokumente, Studien oder Berichte, die in den Suchergebnissen genannt oder zitiert werden und die Behauptung direkt beantworten würden, deren Inhalt aber nicht (oder nur angerissen) in den Treffern steht — z. B. ein Finanzplan, ein amtlicher Bericht, ein Gutachten, eine Studie. Je Eintrag der Titel so, wie er genannt wird, mit Herausgeber und Jahr (z. B. „Finanzplan des Bundes 2025 bis 2029“, „Monitoringbericht 2025 Bundesnetzagentur“); Dokumente internationaler Stellen (Eurostat, OECD, IEA, EU-Kommission) mit ihrem englischen Titel. Höchstens 2; leere Liste, wenn keins genannt wird oder die Treffer die Behauptung schon beantworten."""

@@ -137,13 +137,21 @@ guardrails and how to match evidence to the claim (subject, time, rounding, sour
 1. **Search.** Up to `FAST_SEARCH_MAX_QUERIES` Tavily searches run **in parallel**
    (depth `FAST_TAVILY_SEARCH_DEPTH`), restricted to the trusted domains in
    `backend/services/trusted_domains.py`. Queries come from the reformulator; without
-   them, heuristic variants of the claim are used.
+   them, heuristic variants of the claim are used. One more search, with the first query,
+   runs on the press only (`PRESS_DOMAINS`, `FAST_PRESS_LEADS`): press often says where a
+   figure comes from (a study, an institute, a ministry's answer) and who disputes it. It
+   is a search of its own because press on the trusted list took a third of the result
+   slots and halved the primary sources found.
 2. **Filter and rank.** Hits are de-duplicated by URL, bare homepages and plenary
    transcripts are dropped, and the rest are sorted by source tier: federal/EU official
    sources, then research institutes and fact-checkers, then state (Länder) sources, then
-   parties. Press is not on the trusted list: checks never cite newspapers or broadcasters.
+   press, then parties.
 3. **Synthesize.** One call gets the claim, speaker, session context and date plus the
-   ranked snippets (`FAST_SNIPPET_CHARS` each). It writes the finding first and derives
+   ranked snippets (`FAST_SNIPPET_CHARS` each). Press hits are shown as `[Hinweis]` with
+   their text only — no outlet, title or link — so the verdict can neither cite nor name
+   them; press URLs are also dropped from the sources in code. If the text still names an
+   outlet, "Presse" or "Hinweis", the model gets one correction attempt (output
+   validator); the second answer stands. It writes the finding first and derives
    the level from it:
    - `hoch` — the data supports the claim
    - `niedrig` — the data contradicts the claim

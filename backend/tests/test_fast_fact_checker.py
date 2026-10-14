@@ -74,9 +74,9 @@ class TestFastCheck:
         mock_search = AsyncMock(return_value=FAKE_SEARCH)
         with patch("backend.services.fast_fact_checker.tavily_search", mock_search):
             await checker.check_claim_async(speaker="X", claim="Behauptung Y.")
-        # Without reformulator queries: one search per heuristic variant (3), each with
-        # the fast lane's depth override.
-        assert mock_search.call_count == 3
+        # Without reformulator queries: one search per heuristic variant (3) plus the press
+        # search, each with the fast lane's depth override.
+        assert mock_search.call_count == 4
         for call in mock_search.call_args_list:
             assert call.kwargs.get("search_depth") == checker.search_depth
 
@@ -120,8 +120,27 @@ class TestFastCheck:
         mock_search = AsyncMock(return_value=FAKE_SEARCH)
         with patch("backend.services.fast_fact_checker.tavily_search", mock_search):
             await checker.check_claim_async(speaker="X", claim="Behauptung Y.", queries=["q1", "q2"])
-        searched = [c.args[0] for c in mock_search.call_args_list]
-        assert searched == ["q1", "q2", "Behauptung Y."]
+        trusted = [c.args[0] for c in mock_search.call_args_list if not c.kwargs.get("include_domains")]
+        assert trusted == ["q1", "q2", "Behauptung Y."]
+
+    async def test_press_is_searched_separately_with_the_first_query(self, checker):
+        """Press gets a search of its own and never the primary searches' slots."""
+        from backend.services.trusted_domains import PRESS_DOMAINS, TRUSTED_DOMAINS
+        mock_search = AsyncMock(return_value=FAKE_SEARCH)
+        with patch("backend.services.fast_fact_checker.tavily_search", mock_search):
+            await checker.check_claim_async(speaker="X", claim="Behauptung Y.", queries=["q1", "q2"])
+        press = [c for c in mock_search.call_args_list if c.kwargs.get("include_domains")]
+        assert [(c.args[0], c.kwargs["include_domains"]) for c in press] == [("q1", PRESS_DOMAINS)]
+        assert not set(PRESS_DOMAINS) & set(TRUSTED_DOMAINS)
+
+    async def test_press_search_can_be_switched_off(self):
+        with patch.dict("os.environ", {"FAST_PRESS_LEADS": "false"}):
+            c = _make_checker()
+        mock_search = AsyncMock(return_value=FAKE_SEARCH)
+        with c.agent.override(model=TestModel(custom_output_args=MOCK_VERDICT.model_dump())):
+            with patch("backend.services.fast_fact_checker.tavily_search", mock_search):
+                await c.check_claim_async(speaker="X", claim="Behauptung Y.", queries=["q1", "q2"])
+        assert not any(call.kwargs.get("include_domains") for call in mock_search.call_args_list)
 
     async def test_results_sorted_official_first_and_labelled(self, checker):
         mixed = {"results": [
@@ -136,6 +155,12 @@ class TestFastCheck:
         text = checker._format_evidence(results)
         assert "[amtlich] Destatis" in text and "[Sonstige] Unbekannt" in text and "[Partei] Linke" in text
 
+    def test_press_hit_is_shown_without_outlet(self, checker):
+        """The model sees a press hit's text as a lead, never its outlet, title or link."""
+        text = checker._format_evidence([{"title": "Studie zur Arbeitszeit | Handelsblatt",
+                                          "url": "https://www.handelsblatt.com/a", "content": "Ein Institut rechnet …"}])
+        assert text == "- [Hinweis] Ein Institut rechnet …"
+
     async def test_sources_not_in_results_are_dropped(self):
         c = _make_checker()
         verdict = MOCK_VERDICT.model_copy(update={"sources": [
@@ -144,6 +169,20 @@ class TestFastCheck:
         ]})
         with c.agent.override(model=TestModel(custom_output_args=verdict.model_dump())):
             with patch("backend.services.fast_fact_checker.tavily_search", AsyncMock(return_value=FAKE_SEARCH)):
+                result = await c.check_claim_async(speaker="X", claim="Behauptung.")
+        assert [s["url"] for s in result["sources"]] == ["https://destatis.de/x"]
+
+    async def test_press_is_never_cited(self):
+        """Press hits reach the judge as leads, but a press URL never ends up in sources."""
+        c = _make_checker()
+        with_press = {"results": [*FAKE_SEARCH["results"],
+                                  {"title": "Handelsblatt", "url": "https://www.handelsblatt.com/a", "content": "x"}]}
+        verdict = MOCK_VERDICT.model_copy(update={"sources": [
+            Source(url="https://www.handelsblatt.com/a", title="Handelsblatt"),
+            Source(url="https://destatis.de/x", title="Statistisches Bundesamt"),
+        ]})
+        with c.agent.override(model=TestModel(custom_output_args=verdict.model_dump())):
+            with patch("backend.services.fast_fact_checker.tavily_search", AsyncMock(return_value=with_press)):
                 result = await c.check_claim_async(speaker="X", claim="Behauptung.")
         assert [s["url"] for s in result["sources"]] == ["https://destatis.de/x"]
 
@@ -156,7 +195,7 @@ class TestSourceTier:
         assert source_tier("https://www.iwkoeln.de/x") == (1, "Forschung")
         assert source_tier("https://um.baden-wuerttemberg.de/x") == (2, "Land")
         assert source_tier("https://www.statistik-bw.de/x") == (2, "Land")
-        assert source_tier("https://www.zeit.de/x") == (3, "Sonstige")  # press is not trusted
+        assert source_tier("https://www.zeit.de/x") == (3, "Presse")  # searched as a lead, never cited
         assert source_tier("https://afd.de/x") == (4, "Partei")
         assert source_tier("https://example.org/x")[0] == 3
         assert source_tier("")[0] == 3
@@ -354,3 +393,46 @@ class TestFollowDocuments:
             await checker.check_claim_async(speaker="X", claim="Y.")
         assert len(seen) == 1
         assert not any(c.args[0].startswith("Finanzplan") for c in search.await_args_list)
+
+
+class TestNoMediaInEvidence:
+    """The verdict text never names the press: one correction attempt, then it stands."""
+
+    @staticmethod
+    def _model(texts):
+        from pydantic_ai.messages import ModelResponse, ToolCallPart
+        from pydantic_ai.models.function import FunctionModel
+        calls = []
+
+        def respond(messages, info):
+            text = texts[min(len(calls), len(texts) - 1)]
+            calls.append(text)
+            args = {**MOCK_VERDICT.model_dump(), "evidence": text}
+            return ModelResponse(parts=[ToolCallPart(info.output_tools[0].name, args)])
+        return FunctionModel(respond), calls
+
+    async def test_media_name_triggers_one_retry(self):
+        c = _make_checker()
+        model, calls = self._model(["Laut Handelsblatt rechnet das IW so.", "Nach einer Rechnung des IW."])
+        with c.agent.override(model=model):
+            with patch("backend.services.fast_fact_checker.tavily_search", AsyncMock(return_value=FAKE_SEARCH)):
+                result = await c.check_claim_async(speaker="X", claim="Behauptung.")
+        assert len(calls) == 2
+        assert result["evidence"] == "Nach einer Rechnung des IW."
+
+    async def test_second_answer_stands(self):
+        c = _make_checker()
+        model, calls = self._model(["Ein Hinweis nennt 5 %.", "Ein Hinweis nennt weiter 5 %."])
+        with c.agent.override(model=model):
+            with patch("backend.services.fast_fact_checker.tavily_search", AsyncMock(return_value=FAKE_SEARCH)):
+                result = await c.check_claim_async(speaker="X", claim="Behauptung.")
+        assert len(calls) == 2
+        assert result["consistency"] == "hoch"  # no failure fallback
+
+    async def test_clean_text_needs_no_retry(self):
+        c = _make_checker()
+        model, calls = self._model(["Laut Destatis lag die Zahl 2025 bei 5 %."])
+        with c.agent.override(model=model):
+            with patch("backend.services.fast_fact_checker.tavily_search", AsyncMock(return_value=FAKE_SEARCH)):
+                await c.check_claim_async(speaker="X", claim="Behauptung.")
+        assert len(calls) == 1

@@ -28,8 +28,8 @@ from backend.lang import (
 )
 from .llm_base import build_model, settings_with_thinking
 from .search import tavily_search, tavily_extract
-from .trusted_domains import source_tier
-from pydantic_ai import Agent
+from .trusted_domains import PRESS_DOMAINS, is_press, source_tier
+from pydantic_ai import Agent, ModelRetry, RunContext
 
 logger = logging.getLogger(__name__)
 
@@ -49,6 +49,12 @@ def _url_key(url: str) -> str:
         path += "l"
     return f"{host}{path}" if host else url.strip()
 
+
+# The verdict text never names the press: neither an outlet nor the "[Hinweis]" label it is
+# shown under. Prompt rules alone left one in ~1 in 4 texts, so the output is checked.
+_MEDIA_RE = re.compile(
+    r"Handelsblatt|tagesschau|Tagesschau|\bSpiegel\b|SPIEGEL|\bFAZ\b|Frankfurter Allgemeine|Süddeutsche"
+    r"|\bSZ\b|\bZEIT\b|Zeit Online|Presse(?!mitteil)|Medienbericht|Zeitung|Hinweis")
 
 # Plenary transcripts (Bundestag /btp/, Landtage) are speeches, not evidence.
 _PLENARY_RE = re.compile(r"plenarprotokoll|/protocols/|/btp/|plpr|transcript", re.IGNORECASE)
@@ -88,6 +94,16 @@ class FastVerdict(BaseModel):
     referenced_documents: List[str] = Field(default_factory=list, description=REFERENCED_DOCUMENTS_DESCRIPTION)
 
 
+def _no_media_in_evidence(ctx: RunContext, output: FastVerdict) -> FastVerdict:
+    """One correction attempt when the text names the press; the second answer stands."""
+    found = sorted(set(_MEDIA_RE.findall(output.evidence)))
+    if found and ctx.retry == 0:
+        raise ModelRetry(
+            f"Die Einschätzung nennt {', '.join(found)}. Formuliere sie neu, ohne Zeitungen, Sender, "
+            "„Presse“ oder „Hinweis“ zu nennen; nenne nur den Urheber einer Angabe (Institut, Person, Behörde).")
+    return output
+
+
 class FastFactChecker:
     """Fast, loop-free fact-check: parallel Tavily searches + one synthesis call."""
 
@@ -99,6 +115,10 @@ class FastFactChecker:
         self.search_depth = os.getenv("FAST_TAVILY_SEARCH_DEPTH", "basic")
         # The deciding number often sits past the first few hundred characters.
         self.snippet_chars = int(os.getenv("FAST_SNIPPET_CHARS", "1200"))
+        # One extra search on the press only, with the first query: a lead to where a figure
+        # comes from and who disputes it. Its own search, so press never takes the primary
+        # searches' result slots. +1 credit per claim, parallel (no added latency).
+        self.press_leads = os.getenv("FAST_PRESS_LEADS", "true").strip().lower() in ("1", "true", "yes")
 
         # Undecided verdict: read deeper in the documents already found. Search snippets are
         # passages the search engine picked; the deciding number often sits further inside a
@@ -130,6 +150,7 @@ class FastFactChecker:
             model_settings=settings_with_thinking(self.thinking_level),
             retries=1,
         )
+        self.agent.output_validator(_no_media_in_evidence)
 
         logger.info(
             f"FastFactChecker initialized (model={self.model_name}, "
@@ -168,7 +189,15 @@ class FastFactChecker:
                 logger.exception("Fast search failed for query: %s", q)
                 return {"results": []}
 
-        raw = await asyncio.gather(*[_one(q) for q in queries])
+        async def _press(q: str) -> dict:
+            try:
+                return await tavily_search(q, search_depth=self.search_depth, include_domains=PRESS_DOMAINS)
+            except Exception:
+                logger.exception("Fast press search failed for query: %s", q)
+                return {"results": []}
+
+        searches = [_one(q) for q in queries] + ([_press(queries[0])] if self.press_leads else [])
+        raw = await asyncio.gather(*searches)
         seen_urls: set[str] = set()
         merged: List[dict] = []
         for res in raw:
@@ -201,6 +230,11 @@ class FastFactChecker:
             content = (r.get("content", "") or "")[: self.snippet_chars]
             if extra and extra.get(url):
                 content += f" [Weitere Stellen im Dokument:] {extra[url][: self.extract_chars]}"
+            if is_press(url):
+                # A lead, shown without outlet, title or link: the model can't name or cite
+                # what it never saw (a prompt rule alone left outlets in ~1 in 4 verdicts).
+                lines.append(f"- [Hinweis] {content}")
+                continue
             lines.append(f"- [{source_tier(url)[1]}] {title} ({url}): {content}")
         return "\n".join(lines)
 
@@ -253,9 +287,10 @@ class FastFactChecker:
         result = await self.agent.run(
             f"{header}\n\nSuchergebnisse aus vertrauenswürdigen Quellen:\n{self._format_evidence(results, extra)}")
         parsed = result.output.model_dump()
-        # Only links the model actually saw: drops invented or mangled URLs.
+        # Only links the model actually saw (drops invented or mangled URLs), never press.
         found = {r.get("url") for r in results}
-        parsed["sources"] = [src for src in parsed.get("sources", []) if src.get("url") in found]
+        parsed["sources"] = [src for src in parsed.get("sources", [])
+                             if src.get("url") in found and not is_press(src.get("url"))]
         return parsed
 
     async def check_claim_async(
