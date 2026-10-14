@@ -27,6 +27,9 @@ export function useMicLevel(deviceId, enabled) {
     let stream = null
     let ctx = null
     let raf = 0
+    // Opened without a click (the permission was remembered), the browser keeps the audio
+    // context suspended and the meter reads silence: wake it now and on the first click or key.
+    const wake = () => { if (ctx?.state === 'suspended') ctx.resume().catch(() => {}) }
 
     const start = async () => {
       try {
@@ -36,6 +39,9 @@ export function useMicLevel(deviceId, enabled) {
         if (cancelled) return
         const AudioCtx = window.AudioContext || window.webkitAudioContext
         ctx = new AudioCtx()
+        wake()
+        window.addEventListener('pointerdown', wake)
+        window.addEventListener('keydown', wake)
         const analyser = ctx.createAnalyser()
         analyser.fftSize = 1024
         ctx.createMediaStreamSource(stream).connect(analyser)
@@ -67,6 +73,8 @@ export function useMicLevel(deviceId, enabled) {
     return () => {
       cancelled = true
       cancelAnimationFrame(raf)
+      window.removeEventListener('pointerdown', wake)
+      window.removeEventListener('keydown', wake)
       stream?.getTracks().forEach((tr) => tr.stop())
       ctx?.close().catch(() => {})
     }
