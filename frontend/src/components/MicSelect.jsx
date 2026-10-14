@@ -16,7 +16,7 @@ export function MicSelect({ mic, className = '', disabled = false }) {
 
   return (
     <label className={`mic-select ${className}`.trim()}>
-      Mikrofon:
+      Mikrofon
       {hasLabels ? (
         <select
           value={deviceId}

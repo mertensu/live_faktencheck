@@ -4,8 +4,7 @@ import { BackendErrorDisplay } from '../components/BackendErrorDisplay'
 import { FactCheckStream } from '../components/FactCheckStream'
 import { LiveTranscript } from '../components/LiveTranscript'
 import { LiveTutorial } from '../components/LiveTutorial'
-import { MicSelect } from '../components/MicSelect'
-import { ShareLink } from '../components/ShareLink'
+import { LiveStartPanel } from '../components/LiveStartPanel'
 import { useAudioStream } from '../hooks/useAudioStream'
 import { useMicDevices } from '../hooks/useMicDevices'
 import { useSidebar } from '../components/MyChecksSidebar'
@@ -15,11 +14,12 @@ const DEFAULT_SPEAKERS = []
 
 export function FactCheckPage({ showName, showKey, episodeKey }) {
   // A viewer opened the shared link without an access code: strip the page down
-  // to the debate name and the stream — no "Fakten-Check -" prefix, no controls.
+  // to the debate name and the stream, no controls.
   const isViewer = !getAccessCode()
 
   const [factChecks, setFactChecks] = useState([])
   const [speakers, setSpeakers] = useState(DEFAULT_SPEAKERS)  // Load config from backend
+  const [excludedSpeakers, setExcludedSpeakers] = useState([])  // named but not checked (e.g. moderation)
   const [displayTitle, setDisplayTitle] = useState(showName)  // Full show title (updated from config)
   const [backendError, setBackendError] = useState(null)  // Backend connection error
   const [notFound, setNotFound] = useState(false)  // session unknown or deleted (config 404)
@@ -43,6 +43,9 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
   const showLiveTranscript = !isViewer && (
     isLive || liveStream.transcript.length > 0 || liveStream.claims.length > 0
   )
+  // Before going live the start panel holds the start button (and its error); the
+  // header button only resumes a session that already has a transcript or results.
+  const showStartPanel = !isViewer && !notFound && !showLiveTranscript && factChecks.length === 0
   // The live-check guide opens every time an operator opens a session that has no
   // results yet (before the show starts) — not when reopening a finished check.
   // Decided once, after the first results fetch, so it doesn't flash open.
@@ -70,6 +73,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
           } else {
             debug.warn(`No speakers in config for ${key}, using fallback`)
           }
+          setExcludedSpeakers(config.excluded_speakers || [])
           if (config.show_name && config.date) {
             setDisplayTitle(`${config.show_name} vom ${config.date}`)
           } else if (config.show_name) {
@@ -179,7 +183,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
   // What sits below the header when no live transcript is showing:
   // - viewer: the results stream, or a "starts soon" note until the first result
   // - operator on a session with results (e.g. a Beispiel): the read-only stream
-  // - operator before going live: share link + mic picker; the header starts Live-Check
+  // - operator before going live: the start panel (sound check, people, start, share link)
   const renderResults = () => {
     if (notFound) {
       return (
@@ -214,21 +218,15 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
       )
     }
     return (
-      <div className="review-view">
-        <ShareLink sessionId={episodeKey} />
-        <div className="review-start">
-          <MicSelect mic={mic} className="review-start-mic" />
-          <p className="review-start-hint" role="note">
-            <strong>Hinweis:</strong> Willst du ein Video oder einen Livestream prüfen, verwende
-            bitte nicht dasselbe Gerät (Laptop, Smartphone, Tablet) zum Abspielen und zur
-            Aufnahme des Tons. Viele Geräte filtern den eigenen Ton aus dem Mikrofon heraus.
-            Das Transkript bleibt dann leer oder lückenhaft.
-          </p>
-          <p className="review-start-info">
-            Mit <strong>◉ Live-Check</strong> oben starten Sie Transkript und Prüfung.
-          </p>
-        </div>
-      </div>
+      <LiveStartPanel
+        sessionId={episodeKey}
+        mic={mic}
+        speakers={speakers}
+        excludedSpeakers={excludedSpeakers}
+        onStart={() => liveStream.start()}
+        connecting={liveStream.status === 'connecting'}
+        error={liveStream.error}
+      />
     )
   }
 
@@ -237,7 +235,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
       <header className="app-header">
         <div className="factcheck-header-content">
           <div>
-            <h1>{isViewer ? displayTitle : `Fakten-Check - ${displayTitle}`}</h1>
+            <h1>{displayTitle}</h1>
           </div>
           {!isViewer && !notFound && (
           <div className="factcheck-header-actions">
@@ -246,7 +244,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
                 <span className="header-rec-dot" aria-hidden="true">◉</span>
                 {liveStream.status === 'connecting' ? 'Live verbindet…' : 'Live stoppen'}
               </button>
-            ) : (
+            ) : !showStartPanel && (
               <button
                 type="button"
                 className="header-rec-start"
@@ -259,7 +257,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
             <button type="button" className="header-help-link" onClick={() => setTutorialOpen(true)}>
               Kurzanleitung
             </button>
-            {liveStream.error && (
+            {liveStream.error && !showStartPanel && (
               <span className="header-live-error">{liveStream.error}</span>
             )}
           </div>

@@ -28,7 +28,7 @@ export function ShareLink({ sessionId }) {
 
   return (
     <div className="share-link">
-      <span className="share-link-label">Live-Link teilen</span>
+      <span className="share-link-label">Link für Zuschauer</span>
       <button
         type="button"
         className="share-link-btn"

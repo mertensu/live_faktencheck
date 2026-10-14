@@ -1466,40 +1466,78 @@
 /* ===== Session page below the header (results stream / pre-live panel) ===== */
 .review-view { max-width: 640px; margin: 0 auto; padding: 0 1rem 2rem; }
 
-/* Pre-live panel for the operator: mic picker + hint to the header Live-Check button. */
-.review-start {
-  display: flex; flex-direction: column; align-items: center; gap: 1.25rem;
-  text-align: center; padding: 3rem 1rem;
+/* ===== Pre-live start panel (operator): sound check, people, start ===== */
+.live-start {
+  max-width: 720px; margin: 0 auto; padding: 0.5rem 1rem 3rem;
+  display: flex; flex-direction: column; gap: 1.25rem;
 }
-.review-start-info { color: var(--text-secondary); font-size: 1rem; line-height: 1.5; max-width: 30rem; margin: 0; }
-/* Setup warning: playback and recording must not share one device. */
-.review-start-hint {
-  max-width: 30rem; margin: 0; padding: 0.75rem 1rem; text-align: left;
-  font-size: 0.9rem; line-height: 1.5; color: #78350f;
-  background: #fffbeb; border: 1px solid #fcd34d; border-radius: 8px;
+.live-start-card {
+  background: #fff; border: 1px solid var(--border-light); border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.06); overflow: hidden;
+}
+.live-start-step {
+  display: flex; gap: 1.25rem; padding: 1.5rem 1.75rem;
+  border-bottom: 1px solid #EEF1F5;
+}
+.live-start-mark {
+  flex: none; width: 32px; height: 32px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: #EEF1F5; color: var(--text-secondary); font-weight: 600; font-size: 0.95rem;
+}
+.live-start-mark--done { background: #E3F4EA; color: #1E7A45; }
+.live-start-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.75rem; }
+.live-start-body h2 { margin: 0; font-size: 1.1rem; font-weight: 600; color: var(--text-main); }
+.live-start-row { display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+.live-start-signal { font-size: 0.9rem; font-weight: 500; color: var(--text-secondary); }
+.live-start-signal--ok { color: #1E7A45; }
+.live-start-meter { display: flex; align-items: flex-end; gap: 4px; height: 28px; }
+.live-start-meter span { width: 10px; border-radius: 2px; background: #D5DCE3; transition: background 0.08s linear; }
+.live-start-meter span.on { background: #2F9E5B; }
+.live-start-hint { margin: 0; font-size: 0.9rem; line-height: 1.5; color: var(--text-secondary); }
+.live-start-people { list-style: none; margin: 0; padding: 0; display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.live-start-people li {
+  padding: 0.35rem 0.75rem; border-radius: 999px; font-size: 0.9rem;
+  background: #EEF1F5; color: var(--text-secondary);
+}
+.live-start-people li.checked { background: #E8EEFC; color: #1F45B0; font-weight: 500; }
+.live-start-go { padding: 1.5rem 1.75rem; display: flex; flex-direction: column; gap: 0.6rem; background: #FBFCFD; }
+.live-start-button {
+  height: 56px; border: 0; border-radius: 10px; cursor: pointer;
+  background: #2F5BD3; color: #fff; font: inherit; font-size: 1.1rem; font-weight: 600;
+  display: flex; align-items: center; justify-content: center; gap: 0.6rem;
+  transition: background var(--transition-fast);
+}
+.live-start-button:hover { background: #1F45B0; }
+.live-start-button:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.live-start-button:disabled { opacity: 0.7; cursor: default; }
+.live-start-dot { width: 12px; height: 12px; border-radius: 50%; background: #fff; }
+.live-start-note, .live-start-error { margin: 0; text-align: center; font-size: 0.9rem; }
+.live-start-note { color: var(--text-secondary); }
+.live-start-error { color: #b91c1c; }
+@media (max-width: 520px) {
+  .live-start-step, .live-start-go { padding: 1.25rem 1rem; }
+  .live-start-step { gap: 0.85rem; }
 }
 
-/* Mic input picker (pre-live panel). */
+/* Mic input picker (start panel). */
 .mic-select {
-  display: inline-flex; align-items: center; gap: 0.4rem;
-  color: var(--text-secondary); font-size: 0.9rem; flex-wrap: wrap;
+  display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;
+  color: var(--text-secondary); font-size: 0.95rem;
 }
 .mic-select select {
-  max-width: 14rem; padding: 0.3rem 0.4rem;
-  border-radius: 6px; border: 1px solid #44444f;
-  background: #2a2a33; color: #f0f0f3;
+  flex: 1; min-width: 12rem; height: 44px; padding: 0 0.75rem;
+  font: inherit; font-size: 0.95rem; color: var(--text-main);
+  background: #fff; border: 1px solid #CBD3DD; border-radius: 8px;
 }
-.mic-select select:disabled { opacity: 0.5; cursor: default; }
+.mic-select select:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.mic-select select:disabled { opacity: 0.6; cursor: default; }
 .mic-select-load {
-  padding: 0.3rem 0.7rem; border-radius: 6px;
-  border: 1px solid #2563eb; background: #2563eb; color: #fff;
-  cursor: pointer; font-size: 0.85rem; font-weight: 600;
+  height: 44px; padding: 0 1rem; border-radius: 8px;
+  border: 1px solid #2F5BD3; background: #fff; color: #2F5BD3;
+  cursor: pointer; font: inherit; font-size: 0.9rem; font-weight: 600;
 }
-.mic-select-load:hover { background: #1d4ed8; }
+.mic-select-load:hover { background: #E8EEFC; }
 .mic-select-load:disabled { opacity: 0.5; cursor: default; }
-/* On the light start screen the plain-text label needs a readable color. */
-.review-start-mic { color: var(--text-secondary); justify-content: center; }
-.review-start-mic select { max-width: 16rem; }
 
 .results-feed { display: flex; flex-direction: column; gap: 1rem; margin-top: 1.5rem; }
 .results-feed-item { display: flex; flex-direction: column; gap: 0.25rem; }
@@ -1547,27 +1585,23 @@
 .review-waiting-sub { font-size: 0.9rem; color: var(--text-secondary); margin: 0; max-width: 34ch; }
 @media (prefers-reduced-motion: reduce) { .review-waiting-pulse { animation: none; } }
 
-/* ===== Share live link (moderator) ===== */
+/* ===== Share live link (operator, below the start panel) ===== */
 .share-link {
-  display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;
-  padding: 0.6rem 0.85rem; margin-bottom: 0.75rem;
-  background: #EAF4FE; border: 1px solid #CFE6FB; border-radius: var(--radius-lg);
+  display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;
+  padding: 0.85rem 1.1rem; border: 1px dashed #CBD3DD; border-radius: 10px;
 }
-.share-link-label {
-  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
-  color: var(--accent-active);
-}
+.share-link-label { font-size: 0.9rem; font-weight: 600; color: var(--text-secondary); }
 .share-link-btn {
-  display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer;
-  font: inherit; font-size: 0.82rem; color: var(--text-main);
-  background: #fff; border: 1px solid #CFE6FB; border-radius: 999px;
-  padding: 0.3rem 0.75rem; transition: border-color var(--transition-fast), background var(--transition-fast);
+  flex: 1; min-width: 0; display: inline-flex; align-items: center; justify-content: space-between; gap: 0.75rem;
+  cursor: pointer; font: inherit; font-size: 0.95rem; color: var(--text-main);
+  background: #fff; border: 1px solid #CBD3DD; border-radius: 8px; min-height: 40px;
+  padding: 0.35rem 0.85rem; transition: border-color var(--transition-fast), background var(--transition-fast);
 }
-.share-link-btn:hover { border-color: var(--accent-blue); background: #F7FBFF; }
+.share-link-btn:hover { border-color: #2F5BD3; background: #F7F9FE; }
 .share-link-btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-.share-link-url { font-variant-numeric: tabular-nums; max-width: 60vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.share-link-icon { flex: none; color: var(--accent-active); }
-.share-link-copied { font-size: 0.78rem; font-weight: 600; color: #15803d; opacity: 0; transition: opacity var(--transition-fast); }
+.share-link-url { font-variant-numeric: tabular-nums; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.share-link-icon { flex: none; color: #2F5BD3; }
+.share-link-copied { font-size: 0.85rem; font-weight: 600; color: #1E7A45; opacity: 0; transition: opacity var(--transition-fast); }
 .share-link-copied--show { opacity: 1; }
 
 /* ===== Live Fokus-Stream (FactCheckStream) ===== */

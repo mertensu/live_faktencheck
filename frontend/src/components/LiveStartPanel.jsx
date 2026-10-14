@@ -1,0 +1,96 @@
+import { MicSelect } from './MicSelect'
+import { ShareLink } from './ShareLink'
+import { useMicLevel } from '../hooks/useMicLevel'
+
+const METER_BARS = 10
+
+function CheckIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+  )
+}
+
+function StepMark({ n, done }) {
+  return (
+    <span className={`live-start-mark${done ? ' live-start-mark--done' : ''}`}>
+      {done ? <CheckIcon /> : n}
+    </span>
+  )
+}
+
+// Operator's screen before going live: check the sound, see who is checked, start.
+// The share link for viewers sits below. Going live from here; the header only stops.
+export function LiveStartPanel({ sessionId, mic, speakers, excludedSpeakers, onStart, connecting, error }) {
+  const hasPermission = mic.devices.some((d) => d.label)
+  const { level, hasSignal } = useMicLevel(mic.deviceId, hasPermission)
+
+  const lit = level === null ? 0 : Math.round(level * METER_BARS)
+  const excluded = new Set((excludedSpeakers || []).map((s) => s.trim().toLowerCase()))
+
+  let signalText = 'Mikrofone laden, um den Ton zu prüfen'
+  if (hasPermission) signalText = hasSignal ? 'Signal kommt an' : 'Noch kein Ton'
+
+  return (
+    <div className="live-start">
+      <section className="live-start-card" aria-label="Live-Check vorbereiten">
+        <div className="live-start-step">
+          <StepMark n={1} done={hasSignal} />
+          <div className="live-start-body">
+            <div className="live-start-row">
+              <h2>Ton prüfen</h2>
+              <span className={`live-start-signal${hasSignal ? ' live-start-signal--ok' : ''}`} role="status">
+                {signalText}
+              </span>
+            </div>
+            <MicSelect mic={mic} className="live-start-mic" />
+            {hasPermission && (
+              <div className="live-start-meter" aria-hidden="true">
+                {Array.from({ length: METER_BARS }, (_, i) => (
+                  <span key={i} className={i < lit ? 'on' : ''} style={{ height: `${8 + ((i * 7) % 5) * 4}px` }} />
+                ))}
+              </div>
+            )}
+            <p className="live-start-hint">
+              Spielen Sie die Sendung auf einem anderen Gerät ab als dem, das aufnimmt –
+              viele Geräte filtern den eigenen Ton heraus.
+            </p>
+          </div>
+        </div>
+
+        {speakers.length > 0 && (
+          <div className="live-start-step">
+            <StepMark n={2} done />
+            <div className="live-start-body">
+              <h2>Personen</h2>
+              <ul className="live-start-people">
+                {speakers.map((name) => {
+                  const skip = excluded.has(name.trim().toLowerCase())
+                  return (
+                    <li key={name} className={skip ? '' : 'checked'}>
+                      {name} · {skip ? 'nicht geprüft' : 'wird geprüft'}
+                    </li>
+                  )
+                })}
+              </ul>
+            </div>
+          </div>
+        )}
+
+        <div className="live-start-go">
+          <button type="button" className="live-start-button" onClick={onStart} disabled={connecting}>
+            <span className="live-start-dot" aria-hidden="true" />
+            {connecting ? 'Verbinde…' : 'Live-Check starten'}
+          </button>
+          {error
+            ? <p className="live-start-error" role="alert">{error}</p>
+            : <p className="live-start-note">Startet Transkript und Prüfung. Stoppen jederzeit oben rechts.</p>}
+        </div>
+      </section>
+
+      <ShareLink sessionId={sessionId} />
+    </div>
+  )
+}
