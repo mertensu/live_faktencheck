@@ -88,8 +88,7 @@ function NamesStep({ onSolved }) {
       <p>
         Das System hört nur, dass <em>verschiedene</em> Stimmen sprechen, und nennt sie
         Sprecher A, B, … <strong>Ihre Aufgabe</strong> ist es daher, jede Stimme einmal der
-        richtigen Person zuzuordnen, sobald sie zum ersten Mal spricht. Geprüft wird nur, was
-        eine Stimme sagt, die einer Person zugeordnet ist. Stimmen aus einem Einspieler ordnen
+        richtigen Person zuzuordnen, sobald sie zum ersten Mal spricht. Stimmen aus einem Einspieler ordnen
         Sie <em>Andere Stimme – nicht prüfen</em> zu.
       </p>
       <p className="live-tutorial-task">
@@ -142,14 +141,14 @@ function PassagePractice({ follow, onReset, onSolved }) {
         <div className={right ? 'live-tutorial-done' : 'live-tutorial-retry'} role="status">
           {followed ? (
             <p>
-              {right ? '✓ ' : ''}<strong>„auch alles Weitere“ aktiviert:</strong> Auch die spätere Zeile von Sprecher A heißt jetzt {GUEST_C}.
+              {right ? '✓ ' : ''}<strong>„auch alles Weitere“ aktiviert:</strong> Auch die spätere Zeile von Sprecher A wird jetzt {GUEST_C} zugeordnet.
               Richtig, wenn die zwei Stimmen weiter vermischt sind. Spricht später wieder {HOST},
               klicken Sie in ihrer Sprechblase auf den Namen ({GUEST_C} ▾) und wählen Sie {HOST}. Ab dieser
               Sprechblase stimmt der Name dann wieder.
             </p>
           ) : (
             <p>
-              {right ? '✓ ' : ''}<strong>„auch alles Weitere“ deaktiviert:</strong> Nur die markierte Stelle heißt {GUEST_C}; die spätere
+              {right ? '✓ ' : ''}<strong>„auch alles Weitere“ deaktiviert:</strong> Nur die markierte Stelle wurde von {GUEST_C} gesprochen; die spätere
               Zeile bleibt bei {HOST}. Richtig für einen einzelnen Ausrutscher.
             </p>
           )}
