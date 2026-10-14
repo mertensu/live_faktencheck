@@ -208,7 +208,11 @@ export function LivePractice({ onDone }) {
   const topRef = useRef(null)
   const next = () => {
     setStep(step + 1)
-    requestAnimationFrame(() => topRef.current?.scrollIntoView?.({ block: 'nearest' }))
+    // Up to the tabs if they left the view ('nearest' stops short on a step taller than it).
+    requestAnimationFrame(() => {
+      const el = topRef.current
+      if (el && el.getBoundingClientRect().top < 0) el.scrollIntoView?.({ block: 'start' })
+    })
   }
 
   return (
