@@ -33,6 +33,13 @@ export function LiveStartPanel({
   const { level, hasSignal, verified } = useMicLevel(mic.deviceId, hasPermission)
 
   const [linkCopied, setLinkCopied] = useState(false)
+  // "Fertig" sits at the bottom of the practice: folding it would leave the view below
+  // the card's top, so bring the practice's own row back into view.
+  const closePractice = () => {
+    onPracticeOpen(false)
+    requestAnimationFrame(() =>
+      document.getElementById('live-practice')?.scrollIntoView?.({ block: 'nearest' }))
+  }
 
   const lit = level === null ? 0 : Math.round(level * METER_BARS)
   const excluded = new Set((excludedSpeakers || []).map((s) => s.trim().toLowerCase()))
@@ -63,7 +70,7 @@ export function LiveStartPanel({
           </button>
           {practiceOpen && (
             <div className="live-start-practice-body">
-              <LivePractice onDone={() => onPracticeOpen(false)} />
+              <LivePractice onDone={closePractice} />
             </div>
           )}
         </div>
