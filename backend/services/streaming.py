@@ -215,6 +215,9 @@ class StreamingSession:
         self.session_id = session_id
         self.gate = gate
         self.fast_checker = fast_checker
+        # "fast" or "agent" (LIVE_CHECKER), stored with each row.
+        depth = getattr(fast_checker, "check_depth", None)
+        self._check_depth = depth if isinstance(depth, str) else "fast"
         self.db = db
         self.guests = guests or []
         self.context = context
@@ -516,7 +519,7 @@ class StreamingSession:
                     "timestamp": info["timestamp"],
                     "session_id": self.session_id,
                     "status": "processing",
-                    "check_depth": "fast",
+                    "check_depth": self._check_depth,
                 })
                 self._rows[cid] = pid
                 await self._emit({"type": "claim_processing", "id": pid, "speaker": self._claim_speakers[cid],
@@ -835,14 +838,14 @@ class StreamingSession:
                 queries=info["queries"],
             )
             fc = build_fact_check_dict(result, self.session_id, speaker_fallback=speaker, claim_fallback=info["claim"])
-            fc["check_depth"] = "fast"
+            fc["check_depth"] = self._check_depth
         except Exception:
             logger.exception("Fast check failed for streamed claim")
             fc = {
                 "sprecher": speaker, "behauptung": info["claim"], "consistency": "",
                 "begruendung": "Fehler bei der Schnellprüfung", "quellen": [],
                 "timestamp": info["timestamp"], "session_id": self.session_id, "status": "error",
-                "check_depth": "fast",
+                "check_depth": self._check_depth,
             }
         async with self._publish_lock:
             self._results[cid] = fc

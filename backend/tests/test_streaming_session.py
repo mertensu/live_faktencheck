@@ -94,6 +94,17 @@ class TestWindowing:
         assert row["sprecher"] == "Julia"
         assert row["begruendung"] == "Ein kurzer Satz."
 
+    async def test_agent_checker_rows_carry_its_depth(self, db):
+        gate = _gate([[ExtractedClaim(name="Julia", claim="Deutschland hat 83 Mio. Einwohner.")]])
+        checker = _fast_checker()
+        checker.check_depth = "agent"
+        session = StreamingSession("s1", gate, checker, db)
+        await session.handle_turn("Deutschland hat 83 Millionen Einwohner. Das ist viel.",
+                                  end_of_turn=True, speaker_label="Julia")
+        await session.stop()
+        rows = await db.get_fact_checks(session_id="s1")
+        assert [r["check_depth"] for r in rows] == ["agent"]
+
     async def test_gate_search_queries_reach_checker(self, db):
         claim = GatedClaim(name="Julia", claim="Deutschland hat 83 Mio. Einwohner.",
                            source="Deutschland hat 83 Millionen Einwohner.",
