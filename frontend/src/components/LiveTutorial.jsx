@@ -106,7 +106,7 @@ function NamesStep({ onSolved }) {
   )
 }
 
-// Correction in two parts: 2a with "auch alles Weitere" (the default), 2b without it.
+// Correction in two parts: 1 with "auch alles Weitere" (the default), 2 without it.
 function PassageStep({ onSolved, follow }) {
   const [round, setRound] = useState(0)
   return <PassagePractice key={round} follow={follow} onReset={() => setRound((r) => r + 1)} onSolved={onSolved} />
@@ -191,13 +191,13 @@ function ResultsStep({ onSolved }) {
 }
 
 const STEPS = [
-  { n: '1', title: 'Namen vergeben', Body: NamesStep },
-  { n: '2a', title: 'Korrektur: alles Weitere', Body: (p) => <PassageStep {...p} follow /> },
-  { n: '2b', title: 'Korrektur: nur die Stelle', Body: (p) => <PassageStep {...p} follow={false} /> },
-  { n: '3', title: 'Ergebnisse lesen', Body: ResultsStep },
+  { title: 'Namen vergeben', Body: NamesStep },
+  { title: 'Korrektur 1', Body: (p) => <PassageStep {...p} follow /> },
+  { title: 'Korrektur 2', Body: (p) => <PassageStep {...p} follow={false} /> },
+  { title: 'Ergebnisse lesen', Body: ResultsStep },
 ]
 
-// The practice: steps 1, 2a, 2b, 3 on the real LiveTranscript with made-up data, as tabs with a
+// The practice: four steps on the real LiveTranscript with made-up data, as tabs with a
 // "Weiter" button. Inline in the start panel before going live; onDone after the last step.
 export function LivePractice({ onDone }) {
   const [step, setStep] = useState(0)
@@ -219,9 +219,9 @@ export function LivePractice({ onDone }) {
             onClick={() => setStep(i)}
           >
             <span className={`live-practice-mark${solved.includes(i) ? ' live-practice-mark--done' : ''}`}>
-              {solved.includes(i) ? '✓' : s.n}
+              {solved.includes(i) ? '✓' : i + 1}
             </span>
-            {s.title}
+            <span>{s.title}</span>
           </button>
         ))}
       </div>
@@ -229,7 +229,7 @@ export function LivePractice({ onDone }) {
         <Body key={step} onSolved={solve} />
       </div>
       <div className="live-practice-foot">
-        <span>Schritt {STEPS[step].n} von 3</span>
+        <span>Schritt {step + 1} von {STEPS.length}</span>
         <button type="button" className="live-practice-next" onClick={() => (last ? onDone() : setStep(step + 1))}>
           {last ? 'Fertig – Übung schließen' : `Weiter: ${STEPS[step + 1].title}`}
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
