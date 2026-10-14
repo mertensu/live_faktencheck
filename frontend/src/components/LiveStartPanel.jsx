@@ -31,23 +31,23 @@ export function LiveStartPanel({
   const fromTab = TAB_AUDIO_SUPPORTED && audioSource === 'tab'
   const hasPermission = mic.devices.some((d) => d.label)
   const measuring = fromTab ? !!tab.stream : hasPermission
-  const { level, hasSignal } = useMicLevel(mic.deviceId, measuring, fromTab ? tab.stream : null)
+  const { level, hasSignal, verified } = useMicLevel(mic.deviceId, measuring, fromTab ? tab.stream : null)
 
   const lit = level === null ? 0 : Math.round(level * METER_BARS)
   const excluded = new Set((excludedSpeakers || []).map((s) => s.trim().toLowerCase()))
 
   let signalText = fromTab ? 'Tab mit der Sendung wählen' : 'Mikrofone laden, um den Ton zu prüfen'
-  if (measuring) signalText = hasSignal ? 'Signal kommt an' : 'Noch kein Ton'
+  if (measuring) signalText = hasSignal ? 'Signal kommt an' : verified ? 'Ton geprüft' : 'Noch kein Ton'
 
   return (
     <div className="live-start">
       <section className="live-start-card" aria-label="Live-Check vorbereiten">
         <div className="live-start-step">
-          <StepMark n={1} done={hasSignal} />
+          <StepMark n={1} done={verified} />
           <div className="live-start-body">
             <div className="live-start-row">
               <h2>Ton prüfen</h2>
-              <span className={`live-start-signal${hasSignal ? ' live-start-signal--ok' : ''}`} role="status">
+              <span className={`live-start-signal${verified ? ' live-start-signal--ok' : ''}`} role="status">
                 {signalText}
               </span>
             </div>

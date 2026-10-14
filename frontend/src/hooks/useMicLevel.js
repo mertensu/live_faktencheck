@@ -6,16 +6,19 @@ import { useState, useEffect } from 'react'
 // Opens its own short-lived stream only while `enabled` — the caller enables it once
 // mic permission exists, so it never triggers a prompt of its own — and closes it
 // when disabled (going live opens the stream useAudioStream needs).
-// Returns { level: 0..1 (RMS, scaled) or null while not measuring, hasSignal }.
-// hasSignal stays true a moment after the last loud frame, so pauses don't flicker it.
+// Returns { level: 0..1 (RMS, scaled) or null while not measuring, hasSignal, verified }.
+// hasSignal stays true a moment after the last loud frame, so pauses don't flicker it;
+// verified stays true once this source carried sound at all, until the source changes.
 const SIGNAL_LEVEL = 0.08
 const SIGNAL_HOLD_MS = 3000
 
 export function useMicLevel(deviceId, enabled, given = null) {
   const [level, setLevel] = useState(null)
   const [hasSignal, setHasSignal] = useState(false)
+  const [verified, setVerified] = useState(false)
 
   useEffect(() => {
+    setVerified(false)
     if (!enabled || !navigator.mediaDevices?.getUserMedia) {
       setLevel(null)
       setHasSignal(false)
@@ -49,7 +52,7 @@ export function useMicLevel(deviceId, enabled, given = null) {
             for (let i = 0; i < buf.length; i++) sum += buf[i] * buf[i]
             const rms = Math.sqrt(sum / buf.length)
             const lvl = Math.min(1, rms * 6)
-            if (lvl > SIGNAL_LEVEL) lastLoud = t
+            if (lvl > SIGNAL_LEVEL) { lastLoud = t; setVerified(true) }
             setLevel(lvl)
             setHasSignal(t - lastLoud < SIGNAL_HOLD_MS)
           }
@@ -70,5 +73,5 @@ export function useMicLevel(deviceId, enabled, given = null) {
     }
   }, [deviceId, enabled, given])
 
-  return { level, hasSignal }
+  return { level, hasSignal, verified }
 }
