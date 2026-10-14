@@ -37,9 +37,15 @@ export function useTabAudio() {
   // when the operator cancelled or shared no audio.
   const pick = useCallback(async () => {
     setError(null)
+    // Stay on this page after picking: Chrome otherwise jumps to the shared tab.
+    const controller = typeof CaptureController !== 'undefined' ? new CaptureController() : null
+    const keepFocus = () => { try { controller?.setFocusBehavior('no-focus-change') } catch { /* too late or unsupported */ } }
+    keepFocus()  // newer Chrome takes it up front
     let display
     try {
-      display = await navigator.mediaDevices.getDisplayMedia(DISPLAY_OPTIONS)
+      display = await navigator.mediaDevices.getDisplayMedia(
+        controller ? { ...DISPLAY_OPTIONS, controller } : DISPLAY_OPTIONS)
+      keepFocus()  // older Chrome only right after the pick
     } catch (e) {
       if (e?.name !== 'NotAllowedError') setError(MSG.failed)  // NotAllowed: cancelled
       return null

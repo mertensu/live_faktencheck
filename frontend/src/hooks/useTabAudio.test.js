@@ -35,6 +35,17 @@ describe('useTabAudio', () => {
     expect(result.current.error).toBeNull()
   })
 
+  it('keeps the focus on this page after the pick', async () => {
+    shareTab()
+    const setFocusBehavior = vi.fn()
+    global.CaptureController = class { setFocusBehavior(b) { setFocusBehavior(b) } }
+    const { result } = renderHook(() => useTabAudio())
+    await act(async () => { await result.current.pick() })
+    expect(setFocusBehavior).toHaveBeenCalledWith('no-focus-change')
+    expect(navigator.mediaDevices.getDisplayMedia.mock.calls[0][0].controller).toBeInstanceOf(global.CaptureController)
+    delete global.CaptureController
+  })
+
   it('asks to tick "Tab-Audio teilen" when the tab came without sound', async () => {
     const { video } = shareTab({ audio: false })
     const { result } = renderHook(() => useTabAudio())
