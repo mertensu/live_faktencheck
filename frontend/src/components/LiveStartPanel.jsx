@@ -145,3 +145,27 @@ export function LiveStartPanel({
     </div>
   )
 }
+
+// Touch only, no mouse or trackpad (a phone, a tablet without one). Assigning speakers and
+// marking passages need a pointer, so the live check is not started there; a laptop with a
+// touch screen or an iPad with a trackpad has a fine pointer and is fine.
+export function isTouchOnly() {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false
+  return window.matchMedia('(pointer: coarse)').matches && !window.matchMedia('(any-pointer: fine)').matches
+}
+
+// In place of the start panel on a touch-only device: where to go instead, and the link.
+export function LiveStartDesktopOnly({ sessionId }) {
+  return (
+    <div className="live-start">
+      <section className="live-start-card live-start-desktop" aria-label="Live-Check am Computer starten">
+        <h2>Live-Check bitte am Computer starten</h2>
+        <p>
+          Am Smartphone lassen sich Sprecher nicht zuverlässig zuordnen und korrigieren. Öffnen Sie
+          diesen Faktencheck am Laptop oder PC, mit demselben Link und Zugangscode.
+        </p>
+        <ShareLink sessionId={sessionId} />
+      </section>
+    </div>
+  )
+}
