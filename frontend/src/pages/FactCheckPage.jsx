@@ -4,7 +4,7 @@ import { BackendErrorDisplay } from '../components/BackendErrorDisplay'
 import { FactCheckStream } from '../components/FactCheckStream'
 import { LiveTranscript } from '../components/LiveTranscript'
 import { LiveTutorial } from '../components/LiveTutorial'
-import { LiveStartPanel } from '../components/LiveStartPanel'
+import { LiveStartPanel, LiveStartDesktopOnly, isTouchOnly } from '../components/LiveStartPanel'
 import { useAudioStream } from '../hooks/useAudioStream'
 import { useMicDevices } from '../hooks/useMicDevices'
 import { useTabAudio } from '../hooks/useTabAudio'
@@ -17,6 +17,8 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
   // A viewer opened the shared link without an access code: strip the page down
   // to the debate name and the stream, no controls.
   const isViewer = !getAccessCode()
+  // Phones and mouse-less tablets get no live check (see isTouchOnly); viewing stays open.
+  const [touchOnly] = useState(isTouchOnly)
 
   const [factChecks, setFactChecks] = useState([])
   const [speakers, setSpeakers] = useState(DEFAULT_SPEAKERS)  // Load config from backend
@@ -230,6 +232,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
         </div>
       )
     }
+    if (touchOnly) return <LiveStartDesktopOnly sessionId={episodeKey} />
     return (
       <LiveStartPanel
         sessionId={episodeKey}
@@ -262,7 +265,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
                 <span className="header-rec-dot" aria-hidden="true">◉</span>
                 {liveStream.status === 'connecting' ? 'Live verbindet…' : 'Live stoppen'}
               </button>
-            ) : !showStartPanel && (
+            ) : !showStartPanel && !touchOnly && (
               <button
                 type="button"
                 className="header-rec-start"
@@ -272,9 +275,11 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
                 ◉ Live-Check
               </button>
             )}
-            <button type="button" className="header-help-link" onClick={openGuide}>
-              Kurzanleitung
-            </button>
+            {!touchOnly && (
+              <button type="button" className="header-help-link" onClick={openGuide}>
+                Kurzanleitung
+              </button>
+            )}
             {liveStream.error && !showStartPanel && (
               <span className="header-live-error">{liveStream.error}</span>
             )}

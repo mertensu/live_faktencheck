@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent, act } from '@testing-library/react'
-import { LiveStartPanel } from './LiveStartPanel'
+import { LiveStartPanel, LiveStartDesktopOnly, isTouchOnly } from './LiveStartPanel'
 
 const mic = (devices = []) => ({
   devices, deviceId: '', setDeviceId: vi.fn(), listDevices: vi.fn(),
@@ -75,5 +75,31 @@ describe('LiveStartPanel', () => {
   it('asks to load the mics before it can check the sound', () => {
     renderPanel()
     expect(screen.getByText(/Mikrofone laden, um den Ton zu prüfen/)).toBeTruthy()
+  })
+
+  it('sends phones to a computer, with the link to take along', () => {
+    render(<LiveStartDesktopOnly sessionId="abc123" />)
+    expect(screen.getByRole('heading', { name: /am Computer starten/ })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /Live-Link kopieren/ })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /Live-Check starten/ })).toBeNull()
+  })
+})
+
+describe('isTouchOnly', () => {
+  const media = (coarse, fine) => (q) => ({ matches: q === '(pointer: coarse)' ? coarse : q === '(any-pointer: fine)' ? fine : false })
+  afterEach(() => { delete window.matchMedia })
+
+  it('is true for a phone (coarse pointer, no fine one)', () => {
+    window.matchMedia = media(true, false)
+    expect(isTouchOnly()).toBe(true)
+  })
+
+  it('is false for a touch laptop or a tablet with a trackpad', () => {
+    window.matchMedia = media(true, true)
+    expect(isTouchOnly()).toBe(false)
+  })
+
+  it('is false without matchMedia', () => {
+    expect(isTouchOnly()).toBe(false)
   })
 })
