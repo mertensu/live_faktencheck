@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { LiveTranscript } from './LiveTranscript'
 import { assignFrom, nameAt, splitPassages } from '../hooks/useAudioStream'
 
@@ -204,9 +204,15 @@ export function LivePractice({ onDone }) {
   const { Body } = STEPS[step]
   const last = step === STEPS.length - 1
   const solve = useCallback(() => setSolved((s) => (s.includes(step) ? s : [...s, step])), [step])
+  // "Weiter" sits below the step: on a small screen the next step would start out of view.
+  const topRef = useRef(null)
+  const next = () => {
+    setStep(step + 1)
+    requestAnimationFrame(() => topRef.current?.scrollIntoView?.({ block: 'nearest' }))
+  }
 
   return (
-    <div className="live-practice">
+    <div className="live-practice" ref={topRef}>
       <div className="live-practice-tabs" role="tablist" aria-label="Übungsschritte">
         {STEPS.map((s, i) => (
           <button
@@ -229,7 +235,7 @@ export function LivePractice({ onDone }) {
       </div>
       <div className="live-practice-foot">
         <span>Schritt {step + 1} von {STEPS.length}</span>
-        <button type="button" className="live-practice-next" onClick={() => (last ? onDone() : setStep(step + 1))}>
+        <button type="button" className="live-practice-next" onClick={() => (last ? onDone() : next())}>
           {last ? 'Fertig – Übung schließen' : `Weiter: ${STEPS[step + 1].title}`}
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
