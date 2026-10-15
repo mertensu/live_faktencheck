@@ -34,7 +34,7 @@ REFERENCED_DOCUMENTS_DESCRIPTION = """Offizielle Dokumente, Studien oder Bericht
 # The deep checker's original definitions (v0.2.0), with which the agent was measured;
 # the fast check's sharper rules above are written for a single synthesis call.
 AGENT_CONSISTENCY_DESCRIPTION = """Empirische Konsistenz der Behauptung. Wähle genau eine von vier Stufen:
-- 'hoch': Die verfügbaren Daten stützen die Behauptung — auch wenn die Belege überwiegend stützend, aber nicht vollständig schlüssig sind.
+- 'hoch': Die verfügbaren Daten stützen die Behauptung — auch wenn die Belege überwiegend stützend, aber nicht vollständig schlüssig sind. Eine ausdrücklich behauptete Ursache („dadurch“, „wegen“, „X hat Y bewirkt“) muss selbst belegt sein: Zeigen die Daten nur die Entwicklung, nicht die Ursache, ist das 'unklar'.
 - 'niedrig': Die verfügbaren Daten widersprechen der Behauptung — auch wenn die Belege überwiegend widersprechen, aber nicht vollständig schlüssig sind.
 - 'unklar': Widersprüchliche Studien oder Belege ohne klare Richtung; wirklich nicht bestimmbar.
 - 'keine Datenlage': Keine relevanten Daten oder empirischen Belege zu diesem Thema gefunden."""
