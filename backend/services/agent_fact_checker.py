@@ -199,6 +199,8 @@ class AgentFactChecker:
                 "speaker": speaker, "original_claim": claim, "consistency": out.consistency,
                 "evidence": out.evidence, "sources": sources,
                 "double_check": False, "critique_note": "",
+                # Stored with the row: the agent writes its own searches ("[presse] …" for press).
+                "search_queries": run.queries,
             }
         except Exception as e:
             logger.exception("Agent fact-check failed for claim")

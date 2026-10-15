@@ -222,7 +222,8 @@ Each check is one row in `fact_checks` with `check_depth="fast"` (or `"agent"`),
 `processing` placeholder (so the mark appears in the transcript immediately) and then
 updated in place. `search_queries` holds the searches the check actually sent (the
 reformulator's queries, the claim itself, the press search as `[presse] …`, and any
-document titles it followed), so a
+document titles it followed; for the agent check, the searches the model wrote, press ones
+as `[presse] …`), so a
 verdict can be traced back to what was searched after the container logs are gone.
 Older rows with `check_depth="deep"` — the examples under `/beispiele` —
 come from the ReAct deep checker with self-critique, removed in v0.3.0 (the code is still

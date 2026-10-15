@@ -2,7 +2,8 @@
 Tests for AgentFactChecker (LIVE_CHECKER=agent).
 
 Covered:
-- one research round of parallel searches, then a verdict dict like the fast check's
+- one research round of parallel searches, then a verdict dict like the fast check's,
+  with the searches it sent
 - sources: only URLs the tools returned, never press; press hits carry no URL or title
 - searches after the allowed round(s) are refused
 - too few searches: sent back once for more; a text naming the press: sent back once
@@ -72,6 +73,8 @@ async def test_one_round_then_verdict(checker):
         result = await checker.check_claim_async("Julia", "Deutschland hat 83 Mio. Einwohner.",
                                                  episode_date="19. September 2025")
     assert search.await_count == 3
+    assert result["search_queries"] == ["Einwohner Deutschland 2025", "Bevölkerungsstand Destatis",
+                                        "[presse] 83 Millionen Einwohner"]
     assert result["consistency"] == "hoch"
     assert result["speaker"] == "Julia" and result["original_claim"] == "Deutschland hat 83 Mio. Einwohner."
     assert result["double_check"] is False and result["critique_note"] == ""
