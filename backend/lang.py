@@ -43,11 +43,12 @@ AGENT_CONSISTENCY_DESCRIPTION = """Empirische Konsistenz der Behauptung. Wähle 
 _AGENT_TEXT_RULES = """
 - Nur was in den Suchtreffern steht; kein eigenes Wissen. Fehlt etwas, sag, dass die geprüften Quellen es nicht belegen.
 - Für sich verständlich für Leser, die nur die Behauptung und diese Begründung sehen und von der Recherche nichts wissen: keine Wörter wie „Treffer“, „Suchtreffer“, „Suche“ oder „Auszug“ — sag „die geprüften Quellen“ oder nenne den Urheber. Wenig bekannte Abkürzungen beim ersten Nennen ausschreiben.
-- Flüssig formuliert, keine Listen oder Überschriften."""
+- Unpersönlich formuliert, nie in der Ich-Form („habe ich addiert“, „lag mir nicht vor“): Eigene Rechnungen kennzeichnest du als Rechnung („zusammengerechnet“, „daraus ergibt sich“).
+- Flüssig formuliert, ohne Aufzählungszeichen oder Überschriften im Text."""
 AGENT_KURZ_DESCRIPTION = """Das Ergebnis in 1–2 Sätzen, höchstens 250 Zeichen: was an der Behauptung belegt ist und was nicht, mit der entscheidenden Zahl oder Tatsache und ihrem Urheber. Steht über den beiden anderen Texten.""" + _AGENT_TEXT_RULES
 AGENT_EVIDENCE_DESCRIPTION = """Was die Quellen sagen: die Belege, höchstens 800 Zeichen, ein bis zwei Absätze (getrennt durch eine Leerzeile). Nach Gedanken geordnet statt Quelle für Quelle: Zahlen mit Stand und Urheber im Satz, Quellen, die dasselbe sagen, zusammen, und wie das zur Behauptung passt. Sätze mit Verbindungen („weil“, „dagegen“, „allerdings“) statt aneinandergereihter Einzelaussagen. Wiederhole nicht das Ergebnis aus der Kurzfassung.""" + _AGENT_TEXT_RULES
 AGENT_OPEN_DESCRIPTION = """Was offen bleibt: Einschränkungen, Gegenbelege, abweichende Zeiträume oder Abgrenzungen, fehlende Daten; höchstens 400 Zeichen. Leer lassen, wenn nichts Wesentliches offen ist. Nicht mit „Offen bleibt“ beginnen — das steht als Überschrift darüber.""" + _AGENT_TEXT_RULES
-AGENT_SOURCES_DESCRIPTION = "Primärquellen mit URL und kurzem informativem Titel"
+AGENT_SOURCES_DESCRIPTION = "Pflichtfeld: die 1–4 Primärquellen aus den Suchergebnissen, auf die sich Kurzfassung und Begründung stützen, je mit URL und kurzem informativem Titel. Leer nur bei 'keine Datenlage'."
 
 # --- Live speakers ---
 # Shown when a live claim cannot be tied to a diarization label — preferred over a name

@@ -7,7 +7,7 @@ Covered:
 - sources: only URLs the tools returned, never press; press hits carry no URL or title
 - searches after the allowed round(s) are refused
 - a short and a long version of the evidence
-- too few searches: sent back once for more; a text naming the press: sent back once
+- too few searches: sent back once for more; a text naming the press or no sources: sent back once
 - a failure degrades to "unklar"
 - the registry picks the agent checker with LIVE_CHECKER=agent
 """
@@ -187,3 +187,17 @@ async def test_open_part_gets_its_own_heading(checker):
         result = await checker.check_claim_async("Julia", "Behauptung.")
     assert result["evidence"] == ("**Was die Quellen sagen**\n\n" + VERDICT["evidence"]
                                   + "\n\n**Was offen bleibt**\n\nMonatswerte fehlen.")
+
+
+async def test_verdict_without_sources_is_sent_back_once(checker):
+    outs = []
+
+    def final(i):
+        outs.append({**VERDICT, "sources": []} if not outs else VERDICT)
+        return outs[-1]
+
+    with patch("backend.services.agent_fact_checker.tavily_search", AsyncMock(side_effect=fake_search)), \
+            checker.agent.override(model=_model([THREE], final=final)):
+        result = await checker.check_claim_async("Julia", "Behauptung.")
+    assert len(outs) == 2
+    assert [s["url"] for s in result["sources"]] == ["https://www.destatis.de/a"]

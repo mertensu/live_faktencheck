@@ -50,7 +50,7 @@ class AgentVerdict(BaseModel):
     offen: str = Field(default="", description=AGENT_OPEN_DESCRIPTION)
     # After the long text: the model condenses what it has written, not the other way round.
     kurz: str = Field(default="", description=AGENT_KURZ_DESCRIPTION)
-    sources: List[Source] = Field(default_factory=list, description=AGENT_SOURCES_DESCRIPTION)
+    sources: List[Source] = Field(description=AGENT_SOURCES_DESCRIPTION)
 
 
 @dataclass
@@ -63,6 +63,7 @@ class _Run:
     queries: List[str] = field(default_factory=list)
     asked_more: bool = False
     asked_media: bool = False
+    asked_sources: bool = False
 
 
 def _month_year(date: str | None) -> str:
@@ -174,13 +175,17 @@ class AgentFactChecker:
         return "\n\n".join(f"[Hinweis] {h.get('content', '')}" for h in hits) or "Keine Treffer."
 
     def _check_output(self, ctx: RunContext[_Run], output: AgentVerdict) -> AgentVerdict:
-        """At most one request each: search more, or rewrite a text that names the press."""
+        """At most one request each: search more, list the sources, or rewrite a text that names the press."""
         run = ctx.deps
         if run.searches < self.min_searches and not run.asked_more:
             run.asked_more = True
             raise ModelRetry(
                 f"Du hast erst {run.searches} Suche(n) gestellt. Stelle weitere Suchanfragen gleichzeitig "
                 "(amtliche Statistik, konkreter Wert für Zeitraum und Region, Gegenbelege), dann urteile.")
+        if not output.sources and output.consistency != "keine Datenlage" and run.seen_urls and not run.asked_sources:
+            run.asked_sources = True
+            raise ModelRetry("Die Quellenliste ist leer. Führe in `sources` die 1–4 Quellen aus den Suchergebnissen "
+                             "auf, auf die sich deine Begründung stützt (URL und Titel).")
         found = sorted(set(_MEDIA_RE.findall(f"{output.evidence} {output.offen} {output.kurz}")))
         if found and not run.asked_media:
             run.asked_media = True
