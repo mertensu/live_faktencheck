@@ -43,8 +43,9 @@ AGENT_EVIDENCE_DESCRIPTION = """Ausführliche deutschsprachige Begründung (Lang
 2. Die Belege, nach Gedanken geordnet statt Quelle für Quelle: Zahlen mit Stand und Urheber im Satz, Quellen, die dasselbe sagen, zusammen.
 3. Was offen bleibt: abweichende Zeiträume, Abgrenzungen, Gegenbelege, fehlende Daten.
 Flüssig formuliert, Sätze mit Verbindungen („weil“, „dagegen“, „allerdings“) statt aneinandergereihter Einzelaussagen.
-- Nur was in den Suchtreffern steht; kein eigenes Wissen. Fehlt etwas in den Treffern, sag, dass es dort fehlt."""
-AGENT_KURZ_DESCRIPTION = """Kurzfassung der Begründung für das Handy: 1–2 Sätze, höchstens 250 Zeichen. Die entscheidende Zahl oder Tatsache mit Urheber und wie sie zur Behauptung passt. Nichts, was nicht auch in der Langfassung steht."""
+- Nur was in den Suchtreffern steht; kein eigenes Wissen. Fehlt etwas, sag, dass die geprüften Quellen es nicht belegen.
+- Für sich verständlich für Leser, die nur die Behauptung und diese Begründung sehen und von der Recherche nichts wissen: keine Wörter wie „Treffer“, „Suchtreffer“, „Suche“ oder „Auszug“ — sag „die geprüften Quellen“ oder nenne den Urheber. Wenig bekannte Abkürzungen beim ersten Nennen ausschreiben."""
+AGENT_KURZ_DESCRIPTION = """Kurzfassung der Begründung für das Handy: 1–2 Sätze, höchstens 250 Zeichen. Die entscheidende Zahl oder Tatsache mit Urheber und wie sie zur Behauptung passt. Nichts, was nicht auch in der Langfassung steht; wie dort ohne „Treffer“ oder „Suche“."""
 AGENT_SOURCES_DESCRIPTION = "Primärquellen mit URL und kurzem informativem Titel"
 
 # --- Live speakers ---
