@@ -868,7 +868,8 @@ class StreamingSession:
         else:
             await self._emit({
                 "type": "claim_result", "id": pid, "consistency": fc["consistency"],
-                "begruendung": fc["begruendung"], "quellen": fc["quellen"],
+                "begruendung": fc["begruendung"], "kurzfassung": fc.get("kurzfassung", ""),
+                "quellen": fc["quellen"],
             })
 
     # ---- AssemblyAI wiring (thin; covered by SG-4 e2e, not unit tests) -------

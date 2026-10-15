@@ -1436,6 +1436,12 @@
 .live-popover-claim { margin: 0 0 0.5rem; font-weight: 600; }
 .live-popover-note { margin: 0; color: var(--text-muted); font-style: italic; }
 .live-popover-reason .begruendung-text { margin: 0 0 0.45rem; }
+.begruendung-more {
+  padding: 0; border: 0; background: none; cursor: pointer;
+  color: #1d4ed8; font: inherit; font-size: 0.85em; font-weight: 600;
+}
+.begruendung-more:hover { text-decoration: underline; }
+.fcs-reason .begruendung-more { margin-top: 0.35rem; }
 .live-popover-sources { margin: 0.3rem 0 0; padding-left: 1.1rem; font-size: 0.8rem; }
 .live-popover-sources li { margin-bottom: 0.15rem; overflow-wrap: anywhere; }
 .live-popover-sources a { color: #1d4ed8; }

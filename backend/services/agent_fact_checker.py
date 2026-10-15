@@ -25,6 +25,7 @@ from pydantic_ai import Agent, ModelRetry, PromptedOutput, RunContext, UsageLimi
 from backend.lang import (
     AGENT_CONSISTENCY_DESCRIPTION,
     AGENT_EVIDENCE_DESCRIPTION,
+    AGENT_KURZ_DESCRIPTION,
     AGENT_SOURCES_DESCRIPTION,
 )
 from backend.utils import load_prompt, log_text
@@ -45,6 +46,8 @@ class AgentVerdict(BaseModel):
     consistency: Literal["hoch", "niedrig", "unklar", "keine Datenlage"] = Field(
         description=AGENT_CONSISTENCY_DESCRIPTION)
     evidence: str = Field(description=AGENT_EVIDENCE_DESCRIPTION)
+    # After the long text: the model condenses what it has written, not the other way round.
+    kurz: str = Field(default="", description=AGENT_KURZ_DESCRIPTION)
     sources: List[Source] = Field(default_factory=list, description=AGENT_SOURCES_DESCRIPTION)
 
 
@@ -163,7 +166,7 @@ class AgentFactChecker:
             raise ModelRetry(
                 f"Du hast erst {run.searches} Suche(n) gestellt. Stelle weitere Suchanfragen gleichzeitig "
                 "(amtliche Statistik, konkreter Wert für Zeitraum und Region, Gegenbelege), dann urteile.")
-        found = sorted(set(_MEDIA_RE.findall(output.evidence)))
+        found = sorted(set(_MEDIA_RE.findall(f"{output.evidence} {output.kurz}")))
         if found and not run.asked_media:
             run.asked_media = True
             raise ModelRetry(
@@ -197,7 +200,7 @@ class AgentFactChecker:
             logger.info(f"Agent check done: consistency = {out.consistency}, searches = {run.queries}")
             return {
                 "speaker": speaker, "original_claim": claim, "consistency": out.consistency,
-                "evidence": out.evidence, "sources": sources,
+                "evidence": out.evidence, "kurz": out.kurz, "sources": sources,
                 "double_check": False, "critique_note": "",
                 # Stored with the row: the agent writes its own searches ("[presse] …" for press).
                 "search_queries": run.queries,

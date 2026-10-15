@@ -38,8 +38,9 @@ AGENT_CONSISTENCY_DESCRIPTION = """Empirische Konsistenz der Behauptung. Wähle 
 - 'niedrig': Die verfügbaren Daten widersprechen der Behauptung — auch wenn die Belege überwiegend widersprechen, aber nicht vollständig schlüssig sind.
 - 'unklar': Widersprüchliche Studien oder Belege ohne klare Richtung; wirklich nicht bestimmbar.
 - 'keine Datenlage': Keine relevanten Daten oder empirischen Belege zu diesem Thema gefunden."""
-AGENT_EVIDENCE_DESCRIPTION = """Deutschsprachige Begründung, 3–5 Sätze Fließtext, höchstens 600 Zeichen; keine Listen, Überschriften oder Absätze. Die entscheidende Zahl oder Tatsache mit Stand und Urheber, wie sie zur Behauptung passt, und die wichtigste Einschränkung.
+AGENT_EVIDENCE_DESCRIPTION = """Ausführliche deutschsprachige Begründung (Langfassung), Fließtext, höchstens 1200 Zeichen; keine Listen oder Überschriften. Was die Quellen sagen (Zahlen mit Stand und Urheber), wie das zur Behauptung passt, und die Einschränkungen: abweichende Zeiträume, Abgrenzungen oder Quellen, was offen bleibt.
 - Nur was in den Suchtreffern steht; kein eigenes Wissen. Fehlt etwas in den Treffern, sag, dass es dort fehlt."""
+AGENT_KURZ_DESCRIPTION = """Kurzfassung der Begründung für das Handy: 1–2 Sätze, höchstens 250 Zeichen. Die entscheidende Zahl oder Tatsache mit Urheber und wie sie zur Behauptung passt. Nichts, was nicht auch in der Langfassung steht."""
 AGENT_SOURCES_DESCRIPTION = "Primärquellen mit URL und kurzem informativem Titel"
 
 # --- Live speakers ---

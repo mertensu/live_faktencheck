@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { getConsistencyColor, formatBegruendung, stripDateAnnotation } from './ClaimCard'
+import { getConsistencyColor, Begruendung, stripDateAnnotation } from './ClaimCard'
 
 // Live "Fokus-Stream": fact-checks as one chronological stream, newest on top in
 // full focus, older ones fading slightly downward. Tapping a card brings it into
@@ -278,7 +278,7 @@ export function FactCheckStream({ factChecks }) {
                   <div>
                     <div className="fcs-detail-inner">
                       {fc.begruendung
-                        ? <div className="fcs-reason">{formatBegruendung(fc.begruendung)}</div>
+                        ? <Begruendung className="fcs-reason" kurz={fc.kurzfassung} lang={fc.begruendung} />
                         : <p className="fcs-reason">Keine Begründung verfügbar.</p>}
                       {fc.quellen && fc.quellen.length > 0 && (
                         <ul className="fcs-sources">

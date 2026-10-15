@@ -22,3 +22,27 @@ describe('FactCheckStream order toggle', () => {
     expect(screen.getByRole('button', { name: /älteste zuerst/i })).toBeDefined()
   })
 })
+
+describe('FactCheckStream reasoning', () => {
+  beforeAll(() => {
+    window.matchMedia ??= () => ({ matches: false })
+    window.scrollTo = () => {}
+  })
+
+  it('shows the short version with a toggle to the long one, without closing the card', () => {
+    const fc = { ...checks[0], kurzfassung: 'Kurzfassung.', begruendung: 'Lange Begründung.' }
+    const { container } = render(<FactCheckStream factChecks={[fc]} />)
+    fireEvent.click(container.querySelector('.fcs-card'))
+    expect(screen.getByText('Kurzfassung.')).toBeDefined()
+    expect(screen.queryByText('Lange Begründung.')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Mehr anzeigen' }))
+    expect(screen.getByText('Lange Begründung.')).toBeDefined()
+    expect(container.querySelector('.fcs-card').className).toMatch(/fcs-open/)
+  })
+
+  it('shows the long version alone when there is no short one', () => {
+    render(<FactCheckStream factChecks={[{ ...checks[0], begruendung: 'Lange Begründung.' }]} />)
+    expect(screen.getByText('Lange Begründung.')).toBeDefined()
+    expect(screen.queryByRole('button', { name: 'Mehr anzeigen' })).toBeNull()
+  })
+})

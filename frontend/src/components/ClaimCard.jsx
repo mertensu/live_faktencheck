@@ -192,3 +192,32 @@ export function ClaimCard({ claim, onSelect }) {
     </div>
   )
 }
+
+// Reasoning of a result: the short version with a "Mehr anzeigen" toggle to the long one
+// when the check wrote both (agent check), else the long one alone. Clicks on the toggle
+// stay inside: the stream's cards open and close on a tap.
+export function Begruendung({ kurz, lang, className, onToggle }) {
+  const [more, setMore] = React.useState(false)
+  if (!kurz) return <div className={className}>{formatBegruendung(lang)}</div>
+  const toggle = (e) => {
+    e.stopPropagation()
+    setMore((m) => !m)
+    onToggle?.()
+  }
+  return (
+    <div className={className}>
+      {formatBegruendung(more ? lang : kurz)}
+      {lang && (
+        <button
+          type="button"
+          className="begruendung-more"
+          aria-expanded={more}
+          onClick={toggle}
+          onKeyDown={(e) => e.stopPropagation()}
+        >
+          {more ? 'Weniger anzeigen' : 'Mehr anzeigen'}
+        </button>
+      )}
+    </div>
+  )
+}

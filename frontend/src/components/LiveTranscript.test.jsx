@@ -230,6 +230,18 @@ describe('LiveTranscript', () => {
     expect(screen.queryByRole('dialog')).toBeNull()
   })
 
+  it('shows the short reasoning first and the long one on request', () => {
+    const l = { ...live, claims: [{ ...live.claims[0], kurzfassung: 'Kurz: gesunken.' }] }
+    render(<LiveTranscript live={l} />)
+    const mark = screen.getByText('Strom ist teurer geworden.', { selector: 'mark' })
+    fireEvent.click(mark)
+    expect(screen.getByText('Kurz: gesunken.')).toBeDefined()
+    expect(screen.queryByText('Die Preise sind gesunken.')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Mehr anzeigen' }))
+    expect(screen.getByText('Die Preise sind gesunken.')).toBeDefined()
+    expect(screen.getByRole('dialog')).toBeDefined()
+  })
+
   it('offers claims without a visible passage as badges', () => {
     const l = { ...live, claims: [{ ...live.claims[0], source: 'nicht im Text' }] }
     const { container } = render(<LiveTranscript live={l} />)

@@ -6,6 +6,7 @@ Covered:
   with the searches it sent
 - sources: only URLs the tools returned, never press; press hits carry no URL or title
 - searches after the allowed round(s) are refused
+- a short and a long version of the evidence
 - too few searches: sent back once for more; a text naming the press: sent back once
 - a failure degrades to "unklar"
 - the registry picks the agent checker with LIVE_CHECKER=agent
@@ -30,6 +31,7 @@ TRUSTED = {"results": [
 PRESS = {"results": [{"title": "Artikel", "url": "https://www.spiegel.de/c", "content": "Laut Destatis 83 Mio."}]}
 
 VERDICT = {"consistency": "hoch", "evidence": "Laut Destatis lebten 2025 rund 83,6 Mio. Menschen in Deutschland.",
+           "kurz": "Destatis: 83,6 Mio. Einwohner 2025.",
            "sources": [{"url": "https://www.destatis.de/a", "title": "Destatis"},
                        {"url": "https://www.spiegel.de/c", "title": "Spiegel"},
                        {"url": "https://erfunden.de/x", "title": "Erfunden"}]}
@@ -76,6 +78,7 @@ async def test_one_round_then_verdict(checker):
     assert result["search_queries"] == ["Einwohner Deutschland 2025", "Bevölkerungsstand Destatis",
                                         "[presse] 83 Millionen Einwohner"]
     assert result["consistency"] == "hoch"
+    assert result["kurz"] == "Destatis: 83,6 Mio. Einwohner 2025."
     assert result["speaker"] == "Julia" and result["original_claim"] == "Deutschland hat 83 Mio. Einwohner."
     assert result["double_check"] is False and result["critique_note"] == ""
     # Press and invented URLs are dropped.
@@ -137,6 +140,21 @@ async def test_text_naming_the_press_is_sent_back_once(checker):
         result = await checker.check_claim_async("Julia", "Behauptung.")
     assert len(texts) == 2
     assert "Spiegel" not in result["evidence"]
+
+
+async def test_short_text_naming_the_press_is_sent_back(checker):
+    named = {**VERDICT, "kurz": "Laut Spiegel 83 Mio. Einwohner."}
+    outs = []
+
+    def final(i):
+        outs.append(named if not outs else VERDICT)
+        return outs[-1]
+
+    with patch("backend.services.agent_fact_checker.tavily_search", AsyncMock(side_effect=fake_search)), \
+            checker.agent.override(model=_model([THREE], final=final)):
+        result = await checker.check_claim_async("Julia", "Behauptung.")
+    assert len(outs) == 2
+    assert result["kurz"] == VERDICT["kurz"]
 
 
 async def test_failure_degrades_to_unklar(checker):

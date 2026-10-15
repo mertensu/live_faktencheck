@@ -39,7 +39,10 @@ Du hast genau eine Recherche-Runde.
 </Ablauf>
 
 <Ausgabe>
-Begründung in 3–5 Sätzen Fließtext (höchstens 600 Zeichen, keine Listen): Was sagen die Quellen, wie passt das zur Behauptung, welche Einschränkung bleibt. Nenne keine Zeitungen, Sender oder Presseartikel; nenne den Urheber einer Angabe (Institut, Behörde, Person).
+Zwei Fassungen der Begründung, beide Fließtext ohne Listen:
+- Langfassung (`evidence`, höchstens 1200 Zeichen): Was sagen die Quellen, wie passt das zur Behauptung, welche Einschränkungen bleiben.
+- Kurzfassung (`kurz`, 1–2 Sätze, höchstens 250 Zeichen): die entscheidende Zahl oder Tatsache mit Urheber und wie sie zur Behauptung passt.
+Nenne keine Zeitungen, Sender oder Presseartikel; nenne den Urheber einer Angabe (Institut, Behörde, Person).
 Stütze dich nur auf die Suchtreffer, nicht auf eigenes Wissen. Was die Treffer nicht belegen, nennst du als fehlend, nicht aus dem Gedächtnis.
 </Ausgabe>
 

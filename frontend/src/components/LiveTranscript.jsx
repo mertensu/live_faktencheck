@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { formatBegruendung } from './ClaimCard'
+import { Begruendung } from './ClaimCard'
 import { nameAt, OTHER_VOICE } from '../hooks/useAudioStream'
 
 // Verdict → short label + modifier class for the badge and the transcript highlight.
@@ -238,6 +238,7 @@ function renderLine(text, claimsBySource, handlers, marked) {
 function ClaimPopover({ claim, speaker, anchor, onEnter, onLeave }) {
   const ref = useRef(null)
   const [pos, setPos] = useState(null)
+  const [toggles, setToggles] = useState(0) // "Mehr anzeigen" changes the height: place again
 
   // Fixed positioning so the card floats above the page; follow the
   // mark on scroll/resize and flip above it when there is more room there.
@@ -262,7 +263,7 @@ function ClaimPopover({ claim, speaker, anchor, onEnter, onLeave }) {
       window.removeEventListener('scroll', place, true)
       window.removeEventListener('resize', place)
     }
-  }, [anchor, claim])
+  }, [anchor, claim, toggles])
 
   const info = verdictInfo(claim)
   return (
@@ -283,7 +284,8 @@ function ClaimPopover({ claim, speaker, anchor, onEnter, onLeave }) {
       {claim.status === 'processing' && <p className="live-popover-note">Wird geprüft…</p>}
       {claim.status === 'error' && <p className="live-popover-note">Schnellprüfung fehlgeschlagen.</p>}
       {claim.status === 'done' && (claim.begruendung
-        ? <div className="live-popover-reason">{formatBegruendung(claim.begruendung)}</div>
+        ? <Begruendung className="live-popover-reason" kurz={claim.kurzfassung} lang={claim.begruendung}
+            onToggle={() => setToggles((n) => n + 1)} />
         : <p className="live-popover-note">Keine Begründung verfügbar.</p>)}
       {claim.quellen?.length > 0 && (
         <ul className="live-popover-sources">
