@@ -30,6 +30,18 @@ SOURCES_DESCRIPTION = """Die Treffer, auf die sich die Einschätzung stützt, in
 
 REFERENCED_DOCUMENTS_DESCRIPTION = """Offizielle Dokumente, Studien oder Berichte, die in den Suchergebnissen genannt oder zitiert werden und die Behauptung direkt beantworten würden, deren Inhalt aber nicht (oder nur angerissen) in den Treffern steht — z. B. ein Finanzplan, ein amtlicher Bericht, ein Gutachten, eine Studie. Je Eintrag der Titel so, wie er genannt wird, mit Herausgeber und Jahr (z. B. „Finanzplan des Bundes 2025 bis 2029“, „Monitoringbericht 2025 Bundesnetzagentur“); Dokumente internationaler Stellen (Eurostat, OECD, IEA, EU-Kommission) mit ihrem englischen Titel. Höchstens 2; leere Liste, wenn keins genannt wird oder die Treffer die Behauptung schon beantworten."""
 
+# --- Agent fact-check schema (AgentFactChecker) ---
+# The deep checker's original definitions (v0.2.0), with which the agent was measured;
+# the fast check's sharper rules above are written for a single synthesis call.
+AGENT_CONSISTENCY_DESCRIPTION = """Empirische Konsistenz der Behauptung. Wähle genau eine von vier Stufen:
+- 'hoch': Die verfügbaren Daten stützen die Behauptung — auch wenn die Belege überwiegend stützend, aber nicht vollständig schlüssig sind. Eine ausdrücklich behauptete Ursache („dadurch“, „wegen“, „X hat Y bewirkt“) muss selbst belegt sein: Zeigen die Daten nur die Entwicklung, nicht die Ursache, ist das 'unklar'.
+- 'niedrig': Die verfügbaren Daten widersprechen der Behauptung — auch wenn die Belege überwiegend widersprechen, aber nicht vollständig schlüssig sind.
+- 'unklar': Widersprüchliche Studien oder Belege ohne klare Richtung; wirklich nicht bestimmbar.
+- 'keine Datenlage': Keine relevanten Daten oder empirischen Belege zu diesem Thema gefunden."""
+AGENT_EVIDENCE_DESCRIPTION = """Deutschsprachige Begründung, 3–5 Sätze Fließtext, höchstens 600 Zeichen; keine Listen, Überschriften oder Absätze. Die entscheidende Zahl oder Tatsache mit Stand und Urheber, wie sie zur Behauptung passt, und die wichtigste Einschränkung.
+- Nur was in den Suchtreffern steht; kein eigenes Wissen. Fehlt etwas in den Treffern, sag, dass es dort fehlt."""
+AGENT_SOURCES_DESCRIPTION = "Primärquellen mit URL und kurzem informativem Titel"
+
 # --- Live speakers ---
 # Shown when a live claim cannot be tied to a diarization label — preferred over a name
 # guessed from the text.

@@ -48,6 +48,12 @@ covered in the [development workflow](development-workflow.md#setup); this is th
 | `FAST_EXTRACT` | On `unklar`/`keine Datenlage`, read passages inside the PDFs and research hits found (Tavily Extract) and judge again | `true` |
 | `FAST_FOLLOW_DOCS` / `FAST_FOLLOW_DOCS_MAX` | Search and read official documents the hits only mention (named by the first verdict), then judge again / max. documents per claim | `true` / `2` |
 | `FAST_EXTRACT_MAX_URLS` / `FAST_EXTRACT_CHARS` | Documents read per claim / characters kept from each | `10` / `2500` |
+| `LIVE_CHECKER` | Checker for the live lane: `fast` (parallel searches + one synthesis call) or `agent` (one research round the model plans itself, see `docs/llm_pipeline.md`) | `fast` |
+| `GEMINI_MODEL_AGENT_CHECK` / `GEMINI_THINKING_AGENT_CHECK` | Agent-check model + thinking level | `claude-sonnet-5-5@eu` / `low` |
+| `AGENT_CHECK_ROUNDS` | Research rounds (each: several searches at once) before the verdict | `1` |
+| `AGENT_CHECK_MIN_SEARCHES` | Fewer searches than this: sent back once for more | `2` |
+| `AGENT_CHECK_TIMEOUT_S` | Per-call timeout of the Requesty model (the calls carry the hits) | `45` |
+| `AGENT_CHECK_REQUEST_LIMIT` | Model requests per check, retries included | `6` |
 | `TAVILY_MAX_RESULTS` | Results per search | `5` |
 
 ## Models via Requesty

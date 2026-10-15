@@ -70,13 +70,14 @@ def is_requesty_model(name: str | None) -> bool:
     return "@" in (name or "")
 
 
-def _requesty_model(name: str, thinking: str | None) -> OpenAIChatModel:
+def _requesty_model(name: str, thinking: str | None, timeout: float | None = None) -> OpenAIChatModel:
     """A live-lane model via Requesty. The thinking level becomes the reasoning effort; it
     sits on the model so the Google layers behind it keep their own thinking config. The
-    per-call timeout caps rare router stalls (~28 s seen in benchmarks) before falling back."""
+    per-call timeout caps rare router stalls (~28 s seen in benchmarks) before falling back;
+    ``timeout`` overrides REQUESTY_TIMEOUT_S for agents whose calls carry long inputs."""
     level = (thinking or "").strip().lower()
     settings = OpenAIChatModelSettings(openai_reasoning_effort=level) if level else None
-    timeout = float(os.getenv("REQUESTY_TIMEOUT_S", "12"))
+    timeout = timeout or float(os.getenv("REQUESTY_TIMEOUT_S", "12"))
     return OpenAIChatModel(name, provider=_requesty_provider(timeout), settings=settings)
 
 
@@ -95,7 +96,8 @@ def _provider_fallback_model() -> OpenAIModel | None:
     return OpenAIModel(model_name, provider=_requesty_provider())
 
 
-def build_model(primary: str, fallback: str | None = None, thinking: str | None = None):
+def build_model(primary: str, fallback: str | None = None, thinking: str | None = None,
+                timeout: float | None = None):
     """Build the model chain for an agent.
 
     Returns a bare GoogleModel when only one layer applies, or a FallbackModel that
@@ -104,14 +106,15 @@ def build_model(primary: str, fallback: str | None = None, thinking: str | None 
     limits, connection failures), so a Google outage or quota wall reaches the last layer.
 
     A Requesty primary (name with "@") is followed by ``fallback`` or
-    ``GOOGLE_FALLBACK_MODEL``; ``thinking`` sets its reasoning effort. Without
+    ``GOOGLE_FALLBACK_MODEL``; ``thinking`` sets its reasoning effort, ``timeout`` its
+    per-call timeout (default REQUESTY_TIMEOUT_S). Without
     REQUESTY_API_KEY it is skipped and the Google fallback becomes the primary.
     """
     provider = _provider()
     models = []
     if is_requesty_model(primary):
         if os.getenv("REQUESTY_API_KEY"):
-            models.append(_requesty_model(primary, thinking))
+            models.append(_requesty_model(primary, thinking, timeout))
         else:
             logger.warning("REQUESTY_API_KEY not set — %s runs on Google instead", primary)
         fallback = fallback or os.getenv("GOOGLE_FALLBACK_MODEL", GOOGLE_FALLBACK_MODEL)

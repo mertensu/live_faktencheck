@@ -177,6 +177,37 @@ The model is never allowed to judge a person or give absolute verdicts ("wahr",
 
 ---
 
+## Call 2 (alternative) — Agent check (`LIVE_CHECKER=agent`)
+
+**Prompt:** `prompts/agent_fact_checker.md`
+**Model:** `GEMINI_MODEL_AGENT_CHECK` (default `claude-sonnet-5-5@eu` via Requesty, thinking `low`)
+**Output:** `AgentVerdict` — `consistency`, `evidence`, `sources` (prompted output: Claude
+with thinking rejects the forced tool choice that tool output needs)
+**Code:** `backend/services/agent_fact_checker.py`
+
+The old deep checker (tag `v0.2.0`: a ReAct loop with ~15–30 sequential searches and a
+self-critique) cut down to one research round. The model plans its own searches instead
+of taking the reformulator's queries:
+
+1. **One round of searches.** The model calls `suche` (trusted domains, hits with tier
+   label, title, URL and text) and `presse_hinweis` (`PRESS_DOMAINS`, text only, as
+   `[Hinweis]`) several times in one response; the calls run in parallel. Searches in a
+   later response are refused (`AGENT_CHECK_ROUNDS`), unless fewer than
+   `AGENT_CHECK_MIN_SEARCHES` ran — then the model is sent back once for more.
+2. **Verdict.** Three to six sentences: what the sources say, how that fits the claim,
+   which doubt remains. The four levels are the deep checker's original definitions
+   (`AGENT_CONSISTENCY_DESCRIPTION` in `backend/lang.py`); a claim whose core holds but
+   whose framing goes further keeps its level, and the text names the doubt.
+3. **Guards** as in the fast check: one correction attempt if the text names the press,
+   only URLs the tools returned are kept as sources, never press; on failure `unklar`.
+
+Measured on 21 disputed claims, 2 runs each (14.10.2026): 36/42 verdicts within the
+reference vs. 25/42 for the fast check, 3 vs. 9 decided verdicts the reference rejects,
+p90 ~17–20 s per check (about the same as the fast check), ~2.5 search credits per claim.
+Rows are stored with `check_depth="agent"`.
+
+---
+
 ## Fallbacks
 
 Every model call goes through `build_model()` in `backend/services/llm_base.py`: primary
@@ -187,11 +218,12 @@ Claude via Requesty (EU) when `REQUESTY_API_KEY` is set. See [configuration.md](
 
 ## Stored results
 
-Each check is one row in `fact_checks` with `check_depth="fast"`, written first as a
+Each check is one row in `fact_checks` with `check_depth="fast"` (or `"agent"`), written first as a
 `processing` placeholder (so the mark appears in the transcript immediately) and then
 updated in place. `search_queries` holds the searches the check actually sent (the
 reformulator's queries, the claim itself, the press search as `[presse] …`, and any
-document titles it followed), so a
+document titles it followed; for the agent check, the searches the model wrote, press ones
+as `[presse] …`), so a
 verdict can be traced back to what was searched after the container logs are gone.
 Older rows with `check_depth="deep"` — the examples under `/beispiele` —
 come from the ReAct deep checker with self-critique, removed in v0.3.0 (the code is still

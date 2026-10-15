@@ -107,6 +107,8 @@ def _no_media_in_evidence(ctx: RunContext, output: FastVerdict) -> FastVerdict:
 class FastFactChecker:
     """Fast, loop-free fact-check: parallel Tavily searches + one synthesis call."""
 
+    check_depth = "fast"
+
     def __init__(self):
         self.model_name = os.getenv("GEMINI_MODEL_FAST_CHECK", DEFAULT_MODEL)
         self.fallback_model_name = os.getenv("GEMINI_MODEL_FACT_CHECKER_FALLBACK", "gemini-3-flash-preview")

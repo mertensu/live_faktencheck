@@ -5,6 +5,8 @@ Provides centralized access to AI services to avoid duplicate instances
 across different routers.
 """
 
+import os
+
 _claim_extractor = None
 _fast_fact_checker = None
 
@@ -19,11 +21,16 @@ def get_claim_extractor():
 
 
 def get_fast_fact_checker():
-    """Get or create the FastFactChecker singleton (live fast lane)."""
+    """Get or create the live lane's checker singleton: the FastFactChecker, or the
+    AgentFactChecker with LIVE_CHECKER=agent."""
     global _fast_fact_checker
     if _fast_fact_checker is None:
-        from backend.services.fast_fact_checker import FastFactChecker
-        _fast_fact_checker = FastFactChecker()
+        if os.getenv("LIVE_CHECKER", "fast").strip().lower() == "agent":
+            from backend.services.agent_fact_checker import AgentFactChecker
+            _fast_fact_checker = AgentFactChecker()
+        else:
+            from backend.services.fast_fact_checker import FastFactChecker
+            _fast_fact_checker = FastFactChecker()
     return _fast_fact_checker
 
 
