@@ -88,7 +88,10 @@ class TestFastCheck:
             result = await checker.check_claim_async(
                 speaker="X", claim="Behauptung Y.", queries=["Arbeitslosenquote 2026", "BA Arbeitsmarkt"])
         sent = [call.args[0] for call in mock_search.call_args_list]
-        assert result["search_queries"] == sent == ["Arbeitslosenquote 2026", "BA Arbeitsmarkt", "Behauptung Y."]
+        # The press search (#33) reuses the first query; it is recorded as "[presse] …".
+        assert sent == ["Arbeitslosenquote 2026", "BA Arbeitsmarkt", "Behauptung Y.", "Arbeitslosenquote 2026"]
+        assert result["search_queries"] == ["Arbeitslosenquote 2026", "BA Arbeitsmarkt", "Behauptung Y.",
+                                            "[presse] Arbeitslosenquote 2026"]
 
     async def test_search_failure_degrades_to_unklar(self, checker):
         with patch("backend.services.fast_fact_checker.tavily_search", AsyncMock(side_effect=RuntimeError("boom"))):
