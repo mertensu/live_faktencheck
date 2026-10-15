@@ -1455,7 +1455,7 @@
   background: rgba(0, 0, 0, 0.25);
   animation: claimDetailFade 0.2s ease-out;
 }
-.claim-detail-backdrop--closing { animation: claimDetailFade 0.25s ease-in reverse forwards; }
+.claim-detail-backdrop--closing { animation: claimDetailFadeOut 0.22s ease-in forwards; pointer-events: none; }
 .claim-detail-panel {
   position: fixed; top: 0; right: 0; bottom: 0; z-index: 1101;
   width: min(680px, 100vw);
@@ -1464,9 +1464,12 @@
   box-shadow: -8px 0 40px rgba(0, 0, 0, 0.12);
   animation: claimDetailSlide 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.claim-detail-panel--closing { animation: claimDetailSlide 0.25s cubic-bezier(0.4, 0, 1, 1) reverse forwards; }
+.claim-detail-panel--closing { animation: claimDetailSlideOut 0.22s cubic-bezier(0.4, 0, 1, 1) forwards; }
 @keyframes claimDetailFade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes claimDetailSlide { from { transform: translateX(100%); } to { transform: translateX(0); } }
+/* Own names for closing: switching an ended animation to reverse does not run it again. */
+@keyframes claimDetailFadeOut { from { opacity: 1; } to { opacity: 0; } }
+@keyframes claimDetailSlideOut { from { transform: translateX(0); } to { transform: translateX(100%); } }
 .claim-detail-close {
   position: sticky; top: 0;
   width: 100%; padding: 1rem 1.5rem; text-align: left;

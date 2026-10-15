@@ -40,7 +40,7 @@ Du hast genau eine Recherche-Runde.
 
 <Ausgabe>
 Zwei Fassungen der Begründung, beide Fließtext ohne Listen:
-- Langfassung (`evidence`, höchstens 1200 Zeichen): Was sagen die Quellen, wie passt das zur Behauptung, welche Einschränkungen bleiben.
+- Langfassung (`evidence`, höchstens 1200 Zeichen, zwei bis drei kurze Absätze): zuerst das Ergebnis, dann die Belege nach Gedanken geordnet (nicht Quelle für Quelle), zuletzt was offen bleibt.
 - Kurzfassung (`kurz`, 1–2 Sätze, höchstens 250 Zeichen): die entscheidende Zahl oder Tatsache mit Urheber und wie sie zur Behauptung passt.
 Nenne keine Zeitungen, Sender oder Presseartikel; nenne den Urheber einer Angabe (Institut, Behörde, Person).
 Stütze dich nur auf die Suchtreffer, nicht auf eigenes Wissen. Was die Treffer nicht belegen, nennst du als fehlend, nicht aus dem Gedächtnis.

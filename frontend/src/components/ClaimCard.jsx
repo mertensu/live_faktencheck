@@ -224,8 +224,21 @@ export function ExpandButton({ onClick }) {
 // The whole result at a glance: slides in from the right (full screen on a phone), so the
 // long reasoning needs no scrolling inside a small popover or card.
 // detail: { speaker, claim, consistency, label, begruendung, quellen }
+const CLOSE_MS = 220 // .claim-detail-*--closing in App.css
 export function ClaimDetailPanel({ detail, onClose }) {
   const [closing, setClosing] = React.useState(false)
+  const onCloseRef = React.useRef(onClose)
+  onCloseRef.current = onClose
+  const timer = React.useRef(null)
+
+  // Unmount on a timer, not on animationend: a missed event (an animation that does not
+  // run) would leave an invisible backdrop over the page.
+  const close = React.useCallback(() => {
+    if (timer.current) return
+    setClosing(true)
+    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    timer.current = setTimeout(() => onCloseRef.current(), reduce ? 0 : CLOSE_MS)
+  }, [])
 
   React.useEffect(() => {
     const prev = document.body.style.overflow
@@ -235,14 +248,9 @@ export function ClaimDetailPanel({ detail, onClose }) {
     return () => {
       document.body.style.overflow = prev
       window.removeEventListener('keydown', onKey)
+      clearTimeout(timer.current)
     }
-  }, [])
-
-  // No animationend under reduced motion: close at once then.
-  const close = () => {
-    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) onClose()
-    else setClosing(true)
-  }
+  }, [close])
 
   return createPortal(
     <div className={`claim-detail-backdrop${closing ? ' claim-detail-backdrop--closing' : ''}`} onClick={close}>
@@ -253,7 +261,6 @@ export function ClaimDetailPanel({ detail, onClose }) {
         aria-label="Prüfergebnis"
         onClick={(e) => e.stopPropagation()}
         onMouseDown={(e) => e.stopPropagation()}
-        onAnimationEnd={closing ? onClose : undefined}
       >
         <button type="button" className="claim-detail-close" onClick={close}>← Zurück</button>
         <div className="claim-detail-body">

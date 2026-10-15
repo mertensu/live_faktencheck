@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeAll } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { describe, it, expect, beforeAll, vi } from 'vitest'
+import { render, screen, fireEvent, act } from '@testing-library/react'
 import { FactCheckStream } from './FactCheckStream'
 
 const checks = [
@@ -42,16 +42,19 @@ describe('FactCheckStream reasoning', () => {
     expect(container.querySelector('.fcs-card').className).toMatch(/fcs-open/) // the tap didn't toggle the card
   })
 
-  it('closes the side panel with "Zurück" (at once under reduced motion)', () => {
-    const matchMedia = window.matchMedia
-    window.matchMedia = (q) => ({ matches: q.includes('reduced-motion') })
+  it('closes the side panel with "Zurück" and leaves the page usable', async () => {
+    vi.useFakeTimers()
     try {
       render(<FactCheckStream factChecks={[{ ...checks[0], kurzfassung: 'Kurz.', begruendung: 'Lang.' }]} />)
       fireEvent.click(screen.getByRole('button', { name: 'Mehr anzeigen' }))
+      expect(document.body.style.overflow).toBe('hidden')
       fireEvent.click(screen.getByRole('button', { name: '← Zurück' }))
+      act(() => { vi.advanceTimersByTime(300) }) // no animationend needed
       expect(screen.queryByRole('dialog')).toBeNull()
+      expect(document.querySelector('.claim-detail-backdrop')).toBeNull()
+      expect(document.body.style.overflow).toBe('')
     } finally {
-      window.matchMedia = matchMedia
+      vi.useRealTimers()
     }
   })
 
