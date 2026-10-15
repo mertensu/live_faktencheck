@@ -38,14 +38,15 @@ AGENT_CONSISTENCY_DESCRIPTION = """Empirische Konsistenz der Behauptung. Wähle 
 - 'niedrig': Die verfügbaren Daten widersprechen der Behauptung — auch wenn die Belege überwiegend widersprechen, aber nicht vollständig schlüssig sind.
 - 'unklar': Widersprüchliche Studien oder Belege ohne klare Richtung; wirklich nicht bestimmbar.
 - 'keine Datenlage': Keine relevanten Daten oder empirischen Belege zu diesem Thema gefunden."""
-AGENT_EVIDENCE_DESCRIPTION = """Ausführliche deutschsprachige Begründung (Langfassung), höchstens 1200 Zeichen, in zwei bis drei kurzen Absätzen (getrennt durch eine Leerzeile), ohne Listen oder Überschriften:
-1. Das Ergebnis: was an der Behauptung belegt ist und was nicht.
-2. Die Belege, nach Gedanken geordnet statt Quelle für Quelle: Zahlen mit Stand und Urheber im Satz, Quellen, die dasselbe sagen, zusammen.
-3. Was offen bleibt: abweichende Zeiträume, Abgrenzungen, Gegenbelege, fehlende Daten.
-Flüssig formuliert, Sätze mit Verbindungen („weil“, „dagegen“, „allerdings“) statt aneinandergereihter Einzelaussagen.
+# The three texts of the reasoning; the UI shows kurz first, then the other two under
+# fixed headings ("Was die Quellen sagen", "Was offen bleibt").
+_AGENT_TEXT_RULES = """
 - Nur was in den Suchtreffern steht; kein eigenes Wissen. Fehlt etwas, sag, dass die geprüften Quellen es nicht belegen.
-- Für sich verständlich für Leser, die nur die Behauptung und diese Begründung sehen und von der Recherche nichts wissen: keine Wörter wie „Treffer“, „Suchtreffer“, „Suche“ oder „Auszug“ — sag „die geprüften Quellen“ oder nenne den Urheber. Wenig bekannte Abkürzungen beim ersten Nennen ausschreiben."""
-AGENT_KURZ_DESCRIPTION = """Kurzfassung der Begründung für das Handy: 1–2 Sätze, höchstens 250 Zeichen. Die entscheidende Zahl oder Tatsache mit Urheber und wie sie zur Behauptung passt. Nichts, was nicht auch in der Langfassung steht; wie dort ohne „Treffer“ oder „Suche“."""
+- Für sich verständlich für Leser, die nur die Behauptung und diese Begründung sehen und von der Recherche nichts wissen: keine Wörter wie „Treffer“, „Suchtreffer“, „Suche“ oder „Auszug“ — sag „die geprüften Quellen“ oder nenne den Urheber. Wenig bekannte Abkürzungen beim ersten Nennen ausschreiben.
+- Flüssig formuliert, keine Listen oder Überschriften."""
+AGENT_KURZ_DESCRIPTION = """Das Ergebnis in 1–2 Sätzen, höchstens 250 Zeichen: was an der Behauptung belegt ist und was nicht, mit der entscheidenden Zahl oder Tatsache und ihrem Urheber. Steht über den beiden anderen Texten.""" + _AGENT_TEXT_RULES
+AGENT_EVIDENCE_DESCRIPTION = """Was die Quellen sagen: die Belege, höchstens 800 Zeichen, ein bis zwei Absätze (getrennt durch eine Leerzeile). Nach Gedanken geordnet statt Quelle für Quelle: Zahlen mit Stand und Urheber im Satz, Quellen, die dasselbe sagen, zusammen, und wie das zur Behauptung passt. Sätze mit Verbindungen („weil“, „dagegen“, „allerdings“) statt aneinandergereihter Einzelaussagen. Wiederhole nicht das Ergebnis aus der Kurzfassung.""" + _AGENT_TEXT_RULES
+AGENT_OPEN_DESCRIPTION = """Was offen bleibt: Einschränkungen, Gegenbelege, abweichende Zeiträume oder Abgrenzungen, fehlende Daten; höchstens 400 Zeichen. Leer lassen, wenn nichts Wesentliches offen ist. Nicht mit „Offen bleibt“ beginnen — das steht als Überschrift darüber.""" + _AGENT_TEXT_RULES
 AGENT_SOURCES_DESCRIPTION = "Primärquellen mit URL und kurzem informativem Titel"
 
 # --- Live speakers ---

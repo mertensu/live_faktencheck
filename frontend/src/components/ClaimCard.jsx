@@ -120,6 +120,9 @@ export const formatBegruendung = (text) => {
   const paragraphs = text.split(/\n\n+/).filter(p => p.trim())
 
   return paragraphs.map((para, idx) => {
+    // A paragraph that is only **…** is a heading (agent check: "Was die Quellen sagen").
+    const heading = para.trim().match(/^\*\*([^*\n]+)\*\*$/)
+    if (heading) return <h3 key={idx} className="begruendung-heading">{heading[1]}</h3>
     // Replace single \n with <br>
     const lines = para.split('\n')
     return (
@@ -223,7 +226,7 @@ export function ExpandButton({ onClick }) {
 
 // The whole result at a glance: slides in from the right (full screen on a phone), so the
 // long reasoning needs no scrolling inside a small popover or card.
-// detail: { speaker, claim, consistency, label, begruendung, quellen }
+// detail: { speaker, claim, consistency, label, kurz, begruendung, quellen }
 const CLOSE_MS = 220 // .claim-detail-*--closing in App.css
 export function ClaimDetailPanel({ detail, onClose }) {
   const [closing, setClosing] = React.useState(false)
@@ -271,6 +274,7 @@ export function ClaimDetailPanel({ detail, onClose }) {
             {detail.speaker && <span className="claim-detail-speaker">{detail.speaker}</span>}
           </div>
           <h2 className="claim-detail-heading">{stripDateAnnotation(detail.claim)}</h2>
+          {detail.kurz && <p className="claim-detail-lead">{detail.kurz}</p>}
           <div className="claim-detail-reason">{formatBegruendung(detail.begruendung)}</div>
           {detail.quellen?.length > 0 && (
             <>

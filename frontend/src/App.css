@@ -1488,6 +1488,17 @@
 .claim-detail-heading { margin: 0 0 1.25rem; font-size: 1.3rem; font-weight: 600; line-height: 1.45; }
 .claim-detail-reason { font-size: 1rem; line-height: 1.65; color: var(--text-main); }
 .claim-detail-reason .begruendung-text { margin: 0 0 0.75rem; color: var(--text-main); }
+.claim-detail-lead {
+  margin: 0 0 1.25rem; padding: 0.75rem 1rem;
+  border-left: 3px solid #1d4ed8; border-radius: 0 8px 8px 0;
+  background: #eff6ff; font-size: 1rem; font-weight: 600; line-height: 1.55;
+}
+.begruendung-heading {
+  margin: 1.25rem 0 0.4rem;
+  font-size: 0.75rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase;
+  color: var(--text-muted);
+}
+.begruendung-heading:first-child { margin-top: 0; }
 .claim-detail-section-title {
   margin: 1.5rem 0 0.5rem;
   font-size: 0.75rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase;

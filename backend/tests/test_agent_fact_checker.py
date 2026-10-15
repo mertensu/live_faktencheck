@@ -79,6 +79,8 @@ async def test_one_round_then_verdict(checker):
                                         "[presse] 83 Millionen Einwohner"]
     assert result["consistency"] == "hoch"
     assert result["kurz"] == "Destatis: 83,6 Mio. Einwohner 2025."
+    # Long reasoning under its heading; no "offen" part, so no second heading.
+    assert result["evidence"] == "**Was die Quellen sagen**\n\n" + VERDICT["evidence"]
     assert result["speaker"] == "Julia" and result["original_claim"] == "Deutschland hat 83 Mio. Einwohner."
     assert result["double_check"] is False and result["critique_note"] == ""
     # Press and invented URLs are dropped.
@@ -176,3 +178,12 @@ def test_registry_picks_agent_checker():
     with patch.dict("os.environ", {"GEMINI_API_KEY": "test", "LIVE_CHECKER": "fast", "REQUESTY_API_KEY": ""}):
         assert registry.get_fast_fact_checker().check_depth == "fast"
         registry.reset_services()
+
+
+async def test_open_part_gets_its_own_heading(checker):
+    out = {**VERDICT, "offen": "Monatswerte fehlen."}
+    with patch("backend.services.agent_fact_checker.tavily_search", AsyncMock(side_effect=fake_search)), \
+            checker.agent.override(model=_model([THREE], final=out)):
+        result = await checker.check_claim_async("Julia", "Behauptung.")
+    assert result["evidence"] == ("**Was die Quellen sagen**\n\n" + VERDICT["evidence"]
+                                  + "\n\n**Was offen bleibt**\n\nMonatswerte fehlen.")

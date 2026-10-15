@@ -241,7 +241,8 @@ describe('LiveTranscript', () => {
     expect(panel.className).toMatch(/claim-detail-panel/)
     expect(panel.textContent).toContain('Die Preise sind gesunken.')
     expect(panel.textContent).toContain('Quelle X')
-    expect(screen.queryByText('Kurz: gesunken.')).toBeNull() // the popover closed
+    expect(document.querySelector('.live-popover')).toBeNull() // the popover closed
+    expect(panel.querySelector('.claim-detail-lead').textContent).toBe('Kurz: gesunken.')
   })
 
   it('offers no expand button without a short version', () => {

@@ -30,7 +30,8 @@ describe('FactCheckStream reasoning', () => {
   })
 
   it('shows the short version in the card and the long one in a side panel', () => {
-    const fc = { ...checks[0], kurzfassung: 'Kurzfassung.', begruendung: 'Lange Begründung.' }
+    const fc = { ...checks[0], kurzfassung: 'Kurzfassung.',
+      begruendung: '**Was die Quellen sagen**\n\nLange Begründung.\n\n**Was offen bleibt**\n\nEtwas fehlt.' }
     const { container } = render(<FactCheckStream factChecks={[fc]} />)
     fireEvent.click(container.querySelector('.fcs-card'))
     expect(screen.getByText('Kurzfassung.')).toBeDefined()
@@ -39,6 +40,9 @@ describe('FactCheckStream reasoning', () => {
     const panel = screen.getByRole('dialog', { name: 'Prüfergebnis' })
     expect(panel.textContent).toContain('Lange Begründung.')
     expect(panel.textContent).toContain('Erste Aussage')
+    expect(panel.querySelector('.claim-detail-lead').textContent).toBe('Kurzfassung.')
+    expect([...panel.querySelectorAll('h3.begruendung-heading')].map((h) => h.textContent))
+      .toEqual(['Was die Quellen sagen', 'Was offen bleibt'])
     expect(container.querySelector('.fcs-card').className).toMatch(/fcs-open/) // the tap didn't toggle the card
   })
 

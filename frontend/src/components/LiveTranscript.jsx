@@ -280,7 +280,7 @@ function ClaimPopover({ claim, speaker, anchor, onEnter, onLeave, onExpand }) {
         {speaker && <span className="live-popover-speaker">{speaker}</span>}
         {claim.status === 'done' && claim.kurzfassung && (
           <ExpandButton onClick={() => onExpand({
-            speaker, claim: claim.claim, consistency: claim.consistency, label: info.label,
+            speaker, claim: claim.claim, consistency: claim.consistency, label: info.label, kurz: claim.kurzfassung,
             begruendung: claim.begruendung, quellen: claim.quellen,
           })} />
         )}

@@ -181,7 +181,7 @@ The model is never allowed to judge a person or give absolute verdicts ("wahr",
 
 **Prompt:** `prompts/agent_fact_checker.md`
 **Model:** `GEMINI_MODEL_AGENT_CHECK` (default `claude-sonnet-5-5@eu` via Requesty, thinking `low`)
-**Output:** `AgentVerdict` — `consistency`, `evidence`, `kurz`, `sources` (prompted output: Claude
+**Output:** `AgentVerdict` — `consistency`, `evidence`, `offen`, `kurz`, `sources` (prompted output: Claude
 with thinking rejects the forced tool choice that tool output needs)
 **Code:** `backend/services/agent_fact_checker.py`
 
@@ -194,12 +194,13 @@ of taking the reformulator's queries:
    `[Hinweis]`) several times in one response; the calls run in parallel. Searches in a
    later response are refused (`AGENT_CHECK_ROUNDS`), unless fewer than
    `AGENT_CHECK_MIN_SEARCHES` ran — then the model is sent back once for more.
-2. **Verdict.** Two versions of the reasoning: `evidence` (up to ~1200 characters: what
-   the sources say, how that fits the claim, which doubts remain) and `kurz` (1–2
-   sentences, ≤ 250 characters: the decisive figure with its originator). The UI shows
-   `kurz` in the popover or card; an expand button ("Mehr anzeigen", top right) opens the
-   whole result in a side panel (full screen on a phone) — in the live transcript and on
-   the viewer link alike. The four levels are the deep checker's original definitions
+2. **Verdict.** The reasoning in three texts: `kurz` (the result, 1–2 sentences, ≤ 250
+   characters), `evidence` ("Was die Quellen sagen", ≤ 800) and `offen` ("Was offen
+   bleibt", ≤ 400, may be empty). `evidence` and `offen` are stored together in
+   `begruendung` under their headings (`**…**` paragraphs, rendered as headings), `kurz` in
+   `kurzfassung`. Popover and card show `kurz`; an expand button ("Mehr anzeigen", top
+   right) opens the whole result in a side panel (full screen on a phone), `kurz` on top —
+   in the live transcript and on the viewer link alike. The four levels are the deep checker's original definitions
    (`AGENT_CONSISTENCY_DESCRIPTION` in `backend/lang.py`); a claim whose core holds but
    whose framing goes further keeps its level, and the text names the doubt.
 3. **Guards** as in the fast check: one correction attempt if the text names the press,

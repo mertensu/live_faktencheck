@@ -271,7 +271,7 @@ export function FactCheckStream({ factChecks }) {
                   <span className={`fcs-vlabel fcs-vlabel-${vk}`}>{VLABEL[vk]}</span>
                   {fc.kurzfassung && (
                     <ExpandButton onClick={() => setDetail({
-                      speaker: fc.sprecher, claim: fc.behauptung, consistency: fc.consistency, label: VLABEL[vk],
+                      speaker: fc.sprecher, claim: fc.behauptung, consistency: fc.consistency, label: VLABEL[vk], kurz: fc.kurzfassung,
                       begruendung: fc.begruendung, quellen: fc.quellen,
                     })} />
                   )}

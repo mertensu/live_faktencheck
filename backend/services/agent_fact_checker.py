@@ -26,6 +26,7 @@ from backend.lang import (
     AGENT_CONSISTENCY_DESCRIPTION,
     AGENT_EVIDENCE_DESCRIPTION,
     AGENT_KURZ_DESCRIPTION,
+    AGENT_OPEN_DESCRIPTION,
     AGENT_SOURCES_DESCRIPTION,
 )
 from backend.utils import load_prompt, log_text
@@ -46,6 +47,7 @@ class AgentVerdict(BaseModel):
     consistency: Literal["hoch", "niedrig", "unklar", "keine Datenlage"] = Field(
         description=AGENT_CONSISTENCY_DESCRIPTION)
     evidence: str = Field(description=AGENT_EVIDENCE_DESCRIPTION)
+    offen: str = Field(default="", description=AGENT_OPEN_DESCRIPTION)
     # After the long text: the model condenses what it has written, not the other way round.
     kurz: str = Field(default="", description=AGENT_KURZ_DESCRIPTION)
     sources: List[Source] = Field(default_factory=list, description=AGENT_SOURCES_DESCRIPTION)
@@ -69,6 +71,19 @@ def _month_year(date: str | None) -> str:
     if parts and parts[0].endswith("."):
         return " ".join(parts[1:])
     return date or f"{_MONTHS[datetime.now().month - 1]} {datetime.now().year}"
+
+
+# Headings the UI renders as such (formatBegruendung: a paragraph that is only **…**).
+EVIDENCE_HEADING = "**Was die Quellen sagen**"
+OPEN_HEADING = "**Was offen bleibt**"
+
+
+def _long_text(out: AgentVerdict) -> str:
+    """The long reasoning as stored in ``begruendung``: both parts under their headings."""
+    parts = [EVIDENCE_HEADING, out.evidence.strip()]
+    if out.offen.strip():
+        parts += [OPEN_HEADING, out.offen.strip()]
+    return "\n\n".join(parts)
 
 
 class AgentFactChecker:
@@ -166,7 +181,7 @@ class AgentFactChecker:
             raise ModelRetry(
                 f"Du hast erst {run.searches} Suche(n) gestellt. Stelle weitere Suchanfragen gleichzeitig "
                 "(amtliche Statistik, konkreter Wert für Zeitraum und Region, Gegenbelege), dann urteile.")
-        found = sorted(set(_MEDIA_RE.findall(f"{output.evidence} {output.kurz}")))
+        found = sorted(set(_MEDIA_RE.findall(f"{output.evidence} {output.offen} {output.kurz}")))
         if found and not run.asked_media:
             run.asked_media = True
             raise ModelRetry(
@@ -200,7 +215,7 @@ class AgentFactChecker:
             logger.info(f"Agent check done: consistency = {out.consistency}, searches = {run.queries}")
             return {
                 "speaker": speaker, "original_claim": claim, "consistency": out.consistency,
-                "evidence": out.evidence, "kurz": out.kurz, "sources": sources,
+                "evidence": _long_text(out), "kurz": out.kurz, "sources": sources,
                 "double_check": False, "critique_note": "",
                 # Stored with the row: the agent writes its own searches ("[presse] …" for press).
                 "search_queries": run.queries,
