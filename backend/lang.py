@@ -38,7 +38,8 @@ AGENT_CONSISTENCY_DESCRIPTION = """Empirische Konsistenz der Behauptung. Wähle 
 - 'niedrig': Die verfügbaren Daten widersprechen der Behauptung — auch wenn die Belege überwiegend widersprechen, aber nicht vollständig schlüssig sind.
 - 'unklar': Widersprüchliche Studien oder Belege ohne klare Richtung; wirklich nicht bestimmbar.
 - 'keine Datenlage': Keine relevanten Daten oder empirischen Belege zu diesem Thema gefunden."""
-AGENT_EVIDENCE_DESCRIPTION = "Detaillierte und gut strukturierte deutschsprachige Begründung"
+AGENT_EVIDENCE_DESCRIPTION = """Deutschsprachige Begründung, 3–5 Sätze Fließtext, höchstens 600 Zeichen; keine Listen, Überschriften oder Absätze. Die entscheidende Zahl oder Tatsache mit Stand und Urheber, wie sie zur Behauptung passt, und die wichtigste Einschränkung.
+- Nur was in den Suchtreffern steht; kein eigenes Wissen. Fehlt etwas in den Treffern, sag, dass es dort fehlt."""
 AGENT_SOURCES_DESCRIPTION = "Primärquellen mit URL und kurzem informativem Titel"
 
 # --- Live speakers ---

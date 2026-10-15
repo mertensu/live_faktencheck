@@ -39,7 +39,8 @@ Du hast genau eine Recherche-Runde.
 </Ablauf>
 
 <Ausgabe>
-Begründung in 3–6 Sätzen: Was sagen die Quellen, wie passt das zur Behauptung, welche Einschränkung bleibt. Nenne keine Zeitungen, Sender oder Presseartikel; nenne den Urheber einer Angabe (Institut, Behörde, Person).
+Begründung in 3–5 Sätzen Fließtext (höchstens 600 Zeichen, keine Listen): Was sagen die Quellen, wie passt das zur Behauptung, welche Einschränkung bleibt. Nenne keine Zeitungen, Sender oder Presseartikel; nenne den Urheber einer Angabe (Institut, Behörde, Person).
+Stütze dich nur auf die Suchtreffer, nicht auf eigenes Wissen. Was die Treffer nicht belegen, nennst du als fehlend, nicht aus dem Gedächtnis.
 </Ausgabe>
 
 <challenge_requirement>
