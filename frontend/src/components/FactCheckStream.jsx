@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { getConsistencyColor, Begruendung, stripDateAnnotation } from './ClaimCard'
+import { getConsistencyColor, Begruendung, ClaimDetailPanel, ExpandButton, stripDateAnnotation } from './ClaimCard'
 
 // Live "Fokus-Stream": fact-checks as one chronological stream, newest on top in
 // full focus, older ones fading slightly downward. Tapping a card brings it into
@@ -36,6 +36,7 @@ const lastName = (name) => (name || '').trim().split(/\s+/).slice(-1)[0] || name
 
 export function FactCheckStream({ factChecks }) {
   const [openKey, setOpenKey] = useState(null)
+  const [detail, setDetail] = useState(null) // the full result, in ClaimDetailPanel
   const [speakers, setSpeakers] = useState(() => new Set())
   const [verdicts, setVerdicts] = useState(() => new Set())
   const [filtersOpen, setFiltersOpen] = useState(false)
@@ -268,6 +269,12 @@ export function FactCheckStream({ factChecks }) {
                     <span className="fcs-flag" title="Bewertung unter Vorbehalt" aria-label="Bewertung unter Vorbehalt">⚠</span>
                   )}
                   <span className={`fcs-vlabel fcs-vlabel-${vk}`}>{VLABEL[vk]}</span>
+                  {fc.kurzfassung && (
+                    <ExpandButton onClick={() => setDetail({
+                      speaker: fc.sprecher, claim: fc.behauptung, consistency: fc.consistency, label: VLABEL[vk],
+                      begruendung: fc.begruendung, quellen: fc.quellen,
+                    })} />
+                  )}
                 </div>
                 <div className="fcs-claim">{stripDateAnnotation(fc.behauptung)}</div>
                 <div className="fcs-foot-row">
@@ -302,6 +309,7 @@ export function FactCheckStream({ factChecks }) {
           {filtered.length > 1 && <p className="fcs-peek">{oldestFirst ? '↓ neuer' : '↓ älter'} — tippen fokussiert</p>}
         </div>
       )}
+      {detail && <ClaimDetailPanel detail={detail} onClose={() => setDetail(null)} />}
     </div>
   )
 }

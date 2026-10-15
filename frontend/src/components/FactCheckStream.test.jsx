@@ -29,15 +29,30 @@ describe('FactCheckStream reasoning', () => {
     window.scrollTo = () => {}
   })
 
-  it('shows the short version with a toggle to the long one, without closing the card', () => {
+  it('shows the short version in the card and the long one in a side panel', () => {
     const fc = { ...checks[0], kurzfassung: 'Kurzfassung.', begruendung: 'Lange Begründung.' }
     const { container } = render(<FactCheckStream factChecks={[fc]} />)
     fireEvent.click(container.querySelector('.fcs-card'))
     expect(screen.getByText('Kurzfassung.')).toBeDefined()
     expect(screen.queryByText('Lange Begründung.')).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'Mehr anzeigen' }))
-    expect(screen.getByText('Lange Begründung.')).toBeDefined()
-    expect(container.querySelector('.fcs-card').className).toMatch(/fcs-open/)
+    const panel = screen.getByRole('dialog', { name: 'Prüfergebnis' })
+    expect(panel.textContent).toContain('Lange Begründung.')
+    expect(panel.textContent).toContain('Erste Aussage')
+    expect(container.querySelector('.fcs-card').className).toMatch(/fcs-open/) // the tap didn't toggle the card
+  })
+
+  it('closes the side panel with "Zurück" (at once under reduced motion)', () => {
+    const matchMedia = window.matchMedia
+    window.matchMedia = (q) => ({ matches: q.includes('reduced-motion') })
+    try {
+      render(<FactCheckStream factChecks={[{ ...checks[0], kurzfassung: 'Kurz.', begruendung: 'Lang.' }]} />)
+      fireEvent.click(screen.getByRole('button', { name: 'Mehr anzeigen' }))
+      fireEvent.click(screen.getByRole('button', { name: '← Zurück' }))
+      expect(screen.queryByRole('dialog')).toBeNull()
+    } finally {
+      window.matchMedia = matchMedia
+    }
   })
 
   it('shows the long version alone when there is no short one', () => {

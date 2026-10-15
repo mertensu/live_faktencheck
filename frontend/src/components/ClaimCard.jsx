@@ -1,4 +1,5 @@
 import React from 'react'
+import { createPortal } from 'react-dom'
 
 // Strip date annotations like "(Stand März 2026)" or "(im März 2026)" from claim text
 export const stripDateAnnotation = (text) => {
@@ -193,31 +194,92 @@ export function ClaimCard({ claim, onSelect }) {
   )
 }
 
-// Reasoning of a result: the short version with a "Mehr anzeigen" toggle to the long one
-// when the check wrote both (agent check), else the long one alone. Clicks on the toggle
-// stay inside: the stream's cards open and close on a tap.
-export function Begruendung({ kurz, lang, className, onToggle }) {
-  const [more, setMore] = React.useState(false)
-  if (!kurz) return <div className={className}>{formatBegruendung(lang)}</div>
-  const toggle = (e) => {
-    e.stopPropagation()
-    setMore((m) => !m)
-    onToggle?.()
-  }
+// Reasoning of a result in a card or popover: the short version when the check wrote one
+// (agent check), else the long one. The long one then opens in ClaimDetailPanel.
+export function Begruendung({ kurz, lang, className }) {
+  return <div className={className}>{formatBegruendung(kurz || lang)}</div>
+}
+
+// Top-right button that opens the full result. Stops the click: stream cards open and
+// close on a tap.
+export function ExpandButton({ onClick }) {
+  const open = (e) => { e.stopPropagation(); onClick() }
   return (
-    <div className={className}>
-      {formatBegruendung(more ? lang : kurz)}
-      {lang && (
-        <button
-          type="button"
-          className="begruendung-more"
-          aria-expanded={more}
-          onClick={toggle}
-          onKeyDown={(e) => e.stopPropagation()}
-        >
-          {more ? 'Weniger anzeigen' : 'Mehr anzeigen'}
-        </button>
-      )}
-    </div>
+    <button
+      type="button"
+      className="claim-expand"
+      title="Mehr anzeigen"
+      aria-label="Mehr anzeigen"
+      onClick={open}
+      onKeyDown={(e) => e.stopPropagation()}
+    >
+      <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true">
+        <path d="M9.5 2.5h4v4M13.5 2.5 9 7M6.5 13.5h-4v-4M2.5 13.5 7 9"
+          fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </button>
+  )
+}
+
+// The whole result at a glance: slides in from the right (full screen on a phone), so the
+// long reasoning needs no scrolling inside a small popover or card.
+// detail: { speaker, claim, consistency, label, begruendung, quellen }
+export function ClaimDetailPanel({ detail, onClose }) {
+  const [closing, setClosing] = React.useState(false)
+
+  React.useEffect(() => {
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    const onKey = (e) => { if (e.key === 'Escape') close() }
+    window.addEventListener('keydown', onKey)
+    return () => {
+      document.body.style.overflow = prev
+      window.removeEventListener('keydown', onKey)
+    }
+  }, [])
+
+  // No animationend under reduced motion: close at once then.
+  const close = () => {
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) onClose()
+    else setClosing(true)
+  }
+
+  return createPortal(
+    <div className={`claim-detail-backdrop${closing ? ' claim-detail-backdrop--closing' : ''}`} onClick={close}>
+      <div
+        className={`claim-detail-panel${closing ? ' claim-detail-panel--closing' : ''}`}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Prüfergebnis"
+        onClick={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
+        onAnimationEnd={closing ? onClose : undefined}
+      >
+        <button type="button" className="claim-detail-close" onClick={close}>← Zurück</button>
+        <div className="claim-detail-body">
+          <div className="claim-detail-meta">
+            <span className="claim-detail-verdict" style={{ background: getConsistencyColor(detail.consistency) }}>
+              {detail.label}
+            </span>
+            {detail.speaker && <span className="claim-detail-speaker">{detail.speaker}</span>}
+          </div>
+          <h2 className="claim-detail-heading">{stripDateAnnotation(detail.claim)}</h2>
+          <div className="claim-detail-reason">{formatBegruendung(detail.begruendung)}</div>
+          {detail.quellen?.length > 0 && (
+            <>
+              <h3 className="claim-detail-section-title">Quellen</h3>
+              <ul className="claim-detail-sources">
+                {detail.quellen.map((q, idx) => {
+                  const url = typeof q === 'object' ? q.url : q
+                  const title = typeof q === 'object' && q.title ? q.title : url
+                  return <li key={idx}><a href={url} target="_blank" rel="noopener noreferrer">{title}</a></li>
+                })}
+              </ul>
+            </>
+          )}
+        </div>
+      </div>
+    </div>,
+    document.body,
   )
 }

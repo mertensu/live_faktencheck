@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { Begruendung } from './ClaimCard'
+import { Begruendung, ClaimDetailPanel, ExpandButton } from './ClaimCard'
 import { nameAt, OTHER_VOICE } from '../hooks/useAudioStream'
 
 // Verdict → short label + modifier class for the badge and the transcript highlight.
@@ -235,10 +235,9 @@ function renderLine(text, claimsBySource, handlers, marked) {
   return out
 }
 
-function ClaimPopover({ claim, speaker, anchor, onEnter, onLeave }) {
+function ClaimPopover({ claim, speaker, anchor, onEnter, onLeave, onExpand }) {
   const ref = useRef(null)
   const [pos, setPos] = useState(null)
-  const [toggles, setToggles] = useState(0) // "Mehr anzeigen" changes the height: place again
 
   // Fixed positioning so the card floats above the page; follow the
   // mark on scroll/resize and flip above it when there is more room there.
@@ -263,7 +262,7 @@ function ClaimPopover({ claim, speaker, anchor, onEnter, onLeave }) {
       window.removeEventListener('scroll', place, true)
       window.removeEventListener('resize', place)
     }
-  }, [anchor, claim, toggles])
+  }, [anchor, claim])
 
   const info = verdictInfo(claim)
   return (
@@ -279,13 +278,18 @@ function ClaimPopover({ claim, speaker, anchor, onEnter, onLeave }) {
       <div className="live-popover-head">
         <span className={`live-claim-badge verdict-${info.mod}`}>{info.label}</span>
         {speaker && <span className="live-popover-speaker">{speaker}</span>}
+        {claim.status === 'done' && claim.kurzfassung && (
+          <ExpandButton onClick={() => onExpand({
+            speaker, claim: claim.claim, consistency: claim.consistency, label: info.label,
+            begruendung: claim.begruendung, quellen: claim.quellen,
+          })} />
+        )}
       </div>
       <p className="live-popover-claim">{claim.claim}</p>
       {claim.status === 'processing' && <p className="live-popover-note">Wird geprüft…</p>}
       {claim.status === 'error' && <p className="live-popover-note">Schnellprüfung fehlgeschlagen.</p>}
       {claim.status === 'done' && (claim.begruendung
-        ? <Begruendung className="live-popover-reason" kurz={claim.kurzfassung} lang={claim.begruendung}
-            onToggle={() => setToggles((n) => n + 1)} />
+        ? <Begruendung className="live-popover-reason" kurz={claim.kurzfassung} lang={claim.begruendung} />
         : <p className="live-popover-note">Keine Begründung verfügbar.</p>)}
       {claim.quellen?.length > 0 && (
         <ul className="live-popover-sources">
@@ -320,6 +324,7 @@ export function LiveTranscript({ live, speakers = [], follow = true }) {
   const colorsRef = useRef(new Map()) // speaker name → palette slot, sticky per session
   const closeTimer = useRef(null)
   const [open, setOpen] = useState(null) // { id, pinned }
+  const [detail, setDetail] = useState(null) // the full result, in ClaimDetailPanel
   const [passage, setPassage] = useState(null) // marked text awaiting a speaker: { parts, left, top }
   const closePassage = useCallback(() => setPassage(null), [])
 
@@ -497,8 +502,10 @@ export function LiveTranscript({ live, speakers = [], follow = true }) {
           anchor={anchor}
           onEnter={cancelClose}
           onLeave={scheduleClose}
+          onExpand={(d) => { setOpen(null); setDetail(d) }}
         />
       )}
+      {detail && <ClaimDetailPanel detail={detail} onClose={() => setDetail(null)} />}
     </div>
   )
 }

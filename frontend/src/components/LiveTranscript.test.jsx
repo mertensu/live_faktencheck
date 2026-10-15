@@ -230,16 +230,24 @@ describe('LiveTranscript', () => {
     expect(screen.queryByRole('dialog')).toBeNull()
   })
 
-  it('shows the short reasoning first and the long one on request', () => {
+  it('shows the short reasoning in the popover and the full result in a side panel', () => {
     const l = { ...live, claims: [{ ...live.claims[0], kurzfassung: 'Kurz: gesunken.' }] }
     render(<LiveTranscript live={l} />)
-    const mark = screen.getByText('Strom ist teurer geworden.', { selector: 'mark' })
-    fireEvent.click(mark)
+    fireEvent.click(screen.getByText('Strom ist teurer geworden.', { selector: 'mark' }))
     expect(screen.getByText('Kurz: gesunken.')).toBeDefined()
     expect(screen.queryByText('Die Preise sind gesunken.')).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'Mehr anzeigen' }))
-    expect(screen.getByText('Die Preise sind gesunken.')).toBeDefined()
-    expect(screen.getByRole('dialog')).toBeDefined()
+    const panel = screen.getByRole('dialog', { name: 'Prüfergebnis' })
+    expect(panel.className).toMatch(/claim-detail-panel/)
+    expect(panel.textContent).toContain('Die Preise sind gesunken.')
+    expect(panel.textContent).toContain('Quelle X')
+    expect(screen.queryByText('Kurz: gesunken.')).toBeNull() // the popover closed
+  })
+
+  it('offers no expand button without a short version', () => {
+    render(<LiveTranscript live={live} />)
+    fireEvent.click(screen.getByText('Strom ist teurer geworden.', { selector: 'mark' }))
+    expect(screen.queryByRole('button', { name: 'Mehr anzeigen' })).toBeNull()
   })
 
   it('offers claims without a visible passage as badges', () => {

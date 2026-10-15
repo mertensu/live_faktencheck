@@ -1436,12 +1436,70 @@
 .live-popover-claim { margin: 0 0 0.5rem; font-weight: 600; }
 .live-popover-note { margin: 0; color: var(--text-muted); font-style: italic; }
 .live-popover-reason .begruendung-text { margin: 0 0 0.45rem; }
-.begruendung-more {
-  padding: 0; border: 0; background: none; cursor: pointer;
-  color: #1d4ed8; font: inherit; font-size: 0.85em; font-weight: 600;
+
+/* "Mehr anzeigen": top right in a popover or stream card, opens ClaimDetailPanel. */
+.claim-expand {
+  margin-left: auto;
+  flex: none;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; padding: 0;
+  border: 1px solid var(--border-light); border-radius: 7px;
+  background: #fff; color: #1d4ed8; cursor: pointer;
 }
-.begruendung-more:hover { text-decoration: underline; }
-.fcs-reason .begruendung-more { margin-top: 0.35rem; }
+.claim-expand:hover, .claim-expand:focus-visible { background: #eff6ff; border-color: #93c5fd; }
+.fcs-top .claim-expand { margin-left: 0; }
+
+/* Full result: slides in from the right, full screen on a phone. */
+.claim-detail-backdrop {
+  position: fixed; inset: 0; z-index: 1100;
+  background: rgba(0, 0, 0, 0.25);
+  animation: claimDetailFade 0.2s ease-out;
+}
+.claim-detail-backdrop--closing { animation: claimDetailFade 0.25s ease-in reverse forwards; }
+.claim-detail-panel {
+  position: fixed; top: 0; right: 0; bottom: 0; z-index: 1101;
+  width: min(680px, 100vw);
+  background: #fff; color: var(--text-main);
+  overflow-y: auto; overscroll-behavior: contain;
+  box-shadow: -8px 0 40px rgba(0, 0, 0, 0.12);
+  animation: claimDetailSlide 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.claim-detail-panel--closing { animation: claimDetailSlide 0.25s cubic-bezier(0.4, 0, 1, 1) reverse forwards; }
+@keyframes claimDetailFade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes claimDetailSlide { from { transform: translateX(100%); } to { transform: translateX(0); } }
+.claim-detail-close {
+  position: sticky; top: 0;
+  width: 100%; padding: 1rem 1.5rem; text-align: left;
+  border: 0; border-bottom: 1px solid var(--border-light);
+  background: #fff; color: var(--text-secondary);
+  font: inherit; font-size: 0.95rem; font-weight: 600; cursor: pointer;
+}
+.claim-detail-close:hover { color: #1d4ed8; }
+.claim-detail-body { padding: 1.25rem 1.5rem 3rem; }
+.claim-detail-meta { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.75rem; }
+.claim-detail-verdict {
+  padding: 0.2rem 0.6rem; border-radius: 6px;
+  color: #fff; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+}
+.claim-detail-speaker { color: var(--text-secondary); font-weight: 600; }
+.claim-detail-heading { margin: 0 0 1.25rem; font-size: 1.3rem; font-weight: 600; line-height: 1.45; }
+.claim-detail-reason { font-size: 1rem; line-height: 1.65; color: var(--text-main); }
+.claim-detail-reason .begruendung-text { margin: 0 0 0.75rem; color: var(--text-main); }
+.claim-detail-section-title {
+  margin: 1.5rem 0 0.5rem;
+  font-size: 0.75rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase;
+  color: var(--text-muted);
+}
+.claim-detail-sources { margin: 0; padding-left: 1.1rem; }
+.claim-detail-sources li { margin-bottom: 0.4rem; overflow-wrap: anywhere; }
+.claim-detail-sources a { color: #1d4ed8; }
+@media (max-width: 640px) {
+  .claim-detail-body { padding: 1rem 1rem 2.5rem; }
+  .claim-detail-heading { font-size: 1.12rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .claim-detail-backdrop, .claim-detail-panel { animation: none; }
+}
 .live-popover-sources { margin: 0.3rem 0 0; padding-left: 1.1rem; font-size: 0.8rem; }
 .live-popover-sources li { margin-bottom: 0.15rem; overflow-wrap: anywhere; }
 .live-popover-sources a { color: #1d4ed8; }

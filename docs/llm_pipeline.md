@@ -197,8 +197,9 @@ of taking the reformulator's queries:
 2. **Verdict.** Two versions of the reasoning: `evidence` (up to ~1200 characters: what
    the sources say, how that fits the claim, which doubts remain) and `kurz` (1–2
    sentences, ≤ 250 characters: the decisive figure with its originator). The UI shows
-   `kurz` with "Mehr anzeigen" for the long one — in the live transcript and on the
-   viewer link alike. The four levels are the deep checker's original definitions
+   `kurz` in the popover or card; an expand button ("Mehr anzeigen", top right) opens the
+   whole result in a side panel (full screen on a phone) — in the live transcript and on
+   the viewer link alike. The four levels are the deep checker's original definitions
    (`AGENT_CONSISTENCY_DESCRIPTION` in `backend/lang.py`); a claim whose core holds but
    whose framing goes further keeps its level, and the text names the doubt.
 3. **Guards** as in the fast check: one correction attempt if the text names the press,
