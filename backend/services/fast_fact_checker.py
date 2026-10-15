@@ -338,7 +338,9 @@ class FastFactChecker:
             parsed["critique_note"] = ""
             # Stored with the row, so a verdict can be traced back to what was searched.
             followed = [t.strip() for t in titles if t and t.strip()][: self.follow_docs_max] if self.follow_docs else []
-            parsed["search_queries"] = self._build_queries(claim, queries) + followed
+            sent = self._build_queries(claim, queries)
+            press = [f"[presse] {sent[0]}"] if self.press_leads and sent else []
+            parsed["search_queries"] = sent + press + followed
             logger.info(f"Fast check done: consistency = {parsed.get('consistency', 'unknown')}")
             return parsed
         except Exception as e:
