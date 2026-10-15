@@ -60,7 +60,8 @@ class Database:
                 status TEXT NOT NULL DEFAULT '',
                 double_check INTEGER NOT NULL DEFAULT 0,
                 critique_note TEXT NOT NULL DEFAULT '',
-                check_depth TEXT NOT NULL DEFAULT 'deep'
+                check_depth TEXT NOT NULL DEFAULT 'deep',
+                search_queries TEXT NOT NULL DEFAULT '[]'
             );
 
             CREATE INDEX IF NOT EXISTS idx_fact_checks_speaker_claim
@@ -119,6 +120,8 @@ class Database:
             "ALTER TABLE fact_checks ADD COLUMN critique_note TEXT NOT NULL DEFAULT ''",
             # Existing rows are full/deep checks; the live fast lane writes 'fast'.
             "ALTER TABLE fact_checks ADD COLUMN check_depth TEXT NOT NULL DEFAULT 'deep'",
+            # The searches the fast check actually sent: container logs don't survive a deploy.
+            "ALTER TABLE fact_checks ADD COLUMN search_queries TEXT NOT NULL DEFAULT '[]'",
         ]:
             try:
                 await self.db.execute(migration)
@@ -215,6 +218,7 @@ class Database:
             int(bool(data.get("double_check", False))),
             data.get("critique_note", ""),
             data.get("check_depth", "deep"),
+            json.dumps(data.get("search_queries", []), ensure_ascii=False),
         )
 
     async def add_fact_check(self, fact_check: dict) -> int:
@@ -222,8 +226,8 @@ class Database:
         cursor = await self.db.execute(
             """INSERT INTO fact_checks
                (sprecher, behauptung, consistency, begruendung, quellen, timestamp, session_id, status,
-                double_check, critique_note, check_depth)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                double_check, critique_note, check_depth, search_queries)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             self._fact_check_params(fact_check),
         )
         await self.db.commit()
@@ -263,7 +267,7 @@ class Database:
             """UPDATE fact_checks
                SET sprecher = ?, behauptung = ?, consistency = ?,
                    begruendung = ?, quellen = ?, timestamp = ?, session_id = ?, status = ?,
-                   double_check = ?, critique_note = ?, check_depth = ?
+                   double_check = ?, critique_note = ?, check_depth = ?, search_queries = ?
                WHERE id = ?""",
             (*self._fact_check_params(data), fact_check_id),
         )
@@ -299,6 +303,7 @@ class Database:
             "double_check": bool(row["double_check"]),
             "critique_note": row["critique_note"],
             "check_depth": row["check_depth"],
+            "search_queries": json.loads(row["search_queries"]),
         }
 
     # =========================================================================

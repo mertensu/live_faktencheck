@@ -189,7 +189,10 @@ Claude via Requesty (EU) when `REQUESTY_API_KEY` is set. See [configuration.md](
 
 Each check is one row in `fact_checks` with `check_depth="fast"`, written first as a
 `processing` placeholder (so the mark appears in the transcript immediately) and then
-updated in place. Older rows with `check_depth="deep"` — the examples under `/beispiele` —
+updated in place. `search_queries` holds the searches the check actually sent (the
+reformulator's queries, the claim itself, and any document titles it followed), so a
+verdict can be traced back to what was searched after the container logs are gone.
+Older rows with `check_depth="deep"` — the examples under `/beispiele` —
 come from the ReAct deep checker with self-critique, removed in v0.3.0 (the code is still
 in tag `v0.2.0`; `v0.1.0` is the last release that used it). They are displayed unchanged, including their `double_check` flag
 and `critique_note`.

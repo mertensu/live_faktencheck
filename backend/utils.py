@@ -31,6 +31,7 @@ def build_fact_check_dict(
         "status": "",
         "double_check": result_dict.get("double_check", False),
         "critique_note": result_dict.get("critique_note", ""),
+        "search_queries": result_dict.get("search_queries", []),
     }
 
 

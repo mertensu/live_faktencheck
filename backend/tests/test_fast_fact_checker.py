@@ -6,6 +6,7 @@ Covered:
 - speaker/original_claim fall back to the inputs when the model leaves them blank
 - parallel Tavily searches are issued with the fast search_depth
 - a search/model failure degrades to consistency "unklar" rather than raising
+- the queries actually searched are returned with the verdict
 - _build_queries respects FAST_SEARCH_MAX_QUERIES
 - reformulator queries are preferred over the heuristic variants, claim kept as safety net
 """
@@ -79,6 +80,15 @@ class TestFastCheck:
         assert mock_search.call_count == 4
         for call in mock_search.call_args_list:
             assert call.kwargs.get("search_depth") == checker.search_depth
+
+    async def test_result_records_the_queries_sent(self, checker):
+        """The queries actually searched come back with the verdict, to be stored."""
+        mock_search = AsyncMock(return_value=FAKE_SEARCH)
+        with patch("backend.services.fast_fact_checker.tavily_search", mock_search):
+            result = await checker.check_claim_async(
+                speaker="X", claim="Behauptung Y.", queries=["Arbeitslosenquote 2026", "BA Arbeitsmarkt"])
+        sent = [call.args[0] for call in mock_search.call_args_list]
+        assert result["search_queries"] == sent == ["Arbeitslosenquote 2026", "BA Arbeitsmarkt", "Behauptung Y."]
 
     async def test_search_failure_degrades_to_unklar(self, checker):
         with patch("backend.services.fast_fact_checker.tavily_search", AsyncMock(side_effect=RuntimeError("boom"))):
