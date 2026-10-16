@@ -190,6 +190,28 @@ class TestWindowing:
         assert "turn" in types
         assert "claim_processing" in types
         assert "claim_result" in types
+        result = next(e for e in events if e["type"] == "claim_result")
+        assert result["begruendung"] == "Ein kurzer Satz." and result["kurzfassung"] == ""
+
+    async def test_short_version_reaches_event_and_row(self, db):
+        events = []
+
+        async def on_event(e):
+            events.append(e)
+
+        checker = _fast_checker()
+        plain = checker.check_claim_async.side_effect
+
+        async def with_kurz(*a, **kw):
+            return {**await plain(*a, **kw), "kurz": "Kurz."}
+
+        checker.check_claim_async.side_effect = with_kurz
+        session = StreamingSession("s1", _gate([[ExtractedClaim(name="A", claim="Behauptung A.")]]),
+                                   checker, db, on_event=on_event)
+        await session.handle_turn("Behauptung A. Noch ein Satz.", end_of_turn=True, speaker_label="A")
+        await session.stop()
+        assert next(e for e in events if e["type"] == "claim_result")["kurzfassung"] == "Kurz."
+        assert (await db.get_fact_checks(session_id="s1"))[0]["kurzfassung"] == "Kurz."
 
 
 async def _drain(session):

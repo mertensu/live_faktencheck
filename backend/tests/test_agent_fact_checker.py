@@ -6,7 +6,8 @@ Covered:
   with the searches it sent
 - sources: only URLs the tools returned, never press; press hits carry no URL or title
 - searches after the allowed round(s) are refused
-- too few searches: sent back once for more; a text naming the press: sent back once
+- a short and a long version of the evidence
+- too few searches: sent back once for more; a text naming the press or no sources: sent back once
 - a failure degrades to "unklar"
 - the registry picks the agent checker with LIVE_CHECKER=agent
 """
@@ -30,6 +31,7 @@ TRUSTED = {"results": [
 PRESS = {"results": [{"title": "Artikel", "url": "https://www.spiegel.de/c", "content": "Laut Destatis 83 Mio."}]}
 
 VERDICT = {"consistency": "hoch", "evidence": "Laut Destatis lebten 2025 rund 83,6 Mio. Menschen in Deutschland.",
+           "kurz": "Destatis: 83,6 Mio. Einwohner 2025.",
            "sources": [{"url": "https://www.destatis.de/a", "title": "Destatis"},
                        {"url": "https://www.spiegel.de/c", "title": "Spiegel"},
                        {"url": "https://erfunden.de/x", "title": "Erfunden"}]}
@@ -76,6 +78,9 @@ async def test_one_round_then_verdict(checker):
     assert result["search_queries"] == ["Einwohner Deutschland 2025", "Bevölkerungsstand Destatis",
                                         "[presse] 83 Millionen Einwohner"]
     assert result["consistency"] == "hoch"
+    assert result["kurz"] == "Destatis: 83,6 Mio. Einwohner 2025."
+    # Long reasoning under its heading; no "offen" part, so no second heading.
+    assert result["evidence"] == "**Was die Quellen sagen**\n\n" + VERDICT["evidence"]
     assert result["speaker"] == "Julia" and result["original_claim"] == "Deutschland hat 83 Mio. Einwohner."
     assert result["double_check"] is False and result["critique_note"] == ""
     # Press and invented URLs are dropped.
@@ -139,6 +144,21 @@ async def test_text_naming_the_press_is_sent_back_once(checker):
     assert "Spiegel" not in result["evidence"]
 
 
+async def test_short_text_naming_the_press_is_sent_back(checker):
+    named = {**VERDICT, "kurz": "Laut Spiegel 83 Mio. Einwohner."}
+    outs = []
+
+    def final(i):
+        outs.append(named if not outs else VERDICT)
+        return outs[-1]
+
+    with patch("backend.services.agent_fact_checker.tavily_search", AsyncMock(side_effect=fake_search)), \
+            checker.agent.override(model=_model([THREE], final=final)):
+        result = await checker.check_claim_async("Julia", "Behauptung.")
+    assert len(outs) == 2
+    assert result["kurz"] == VERDICT["kurz"]
+
+
 async def test_failure_degrades_to_unklar(checker):
     def boom(messages, info):
         raise RuntimeError("kaputt")
@@ -158,3 +178,26 @@ def test_registry_picks_agent_checker():
     with patch.dict("os.environ", {"GEMINI_API_KEY": "test", "LIVE_CHECKER": "fast", "REQUESTY_API_KEY": ""}):
         assert registry.get_fast_fact_checker().check_depth == "fast"
         registry.reset_services()
+
+
+async def test_open_part_gets_its_own_heading(checker):
+    out = {**VERDICT, "offen": "Monatswerte fehlen."}
+    with patch("backend.services.agent_fact_checker.tavily_search", AsyncMock(side_effect=fake_search)), \
+            checker.agent.override(model=_model([THREE], final=out)):
+        result = await checker.check_claim_async("Julia", "Behauptung.")
+    assert result["evidence"] == ("**Was die Quellen sagen**\n\n" + VERDICT["evidence"]
+                                  + "\n\n**Was offen bleibt**\n\nMonatswerte fehlen.")
+
+
+async def test_verdict_without_sources_is_sent_back_once(checker):
+    outs = []
+
+    def final(i):
+        outs.append({**VERDICT, "sources": []} if not outs else VERDICT)
+        return outs[-1]
+
+    with patch("backend.services.agent_fact_checker.tavily_search", AsyncMock(side_effect=fake_search)), \
+            checker.agent.override(model=_model([THREE], final=final)):
+        result = await checker.check_claim_async("Julia", "Behauptung.")
+    assert len(outs) == 2
+    assert [s["url"] for s in result["sources"]] == ["https://www.destatis.de/a"]

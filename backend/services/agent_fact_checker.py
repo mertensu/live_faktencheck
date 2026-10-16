@@ -25,6 +25,8 @@ from pydantic_ai import Agent, ModelRetry, PromptedOutput, RunContext, UsageLimi
 from backend.lang import (
     AGENT_CONSISTENCY_DESCRIPTION,
     AGENT_EVIDENCE_DESCRIPTION,
+    AGENT_KURZ_DESCRIPTION,
+    AGENT_OPEN_DESCRIPTION,
     AGENT_SOURCES_DESCRIPTION,
 )
 from backend.utils import load_prompt, log_text
@@ -45,7 +47,10 @@ class AgentVerdict(BaseModel):
     consistency: Literal["hoch", "niedrig", "unklar", "keine Datenlage"] = Field(
         description=AGENT_CONSISTENCY_DESCRIPTION)
     evidence: str = Field(description=AGENT_EVIDENCE_DESCRIPTION)
-    sources: List[Source] = Field(default_factory=list, description=AGENT_SOURCES_DESCRIPTION)
+    offen: str = Field(default="", description=AGENT_OPEN_DESCRIPTION)
+    # After the long text: the model condenses what it has written, not the other way round.
+    kurz: str = Field(default="", description=AGENT_KURZ_DESCRIPTION)
+    sources: List[Source] = Field(description=AGENT_SOURCES_DESCRIPTION)
 
 
 @dataclass
@@ -58,6 +63,7 @@ class _Run:
     queries: List[str] = field(default_factory=list)
     asked_more: bool = False
     asked_media: bool = False
+    asked_sources: bool = False
 
 
 def _month_year(date: str | None) -> str:
@@ -66,6 +72,19 @@ def _month_year(date: str | None) -> str:
     if parts and parts[0].endswith("."):
         return " ".join(parts[1:])
     return date or f"{_MONTHS[datetime.now().month - 1]} {datetime.now().year}"
+
+
+# Headings the UI renders as such (formatBegruendung: a paragraph that is only **…**).
+EVIDENCE_HEADING = "**Was die Quellen sagen**"
+OPEN_HEADING = "**Was offen bleibt**"
+
+
+def _long_text(out: AgentVerdict) -> str:
+    """The long reasoning as stored in ``begruendung``: both parts under their headings."""
+    parts = [EVIDENCE_HEADING, out.evidence.strip()]
+    if out.offen.strip():
+        parts += [OPEN_HEADING, out.offen.strip()]
+    return "\n\n".join(parts)
 
 
 class AgentFactChecker:
@@ -156,14 +175,18 @@ class AgentFactChecker:
         return "\n\n".join(f"[Hinweis] {h.get('content', '')}" for h in hits) or "Keine Treffer."
 
     def _check_output(self, ctx: RunContext[_Run], output: AgentVerdict) -> AgentVerdict:
-        """At most one request each: search more, or rewrite a text that names the press."""
+        """At most one request each: search more, list the sources, or rewrite a text that names the press."""
         run = ctx.deps
         if run.searches < self.min_searches and not run.asked_more:
             run.asked_more = True
             raise ModelRetry(
                 f"Du hast erst {run.searches} Suche(n) gestellt. Stelle weitere Suchanfragen gleichzeitig "
                 "(amtliche Statistik, konkreter Wert für Zeitraum und Region, Gegenbelege), dann urteile.")
-        found = sorted(set(_MEDIA_RE.findall(output.evidence)))
+        if not output.sources and output.consistency != "keine Datenlage" and run.seen_urls and not run.asked_sources:
+            run.asked_sources = True
+            raise ModelRetry("Die Quellenliste ist leer. Führe in `sources` die 1–4 Quellen aus den Suchergebnissen "
+                             "auf, auf die sich deine Begründung stützt (URL und Titel).")
+        found = sorted(set(_MEDIA_RE.findall(f"{output.evidence} {output.offen} {output.kurz}")))
         if found and not run.asked_media:
             run.asked_media = True
             raise ModelRetry(
@@ -197,7 +220,7 @@ class AgentFactChecker:
             logger.info(f"Agent check done: consistency = {out.consistency}, searches = {run.queries}")
             return {
                 "speaker": speaker, "original_claim": claim, "consistency": out.consistency,
-                "evidence": out.evidence, "sources": sources,
+                "evidence": _long_text(out), "kurz": out.kurz, "sources": sources,
                 "double_check": False, "critique_note": "",
                 # Stored with the row: the agent writes its own searches ("[presse] …" for press).
                 "search_queries": run.queries,
