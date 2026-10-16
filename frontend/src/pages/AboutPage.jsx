@@ -44,12 +44,13 @@ export function AboutPage() {
           Der Ton der Sendung wird fortlaufend an einen Transkriptionsdienst gestreamt und erscheint Satz für Satz
           als Live-Transkript. Ein schnelles KI-Modell entscheidet für jeden Satz, ob er eine überprüfbare und
           relevante Tatsachenbehauptung enthält. Ist das der Fall, formuliert ein Sprachmodell (LLM) den Satz
-          als eigenständige Aussage um und leitet daraus mehrere Suchanfragen ab. Dabei berücksichtigt es die
-          vorangegangenen Sätze, damit etwa „das“ oder „dort“ aufgelöst werden. Die Suchanfragen laufen parallel
-          im Web, beschränkt auf
-          vertrauenswürdige Quellen wie offizielle Statistikämter, Ministerien oder anerkannte Forschungsinstitute,
-          wobei amtliche Quellen Vorrang haben. Ein weiteres LLM ordnet die Treffer ein und gibt eine Bewertung ab
-          (wie sehr wird die Aussage durch Daten gestützt), zusammen mit einer kurzen Begründung und den verwendeten
+          als eigenständige Aussage um. Dabei berücksichtigt es die vorangegangenen Sätze, damit etwa „das“ oder
+          „dort“ aufgelöst werden. Ein zweites LLM prüft die Aussage: Es stellt mehrere Suchanfragen gleichzeitig,
+          beschränkt auf vertrauenswürdige Quellen wie offizielle Statistikämter, Ministerien oder anerkannte
+          Forschungsinstitute, wobei amtliche Quellen Vorrang haben. Presseartikel nutzt es nur als Hinweis, woher
+          eine Zahl stammt; zitiert werden sie nicht. Anschließend wägt es die Belege ab und gibt eine Bewertung ab
+          (wie sehr wird die Aussage durch Daten gestützt), zusammen mit einer Kurzfassung, einer ausführlichen
+          Begründung und den verwendeten
           Quellen. Das Ergebnis wird im Live-Transkript direkt an der betreffenden Textstelle markiert.
         </p>
         <p>
@@ -58,8 +59,8 @@ export function AboutPage() {
           falschen Person zuzuschreiben wäre schlimmer als gar keine Zuordnung.
         </p>
         <p>
-          Der Schnellcheck ist bewusst auf Tempo ausgelegt: Er liefert eine Einordnung in Sekunden, keine
-          erschöpfende Analyse. Für Details sei auf das{' '}
+          Der Live-Check ist bewusst auf Tempo ausgelegt: Er liefert eine Einordnung, solange das Thema noch
+          läuft (meist nach 10 bis 20 Sekunden), keine erschöpfende Analyse. Für Details sei auf das{' '}
           <a href="https://github.com/mertensu/live_faktencheck">Github-Projekt</a> verwiesen.
         </p>
         <h2>Hinweis</h2>

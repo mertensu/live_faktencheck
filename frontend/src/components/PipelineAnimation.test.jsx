@@ -26,7 +26,13 @@ describe('PipelineAnimation', () => {
     render(<PipelineAnimation />)
     fireEvent.click(screen.getByRole('button', { name: /Umformulieren/ }))
     expect(screen.getByText(/In Deutschland/)).toBeTruthy()
-    expect(screen.getByText('Einordnung')).toBeTruthy()
+  })
+
+  it('shows the checker\'s own searches, press only as a lead', () => {
+    render(<PipelineAnimation />)
+    fireEvent.click(screen.getByRole('button', { name: /Recherchieren/ }))
+    expect(screen.getByText('destatis.de')).toBeTruthy()
+    expect(screen.getByText('nur Hinweis')).toBeTruthy()
   })
 
   it('shows complete scenes with reduced motion', () => {
