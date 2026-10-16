@@ -215,7 +215,8 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
         </div>
       )
     }
-    if (factChecks.length > 0) {
+    // Resuming ("preparing"): the setup panel takes the results' place until the start.
+    if (factChecks.length > 0 && !showStartPanel) {
       return (
         <div className="review-view">
           <FactCheckStream factChecks={factChecks} />
