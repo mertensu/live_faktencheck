@@ -2316,6 +2316,11 @@
 .pa .pa-pop p { margin: 0; line-height: 1.45; }
 .pa .pa-pop .li-pop-claim { color: var(--text-main); }
 .pa-expand { cursor: default; }
+.pa-expand-inline {
+  display: inline-flex; align-items: center; justify-content: center; vertical-align: -0.25em;
+  width: 20px; height: 20px; border: 1px solid var(--border-light); border-radius: 5px;
+  background: #fff; color: #1d4ed8;
+}
 
 @media (max-width: 760px) {
   .pa { grid-template-columns: 1fr; gap: 0.75rem; }

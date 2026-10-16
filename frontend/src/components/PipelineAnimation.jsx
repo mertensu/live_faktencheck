@@ -28,11 +28,29 @@ const STEPS = [
   },
   {
     title: 'Markieren',
-    text: 'Nach 10 bis 20 Sekunden steht das Ergebnis direkt an der Textstelle im Live-Transkript: die Kurzfassung mit den verwendeten Quellen. Ein Klick auf das Vergrößern-Symbol öffnet die ausführliche Begründung.',
+    text: (
+      <>
+        Nach 10 bis 20 Sekunden steht das Ergebnis direkt an der Textstelle im Live-Transkript: die Kurzfassung
+        mit den verwendeten Quellen. Ein Klick auf <ExpandIcon size={12} className="pa-expand-inline" /> („Mehr
+        anzeigen“) oben rechts öffnet das ganze Ergebnis mit ausführlicher Begründung und dem, was offen bleibt.
+      </>
+    ),
   },
 ]
 
 const d = (s) => ({ '--d': `${s}s` })
+
+// The look of the result's expand button (ClaimCard's ExpandButton), as a picture only.
+function ExpandIcon({ size, className }) {
+  return (
+    <span className={className} title="Mehr anzeigen" aria-label="Mehr anzeigen" role="img">
+      <svg viewBox="0 0 16 16" width={size} height={size} aria-hidden="true">
+        <path d="M9.5 2.5h4v4M13.5 2.5 9 7M6.5 13.5h-4v-4M2.5 13.5 7 9"
+          fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </span>
+  )
+}
 
 const WAVE = [40, 75, 55, 90, 35, 70, 95, 50, 80, 45, 65, 85, 30, 60, 90, 50]
 
@@ -195,12 +213,7 @@ function SceneMark() {
         <div className="li-pop-head">
           <span className="live-claim-badge verdict-hoch">Hoch</span>
           <span className="li-pop-speaker">Sprecher A</span>
-          <span className="claim-expand pa-expand" title="Mehr anzeigen" aria-label="Mehr anzeigen" role="img">
-            <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true">
-              <path d="M9.5 2.5h4v4M13.5 2.5 9 7M6.5 13.5h-4v-4M2.5 13.5 7 9"
-                fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </span>
+          <ExpandIcon size={15} className="claim-expand pa-expand" />
         </div>
         <p className="li-pop-claim">In Deutschland wird rund die Hälfte aller Wohnungen mit Gas beheizt.</p>
         <p className="li-pop-reason">Amtliche Daten zeigen: Knapp jede zweite Wohnung wird überwiegend mit Gas beheizt.</p>
