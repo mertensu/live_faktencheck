@@ -1891,6 +1891,13 @@
 .live-tutorial-reset { padding: 0; border: 0; background: none; color: #166534; font: inherit; font-size: 0.85rem; font-weight: 600; text-decoration: underline; cursor: pointer; }
 .live-tutorial-tip { margin-top: 0.9rem !important; font-size: 0.9rem !important; color: var(--text-secondary); }
 .live-tutorial-chip { padding: 0 0.3em; border-radius: 3px; border-bottom: 3px solid; }
+.live-tutorial-hint { margin: 0 0 0.6rem; padding: 0.5rem 0.75rem; border-radius: 8px; background: #eff6ff; color: #1e3a8a; font-size: 0.9rem; }
+/* The expand button's look (.claim-expand), small and inline in the text. */
+.live-tutorial-expand-icon {
+  display: inline-flex; align-items: center; justify-content: center; vertical-align: -0.3em;
+  width: 22px; height: 22px; border: 1px solid var(--border-light); border-radius: 5px;
+  background: #fff; color: #1d4ed8;
+}
 .live-tutorial-chip.verdict-hoch { border-bottom-color: #16a34a; background: rgba(22,163,74,0.24); }
 .live-tutorial-chip.verdict-niedrig { border-bottom-color: #dc2626; background: rgba(220,38,38,0.22); }
 .live-tutorial-chip.verdict-unklar { border-bottom-color: #d97706; background: rgba(217,119,6,0.24); }

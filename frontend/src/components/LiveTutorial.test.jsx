@@ -55,12 +55,22 @@ describe('LiveTutorial', () => {
     expect(screen.getByRole('tab', { name: /Korrektur 2/ }).textContent).toContain('✓')
   })
 
-  it('opens a result from its mark and closes on the last step', () => {
+  it('opens a result from its mark, then in full, and closes on the last step', () => {
     const onClose = vi.fn()
     const { container } = render(<LiveTutorial onClose={onClose} />)
     for (let i = 0; i < 3; i++) fireEvent.click(screen.getByRole('button', { name: /^Weiter:/ }))
     fireEvent.click(container.querySelector('.live-transcript-mark.verdict-niedrig'))
-    expect(screen.getByRole('dialog', { name: 'Prüfergebnis' }).textContent).toContain('Die Renten sind seit 2010 real gesunken.')
+    const popover = screen.getByRole('dialog', { name: 'Prüfergebnis' })
+    expect(popover.textContent).toContain('Die Renten sind seit 2010 real gesunken.')
+    expect(popover.textContent).not.toContain('Was offen bleibt')
+    expect(screen.getByRole('tab', { name: /Ergebnisse lesen/ }).textContent).not.toContain('✓')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mehr anzeigen' }))
+    expect(document.querySelector('.claim-detail-panel').textContent).toContain('Was offen bleibt')
+    expect(screen.getByRole('tab', { name: /Ergebnisse lesen/ }).textContent).toContain('✓')
+    // Escape closes the full result, not the guide.
+    fireEvent.keyDown(window, { key: 'Escape' })
+    expect(onClose).not.toHaveBeenCalled()
     fireEvent.click(screen.getByRole('button', { name: 'Fertig – Übung schließen' }))
     expect(onClose).toHaveBeenCalled()
   })
