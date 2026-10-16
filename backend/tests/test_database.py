@@ -255,6 +255,17 @@ async def test_search_queries_roundtrip(db):
     assert (await db.get_fact_check_by_id(fid))["search_queries"] == queries
 
 
+async def test_kurzfassung_roundtrip(db):
+    """kurzfassung defaults to '' and survives an update."""
+    base = {"sprecher": "X", "behauptung": "Y", "timestamp": datetime.now().isoformat()}
+    assert (await db.get_fact_check_by_id(await db.add_fact_check(base)))["kurzfassung"] == ""
+    fid = await db.add_fact_check({**base, "kurzfassung": "Kurz."})
+    row = await db.get_fact_check_by_id(fid)
+    assert row["kurzfassung"] == "Kurz."
+    await db.update_fact_check(fid, {**row, "sprecher": "Z"})
+    assert (await db.get_fact_check_by_id(fid))["kurzfassung"] == "Kurz."
+
+
 async def test_json_quellen_roundtrip(db):
     """Complex quellen (sources) survive JSON serialization."""
     sources = [

@@ -81,7 +81,7 @@ if old results should still display correctly.
 
 ## 4. Database and API field names (optional)
 
-The database columns and JSON API keys use German names (`sprecher`, `behauptung`, `begruendung`, `quellen`). These are internal — they never reach the LLM — so renaming them is optional but possible if you want a clean codebase.
+The database columns and JSON API keys use German names (`sprecher`, `behauptung`, `begruendung`, `kurzfassung`, `quellen`). These are internal — they never reach the LLM — so renaming them is optional but possible if you want a clean codebase.
 
 Files to update if you rename them:
 
@@ -89,7 +89,7 @@ Files to update if you rename them:
 - `backend/models.py` — `FactCheck` Pydantic model
 - `backend/utils.py` — `build_fact_check_dict()`
 - `backend/routers/fact_checks.py`, `backend/services/streaming.py` — any dict accesses
-- `frontend/src/components/FactCheckStream.jsx`, `LiveTranscript.jsx` — `behauptung`, `begruendung`, `quellen`
+- `frontend/src/components/FactCheckStream.jsx`, `LiveTranscript.jsx` — `behauptung`, `begruendung`, `kurzfassung`, `quellen`
 
 ---
 

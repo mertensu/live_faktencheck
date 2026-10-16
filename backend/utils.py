@@ -25,6 +25,8 @@ def build_fact_check_dict(
         "behauptung": result_dict.get("original_claim", claim_fallback),
         "consistency": result_dict.get("consistency", "unklar"),
         "begruendung": result_dict.get("evidence", ""),
+        # Agent check only; empty means the UI shows begruendung alone.
+        "kurzfassung": result_dict.get("kurz", ""),
         "quellen": [to_dict(s) for s in sources] if sources else [],
         "timestamp": datetime.now().isoformat(),
         "session_id": session_id,

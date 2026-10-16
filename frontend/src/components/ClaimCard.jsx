@@ -1,4 +1,5 @@
 import React from 'react'
+import { createPortal } from 'react-dom'
 
 // Strip date annotations like "(Stand März 2026)" or "(im März 2026)" from claim text
 export const stripDateAnnotation = (text) => {
@@ -119,6 +120,9 @@ export const formatBegruendung = (text) => {
   const paragraphs = text.split(/\n\n+/).filter(p => p.trim())
 
   return paragraphs.map((para, idx) => {
+    // A paragraph that is only **…** is a heading (agent check: "Was die Quellen sagen").
+    const heading = para.trim().match(/^\*\*([^*\n]+)\*\*$/)
+    if (heading) return <h3 key={idx} className="begruendung-heading">{heading[1]}</h3>
     // Replace single \n with <br>
     const lines = para.split('\n')
     return (
@@ -190,5 +194,103 @@ export function ClaimCard({ claim, onSelect }) {
         </div>
       </div>
     </div>
+  )
+}
+
+// Reasoning of a result in a card or popover: the short version when the check wrote one
+// (agent check), else the long one. The long one then opens in ClaimDetailPanel.
+export function Begruendung({ kurz, lang, className }) {
+  return <div className={className}>{formatBegruendung(kurz || lang)}</div>
+}
+
+// Top-right button that opens the full result. Stops the click: stream cards open and
+// close on a tap.
+export function ExpandButton({ onClick }) {
+  const open = (e) => { e.stopPropagation(); onClick() }
+  return (
+    <button
+      type="button"
+      className="claim-expand"
+      title="Mehr anzeigen"
+      aria-label="Mehr anzeigen"
+      onClick={open}
+      onKeyDown={(e) => e.stopPropagation()}
+    >
+      <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true">
+        <path d="M9.5 2.5h4v4M13.5 2.5 9 7M6.5 13.5h-4v-4M2.5 13.5 7 9"
+          fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </button>
+  )
+}
+
+// The whole result at a glance: slides in from the right (full screen on a phone), so the
+// long reasoning needs no scrolling inside a small popover or card.
+// detail: { speaker, claim, consistency, label, kurz, begruendung, quellen }
+const CLOSE_MS = 220 // .claim-detail-*--closing in App.css
+export function ClaimDetailPanel({ detail, onClose }) {
+  const [closing, setClosing] = React.useState(false)
+  const onCloseRef = React.useRef(onClose)
+  onCloseRef.current = onClose
+  const timer = React.useRef(null)
+
+  // Unmount on a timer, not on animationend: a missed event (an animation that does not
+  // run) would leave an invisible backdrop over the page.
+  const close = React.useCallback(() => {
+    if (timer.current) return
+    setClosing(true)
+    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    timer.current = setTimeout(() => onCloseRef.current(), reduce ? 0 : CLOSE_MS)
+  }, [])
+
+  React.useEffect(() => {
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    const onKey = (e) => { if (e.key === 'Escape') close() }
+    window.addEventListener('keydown', onKey)
+    return () => {
+      document.body.style.overflow = prev
+      window.removeEventListener('keydown', onKey)
+      clearTimeout(timer.current)
+    }
+  }, [close])
+
+  return createPortal(
+    <div className={`claim-detail-backdrop${closing ? ' claim-detail-backdrop--closing' : ''}`} onClick={close}>
+      <div
+        className={`claim-detail-panel${closing ? ' claim-detail-panel--closing' : ''}`}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Prüfergebnis"
+        onClick={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
+      >
+        <button type="button" className="claim-detail-close" onClick={close}>← Zurück</button>
+        <div className="claim-detail-body">
+          <div className="claim-detail-meta">
+            <span className="claim-detail-verdict" style={{ background: getConsistencyColor(detail.consistency) }}>
+              {detail.label}
+            </span>
+            {detail.speaker && <span className="claim-detail-speaker">{detail.speaker}</span>}
+          </div>
+          <h2 className="claim-detail-heading">{stripDateAnnotation(detail.claim)}</h2>
+          {detail.kurz && <p className="claim-detail-lead">{detail.kurz}</p>}
+          <div className="claim-detail-reason">{formatBegruendung(detail.begruendung)}</div>
+          {detail.quellen?.length > 0 && (
+            <>
+              <h3 className="claim-detail-section-title">Quellen</h3>
+              <ul className="claim-detail-sources">
+                {detail.quellen.map((q, idx) => {
+                  const url = typeof q === 'object' ? q.url : q
+                  const title = typeof q === 'object' && q.title ? q.title : url
+                  return <li key={idx}><a href={url} target="_blank" rel="noopener noreferrer">{title}</a></li>
+                })}
+              </ul>
+            </>
+          )}
+        </div>
+      </div>
+    </div>,
+    document.body,
   )
 }
