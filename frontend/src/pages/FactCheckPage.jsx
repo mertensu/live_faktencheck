@@ -270,16 +270,18 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
                 <span className="header-rec-dot" aria-hidden="true">◉</span>
                 {liveStream.status === 'connecting' ? 'Live verbindet…' : 'Live stoppen'}
               </button>
-            ) : !showStartPanel && !touchOnly && (
-              <button
-                type="button"
-                className="header-rec-start"
-                onClick={showLiveTranscript ? startLive : () => setPreparing(true)}
-                title="Live-Check starten (Streaming)"
-              >
+            ) : !showStartPanel && !touchOnly && (showLiveTranscript ? (
+              // Stopped on this page: source still connected, resume directly.
+              <button type="button" className="header-rec-start" onClick={startLive} title="Live-Check fortsetzen (Streaming)">
                 ◉ Live-Check
               </button>
-            )}
+            ) : (
+              // Results shown: to continue, go through the setup (source, sound check) first.
+              <button type="button" className="header-rec-start" onClick={() => setPreparing(true)}
+                title="Tonquelle wählen und den Live-Check fortsetzen">
+                Zurück zum Setup
+              </button>
+            ))}
             {!touchOnly && (
               <button type="button" className="header-help-link" onClick={openGuide}>
                 Kurzanleitung

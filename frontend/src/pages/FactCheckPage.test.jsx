@@ -28,7 +28,7 @@ describe('FactCheckPage: resuming a session with results', () => {
     render(<FactCheckPage showName="Gespräch" episodeKey="s1" />)
     expect(await screen.findByText('Eine Aussage.')).toBeDefined()
 
-    fireEvent.click(screen.getByRole('button', { name: /Live-Check/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Zurück zum Setup' }))
     expect(screen.getByRole('region', { name: 'Live-Check vorbereiten' })).toBeDefined()
     expect(screen.queryByText('Eine Aussage.')).toBeNull()
     expect(screen.getByRole('button', { name: /Live-Check starten/ })).toBeDefined()
