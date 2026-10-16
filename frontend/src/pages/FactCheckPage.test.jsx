@@ -24,16 +24,20 @@ describe('FactCheckPage: resuming a session with results', () => {
     vi.restoreAllMocks()
   })
 
-  it('opens the setup panel (source pick) instead of starting, and leads back', async () => {
+  it('switches between results and the setup (source pick), starting only from the setup', async () => {
     render(<FactCheckPage showName="Gespräch" episodeKey="s1" />)
     expect(await screen.findByText('Eine Aussage.')).toBeDefined()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Zurück zum Setup' }))
+    expect(screen.getByRole('radio', { name: 'Ergebnisse' }).getAttribute('aria-checked')).toBe('true')
+    expect(screen.queryByRole('button', { name: /Live-Check$/ })).toBeNull() // no start without the setup
+
+    fireEvent.click(screen.getByRole('radio', { name: 'Setup' }))
     expect(screen.getByRole('region', { name: 'Live-Check vorbereiten' })).toBeDefined()
     expect(screen.queryByText('Eine Aussage.')).toBeNull()
     expect(screen.getByRole('button', { name: /Live-Check starten/ })).toBeDefined()
+    expect(screen.getByRole('radio', { name: 'Setup' }).getAttribute('aria-checked')).toBe('true')
 
-    fireEvent.click(screen.getByRole('button', { name: /Zurück zu den Ergebnissen/ }))
+    fireEvent.click(screen.getByRole('radio', { name: 'Ergebnisse' }))
     expect(screen.getByText('Eine Aussage.')).toBeDefined()
     expect(screen.queryByRole('region', { name: 'Live-Check vorbereiten' })).toBeNull()
   })

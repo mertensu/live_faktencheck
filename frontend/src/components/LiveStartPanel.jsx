@@ -28,10 +28,9 @@ function StepMark({ n, done }) {
 // then check the sound, see who is checked, start.
 // Then the viewers' link (ticked once copied). Going live from here; the header only stops.
 // Sound comes from a mic, or (Chrome, Edge) digitally from another browser tab.
-// onBack: set when the session already has results (resuming) — leads back to them.
 export function LiveStartPanel({
   sessionId, mic, tab, audioSource, onAudioSource, speakers, excludedSpeakers, onStart, connecting, error,
-  practiceOpen, onPracticeOpen, onBack,
+  practiceOpen, onPracticeOpen,
 }) {
   const fromTab = TAB_AUDIO_SUPPORTED && audioSource === 'tab'
   const hasPermission = mic.devices.some((d) => d.label)
@@ -55,9 +54,6 @@ export function LiveStartPanel({
 
   return (
     <div className="live-start">
-      {onBack && (
-        <button type="button" className="live-start-back" onClick={onBack}>← Zurück zu den Ergebnissen</button>
-      )}
       <section className="live-start-card" aria-label="Live-Check vorbereiten">
         <div className={`live-start-practice${practiceOpen ? ' live-start-practice--open' : ''}`} id="live-practice">
           <button

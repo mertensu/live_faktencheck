@@ -251,7 +251,6 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
         error={liveStream.error}
         practiceOpen={practiceOpen}
         onPracticeOpen={setPracticeOpen}
-        onBack={factChecks.length > 0 ? () => setPreparing(false) : undefined}
       />
     )
   }
@@ -270,17 +269,21 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
                 <span className="header-rec-dot" aria-hidden="true">◉</span>
                 {liveStream.status === 'connecting' ? 'Live verbindet…' : 'Live stoppen'}
               </button>
-            ) : !showStartPanel && !touchOnly && (showLiveTranscript ? (
+            ) : !touchOnly && (showLiveTranscript ? (
               // Stopped on this page: source still connected, resume directly.
               <button type="button" className="header-rec-start" onClick={startLive} title="Live-Check fortsetzen (Streaming)">
                 ◉ Live-Check
               </button>
-            ) : (
-              // Results shown: to continue, go through the setup (source, sound check) first.
-              <button type="button" className="header-rec-start" onClick={() => setPreparing(true)}
-                title="Tonquelle wählen und den Live-Check fortsetzen">
-                Zurück zum Setup
-              </button>
+            ) : factChecks.length > 0 && (
+              // A session with results: switch between them and the setup, where it continues.
+              <div className="live-start-source header-view" role="radiogroup" aria-label="Ansicht">
+                {[[false, 'Ergebnisse'], [true, 'Setup']].map(([setup, label]) => (
+                  <button key={label} type="button" role="radio" aria-checked={preparing === setup}
+                    className={preparing === setup ? 'active' : ''} onClick={() => setPreparing(setup)}>
+                    {label}
+                  </button>
+                ))}
+              </div>
             ))}
             {!touchOnly && (
               <button type="button" className="header-help-link" onClick={openGuide}>
