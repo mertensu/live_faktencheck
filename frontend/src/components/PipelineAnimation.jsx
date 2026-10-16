@@ -16,19 +16,19 @@ const STEPS = [
   },
   {
     title: 'Umformulieren',
-    text: 'Ein Sprachmodell macht aus dem Satz eine eigenständige Aussage und leitet Suchanfragen aus fünf Blickwinkeln ab. Dabei berücksichtigt es die vorigen Sätze, damit etwa „da“ aufgelöst wird.',
+    text: 'Ein Sprachmodell macht aus dem Satz eine eigenständige Aussage, die auch ohne das Gespräch verständlich ist. Dabei berücksichtigt es die vorigen Sätze, damit etwa „da“ aufgelöst wird.',
   },
   {
     title: 'Recherchieren',
-    text: 'Die Suchen laufen parallel und nur auf vertrauenswürdigen Seiten: Statistikämter, Ministerien, Forschungsinstitute. Amtliche Quellen haben Vorrang.',
+    text: 'Ein Prüfmodell stellt mehrere Suchen gleichzeitig. Belege kommen nur von vertrauenswürdigen Seiten: Statistikämter, Ministerien, Forschungsinstitute, amtliche Quellen zuerst. Presseartikel dienen nur als Hinweis, woher eine Zahl stammt, und werden nie zitiert.',
   },
   {
     title: 'Bewerten',
-    text: 'Ein weiteres Sprachmodell wägt die Treffer ab: Wie stark stützen die Daten die Aussage? Erwähnen Treffer nur ein Dokument, wird es bei Bedarf gesucht und nachgelesen.',
+    text: 'Dasselbe Modell wägt die Belege ab: Wie stark stützen die Daten die Aussage? Es schreibt eine Kurzfassung und eine ausführliche Begründung, die auch nennt, was offen bleibt.',
   },
   {
     title: 'Markieren',
-    text: 'Nach wenigen Sekunden steht das Ergebnis direkt an der Textstelle im Live-Transkript, mit Begründung und den verwendeten Quellen.',
+    text: 'Nach 10 bis 20 Sekunden steht das Ergebnis direkt an der Textstelle im Live-Transkript: die Kurzfassung mit den verwendeten Quellen. Ein Klick auf das Vergrößern-Symbol öffnet die ausführliche Begründung.',
   },
 ]
 
@@ -98,12 +98,13 @@ function SceneGate() {
   )
 }
 
-const QUERIES = [
-  { angle: 'Kern', q: 'Anteil Wohnungen mit Gasheizung Deutschland', hit: 'destatis.de' },
-  { angle: 'Datenquelle', q: 'Destatis Wohnungen nach Beheizungsart', hit: 'destatis.de' },
-  { angle: 'Studie', q: 'Studie Heizungsarten im Wohnungsbestand', hit: 'umweltbundesamt.de' },
-  { angle: 'Maßstab', q: 'Wohnungen nach überwiegender Heizenergie', hit: 'bdh-industrie.de' },
-  { angle: 'Einordnung', q: 'Entwicklung Anteil Gasheizungen seit 2010', hit: 'bundesregierung.de' },
+// The checker's own searches, written at once; the last one only looks for a press lead.
+const SEARCHES = [
+  { q: 'Wohnungen nach Beheizungsart Destatis', hit: 'destatis.de' },
+  { q: 'Anteil Gasheizungen im Wohnungsbestand', hit: 'umweltbundesamt.de' },
+  { q: 'Beheizungsstruktur Wohngebäude Studie', hit: 'dena.de' },
+  { q: 'Gasheizungen Rückgang Wärmepumpen seit 2020', hit: 'bundesregierung.de' },
+  { q: 'Hälfte der Wohnungen mit Gas beheizt', press: true },
 ]
 
 function SceneRewrite() {
@@ -117,13 +118,6 @@ function SceneRewrite() {
       <p className="pa-claim pa-in" style={d(1.2)}>
         <span className="pa-ref pa-ref--new">In Deutschland</span> wird rund die Hälfte aller Wohnungen mit Gas beheizt.
       </p>
-      <ul className="pa-queries">
-        {QUERIES.map((x, i) => (
-          <li key={x.angle} className="pa-in" style={d(2.2 + i * 0.35)}>
-            <span className="pa-angle">{x.angle}</span><span className="pa-q">{x.q}</span>
-          </li>
-        ))}
-      </ul>
     </div>
   )
 }
@@ -131,15 +125,17 @@ function SceneRewrite() {
 function SceneSearch() {
   return (
     <div className="pa-scene">
-      <div className="pa-filter pa-in" style={d(0.1)}>🔒 nur vertrauenswürdige Quellen · amtliche zuerst</div>
+      <div className="pa-filter pa-in" style={d(0.1)}>🔒 Belege nur von vertrauenswürdigen Seiten · amtliche zuerst</div>
       <ul className="pa-lanes">
-        {QUERIES.map((x, i) => (
-          <li key={x.angle} className="pa-lane">
-            <span className="pa-angle">{x.angle}</span>
+        {SEARCHES.map((x, i) => (
+          <li key={x.q} className={`pa-lane${x.press ? ' pa-lane--press' : ''}`}>
+            <span className="pa-q">{x.press && <span className="pa-press-tag">Presse</span>}{x.q}</span>
             <span className="pa-track" aria-hidden="true">
               <span className="pa-track-fill" style={{ ...d(0.5), '--dur': `${1.3 + (i % 3) * 0.35}s` }} />
             </span>
-            <span className="pa-hit pa-in" style={d(1.9 + (i % 3) * 0.35)}>{x.hit}</span>
+            <span className={`pa-hit pa-in${x.press ? ' pa-hit--lead' : ''}`} style={d(1.9 + (i % 3) * 0.35)}>
+              {x.press ? 'nur Hinweis' : x.hit}
+            </span>
           </li>
         ))}
       </ul>
@@ -160,10 +156,7 @@ function SceneJudge() {
       <ul className="pa-evidence">
         <li className="pa-in" style={d(0.2)}><b>destatis.de</b> Wohnungen nach Heizenergie</li>
         <li className="pa-in" style={d(0.5)}><b>umweltbundesamt.de</b> Wärmeversorgung im Bestand</li>
-        <li className="pa-doc pa-in" style={d(2.4)}>
-          <span className="pa-doc-tag">erwähnt → nachgelesen</span>
-          <b>Bericht (PDF)</b> Beheizungsstruktur
-        </li>
+        <li className="pa-in" style={d(0.8)}><b>dena.de</b> Gebäudereport</li>
       </ul>
       <div className="pa-verdict">
         <div className="pa-levels">
@@ -180,6 +173,7 @@ function SceneJudge() {
         <p className="pa-reason pa-in" style={d(3.2)}>
           Amtliche Daten zeigen: Knapp jede zweite Wohnung wird überwiegend mit Gas beheizt.
         </p>
+        <p className="pa-long pa-in" style={d(3.8)}>+ ausführliche Begründung, was offen bleibt</p>
       </div>
     </div>
   )
@@ -201,6 +195,12 @@ function SceneMark() {
         <div className="li-pop-head">
           <span className="live-claim-badge verdict-hoch">Hoch</span>
           <span className="li-pop-speaker">Sprecher A</span>
+          <span className="claim-expand pa-expand" title="Mehr anzeigen" aria-label="Mehr anzeigen" role="img">
+            <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true">
+              <path d="M9.5 2.5h4v4M13.5 2.5 9 7M6.5 13.5h-4v-4M2.5 13.5 7 9"
+                fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </span>
         </div>
         <p className="li-pop-claim">In Deutschland wird rund die Hälfte aller Wohnungen mit Gas beheizt.</p>
         <p className="li-pop-reason">Amtliche Daten zeigen: Knapp jede zweite Wohnung wird überwiegend mit Gas beheizt.</p>

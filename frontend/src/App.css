@@ -2261,13 +2261,6 @@
   margin: 0; padding: 0.5rem 0.75rem; background: #fff; border: 1px solid var(--border-light);
   border-radius: var(--radius-lg); font-size: 0.92rem; font-weight: 600; color: var(--text-main); line-height: 1.45;
 }
-.pa-queries { list-style: none; margin: 0.15rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 0.3rem; }
-.pa-queries li { display: flex; align-items: baseline; gap: 0.5rem; font-size: 0.8rem; color: var(--text-secondary); min-width: 0; }
-.pa-angle {
-  flex-shrink: 0; width: 6.2rem; padding: 0.1rem 0.4rem; border-radius: 4px; background: #e0e7ff; color: #3730a3;
-  font-size: 0.68rem; font-weight: 600; text-align: center;
-}
-.pa-q { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.76rem; }
 
 /* 4 Recherchieren */
 .pa-filter {
@@ -2275,7 +2268,16 @@
   border: 1px solid #86efac; font-size: 0.75rem; font-weight: 600;
 }
 .pa-lanes { list-style: none; margin: 0.4rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 0.75rem; }
-.pa-lane { display: grid; grid-template-columns: 6.2rem 1fr 13rem; align-items: center; gap: 0.75rem; }
+.pa-lane { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(2rem, 0.5fr) 9rem; align-items: center; gap: 0.75rem; }
+.pa-q {
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.74rem; color: var(--text-secondary);
+}
+.pa-press-tag {
+  margin-right: 0.4rem; padding: 0.05rem 0.35rem; border-radius: 4px; background: #f3f4f6; color: #6b7280;
+  font-family: inherit; font-size: 0.64rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;
+}
+.pa-lane--press .pa-track-fill { background: linear-gradient(90deg, #e5e7eb, #9ca3af); }
 .pa-track { position: relative; height: 4px; border-radius: 2px; background: var(--border-light); overflow: hidden; }
 .pa-track-fill {
   position: absolute; inset: 0; background: linear-gradient(90deg, #93c5fd, var(--pa-blue)); transform-origin: left;
@@ -2286,6 +2288,7 @@
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.72rem; color: #1d4ed8;
   max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
+.pa-hit--lead { color: #6b7280; font-family: inherit; font-style: italic; background: #f9fafb; }
 
 /* 5 Bewerten */
 .pa-judge { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; align-items: center; }
@@ -2295,8 +2298,6 @@
   border-radius: var(--radius-md); font-size: 0.78rem; color: var(--text-secondary);
 }
 .pa-evidence b { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.74rem; font-weight: 600; color: #1d4ed8; }
-.pa-evidence .pa-doc { border-style: dashed; border-color: #93c5fd; }
-.pa-doc-tag { align-self: flex-start; margin-bottom: 0.15rem; font-size: 0.64rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--pa-blue); }
 .pa-verdict { display: flex; flex-direction: column; gap: 0.75rem; }
 .pa-levels { display: flex; flex-wrap: wrap; gap: 0.4rem; }
 .pa-level { opacity: 0.35; animation: pa-scan 0.3s ease-out var(--d, 0s) 2 alternate both; }
@@ -2304,6 +2305,7 @@
 @keyframes pa-scan { from { opacity: 0.35; } to { opacity: 1; } }
 @keyframes pa-pick { from { opacity: 0.35; transform: none; box-shadow: none; } }
 .pa .pa-reason { margin: 0; font-size: 0.85rem; line-height: 1.5; color: var(--text-main); }
+.pa .pa-long { margin: -0.4rem 0 0; font-size: 0.75rem; color: var(--text-muted); }
 
 /* 6 Markieren */
 .pa-mark { animation: pa-mark 0.8s ease-out var(--d, 0s) both; }
@@ -2313,6 +2315,7 @@
 .pa-pop { margin-top: 0.2rem; }
 .pa .pa-pop p { margin: 0; line-height: 1.45; }
 .pa .pa-pop .li-pop-claim { color: var(--text-main); }
+.pa-expand { cursor: default; }
 
 @media (max-width: 760px) {
   .pa { grid-template-columns: 1fr; gap: 0.75rem; }
@@ -2326,10 +2329,9 @@
   .pa-gate-head .pa-gate-legend { grid-column: 1 / -1; }
   .pa-gate-row { grid-template-columns: 1fr auto; row-gap: 0.4rem; }
   .pa-gate-row .pa-meter { grid-column: 1 / -1; grid-row: 2; }
-  .pa-lane { grid-template-columns: 5.6rem 1fr; row-gap: 0.25rem; }
-  .pa-lane .pa-hit { grid-column: 2; }
+  .pa-lane { grid-template-columns: 1fr auto; row-gap: 0.25rem; }
+  .pa-lane .pa-q { grid-column: 1 / -1; }
   .pa-lanes { gap: 0.5rem; }
-  .pa-angle { width: 5.6rem; }
   .pa-judge { grid-template-columns: 1fr; gap: 0.75rem; align-content: start; }
   .pa-caption { flex-direction: column; gap: 0.5rem; }
   .pa .pa-caption p { min-height: 9.6em; }
