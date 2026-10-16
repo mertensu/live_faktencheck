@@ -1567,6 +1567,11 @@
 .live-start-dot { width: 12px; height: 12px; border-radius: 50%; background: #fff; }
 .live-start-note, .live-start-error { margin: 0; text-align: center; font-size: 0.9rem; }
 .live-start-note { color: var(--text-secondary); }
+.live-start-back {
+  align-self: flex-start; margin: 0; padding: 0; border: 0; background: none; cursor: pointer;
+  color: var(--text-secondary); font: inherit; font-size: 0.95rem; font-weight: 600;
+}
+.live-start-back:hover { color: #1d4ed8; }
 .live-start-error { color: #b91c1c; }
 .live-start-desktop { padding: 1.5rem 1.75rem; display: flex; flex-direction: column; gap: 0.5rem; }
 .live-start-desktop h2 { margin: 0; font-size: 1.15rem; font-weight: 600; color: var(--text-main); }

@@ -59,9 +59,12 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
   const showLiveTranscript = !isViewer && (
     isLive || liveStream.transcript.length > 0 || liveStream.claims.length > 0
   )
-  // Before going live the start panel holds the start button (and its error); the
-  // header button only resumes a session that already has a transcript or results.
-  const showStartPanel = !isViewer && !notFound && !showLiveTranscript && factChecks.length === 0
+  // Before going live the start panel holds the start button (and its error). A session
+  // with results opens it again from the header ("preparing"), so the sound source can be
+  // picked and checked before resuming; after a stop on this page the header resumes directly.
+  const [preparing, setPreparing] = useState(false)
+  const showStartPanel = !isViewer && !notFound && !showLiveTranscript && (factChecks.length === 0 || preparing)
+  useEffect(() => { if (isLive) setPreparing(false) }, [isLive])
   // The practice: folded into the start panel before going live; once the panel is gone
   // (live, or a session with results) "Kurzanleitung" opens it as a dialog instead.
   const [practiceOpen, setPracticeOpen] = useState(false)
@@ -247,6 +250,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
         error={liveStream.error}
         practiceOpen={practiceOpen}
         onPracticeOpen={setPracticeOpen}
+        onBack={factChecks.length > 0 ? () => setPreparing(false) : undefined}
       />
     )
   }
@@ -269,7 +273,7 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
               <button
                 type="button"
                 className="header-rec-start"
-                onClick={startLive}
+                onClick={showLiveTranscript ? startLive : () => setPreparing(true)}
                 title="Live-Check starten (Streaming)"
               >
                 ◉ Live-Check

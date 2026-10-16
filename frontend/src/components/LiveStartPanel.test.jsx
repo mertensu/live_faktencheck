@@ -66,6 +66,18 @@ describe('LiveStartPanel', () => {
     expect(onStart).toHaveBeenCalledOnce()
   })
 
+  it('leads back to the results only when resuming', () => {
+    const onBack = vi.fn()
+    renderPanel({ onBack })
+    fireEvent.click(screen.getByRole('button', { name: /Zurück zu den Ergebnissen/ }))
+    expect(onBack).toHaveBeenCalled()
+  })
+
+  it('has no way back before the first start', () => {
+    renderPanel()
+    expect(screen.queryByRole('button', { name: /Zurück zu den Ergebnissen/ })).toBeNull()
+  })
+
   it('shows the start error in place of the note', () => {
     renderPanel({ error: 'Mikrofonzugriff verweigert' })
     expect(screen.getByRole('alert').textContent).toBe('Mikrofonzugriff verweigert')
