@@ -59,9 +59,12 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
   const showLiveTranscript = !isViewer && (
     isLive || liveStream.transcript.length > 0 || liveStream.claims.length > 0
   )
-  // Before going live the start panel holds the start button (and its error); the
-  // header button only resumes a session that already has a transcript or results.
-  const showStartPanel = !isViewer && !notFound && !showLiveTranscript && factChecks.length === 0
+  // Before going live the start panel holds the start button (and its error). A session
+  // with results opens it again from the header ("preparing"), so the sound source can be
+  // picked and checked before resuming; after a stop on this page the header resumes directly.
+  const [preparing, setPreparing] = useState(false)
+  const showStartPanel = !isViewer && !notFound && !showLiveTranscript && (factChecks.length === 0 || preparing)
+  useEffect(() => { if (isLive) setPreparing(false) }, [isLive])
   // The practice: folded into the start panel before going live; once the panel is gone
   // (live, or a session with results) "Kurzanleitung" opens it as a dialog instead.
   const [practiceOpen, setPracticeOpen] = useState(false)
@@ -212,7 +215,8 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
         </div>
       )
     }
-    if (factChecks.length > 0) {
+    // Resuming ("preparing"): the setup panel takes the results' place until the start.
+    if (factChecks.length > 0 && !showStartPanel) {
       return (
         <div className="review-view">
           <FactCheckStream factChecks={factChecks} />
@@ -265,16 +269,22 @@ export function FactCheckPage({ showName, showKey, episodeKey }) {
                 <span className="header-rec-dot" aria-hidden="true">◉</span>
                 {liveStream.status === 'connecting' ? 'Live verbindet…' : 'Live stoppen'}
               </button>
-            ) : !showStartPanel && !touchOnly && (
-              <button
-                type="button"
-                className="header-rec-start"
-                onClick={startLive}
-                title="Live-Check starten (Streaming)"
-              >
+            ) : !touchOnly && (showLiveTranscript ? (
+              // Stopped on this page: source still connected, resume directly.
+              <button type="button" className="header-rec-start" onClick={startLive} title="Live-Check fortsetzen (Streaming)">
                 ◉ Live-Check
               </button>
-            )}
+            ) : factChecks.length > 0 && (
+              // A session with results: switch between them and the setup, where it continues.
+              <div className="live-start-source header-view" role="radiogroup" aria-label="Ansicht">
+                {[[false, 'Ergebnisse'], [true, 'Setup']].map(([setup, label]) => (
+                  <button key={label} type="button" role="radio" aria-checked={preparing === setup}
+                    className={preparing === setup ? 'active' : ''} onClick={() => setPreparing(setup)}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+            ))}
             {!touchOnly && (
               <button type="button" className="header-help-link" onClick={openGuide}>
                 Kurzanleitung
