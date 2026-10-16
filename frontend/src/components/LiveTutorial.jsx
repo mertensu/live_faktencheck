@@ -41,13 +41,15 @@ const SCENES = {
         id: 'tut-1', speaker: GUEST_B, label: 'B', status: 'done', consistency: 'hoch',
         claim: 'In Deutschland beziehen rund 21 Millionen Menschen eine Rente.',
         source: 'In Deutschland beziehen rund 21 Millionen Menschen eine Rente.',
-        begruendung: 'Übungsbeispiel: Die Zahl passt zur Größenordnung der amtlichen Statistik. Im echten Check stehen hier Begründung und Quellen.',
+        kurzfassung: 'Übungsbeispiel: Die Zahl passt zur Größenordnung der amtlichen Statistik.',
+        begruendung: '**Was die Quellen sagen**\n\nÜbungsbeispiel: Im echten Check steht hier die ausführliche Begründung mit Zahlen und ihrer Herkunft.\n\n**Was offen bleibt**\n\nHier stehen Einschränkungen, etwa ob eine Zahl gerundet ist oder sich auf ein anderes Jahr bezieht. Darunter folgen die Quellen.',
       },
       {
         id: 'tut-2', speaker: GUEST_B, label: 'B', status: 'done', consistency: 'niedrig',
         claim: 'Die Renten sind seit 2010 real gesunken.',
         source: 'Und die Renten sind seit 2010 real gesunken.',
-        begruendung: 'Übungsbeispiel: Die Belege sprechen gegen die Aussage. Im echten Check stehen hier Begründung und Quellen.',
+        kurzfassung: 'Übungsbeispiel: Die Belege sprechen gegen die Aussage.',
+        begruendung: '**Was die Quellen sagen**\n\nÜbungsbeispiel: Im echten Check steht hier die ausführliche Begründung mit Zahlen und ihrer Herkunft.\n\n**Was offen bleibt**\n\nHier stehen Einschränkungen, etwa ob eine Zahl gerundet ist oder sich auf ein anderes Jahr bezieht. Darunter folgen die Quellen.',
       },
     ],
   },
@@ -163,12 +165,15 @@ function PassagePractice({ follow, onReset, onSolved }) {
   )
 }
 
+// Two tasks: open a mark (short version), then the whole result through the expand button.
 function ResultsStep({ onSolved }) {
   const live = usePracticeLive(SCENES.results)
   const [opened, setOpened] = useState(false)
-  useSolved(opened, onSolved)
+  const [expanded, setExpanded] = useState(false)
+  useSolved(expanded, onSolved)
   const onClickCapture = (e) => {
     if (e.target.closest?.('.live-transcript-mark')) setOpened(true)
+    if (e.target.closest?.('.claim-expand')) setExpanded(true)
   }
   return (
     <>
@@ -177,15 +182,40 @@ function ResultsStep({ onSolved }) {
         <span className="live-tutorial-chip verdict-niedrig">rot</span> widerspricht ihnen,{' '}
         <span className="live-tutorial-chip verdict-unklar">orange</span> unklar.
       </p>
-      <p className="live-tutorial-task">Klicken Sie auf eine Markierung, um Begründung und Quellen zu sehen.</p>
+      <p className="live-tutorial-task">
+        Klicken Sie auf eine Markierung. Sie sehen eine Kurzfassung. Für das ganze Ergebnis mit
+        Begründung und Quellen klicken Sie oben rechts auf <ExpandIcon /> <em>Mehr anzeigen</em>.
+      </p>
       <div onClickCapture={onClickCapture}>
         <LiveTranscript live={live} speakers={SPEAKERS} follow={false} />
       </div>
-      {opened && <Done>So öffnen Sie im Live-Check jedes Ergebnis.</Done>}
+      {opened && !expanded && (
+        <p className="live-tutorial-hint" role="status">
+          Gut. Jetzt oben rechts im Fenster auf <ExpandIcon /> klicken.
+        </p>
+      )}
+      {expanded && (
+        <Done>
+          So öffnen Sie im Live-Check jedes Ergebnis: Kurzfassung per Klick auf die Markierung,
+          alles Weitere über <ExpandIcon />.
+        </Done>
+      )}
       <p className="live-tutorial-tip">
         Sie können nun den Live-Faktencheck starten.
       </p>
     </>
+  )
+}
+
+// The expand button's icon (ClaimCard's ExpandButton), inline in the text.
+function ExpandIcon() {
+  return (
+    <span className="live-tutorial-expand-icon" aria-label="Mehr anzeigen" role="img">
+      <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true">
+        <path d="M9.5 2.5h4v4M13.5 2.5 9 7M6.5 13.5h-4v-4M2.5 13.5 7 9"
+          fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </span>
   )
 }
 
@@ -256,10 +286,10 @@ export function LivePractice({ onDone }) {
 export function LiveTutorial({ onClose }) {
   useEffect(() => {
     document.body.style.overflow = 'hidden'
-    // Escape closes an open speaker menu or result first; only a bare Escape skips the guide.
+    // Escape closes an open speaker menu, result or full result first; only a bare Escape skips the guide.
     const onKey = (e) => {
       if (e.key !== 'Escape') return
-      if (document.querySelector('.live-tutorial .live-speaker-menu, .live-popover')) return
+      if (document.querySelector('.live-tutorial .live-speaker-menu, .live-popover, .claim-detail-panel')) return
       onClose()
     }
     window.addEventListener('keydown', onKey)
