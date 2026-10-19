@@ -144,6 +144,21 @@ async def test_text_naming_the_press_is_sent_back_once(checker):
     assert "Spiegel" not in result["evidence"]
 
 
+async def test_research_vocabulary_is_sent_back_once(checker):
+    named = {**VERDICT, "offen": "Aus den geprüften Auszügen ist das nicht erkennbar."}
+    outs = []
+
+    def final(i):
+        outs.append(named if not outs else VERDICT)
+        return outs[-1]
+
+    with patch("backend.services.agent_fact_checker.tavily_search", AsyncMock(side_effect=fake_search)), \
+            checker.agent.override(model=_model([THREE], final=final)):
+        result = await checker.check_claim_async("Julia", "Behauptung.")
+    assert len(outs) == 2
+    assert "Auszüge" not in result["evidence"]
+
+
 async def test_short_text_naming_the_press_is_sent_back(checker):
     named = {**VERDICT, "kurz": "Laut Spiegel 83 Mio. Einwohner."}
     outs = []

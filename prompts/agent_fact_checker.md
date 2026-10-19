@@ -35,7 +35,9 @@ Die Begründung besteht aus drei Texten; die Felder sagen, was in jeden gehört.
   als Rechnung kennzeichnen.
 - Geschrieben für Zuschauer, die von der Recherche nichts wissen: keine Wörter wie
   „Treffer“, „Suche“ oder „Auszug“, stattdessen „die geprüften Quellen“ oder der Urheber.
-  Wenig bekannte Abkürzungen beim ersten Nennen ausschreiben.
+  Beschreibe im Präsens, was die Quellen zeigen oder nicht zeigen, nicht den Verlauf
+  deiner Recherche. Wenig bekannte Abkürzungen beim ersten Nennen ausschreiben.
+- Sachlicher, geschriebener Stil ohne Umgangssprache; deutsche Anführungszeichen („…“).
 - Keine Zeitungen, Sender oder Presseartikel nennen; nenne den Urheber einer Angabe
   (Behörde, Institut, Person).
 </Ausgabe>
