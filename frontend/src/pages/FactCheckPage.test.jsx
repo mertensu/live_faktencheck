@@ -42,3 +42,23 @@ describe('FactCheckPage: resuming a session with results', () => {
     expect(screen.queryByRole('region', { name: 'Live-Check vorbereiten' })).toBeNull()
   })
 })
+
+describe('FactCheckPage: a Beispiel opened by an operator', () => {
+  beforeEach(() => {
+    localStorage.setItem('fc_access_code', 'abc')
+    global.fetch = vi.fn((url) => json(String(url).includes('/api/config/')
+      ? { speakers: ['Dröge'], show_name: 'Maischberger' }
+      : [CHECK]))
+  })
+  afterEach(() => {
+    localStorage.clear()
+    vi.restoreAllMocks()
+  })
+
+  it('shows the results as every visitor sees them, without live controls', async () => {
+    render(<FactCheckPage showName="Maischberger" episodeKey="s1" asViewer />)
+    expect(await screen.findByText('Eine Aussage.')).toBeDefined()
+    expect(screen.queryByRole('radio', { name: 'Setup' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Kurzanleitung' })).toBeNull()
+  })
+})

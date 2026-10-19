@@ -34,11 +34,16 @@ function ScrollOnNavigate() {
 
 function EpisodeRoute() {
   const { episodeKey } = useParams()
+  const asViewer = useAsViewer()
   const prefix = episodeKey.split('-')[0]
   const showName = prefix.charAt(0).toUpperCase() + prefix.slice(1)
   // Keyed so switching checks from the sidebar starts a fresh page (stream, results, config).
-  return <FactCheckPage key={episodeKey} showName={showName} episodeKey={episodeKey} />
+  return <FactCheckPage key={episodeKey} showName={showName} episodeKey={episodeKey} asViewer={asViewer} />
 }
+
+// A check opened from "Beispiele" shows what every visitor sees, also to an operator
+// (and to its owner): no "Meine Checks" sidebar, no live controls.
+const useAsViewer = () => Boolean(useLocation().state?.asViewer)
 
 // Static top-level routes; anything else is an episode/session page.
 const STATIC_ROUTES = new Set(['/', '/about', '/trusted-domains', '/new', '/beispiele', '/meine-checks', '/mein-bereich', '/datenschutz'])
@@ -49,12 +54,14 @@ const SIDEBAR_ROUTES = new Set(['/mein-bereich', '/new'])
 function AppInner() {
   const { pathname } = useLocation()
   const hasCode = useHasAccessCode()
+  const asViewer = useAsViewer()
   // A viewer opening a shared session link (no access code) gets a stripped-down
   // public page: just the fact-check stream, no site nav or footer chrome. The
-  // moderator (holds a code) keeps the full app.
+  // moderator (holds a code) keeps the full app. A Beispiel keeps the site nav, so the
+  // visitor can find the way back.
   const isEpisodeRoute = !STATIC_ROUTES.has(pathname)
-  const viewerMinimal = isEpisodeRoute && !getAccessCode()
-  const sidebarEnabled = hasCode && (isEpisodeRoute || SIDEBAR_ROUTES.has(pathname))
+  const viewerMinimal = isEpisodeRoute && !getAccessCode() && !asViewer
+  const sidebarEnabled = hasCode && !asViewer && (isEpisodeRoute || SIDEBAR_ROUTES.has(pathname))
 
   return (
     <SidebarProvider enabled={sidebarEnabled}>

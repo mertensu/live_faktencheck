@@ -39,7 +39,7 @@ export function ExamplesPage() {
               const episodeKey = show.key || show
               const showInfo = show.date || ''
               return (
-                <Link key={episodeKey} to={`/${episodeKey}`} className="show-item">
+                <Link key={episodeKey} to={`/${episodeKey}`} state={{ asViewer: true }} className="show-item">
                   <div className="show-item-content">
                     <div className="show-name-row">
                       <span className="show-name">{getEpisodeDisplayName(show)}</span>
