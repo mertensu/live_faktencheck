@@ -58,6 +58,12 @@ class AgentVerdict(BaseModel):
     sources: List[Source] = Field(description=AGENT_SOURCES_DESCRIPTION)
 
 
+def _page_key(url: str) -> str:
+    """The same page without scheme, www and trailing slash."""
+    u = urlparse(url)
+    return u.netloc.lower().removeprefix("www.") + u.path.rstrip("/") + ("?" + u.query if u.query else "")
+
+
 @dataclass
 class _Run:
     """Per-claim state the prompt, the tools and the output check share."""
@@ -166,7 +172,16 @@ class AgentFactChecker:
             logger.exception("Agent check: search failed for query: %s", query)
             return []
         raw = [r for r in res.get("results", []) or [] if r.get("url")]
-        hits = [r for r in raw if not _is_noise(r["url"])]
+        # Tavily returns the same page under http/https and with/without www (seen: one
+        # study five times); the duplicates would take slots and count against the host cap.
+        seen_keys: set[str] = set()
+        hits = []
+        for r in raw:
+            key = _page_key(r["url"])
+            if _is_noise(r["url"]) or key in seen_keys:
+                continue
+            seen_keys.add(key)
+            hits.append(r)
         # A hit without a score (older API shapes, tests) is kept.
         relevant = [r for r in hits if r.get("score") is None or float(r["score"]) >= self.min_score]
         relevant.sort(key=lambda r: source_tier(r["url"])[0])  # stable: official data first
@@ -176,7 +191,8 @@ class AgentFactChecker:
             "query": query, "fetched": len(raw), "noise": len(raw) - len(hits),
             "low_score": len(hits) - len(relevant),
             "hits": [(source_tier(r["url"])[1], round(float(r.get("score") or 0.0), 3), r["url"],
-                      "shown" if r in shown else "noise" if r not in hits else "low" if r not in relevant else "cut")
+                      "shown" if r in shown else "dup" if r not in hits and not _is_noise(r["url"])
+                      else "noise" if r not in hits else "low" if r not in relevant else "cut")
                      for r in raw],
         })
         return shown

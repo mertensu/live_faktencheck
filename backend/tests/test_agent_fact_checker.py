@@ -116,6 +116,22 @@ async def test_window_promotes_official_hit_and_drops_low_score(checker):
     assert shown.count("[amtlich]") == 1
 
 
+async def test_same_page_under_two_urls_is_shown_once(checker):
+    dup = {"results": [
+        {"title": "A", "url": "https://www.agora-energiewende.de/aktuelles/x", "content": "…", "score": 0.9},
+        {"title": "A", "url": "https://agora-energiewende.de/aktuelles/x", "content": "…", "score": 0.9},
+        {"title": "B", "url": "http://www.ise.fraunhofer.de/studie/", "content": "…", "score": 0.8},
+        {"title": "B", "url": "https://www.ise.fraunhofer.de/studie", "content": "…", "score": 0.8},
+        {"title": "C", "url": "https://www.diw.de/c", "content": "…", "score": 0.7},
+    ]}
+    seen = []
+    with patch("backend.services.agent_fact_checker.tavily_search", AsyncMock(return_value=dup)), \
+            checker.agent.override(model=_model([THREE], seen=seen)):
+        await checker.check_claim_async("Julia", "Behauptung.")
+    shown = [p.content for p in seen if p.tool_name == "suche"][0]
+    assert shown.count("URL: ") == 3 and "agora-energiewende.de/aktuelles/x" in shown and "diw.de/c" in shown
+
+
 def test_host_cap_fills_from_one_host_when_no_other_is_left(checker):
     hits = [{"url": f"https://www.bmas.de/p{i}"} for i in range(7)]
     assert [h["url"] for h in checker._cap_hosts(hits)] == [h["url"] for h in hits[:5]]
