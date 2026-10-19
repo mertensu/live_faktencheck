@@ -15,7 +15,6 @@ Rows are stored with check_depth="agent".
 import os
 import json
 import logging
-import re
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Dict, List, Literal
@@ -80,19 +79,11 @@ EVIDENCE_HEADING = "**Was die Quellen sagen**"
 OPEN_HEADING = "**Was offen bleibt**"
 
 
-_STRAIGHT_QUOTES = re.compile(r'"([^"\n]+)"')
-
-
-def _german_quotes(text: str) -> str:
-    """'"teuer"' -> '„teuer“': the model mixes straight and German quotes."""
-    return _STRAIGHT_QUOTES.sub(r"„\1“", text.strip())
-
-
 def _long_text(out: AgentVerdict) -> str:
     """The long reasoning as stored in ``begruendung``: both parts under their headings."""
-    parts = [EVIDENCE_HEADING, _german_quotes(out.evidence)]
+    parts = [EVIDENCE_HEADING, out.evidence.strip()]
     if out.offen.strip():
-        parts += [OPEN_HEADING, _german_quotes(out.offen)]
+        parts += [OPEN_HEADING, out.offen.strip()]
     return "\n\n".join(parts)
 
 
@@ -229,7 +220,7 @@ class AgentFactChecker:
             logger.info(f"Agent check done: consistency = {out.consistency}, searches = {run.queries}")
             return {
                 "speaker": speaker, "original_claim": claim, "consistency": out.consistency,
-                "evidence": _long_text(out), "kurz": _german_quotes(out.kurz), "sources": sources,
+                "evidence": _long_text(out), "kurz": out.kurz, "sources": sources,
                 "double_check": False, "critique_note": "",
                 # Stored with the row: the agent writes its own searches ("[presse] …" for press).
                 "search_queries": run.queries,
