@@ -20,7 +20,7 @@ from pydantic_ai import models
 from pydantic_ai.messages import ModelResponse, TextPart, ToolCallPart, ToolReturnPart
 from pydantic_ai.models.function import AgentInfo, FunctionModel
 
-from backend.services.agent_fact_checker import AgentFactChecker
+from backend.services.agent_fact_checker import AgentFactChecker, _german_quotes
 
 models.ALLOW_MODEL_REQUESTS = False
 
@@ -201,3 +201,7 @@ async def test_verdict_without_sources_is_sent_back_once(checker):
         result = await checker.check_claim_async("Julia", "Behauptung.")
     assert len(outs) == 2
     assert [s["url"] for s in result["sources"]] == ["https://www.destatis.de/a"]
+
+
+def test_german_quotes():
+    assert _german_quotes('Ob Gas "teuer" wird, und „billig“ bleibt.') == "Ob Gas „teuer“ wird, und „billig“ bleibt."

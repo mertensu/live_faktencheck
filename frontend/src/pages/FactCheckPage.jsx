@@ -13,10 +13,10 @@ import { useSidebar } from '../components/MyChecksSidebar'
 // Default speakers as fallback
 const DEFAULT_SPEAKERS = []
 
-export function FactCheckPage({ showName, showKey, episodeKey }) {
-  // A viewer opened the shared link without an access code: strip the page down
-  // to the debate name and the stream, no controls.
-  const isViewer = !getAccessCode()
+export function FactCheckPage({ showName, showKey, episodeKey, asViewer = false }) {
+  // A viewer opened the shared link without an access code, or anyone opened a Beispiel:
+  // strip the page down to the debate name and the stream, no controls.
+  const isViewer = asViewer || !getAccessCode()
   // Phones and mouse-less tablets get no live check (see isTouchOnly); viewing stays open.
   const [touchOnly] = useState(isTouchOnly)
 
