@@ -83,9 +83,10 @@ STREAM_SPEECH_MODEL = os.getenv("STREAM_SPEECH_MODEL", "universal-3-6-pro")
 STREAM_SPEAKER_REVISION_MS = int(os.getenv("STREAM_SPEAKER_REVISION_MS", "120000"))
 # Only claims of a voice the operator gave to a guest are published. A clip (Einspieler)
 # has many voices, some of them the guests' own; checking every unnamed label put those
-# on air. A claim of an unassigned label is checked in the background but held back, and
-# published as soon as its label (or passage) is given to a guest — or never. Off: every
-# claim not from an excluded speaker or "Andere Stimme" is published right away.
+# on air. A claim of an unassigned label is held back and published as soon as its label
+# (or passage) is given to a guest — or never. With the Jev gate it is reformulated and
+# checked only then: who says "unsere Steuer" decides what the claim is. Off: every claim
+# not from an excluded speaker or "Andere Stimme" is published right away.
 STREAM_HOLD_UNASSIGNED = os.getenv("STREAM_HOLD_UNASSIGNED", "true").lower() in ("1", "true", "yes")
 
 
@@ -253,9 +254,12 @@ class StreamingSession:
         self._claim_labels: dict[int, str] = {}        # cid -> current label
         self._claim_speakers: dict[int, str] = {}      # cid -> current speaker
         self._claim_turns: dict[int, int] = {}         # cid -> turn_order
-        self._claim_info: dict[int, dict] = {}         # cid -> {"claim", "source", "queries", "timestamp"}
+        # cid -> {"claim", "source", "queries", "timestamp", "deferred", "context"}; a deferred
+        # claim waits for its speaker's name to be reformulated (see STREAM_HOLD_UNASSIGNED).
+        self._claim_info: dict[int, dict] = {}
         self._results: dict[int, dict] = {}            # cid -> stored row of the finished check
         self._checking: set[int] = set()               # cids whose check was started
+        self._reformulating: set[int] = set()          # deferred cids whose rewrite was started
         self._rows: dict[int, int] = {}                # cid -> fact_check_id while published
         self._next_cid = 1
         # Serializes publishing, withdrawing and writing results of claims.
@@ -308,14 +312,17 @@ class StreamingSession:
         """True for a speaker never gated or checked: excluded, or "Andere Stimme"."""
         return name == OTHER_VOICE or self._excluded(name)
 
+    @property
+    def _holding(self) -> bool:
+        """True if claims of a voice not given to a guest are held back."""
+        return STREAM_HOLD_UNASSIGNED and bool(self.speakers)
+
     def _publishable(self, cid: int) -> bool:
         """A claim is on air only while its speaker is a guest (see STREAM_HOLD_UNASSIGNED)."""
         speaker = self._claim_speakers.get(cid)
-        if self._suppressed(speaker):
+        if self._suppressed(speaker) or not self._claim_info[cid]["claim"]:
             return False
-        if not STREAM_HOLD_UNASSIGNED or not self.speakers:
-            return True
-        return speaker in self.speakers
+        return not self._holding or speaker in self.speakers
 
     # ---- speakers: operator assignment + reclustering (unit-testable) --------
     @property
@@ -508,7 +515,9 @@ class StreamingSession:
         longer is. A withdrawn claim keeps its check result and comes back with it."""
         async with self._publish_lock:
             want, pid = self._publishable(cid), self._rows.get(cid)
-            if want and pid is None:
+            if want and pid is None and self._claim_info[cid].get("deferred"):
+                self._start_reformulation(cid)
+            elif want and pid is None:
                 info = self._claim_info[cid]
                 pid = await self.db.add_fact_check({
                     "sprecher": self._claim_speakers[cid],
@@ -700,6 +709,9 @@ class StreamingSession:
 
         if not gated:
             return
+        # Label -> name as assigned for this window's turns.
+        speaker_names = {e["speaker"]: self._display(e["speaker"], e.get("turn_order"))
+                         for e in gated if e["speaker"]}
         try:
             claims = await self.gate.gate(
                 window_text,
@@ -708,9 +720,10 @@ class StreamingSession:
                 conversation_type=self.conversation_type,
                 excluded_speakers=self.excluded_speakers,
                 previous_context=previous,
-                # Label -> name as assigned for this window's turns.
-                speaker_names={e["speaker"]: self._display(e["speaker"], e.get("turn_order"))
-                               for e in gated if e["speaker"]},
+                speaker_names=speaker_names,
+                # Claims of the other labels wait for their name to be reformulated.
+                ready_speakers={label for label, name in speaker_names.items() if name in self.speakers}
+                if self._holding else None,
             )
         except Exception:
             logger.exception("Window gate failed; skipping window")
@@ -721,6 +734,7 @@ class StreamingSession:
             text = getattr(claim, "claim", "") or ""
             source = getattr(claim, "source", None)  # original transcript sentence (JevGate)
             queries = getattr(claim, "search_queries", None) or None  # JevGate only
+            deferred = getattr(claim, "deferred", False) is True  # JevGate only
             if not text:
                 continue
             # Safety net for early sentences: a sentence taken from a partial and again,
@@ -741,7 +755,9 @@ class StreamingSession:
                     source = self._final_source(turn_order, source) or source
                 else:
                     self._early_sources.setdefault(turn_order, []).append(source)
-            self._track(self._check_and_store(text, source, turn_order, label, queries))
+            self._track(self._check_and_store(text, source, turn_order, label, queries,
+                                              context=getattr(claim, "context", None) if deferred else None,
+                                              deferred=deferred))
 
     def _match_turn(self, source: str | None, entries: list[dict]) -> tuple[int | None, str | None] | None:
         """Find the buffered turn a claim's source sentence came from.
@@ -784,13 +800,17 @@ class StreamingSession:
         turn_order: int | None = None,
         speaker_label: str | None = None,
         queries: list[str] | None = None,
+        context: str | None = None,
+        deferred: bool = False,
     ) -> None:
         """Register a gated claim, check it and publish it once its speaker is a guest.
 
         The check starts right away, also for a claim that is held back (an unassigned
-        label): if the operator names the label a moment later, the result is there.
-        Claims of excluded speakers and of "Andere Stimme" are not checked unless the
-        operator gives them to a guest.
+        label): if the operator names the label a moment later, the result is there. A
+        ``deferred`` claim (``claim`` is still the raw sentence, ``context`` the lines
+        before it) is reformulated and checked only once it is published. Claims of
+        excluded speakers and of "Andere Stimme" are not checked unless the operator gives
+        them to a guest.
         """
         cid = self._next_cid
         self._next_cid += 1
@@ -803,7 +823,8 @@ class StreamingSession:
             speaker_label = self._sentence_label(turn_order, _norm(source or ""))
         speaker = passage_speaker or self._display(speaker_label, turn_order) or UNCLEAR_SPEAKER
         self._claim_info[cid] = {"claim": claim, "source": source, "queries": queries,
-                                 "timestamp": datetime.now().isoformat()}
+                                 "timestamp": datetime.now().isoformat(),
+                                 "deferred": deferred, "context": context}
         self._claim_speakers[cid] = speaker
         if turn_order is not None:
             self._claim_turns[cid] = turn_order
@@ -817,10 +838,37 @@ class StreamingSession:
             self._turn_claims.setdefault(turn_order, []).append(cid)
         if self._suppressed(speaker):
             logger.info(f"[stream:{self.session_id}] hold claim of {speaker} unchecked: {log_text(claim, 80)}")
+        elif deferred:
+            logger.info(f"[stream:{self.session_id}] hold claim of unassigned {speaker} "
+                        f"until named: {log_text(claim, 80)}")
         else:
             if not self._publishable(cid):
                 logger.info(f"[stream:{self.session_id}] hold claim of unassigned {speaker}: {log_text(claim, 80)}")
             self._start_check(cid)
+        await self._sync(cid)
+
+    def _start_reformulation(self, cid: int) -> None:
+        if cid not in self._reformulating:
+            self._reformulating.add(cid)
+            self._track(self._reformulate(cid))
+
+    async def _reformulate(self, cid: int) -> None:
+        """Reformulate a deferred claim under its speaker's name, then publish and check it.
+
+        Only the first naming does this; a later rename keeps the wording. Lines of the
+        claim's label in the context get the name too. A failed rewrite drops the claim.
+        """
+        info, speaker = self._claim_info[cid], self._claim_speakers[cid]
+        label, context = self._claim_labels.get(cid), info["context"]
+        if label and context:
+            context = "\n".join(f"{speaker}: {ln[len(label) + 2:]}" if ln.startswith(f"{label}: ") else ln
+                                for ln in context.splitlines())
+        claim = await self.gate.reformulate(info["source"], speaker, self._known_names,
+                                            context=self.context, previous_context=context)
+        info.update(deferred=False, claim=claim.claim if claim else "",
+                    queries=(claim.search_queries or None) if claim else None)
+        if not claim:
+            logger.info(f"[stream:{self.session_id}] drop claim of {speaker}: reformulation failed")
         await self._sync(cid)
 
     def _start_check(self, cid: int) -> None:

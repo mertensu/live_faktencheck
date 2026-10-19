@@ -44,6 +44,11 @@ class GatedClaim:
     claim: str
     source: str
     search_queries: list[str] = field(default_factory=list)
+    # Its speaker was not a guest yet (``ready_speakers``): ``claim`` is still the raw
+    # sentence and ``context`` what the reformulator would have seen. The streaming layer
+    # reformulates it once the operator names the speaker (``JevGate.reformulate``).
+    deferred: bool = False
+    context: str | None = None
 
 
 @runtime_checkable
@@ -59,6 +64,7 @@ class ClaimGate(Protocol):
         excluded_speakers: list[str] | None = None,
         previous_context: str | None = None,
         speaker_names: dict[str, str] | None = None,
+        ready_speakers: set[str] | None = None,
     ) -> List[ExtractedClaim]: ...
 
 
@@ -77,6 +83,7 @@ class ExtractorGate:
         excluded_speakers: list[str] | None = None,
         previous_context: str | None = None,
         speaker_names: dict[str, str] | None = None,  # unused: the window agent names speakers itself
+        ready_speakers: set[str] | None = None,  # unused: the window agent extracts and rewrites in one
     ) -> List[ExtractedClaim]:
         return await self._extractor.extract_window_async(
             window_text,
@@ -219,7 +226,9 @@ class JevGate:
       4. For each hit, an LLM call reformulates the sentence into a standalone claim
          (pronouns resolved from rolling context, speaker assigned) and writes search
          queries for the fast checker. Check-worthiness is decided by then — this step
-         does not re-judge it.
+         does not re-judge it. A hit of a speaker outside ``ready_speakers`` (a label the
+         operator hasn't given to a guest) is returned unreformulated: "unsere Steuer"
+         can only be resolved once it is known who says it.
     """
 
     def __init__(self, extractor: ClaimExtractor, scorer: JevScorer | None = None):
@@ -283,6 +292,7 @@ class JevGate:
         excluded_speakers: list[str] | None = None,
         previous_context: str | None = None,
         speaker_names: dict[str, str] | None = None,
+        ready_speakers: set[str] | None = None,
     ) -> List[GatedClaim]:
         if not window_text or not window_text.strip():
             return []
@@ -331,24 +341,11 @@ class JevGate:
                 verdict = await self._second_opinion(sentence, names.get(speaker, speaker), context, context_before(i))
             if verdict != "CHECK":
                 return None
-            try:
-                claim = await self._extractor.reformulate_claim_async(
-                    sentence,
-                    speaker=names.get(speaker, speaker),
-                    guests=guests,
-                    context=context,
-                    previous_context=context_before(i),
-                )
-            except Exception:
-                logger.exception("Reformulation failed for gated sentence")
-                return None
-            if not claim or not (claim.claim or "").strip():
-                return None
-            # Keep the original sentence as the highlight anchor for the UI.
-            return GatedClaim(
-                name=claim.name or names.get(speaker, speaker), claim=claim.claim, source=sentence,
-                search_queries=list(getattr(claim, "search_queries", None) or []),
-            )
+            if ready_speakers is not None and speaker not in ready_speakers:
+                return GatedClaim(name=names.get(speaker, speaker), claim=sentence, source=sentence,
+                                  deferred=True, context=context_before(i))
+            return await self.reformulate(sentence, names.get(speaker, speaker), guests, context,
+                                          context_before(i))
 
         # Hits are reformulated and grey sentences judged concurrently; claims keep the
         # order of their sentences.
@@ -360,6 +357,28 @@ class JevGate:
             f"(check>={self.check_hi})"
         )
         return claims
+
+    async def reformulate(self, sentence: str, speaker: str, guests: list[str], context: str = "",
+                          previous_context: str | None = None) -> GatedClaim | None:
+        """Rewrite a gated sentence into a standalone claim; ``None`` if that fails."""
+        try:
+            claim = await self._extractor.reformulate_claim_async(
+                sentence,
+                speaker=speaker,
+                guests=guests,
+                context=context,
+                previous_context=previous_context,
+            )
+        except Exception:
+            logger.exception("Reformulation failed for gated sentence")
+            return None
+        if not claim or not (claim.claim or "").strip():
+            return None
+        # Keep the original sentence as the highlight anchor for the UI.
+        return GatedClaim(
+            name=claim.name or speaker, claim=claim.claim, source=sentence,
+            search_queries=list(getattr(claim, "search_queries", None) or []),
+        )
 
 
 def build_gate(extractor: ClaimExtractor) -> ClaimGate:
