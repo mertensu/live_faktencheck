@@ -8,7 +8,7 @@ test_jev_gate.py.
 import pytest
 from unittest.mock import patch
 
-from backend.services.claim_extraction import ClaimExtractor, ClaimExtractionInput
+from backend.services.claim_extraction import ClaimExtractor, ClaimExtractionInput, ExtractedClaim, ReformulatedClaim
 
 
 class TestClaimExtractionInput:
@@ -45,3 +45,20 @@ class TestClaimExtractorInit:
             extractor = ClaimExtractor()
             assert extractor.window_model_name == "gemini-custom-gate"
             assert extractor.reformulate_model_name == "gemini-custom-reformulate"
+
+    def test_fast_checker_reformulator_writes_queries(self):
+        with patch.dict("os.environ", {"GEMINI_API_KEY": "test-key"}, clear=True):
+            extractor = ClaimExtractor()
+            assert extractor.writes_queries is True
+            assert extractor.reformulator.output_type is ReformulatedClaim
+            instructions = "".join(i for i in extractor.reformulator._instructions if isinstance(i, str))
+            assert "search_queries" in instructions
+
+    def test_agent_checker_reformulator_skips_queries(self):
+        """The agent checker plans its own searches: no queries in prompt or schema."""
+        with patch.dict("os.environ", {"GEMINI_API_KEY": "test-key", "LIVE_CHECKER": "agent"}, clear=True):
+            extractor = ClaimExtractor()
+            assert extractor.writes_queries is False
+            assert extractor.reformulator.output_type is ExtractedClaim
+            instructions = "".join(i for i in extractor.reformulator._instructions if isinstance(i, str))
+            assert "search_queries" not in instructions

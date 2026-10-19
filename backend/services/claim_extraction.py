@@ -91,17 +91,23 @@ class ClaimExtractor:
 
         # Reformulation agent (live streaming lane, Jev gate): does NOT judge
         # check-worthiness (the Jev gate already did) — it rewrites a single gated
-        # sentence into a standalone, decontextualized claim, assigns the speaker and
-        # writes the search queries for the fast checker. Used by ``JevGate`` in
-        # services/gate.py. The queries decide what the fast checker gets to see:
-        # GPT-6 Luna (Requesty, EU) with medium reasoning writes five queries from fixed
-        # angles, which made verdicts stable across runs (13/15 vs 10/15) for ~0.5 s.
+        # sentence into a standalone, decontextualized claim and assigns the speaker.
+        # Used by ``JevGate`` in services/gate.py.
+        # With the fast checker it also writes the search queries, which decide what the
+        # fast checker gets to see: GPT-6 Luna (Requesty, EU) with medium reasoning writes
+        # five queries from fixed angles, which made verdicts stable across runs (13/15 vs
+        # 10/15) for ~0.5 s. The agent checker plans its own searches, so with
+        # LIVE_CHECKER=agent the queries are left out of the prompt and the schema.
+        self.writes_queries = os.getenv("LIVE_CHECKER", "fast").strip().lower() != "agent"
         self.reformulate_model_name = os.getenv("GEMINI_MODEL_REFORMULATE", "gpt-6-luna@eu")
         reformulate_thinking = os.getenv("GEMINI_THINKING_REFORMULATE", "medium")
+        instructions = load_prompt("claim_reformulation.md")
+        if self.writes_queries:
+            instructions += "\n\n" + load_prompt("claim_search_queries.md")
         self.reformulator = Agent(
             build_model(self.reformulate_model_name, thinking=reformulate_thinking),
-            output_type=ReformulatedClaim,
-            instructions=load_prompt("claim_reformulation.md"),
+            output_type=ReformulatedClaim if self.writes_queries else ExtractedClaim,
+            instructions=instructions,
             model_settings=settings_with_thinking(reformulate_thinking),
         )
 
@@ -120,7 +126,7 @@ class ClaimExtractor:
 
         logger.info(
             f"ClaimExtractor initialized (window_gate={self.window_model_name}, reformulate={self.reformulate_model_name}, "
-            f"grey_zone={self.grey_zone_model_name})"
+            f"queries={self.writes_queries}, grey_zone={self.grey_zone_model_name})"
         )
 
     async def extract_window_async(
@@ -173,13 +179,13 @@ class ClaimExtractor:
         guests: list[str] | None = None,
         context: str = "",
         previous_context: str | None = None,
-    ) -> ReformulatedClaim | None:
+    ) -> ExtractedClaim | None:
         """Rewrite one already-gated sentence into a standalone, decontextualized claim.
 
         This does NOT decide check-worthiness or importance (the Jev gate did both); it
-        resolves pronouns/references, assigns/corrects the speaker name against
-        ``guests`` and writes search queries for the fast checker. Returns ``None`` for
-        empty input.
+        resolves pronouns/references and assigns/corrects the speaker name against
+        ``guests``. With the fast checker the result is a ``ReformulatedClaim`` that also
+        carries its search queries. Returns ``None`` for empty input.
         """
         if not sentence or not sentence.strip():
             return None
