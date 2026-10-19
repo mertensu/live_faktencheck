@@ -53,7 +53,7 @@ covered in the [development workflow](development-workflow.md#setup); this is th
 | `AGENT_CHECK_ROUNDS` | Research rounds (each: several searches at once) before the verdict | `1` |
 | `AGENT_CHECK_MIN_SEARCHES` | Fewer searches than this: sent back once for more | `2` |
 | `AGENT_FETCH_RESULTS` | Hits fetched per agent search before the tier sort picks the `TAVILY_MAX_RESULTS` shown (same credits) | `10` |
-| `AGENT_MIN_SCORE` | Tavily relevance score below which a fetched hit is dropped before the tier sort | `0.2` |
+| `AGENT_MIN_SCORE` | Tavily relevance score below which a fetched hit is dropped before the tier sort | `0.1` |
 | `AGENT_MAX_PER_HOST` | Hits per host shown before other hosts get a turn; skipped hits fill remaining slots | `2` |
 | `AGENT_CHECK_TIMEOUT_S` | Per-call timeout of the Requesty model (the calls carry the hits) | `45` |
 | `AGENT_CHECK_REQUEST_LIMIT` | Model requests per check, retries included | `6` |
