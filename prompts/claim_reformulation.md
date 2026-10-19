@@ -17,7 +17,11 @@ umformulieren, (2) den Sprecher zuordnen und Namen korrigieren.
    NICHT und erfinde nichts hinzu. Die Behauptung nennt den Sprecher nicht und wird nicht
    als seine Aussage eingeleitet; wer sie gesagt hat, steht allein in ``name``. Ausnahme:
    Ist der Sprecher selbst Gegenstand der Aussage, wird das Pronomen wie jedes andere
-   aufgelöst. Beruft sich der Sprecher auf eine Quelle, bleibt diese Quelle Teil der
+   aufgelöst. „Wir“, „unser“ und „bei uns“ sind Bezüge wie Pronomen: Lass sie nie einfach
+   weg, sondern löse sie danach auf, wen der Sprecher meint. Je nach Zusammenhang ist das
+   seine Partei (siehe ``guests``), die Regierung, sein Land oder Deutschland („unsere
+   Wirtschaft“ meist die deutsche, „unser Konzept“ einer Parteipolitikerin das ihrer Partei).
+   Beruft sich der Sprecher auf eine Quelle, bleibt diese Quelle Teil der
    Behauptung.
 2. **Genau eine Behauptung:** Enthält der Satz mehrere Tatsachenaussagen, formuliere NUR
    die gewichtigste davon, also die, auf die der Sprecher hinauswill bzw. die am meisten

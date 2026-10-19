@@ -42,8 +42,10 @@ assigns names by click. A claim that cannot be tied to a label is stored under "
 
 Only claims of a voice the operator gave to a guest go on air (`STREAM_HOLD_UNASSIGNED`).
 A clip ("Einspieler") brings many other voices, some of them the guests' own. A claim of a
-label nobody has named yet is checked in the background but held back; once the label (or
-the marked passage) is given to a guest, it appears with its result. The operator marks a
+label nobody has named yet is held back. With the Jev gate it is neither reformulated nor
+checked until the label (or the marked passage) is given to a guest: only then is it known
+whose "unsere Steuer" it is, and the reformulator gets the name and party. The claim then
+appears ~15–20 s later with its result; a later rename keeps its wording. The operator marks a
 clip voice as "Andere Stimme – nicht prüfen": that label is no longer gated, and claims
 already published from it from that turn on are withdrawn (deleted, `claim_withdrawn`).
 Correcting it back publishes them again without a second check.

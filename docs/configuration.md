@@ -27,7 +27,7 @@ covered in the [development workflow](development-workflow.md#setup); this is th
 | `STREAM_SPEAKER_REVISION_MS` | Interval for AssemblyAI speaker revisions | `120000` |
 | `STREAM_MAX_SPEAKERS` | Cap on diarized speakers | unset |
 | `STREAM_EARLY_SENTENCES` | Gate settled sentences from partial turns before the turn ends | `true` |
-| `STREAM_HOLD_UNASSIGNED` | Publish only claims of voices the operator gave to a guest; others are checked in the background and held (no effect for an episode without a speaker list) | `true` |
+| `STREAM_HOLD_UNASSIGNED` | Publish only claims of voices the operator gave to a guest; others are held, and with the Jev gate reformulated and checked only once named (no effect for an episode without a speaker list) | `true` |
 | `CLAIM_GATE` | `jev` (per-sentence classifier via Requesty) or `extractor` (Gemini window gate) | `extractor` |
 | `GEMINI_MODEL_WINDOW_GATE` | Model for the extractor gate | `gemini-3.5-flash-lite` |
 | `JEV_MODEL` / `JEV_TIMEOUT_S` | Jev gate model and per-call timeout (s) | `typesafe/jev-1.13.0` / `5` |

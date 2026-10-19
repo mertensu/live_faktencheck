@@ -16,7 +16,8 @@ from backend.database import Database
 from backend.lang import OTHER_VOICE
 from backend.services.claim_extraction import ExtractedClaim
 from backend.services import streaming as streaming_mod
-from backend.services.gate import GatedClaim
+from backend.services.gate import GatedClaim, JevGate
+from backend.tests.test_jev_gate import FakeScorer
 from backend.routers.stream import _handle_control
 from backend.services.streaming import StreamingSession
 
@@ -1046,6 +1047,101 @@ class TestHoldUnassigned:
                                   speaker_label="A", turn_order=0)
         await session.stop()
         assert len(await db.get_fact_checks(session_id="s1")) == 1
+
+    @staticmethod
+    def _jev_gate(reformulated="Die Vermögensteuer der Linken setzt ab einer Million an."):
+        """A real JevGate: the Million sentence is a hit, the reformulator is mocked."""
+        extractor = MagicMock()
+        extractor.reformulate_claim_async = AsyncMock(
+            return_value=ExtractedClaim(name="Reichinnek", claim=reformulated) if reformulated else None)
+        return JevGate(extractor, FakeScorer({"Million": 0.95})), extractor.reformulate_claim_async
+
+    async def test_unassigned_claim_is_reformulated_and_checked_once_named(self, db):
+        """Who says "unsere" decides the claim: no rewrite and no check before the name."""
+        events, on_event = _collect()
+        gate, reformulate = self._jev_gate()
+        checker = _fast_checker()
+        session = StreamingSession("s1", gate, checker, db, on_event=on_event,
+                                   guests=["Reichinnek (Linke)"], speakers=["Reichinnek"])
+        await session.handle_turn("Na ja, wenn es darum geht. Unsere Steuer setzt ab der ersten Million an.",
+                                  end_of_turn=True, speaker_label="A", turn_order=0)
+        await session._flush_window()
+        await _drain(session)
+        assert reformulate.await_count == 0 and checker.check_claim_async.await_count == 0
+        assert await db.get_fact_checks(session_id="s1") == []
+
+        await session.assign_speaker("A", "Reichinnek")
+        await _drain(session)
+        kw = reformulate.await_args.kwargs
+        assert reformulate.await_args.args[0] == "Unsere Steuer setzt ab der ersten Million an."
+        # The name with the party: whose "unsere" it is.
+        assert kw["speaker"] == "Reichinnek (Linke)" and kw["guests"] == ["Reichinnek (Linke)"]
+        # The label's lines in the context carry the name as well.
+        assert kw["previous_context"] == "Reichinnek (Linke): Na ja, wenn es darum geht."
+        assert checker.check_claim_async.await_args.kwargs["claim"] == (
+            "Die Vermögensteuer der Linken setzt ab einer Million an.")
+        rows = await db.get_fact_checks(session_id="s1")
+        assert len(rows) == 1 and rows[0]["behauptung"] == "Die Vermögensteuer der Linken setzt ab einer Million an."
+        assert rows[0]["sprecher"] == "Reichinnek" and rows[0]["consistency"] == "hoch"
+        processing = next(e for e in events if e["type"] == "claim_processing")
+        assert processing["source"] == "Unsere Steuer setzt ab der ersten Million an."
+
+        # A later rename keeps the wording: no second rewrite, no second check.
+        await session.assign_speaker("A", OTHER_VOICE)
+        await session.assign_speaker("A", "Reichinnek")
+        await session.stop()
+        assert reformulate.await_count == 1 and checker.check_claim_async.await_count == 1
+
+    async def test_claim_of_a_named_speaker_is_reformulated_right_away(self, db):
+        gate, reformulate = self._jev_gate()
+        session = StreamingSession("s1", gate, _fast_checker(), db, guests=["Reichinnek (Linke)"],
+                                   speakers=["Reichinnek"])
+        await session.assign_speaker("A", "Reichinnek")
+        await session.handle_turn("Unsere Steuer setzt ab der ersten Million an. Noch ein Satz.",
+                                  end_of_turn=True, speaker_label="A", turn_order=0)
+        await session._flush_window()
+        await _drain(session)
+        assert reformulate.await_count == 1
+        assert reformulate.await_args.kwargs["speaker"] == "Reichinnek (Linke)"
+        rows = await db.get_fact_checks(session_id="s1")
+        assert len(rows) == 1 and rows[0]["sprecher"] == "Reichinnek"
+        await session.stop()
+
+    async def test_unassigned_at_session_end_is_never_reformulated(self, db):
+        gate, reformulate = self._jev_gate()
+        checker = _fast_checker()
+        session = StreamingSession("s1", gate, checker, db, speakers=["Reichinnek"])
+        await session.handle_turn("Unsere Steuer setzt ab der ersten Million an. Noch ein Satz.",
+                                  end_of_turn=True, speaker_label="A", turn_order=0)
+        await session.stop()
+        assert reformulate.await_count == 0 and checker.check_claim_async.await_count == 0
+        assert await db.get_fact_checks(session_id="s1") == []
+
+    async def test_failed_reformulation_drops_the_claim(self, db):
+        gate, reformulate = self._jev_gate(reformulated=None)
+        checker = _fast_checker()
+        session = StreamingSession("s1", gate, checker, db, speakers=["Reichinnek"])
+        await session.handle_turn("Unsere Steuer setzt ab der ersten Million an. Noch ein Satz.",
+                                  end_of_turn=True, speaker_label="A", turn_order=0)
+        await session._flush_window()
+        await _drain(session)
+        await session.assign_speaker("A", "Reichinnek")
+        await session.stop()
+        assert reformulate.await_count == 1 and checker.check_claim_async.await_count == 0
+        assert await db.get_fact_checks(session_id="s1") == []
+
+    async def test_passage_given_to_a_guest_reformulates_under_that_name(self, db):
+        gate, reformulate = self._jev_gate()
+        session = StreamingSession("s1", gate, _fast_checker(), db, speakers=["Reichinnek", "Amthor"])
+        await session.handle_turn("Unsere Steuer setzt ab der ersten Million an. Noch ein Satz.",
+                                  end_of_turn=True, speaker_label="A", turn_order=0)
+        await session._flush_window()
+        await _drain(session)
+        await session.assign_passage("Unsere Steuer setzt ab der ersten Million an.", "Reichinnek")
+        await session.stop()
+        assert reformulate.await_args.kwargs["speaker"] == "Reichinnek"
+        rows = await db.get_fact_checks(session_id="s1")
+        assert len(rows) == 1 and rows[0]["sprecher"] == "Reichinnek"
 
     async def test_other_voice_message_reaches_session(self, db):
         session = StreamingSession("s1", _gate([]), _fast_checker(), db, speakers=["Dröge"])

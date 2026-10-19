@@ -207,6 +207,28 @@ class TestJevGate:
         # Only what came before: the following sentence is not part of it.
         assert "Habeck" not in kw["previous_context"]
 
+    async def test_hit_of_a_speaker_not_ready_is_deferred(self):
+        """A label not given to a guest: the hit comes back as the raw sentence, with the
+        context the reformulator would have seen, and no LLM call is made."""
+        ex = _make_extractor()
+        ex.reformulate_claim_async = AsyncMock(return_value=ExtractedClaim(name="Dröge", claim="X."))
+        gate = JevGate(ex, FakeScorer({"Million": 0.9}))
+        out = await gate.gate("A: Na ja.\nB: Unsere Steuer setzt ab der ersten Million an.",
+                              guests=["Dröge"], ready_speakers=set())
+        assert ex.reformulate_claim_async.await_count == 0
+        assert len(out) == 1 and out[0].deferred
+        assert out[0].claim == out[0].source == "Unsere Steuer setzt ab der ersten Million an."
+        assert out[0].context == "A: Na ja."
+
+    async def test_hit_of_a_ready_speaker_is_reformulated(self):
+        ex = _make_extractor()
+        ex.reformulate_claim_async = AsyncMock(return_value=ExtractedClaim(name="Dröge", claim="X."))
+        gate = JevGate(ex, FakeScorer({"Million": 0.9}))
+        out = await gate.gate("C: Unsere Steuer setzt ab der ersten Million an.", guests=["Dröge"],
+                              speaker_names={"C": "Dröge"}, ready_speakers={"C"})
+        assert out[0].claim == "X." and not out[0].deferred
+        assert ex.reformulate_claim_async.await_args.kwargs["speaker"] == "Dröge"
+
     async def test_colon_in_a_line_without_speaker_is_text(self):
         scorer = FakeScorer({})
         gate = JevGate(_make_extractor(), scorer)
