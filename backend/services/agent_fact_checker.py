@@ -115,9 +115,10 @@ class AgentFactChecker:
         self.fetch_results = max(int(os.getenv("AGENT_FETCH_RESULTS", "10")), self.max_results)
         # Relevance floor on Tavily's score: a hit below it is dropped before the tier sort,
         # so an off-topic official page cannot displace a relevant research page.
-        # 0.2: in a 21-claim run every hit below 0.1 was plainly off-topic, and the ~10 % of
-        # shown hits between 0.1 and 0.2 were other states' parliamentary papers.
-        self.min_score = float(os.getenv("AGENT_MIN_SCORE", "0.2"))
+        # 0.1 removes only the plainly off-topic (measured: every hit below it). 0.2 was
+        # measured too: it emptied 6 of 171 searches and doubled the searches with fewer
+        # than three hits, with no gain in verdicts.
+        self.min_score = float(os.getenv("AGENT_MIN_SCORE", "0.1"))
         # Host cap: in 35 of 159 measured searches all five shown hits came from one host
         # (one ministry's press archive), while research pages from the pool were cut. At
         # most this many hits per host are shown while others are left; the rest fill up.
