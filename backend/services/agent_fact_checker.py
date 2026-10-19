@@ -162,11 +162,13 @@ class AgentFactChecker:
         relevant = [r for r in hits if r.get("score") is None or float(r["score"]) >= self.min_score]
         relevant.sort(key=lambda r: source_tier(r["url"])[0])  # stable: official data first
         shown = relevant[: self.max_results]
+        # Every fetched hit with its fate, to calibrate the window and the floor from runs.
         ctx.deps.hit_log.append({
             "query": query, "fetched": len(raw), "noise": len(raw) - len(hits),
             "low_score": len(hits) - len(relevant),
-            "hits": [(source_tier(r["url"])[1], round(float(r.get("score") or 0.0), 3), r["url"], r in shown)
-                     for r in relevant],
+            "hits": [(source_tier(r["url"])[1], round(float(r.get("score") or 0.0), 3), r["url"],
+                      "shown" if r in shown else "noise" if r not in hits else "low" if r not in relevant else "cut")
+                     for r in raw],
         })
         return shown
 
