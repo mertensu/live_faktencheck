@@ -65,6 +65,8 @@ class _Run:
     searches: int = 0
     seen_urls: set[str] = field(default_factory=set)
     queries: List[str] = field(default_factory=list)
+    # Per search: what came back and what was shown — (tier, score, url) per hit, dropped counts.
+    hit_log: List[dict] = field(default_factory=list)
     asked_more: bool = False
     asked_media: bool = False
     asked_sources: bool = False
@@ -106,6 +108,13 @@ class AgentFactChecker:
         # of 42 measured checks searched twice.
         self.min_searches = int(os.getenv("AGENT_CHECK_MIN_SEARCHES", "2"))
         self.max_results = int(os.getenv("TAVILY_MAX_RESULTS", "5"))
+        # Retrieval window: fetch more hits than the model sees, so that an official or
+        # research page Tavily ranks 6th–10th among the ~109 trusted domains still makes it
+        # into the five shown (the tier sort below decides). Same credits per search.
+        self.fetch_results = max(int(os.getenv("AGENT_FETCH_RESULTS", "10")), self.max_results)
+        # Relevance floor on Tavily's score: a hit below it is dropped before the tier sort,
+        # so an off-topic official page cannot displace a relevant research page.
+        self.min_score = float(os.getenv("AGENT_MIN_SCORE", "0.1"))
         self.prompt_template = load_prompt("agent_fact_checker.md")
 
         self.agent = Agent(
@@ -125,7 +134,8 @@ class AgentFactChecker:
         self.agent.tool(self.presse_hinweis)
         self.agent.output_validator(self._check_output)
         logger.info(f"AgentFactChecker initialized (model={self.model_name}, thinking={thinking}, "
-                    f"rounds={self.max_rounds}, min_searches={self.min_searches})")
+                    f"rounds={self.max_rounds}, min_searches={self.min_searches}, "
+                    f"fetch={self.fetch_results}/show={self.max_results}, min_score={self.min_score})")
 
     def _instructions(self, ctx: RunContext[_Run]) -> str:
         return self.prompt_template.replace("{current_date}", ctx.deps.date)
@@ -142,13 +152,23 @@ class AgentFactChecker:
     async def _search(self, ctx: RunContext[_Run], query: str, domains: list[str] | None) -> list[dict]:
         ctx.deps.queries.append(query if domains is None else f"[presse] {query}")
         try:
-            res = await tavily_search(query, include_domains=domains)
+            res = await tavily_search(query, include_domains=domains, max_results=self.fetch_results)
         except Exception:
             logger.exception("Agent check: search failed for query: %s", query)
             return []
-        hits = [r for r in res.get("results", []) or [] if r.get("url") and not _is_noise(r["url"])]
-        hits.sort(key=lambda r: source_tier(r["url"])[0])  # stable: official data first
-        return hits[: self.max_results]
+        raw = [r for r in res.get("results", []) or [] if r.get("url")]
+        hits = [r for r in raw if not _is_noise(r["url"])]
+        # A hit without a score (older API shapes, tests) is kept.
+        relevant = [r for r in hits if r.get("score") is None or float(r["score"]) >= self.min_score]
+        relevant.sort(key=lambda r: source_tier(r["url"])[0])  # stable: official data first
+        shown = relevant[: self.max_results]
+        ctx.deps.hit_log.append({
+            "query": query, "fetched": len(raw), "noise": len(raw) - len(hits),
+            "low_score": len(hits) - len(relevant),
+            "hits": [(source_tier(r["url"])[1], round(float(r.get("score") or 0.0), 3), r["url"], r in shown)
+                     for r in relevant],
+        })
+        return shown
 
     async def suche(self, ctx: RunContext[_Run], query: str) -> str:
         """Durchsucht vertrauenswürdige deutsche Quellen (Behörden, Statistikämter, Forschung,

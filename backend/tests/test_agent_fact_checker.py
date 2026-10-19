@@ -37,8 +37,20 @@ VERDICT = {"consistency": "hoch", "evidence": "Laut Destatis lebten 2025 rund 83
                        {"url": "https://erfunden.de/x", "title": "Erfunden"}]}
 
 
-async def fake_search(query, search_depth="basic", include_domains=None):
+async def fake_search(query, search_depth="basic", include_domains=None, max_results=None):
     return PRESS if include_domains and "spiegel.de" in include_domains else TRUSTED
+
+
+# Ten hits as Tavily ranks them: research and state pages first, Destatis only 7th, one
+# official hit that is off-topic (low score), one bare homepage.
+WINDOW = {"results": [
+    *({"title": f"Forschung {i}", "url": f"https://www.diw.de/{i}", "content": "…", "score": 0.8 - i / 100}
+      for i in range(6)),
+    {"title": "Destatis", "url": "https://www.destatis.de/bevoelkerung", "content": "83,6 Mio.", "score": 0.6},
+    {"title": "Destatis Startseite", "url": "https://www.destatis.de/", "content": "", "score": 0.5},
+    {"title": "Destatis Abseits", "url": "https://www.destatis.de/abseits", "content": "Gastgewerbe.", "score": 0.05},
+    {"title": "Land", "url": "https://www.statistik-berlin-brandenburg.de/x", "content": "…", "score": 0.4},
+]}
 
 
 def _model(rounds, final=VERDICT, seen=None):
@@ -85,6 +97,22 @@ async def test_one_round_then_verdict(checker):
     assert result["double_check"] is False and result["critique_note"] == ""
     # Press and invented URLs are dropped.
     assert [s["url"] for s in result["sources"]] == ["https://www.destatis.de/a"]
+
+
+async def test_window_promotes_official_hit_and_drops_low_score(checker):
+    """Fetch 10, show 5: the official page ranked 7th is shown first; the off-topic official
+    page (score below the floor) and the bare homepage are not; the rest stays in Tavily order."""
+    seen = []
+    search = AsyncMock(return_value=WINDOW)
+    with patch("backend.services.agent_fact_checker.tavily_search", search), \
+            checker.agent.override(model=_model([THREE], seen=seen)):
+        await checker.check_claim_async("Julia", "Behauptung.")
+    assert search.await_args.kwargs["max_results"] == 10
+    shown = [p.content for p in seen if p.tool_name == "suche"][0]
+    urls = [line.split("URL: ")[1] for line in shown.splitlines() if line.startswith("URL: ")]
+    assert urls == ["https://www.destatis.de/bevoelkerung", "https://www.diw.de/0", "https://www.diw.de/1",
+                    "https://www.diw.de/2", "https://www.diw.de/3"]
+    assert shown.count("[amtlich]") == 1
 
 
 async def test_press_hits_come_without_url_or_title(checker):
