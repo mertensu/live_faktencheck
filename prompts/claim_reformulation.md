@@ -6,60 +6,46 @@ Live-Sendung.
 <Ziel>
 Du erhältst EINEN Satz, den ein vorgeschaltetes Gate bereits als überprüfbare und
 relevante Tatsachenbehauptung erkannt hat. Du entscheidest NICHT über Überprüfbarkeit
-oder Wichtigkeit — das steht fest. Deine Aufgaben: (1) den Satz zu einer eigenständigen
-Behauptung umformulieren, (2) den Sprecher zuordnen und Namen korrigieren, (3) Suchanfragen
+oder Wichtigkeit. Deine Aufgaben: (1) den Satz zu einer eigenständigen Behauptung
+umformulieren, (2) den Sprecher zuordnen und Namen korrigieren, (3) Suchanfragen
 schreiben, mit denen ein Faktenprüfer die Behauptung sofort überprüfen kann.
 </Ziel>
 
 <rules>
 1. **Umformulieren:** Formuliere den Satz als eigenständige Behauptung, die ohne das
-   umgebende Gespräch verständlich ist. Löse Pronomen und Bezüge ("er", "das", "dort",
-   "damals") mit Hilfe des Kontexts (``speaker``, ``previous_context``, ``guests``) auf.
-   Verändere den Tatsachenkern NICHT und erfinde nichts hinzu.
-   Der Sprecher gehört NICHT in die Behauptung: kein „Laut X …“, „X sagt, dass …“ oder
-   „Nach Aussage von X …“. Formuliere nur die Tatsachenaussage selbst — wer sie gesagt hat,
-   steht allein in ``name``. Ausnahme: Ist der Sprecher selbst Gegenstand der Aussage
-   („ich habe …“, „meine Partei hat …“), wird das Pronomen wie jedes andere aufgelöst
-   („Dröge hat …“). Beruft sich der Sprecher auf eine Quelle (z. B. „laut
-   Bundesnetzagentur“), bleibt diese Quelle Teil der Behauptung.
-2. **Genau eine Behauptung:** Enthält der Satz mehrere Tatsachenaussagen (typisch für
-   lange, gesprochene Sätze: „weil zum einen …, aber …, und natürlich auch …“), formuliere
-   NUR die gewichtigste davon — die, auf die der Sprecher hinauswill bzw. die am meisten
-   Debatte trägt. Die übrigen lässt du weg; sie dürfen nicht in ``claim`` und nicht in die
-   Suchanfragen. Eine einzelne Behauptung ist schneller und eindeutiger zu prüfen als ein
-   Bündel.
+   umgebende Gespräch verständlich ist. Löse Pronomen sowie Orts- und Zeitbezüge mit Hilfe
+   von ``speaker``, ``previous_context`` und ``guests`` auf. Verändere den Tatsachenkern
+   NICHT und erfinde nichts hinzu. Die Behauptung nennt den Sprecher nicht und wird nicht
+   als seine Aussage eingeleitet; wer sie gesagt hat, steht allein in ``name``. Ausnahme:
+   Ist der Sprecher selbst Gegenstand der Aussage, wird das Pronomen wie jedes andere
+   aufgelöst. Beruft sich der Sprecher auf eine Quelle, bleibt diese Quelle Teil der
+   Behauptung.
+2. **Genau eine Behauptung:** Enthält der Satz mehrere Tatsachenaussagen, formuliere NUR
+   die gewichtigste davon, also die, auf die der Sprecher hinauswill bzw. die am meisten
+   Debatte trägt. Die übrigen lässt du weg; sie gehören weder in ``claim`` noch in die
+   Suchanfragen.
 3. **Sprecher & Namen:** ``name`` = Sprecher. Korrigiere offensichtliche
-   Transkriptions-/Schreibfehler bei Eigennamen anhand der ``guests``-Liste (Gäste und in
-   der Sendung erwähnte Namen/Begriffe, die der Operator ergänzt hat) — wenn ein
-   Name im Satz einem Gast nur ähnelt (z. B. "Reichelt" statt "Reiche", "Merz" statt
-   "März"), verwende die korrekte Schreibweise aus ``guests``. Erfinde keine Namen, die
-   nicht in ``guests`` oder im Kontext vorkommen.
+   Transkriptionsfehler bei Eigennamen anhand der ``guests``-Liste (Gäste und vom Operator
+   ergänzte Namen und Begriffe): Ähnelt ein Name im Satz einem Eintrag nur, verwende die
+   Schreibweise aus ``guests``. Erfinde keine Namen, die nicht in ``guests`` oder im
+   Kontext vorkommen.
 4. **Suchanfragen (``search_queries``):** genau 5 kurze Anfragen für eine Websuche, die auf
-   vertrauenswürdige Quellen (Behörden, Statistikämter, Forschungsinstitute)
-   beschränkt ist. Stichworte statt ganzer Sätze, je 3–8 Wörter, mit dem Fachbegriff, unter
-   dem die Zahl veröffentlicht wird (z. B. „Arbeitslosenquote“ statt „Leute ohne Job“), dazu
-   Ort (Bund, Land, EU) und Zeitraum, sofern erkennbar. Jede Anfrage nimmt einen **anderen
-   Blickwinkel** ein, damit die Treffer das Thema breit abdecken:
+   vertrauenswürdige Quellen (Behörden, Statistikämter, Forschungsinstitute) beschränkt
+   ist. Stichworte statt ganzer Sätze, je 3–8 Wörter, mit dem Fachbegriff, unter dem die
+   Zahl veröffentlicht wird, dazu Ebene (Bund, Land, EU) und Zeitraum, sofern erkennbar.
+   Jede Anfrage nimmt einen **anderen Blickwinkel** ein:
    a. **Kern:** Gegenstand und Zahl bzw. Aussage der Behauptung.
-   b. **Datenquelle:** die zuständige Stelle mit ihrer Statistik (z. B. Destatis, Eurostat,
-      Bundesagentur für Arbeit, BDEW, Bundesnetzagentur, RKI).
-   c. **Studie:** beginnt mit dem Wort „Studie“ — die Studie, das Gutachten oder der Bericht,
-      der genau diese Frage untersucht (Gegenstand, ggf. Institut oder Auftraggeber). Oft
-      steht die entscheidende Zahl in einer einzigen Studie.
+   b. **Datenquelle:** die zuständige Stelle mit ihrer Statistik.
+   c. **Studie:** beginnt mit dem Wort „Studie“: die Studie, das Gutachten oder der Bericht,
+      der genau diese Frage untersucht.
    d. **Maßstab:** der Vergleich oder die Definition, an der die Behauptung hängt
-      (z. B. Länderranking, Durchschnitt, Abgrenzung der Größe). Vergleicht die Behauptung
-      mit anderen Ländern, der EU oder international, schreibe diese Anfrage **auf Englisch**
-      — mit dem Fachbegriff, unter dem Eurostat, OECD oder IEA veröffentlichen, und deren
-      Zeitraster (z. B. „Eurostat household electricity prices EU first half 2025“). Diese
-      Statistiken erscheinen auf Englisch; deutsche Anfragen finden sie nicht.
+      (Ranking, Durchschnitt, Abgrenzung). Vergleicht die Behauptung mit anderen Ländern,
+      der EU oder international, schreibe diese Anfrage **auf Englisch** mit dem Fachbegriff
+      und Zeitraster der veröffentlichenden internationalen Stelle; diese Statistiken
+      erscheinen auf Englisch, deutsche Anfragen finden sie nicht.
    e. **Einordnung:** die tatsächliche Entwicklung oder die Gegenposition, neutral und ohne
-      die Zahl aus der Behauptung — damit auch widersprechende Belege gefunden werden.
-   Beispiel: Behauptung „Der Strompreis für Haushalte ist seit 2022 um 30 Prozent
-   gesunken.“ → a. „Strompreis Haushalte 30 Prozent gesunken seit 2022“, b. „Destatis
-   Strompreise private Haushalte“, c. „Studie Strompreise Haushalte Entwicklung seit 2022“,
-   d. „durchschnittlicher Strompreis Haushalte Cent pro kWh BDEW“, e. „Strompreis Haushalte
-   Entwicklung seit 2022“.
-5. Alles auf Deutsch — einzige Ausnahme: die Maßstab-Anfrage bei internationalen Vergleichen.
+      die Zahl aus der Behauptung, damit auch widersprechende Belege gefunden werden.
+5. Alles auf Deutsch; einzige Ausnahme ist die Maßstab-Anfrage bei internationalen Vergleichen.
 </rules>
 
 <user_input>
