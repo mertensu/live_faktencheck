@@ -1074,9 +1074,10 @@ class TestHoldUnassigned:
         await _drain(session)
         kw = reformulate.await_args.kwargs
         assert reformulate.await_args.args[0] == "Unsere Steuer setzt ab der ersten Million an."
-        assert kw["speaker"] == "Reichinnek" and kw["guests"] == ["Reichinnek (Linke)"]
+        # The name with the party: whose "unsere" it is.
+        assert kw["speaker"] == "Reichinnek (Linke)" and kw["guests"] == ["Reichinnek (Linke)"]
         # The label's lines in the context carry the name as well.
-        assert kw["previous_context"] == "Reichinnek: Na ja, wenn es darum geht."
+        assert kw["previous_context"] == "Reichinnek (Linke): Na ja, wenn es darum geht."
         assert checker.check_claim_async.await_args.kwargs["claim"] == (
             "Die Vermögensteuer der Linken setzt ab einer Million an.")
         rows = await db.get_fact_checks(session_id="s1")
@@ -1093,15 +1094,17 @@ class TestHoldUnassigned:
 
     async def test_claim_of_a_named_speaker_is_reformulated_right_away(self, db):
         gate, reformulate = self._jev_gate()
-        session = StreamingSession("s1", gate, _fast_checker(), db, speakers=["Reichinnek"])
+        session = StreamingSession("s1", gate, _fast_checker(), db, guests=["Reichinnek (Linke)"],
+                                   speakers=["Reichinnek"])
         await session.assign_speaker("A", "Reichinnek")
         await session.handle_turn("Unsere Steuer setzt ab der ersten Million an. Noch ein Satz.",
                                   end_of_turn=True, speaker_label="A", turn_order=0)
         await session._flush_window()
         await _drain(session)
         assert reformulate.await_count == 1
-        assert reformulate.await_args.kwargs["speaker"] == "Reichinnek"
-        assert len(await db.get_fact_checks(session_id="s1")) == 1
+        assert reformulate.await_args.kwargs["speaker"] == "Reichinnek (Linke)"
+        rows = await db.get_fact_checks(session_id="s1")
+        assert len(rows) == 1 and rows[0]["sprecher"] == "Reichinnek"
         await session.stop()
 
     async def test_unassigned_at_session_end_is_never_reformulated(self, db):

@@ -18,6 +18,7 @@ import logging
 from datetime import datetime
 from difflib import SequenceMatcher
 
+from backend.config import _guest_name
 from backend.lang import OTHER_VOICE, UNCLEAR_SPEAKER
 from backend.utils import build_fact_check_dict, log_text
 from .gate import NO_SPEAKER, split_sentences
@@ -303,6 +304,11 @@ class StreamingSession:
     def _known_names(self) -> list[str]:
         """Guests plus the operator's extra terms: names the reformulator may correct to."""
         return self.guests + [k for k in self.keyterms if k not in self.guests]
+
+    def _with_role(self, name: str | None) -> str | None:
+        """A guest's entry with role ("Reichinnek (Linke)"), else the name: the party tells
+        the reformulator whose "unsere Steuer" it is."""
+        return next((g for g in self.guests if _guest_name(g) == name), name)
 
     def _excluded(self, name: str | None) -> bool:
         """True for a speaker the session excludes from checking (e.g. the moderator)."""
@@ -720,7 +726,7 @@ class StreamingSession:
                 conversation_type=self.conversation_type,
                 excluded_speakers=self.excluded_speakers,
                 previous_context=previous,
-                speaker_names=speaker_names,
+                speaker_names={label: self._with_role(name) for label, name in speaker_names.items()},
                 # Claims of the other labels wait for their name to be reformulated.
                 ready_speakers={label for label, name in speaker_names.items() if name in self.speakers}
                 if self._holding else None,
@@ -858,7 +864,7 @@ class StreamingSession:
         Only the first naming does this; a later rename keeps the wording. Lines of the
         claim's label in the context get the name too. A failed rewrite drops the claim.
         """
-        info, speaker = self._claim_info[cid], self._claim_speakers[cid]
+        info, speaker = self._claim_info[cid], self._with_role(self._claim_speakers[cid])
         label, context = self._claim_labels.get(cid), info["context"]
         if label and context:
             context = "\n".join(f"{speaker}: {ln[len(label) + 2:]}" if ln.startswith(f"{label}: ") else ln
