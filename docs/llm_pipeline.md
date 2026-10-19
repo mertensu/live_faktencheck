@@ -94,10 +94,10 @@ reformulation of the hits; a window's claims arrive once its slowest sentence is
 
 **Step 1b — Reformulation**
 
-**Prompt:** `prompts/claim_reformulation.md`
+**Prompt:** `prompts/claim_reformulation.md` (+ `prompts/claim_search_queries.md` with the fast checker)
 **Schema:** `ReformulationInput`
 **Model:** `GEMINI_MODEL_REFORMULATE` (default `gpt-6-luna@eu` via Requesty, reasoning `medium`)
-**Output:** `ReformulatedClaim` — `(name, claim, search_queries)`
+**Output:** `ReformulatedClaim` — `(name, claim, search_queries)`; with `LIVE_CHECKER=agent` an `ExtractedClaim` — `(name, claim)`, since the agent plans its own searches
 
 ```
 ReformulationInput

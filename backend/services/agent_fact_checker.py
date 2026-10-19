@@ -15,6 +15,7 @@ Rows are stored with check_depth="agent".
 import os
 import json
 import logging
+import re
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Dict, List, Literal
@@ -38,6 +39,9 @@ from .trusted_domains import PRESS_DOMAINS, is_press, source_tier
 logger = logging.getLogger(__name__)
 
 DEFAULT_MODEL = "claude-sonnet-5-5@eu"
+
+# Research vocabulary that must not reach viewers (the prompt bans it; this catches slips).
+_RESEARCH_RE = re.compile(r"Suchtreffer|\bTreffer\b|Auszug|Auszüge|Suchergebnis")
 
 _MONTHS = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August",
            "September", "Oktober", "November", "Dezember"]
@@ -186,12 +190,14 @@ class AgentFactChecker:
             run.asked_sources = True
             raise ModelRetry("Die Quellenliste ist leer. Führe in `sources` die 1–4 Quellen aus den Suchergebnissen "
                              "auf, auf die sich deine Begründung stützt (URL und Titel).")
-        found = sorted(set(_MEDIA_RE.findall(f"{output.evidence} {output.offen} {output.kurz}")))
+        text = f"{output.evidence} {output.offen} {output.kurz}"
+        found = sorted(set(_MEDIA_RE.findall(text)) | set(_RESEARCH_RE.findall(text)))
         if found and not run.asked_media:
             run.asked_media = True
             raise ModelRetry(
                 f"Die Begründung nennt {', '.join(found)}. Formuliere sie neu, ohne Zeitungen, Sender, "
-                "„Presse“ oder „Hinweis“ zu nennen; nenne nur den Urheber einer Angabe (Institut, Person, Behörde).")
+                "„Presse“ oder „Hinweis“ zu nennen und ohne Wörter wie „Treffer“ oder „Auszug“; nenne nur den "
+                "Urheber einer Angabe (Institut, Person, Behörde) und sprich von „den geprüften Quellen“.")
         return output
 
     async def check_claim_async(
