@@ -37,8 +37,20 @@ VERDICT = {"consistency": "hoch", "evidence": "Laut Destatis lebten 2025 rund 83
                        {"url": "https://erfunden.de/x", "title": "Erfunden"}]}
 
 
-async def fake_search(query, search_depth="basic", include_domains=None):
+async def fake_search(query, search_depth="basic", include_domains=None, max_results=None):
     return PRESS if include_domains and "spiegel.de" in include_domains else TRUSTED
+
+
+# Ten hits as Tavily ranks them: research and state pages first, Destatis only 7th, one
+# official hit that is off-topic (low score), one bare homepage.
+WINDOW = {"results": [
+    *({"title": f"Forschung {i}", "url": f"https://www.diw.de/{i}", "content": "…", "score": 0.8 - i / 100}
+      for i in range(6)),
+    {"title": "Destatis", "url": "https://www.destatis.de/bevoelkerung", "content": "83,6 Mio.", "score": 0.6},
+    {"title": "Destatis Startseite", "url": "https://www.destatis.de/", "content": "", "score": 0.5},
+    {"title": "Destatis Abseits", "url": "https://www.destatis.de/abseits", "content": "Gastgewerbe.", "score": 0.05},
+    {"title": "Land", "url": "https://www.statistik-berlin-brandenburg.de/x", "content": "…", "score": 0.4},
+]}
 
 
 def _model(rounds, final=VERDICT, seen=None):
@@ -85,6 +97,48 @@ async def test_one_round_then_verdict(checker):
     assert result["double_check"] is False and result["critique_note"] == ""
     # Press and invented URLs are dropped.
     assert [s["url"] for s in result["sources"]] == ["https://www.destatis.de/a"]
+
+
+async def test_window_promotes_official_hit_and_drops_low_score(checker):
+    """Fetch 10, show 5: the official page ranked 7th is shown first; the off-topic official
+    page (score below the floor) and the bare homepage are not; at most two hits per host
+    while another host waits (the state page), then the skipped ones fill up in order."""
+    seen = []
+    search = AsyncMock(return_value=WINDOW)
+    with patch("backend.services.agent_fact_checker.tavily_search", search), \
+            checker.agent.override(model=_model([THREE], seen=seen)):
+        await checker.check_claim_async("Julia", "Behauptung.")
+    assert search.await_args.kwargs["max_results"] == 10
+    shown = [p.content for p in seen if p.tool_name == "suche"][0]
+    urls = [line.split("URL: ")[1] for line in shown.splitlines() if line.startswith("URL: ")]
+    assert urls == ["https://www.destatis.de/bevoelkerung", "https://www.diw.de/0", "https://www.diw.de/1",
+                    "https://www.statistik-berlin-brandenburg.de/x", "https://www.diw.de/2"]
+    assert shown.count("[amtlich]") == 1
+
+
+async def test_same_page_under_two_urls_is_shown_once(checker):
+    dup = {"results": [
+        {"title": "A", "url": "https://www.agora-energiewende.de/aktuelles/x", "content": "…", "score": 0.9},
+        {"title": "A", "url": "https://agora-energiewende.de/aktuelles/x", "content": "…", "score": 0.9},
+        {"title": "B", "url": "http://www.ise.fraunhofer.de/studie/", "content": "…", "score": 0.8},
+        {"title": "B", "url": "https://www.ise.fraunhofer.de/studie", "content": "…", "score": 0.8},
+        {"title": "C", "url": "https://www.diw.de/c", "content": "…", "score": 0.7},
+    ]}
+    seen = []
+    with patch("backend.services.agent_fact_checker.tavily_search", AsyncMock(return_value=dup)), \
+            checker.agent.override(model=_model([THREE], seen=seen)):
+        await checker.check_claim_async("Julia", "Behauptung.")
+    shown = [p.content for p in seen if p.tool_name == "suche"][0]
+    assert shown.count("URL: ") == 3 and "agora-energiewende.de/aktuelles/x" in shown and "diw.de/c" in shown
+
+
+def test_host_cap_fills_from_one_host_when_no_other_is_left(checker):
+    hits = [{"url": f"https://www.bmas.de/p{i}"} for i in range(7)]
+    assert [h["url"] for h in checker._cap_hosts(hits)] == [h["url"] for h in hits[:5]]
+    mixed = hits[:4] + [{"url": "https://destatis.de/a"}, {"url": "https://www.destatis.de/b"}]
+    assert [h["url"] for h in checker._cap_hosts(mixed)] == [
+        "https://www.bmas.de/p0", "https://www.bmas.de/p1", "https://destatis.de/a",
+        "https://www.destatis.de/b", "https://www.bmas.de/p2"]
 
 
 async def test_press_hits_come_without_url_or_title(checker):
