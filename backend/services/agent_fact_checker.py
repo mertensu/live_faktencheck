@@ -19,6 +19,7 @@ import re
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Dict, List, Literal
+from urllib.parse import urlparse
 
 from pydantic import BaseModel, Field
 from pydantic_ai import Agent, ModelRetry, PromptedOutput, RunContext, UsageLimits
@@ -114,7 +115,13 @@ class AgentFactChecker:
         self.fetch_results = max(int(os.getenv("AGENT_FETCH_RESULTS", "10")), self.max_results)
         # Relevance floor on Tavily's score: a hit below it is dropped before the tier sort,
         # so an off-topic official page cannot displace a relevant research page.
-        self.min_score = float(os.getenv("AGENT_MIN_SCORE", "0.1"))
+        # 0.2: in a 21-claim run every hit below 0.1 was plainly off-topic, and the ~10 % of
+        # shown hits between 0.1 and 0.2 were other states' parliamentary papers.
+        self.min_score = float(os.getenv("AGENT_MIN_SCORE", "0.2"))
+        # Host cap: in 35 of 159 measured searches all five shown hits came from one host
+        # (one ministry's press archive), while research pages from the pool were cut. At
+        # most this many hits per host are shown while others are left; the rest fill up.
+        self.max_per_host = int(os.getenv("AGENT_MAX_PER_HOST", "2"))
         self.prompt_template = load_prompt("agent_fact_checker.md")
 
         self.agent = Agent(
@@ -135,7 +142,8 @@ class AgentFactChecker:
         self.agent.output_validator(self._check_output)
         logger.info(f"AgentFactChecker initialized (model={self.model_name}, thinking={thinking}, "
                     f"rounds={self.max_rounds}, min_searches={self.min_searches}, "
-                    f"fetch={self.fetch_results}/show={self.max_results}, min_score={self.min_score})")
+                    f"fetch={self.fetch_results}/show={self.max_results}, min_score={self.min_score}, "
+                    f"max_per_host={self.max_per_host})")
 
     def _instructions(self, ctx: RunContext[_Run]) -> str:
         return self.prompt_template.replace("{current_date}", ctx.deps.date)
@@ -161,7 +169,7 @@ class AgentFactChecker:
         # A hit without a score (older API shapes, tests) is kept.
         relevant = [r for r in hits if r.get("score") is None or float(r["score"]) >= self.min_score]
         relevant.sort(key=lambda r: source_tier(r["url"])[0])  # stable: official data first
-        shown = relevant[: self.max_results]
+        shown = self._cap_hosts(relevant)
         # Every fetched hit with its fate, to calibrate the window and the floor from runs.
         ctx.deps.hit_log.append({
             "query": query, "fetched": len(raw), "noise": len(raw) - len(hits),
@@ -171,6 +179,20 @@ class AgentFactChecker:
                      for r in raw],
         })
         return shown
+
+    def _cap_hosts(self, hits: list[dict]) -> list[dict]:
+        """The first max_results hits with at most max_per_host per host; if that leaves
+        room, the skipped hits fill it in order."""
+        per_host: Dict[str, int] = {}
+        shown, skipped = [], []
+        for r in hits:
+            host = urlparse(r["url"]).netloc.lower().removeprefix("www.")
+            if per_host.get(host, 0) < self.max_per_host:
+                per_host[host] = per_host.get(host, 0) + 1
+                shown.append(r)
+            else:
+                skipped.append(r)
+        return (shown + skipped)[: self.max_results]
 
     async def suche(self, ctx: RunContext[_Run], query: str) -> str:
         """Durchsucht vertrauenswürdige deutsche Quellen (Behörden, Statistikämter, Forschung,

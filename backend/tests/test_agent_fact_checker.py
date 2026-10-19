@@ -101,7 +101,8 @@ async def test_one_round_then_verdict(checker):
 
 async def test_window_promotes_official_hit_and_drops_low_score(checker):
     """Fetch 10, show 5: the official page ranked 7th is shown first; the off-topic official
-    page (score below the floor) and the bare homepage are not; the rest stays in Tavily order."""
+    page (score below the floor) and the bare homepage are not; at most two hits per host
+    while another host waits (the state page), then the skipped ones fill up in order."""
     seen = []
     search = AsyncMock(return_value=WINDOW)
     with patch("backend.services.agent_fact_checker.tavily_search", search), \
@@ -111,8 +112,17 @@ async def test_window_promotes_official_hit_and_drops_low_score(checker):
     shown = [p.content for p in seen if p.tool_name == "suche"][0]
     urls = [line.split("URL: ")[1] for line in shown.splitlines() if line.startswith("URL: ")]
     assert urls == ["https://www.destatis.de/bevoelkerung", "https://www.diw.de/0", "https://www.diw.de/1",
-                    "https://www.diw.de/2", "https://www.diw.de/3"]
+                    "https://www.statistik-berlin-brandenburg.de/x", "https://www.diw.de/2"]
     assert shown.count("[amtlich]") == 1
+
+
+def test_host_cap_fills_from_one_host_when_no_other_is_left(checker):
+    hits = [{"url": f"https://www.bmas.de/p{i}"} for i in range(7)]
+    assert [h["url"] for h in checker._cap_hosts(hits)] == [h["url"] for h in hits[:5]]
+    mixed = hits[:4] + [{"url": "https://destatis.de/a"}, {"url": "https://www.destatis.de/b"}]
+    assert [h["url"] for h in checker._cap_hosts(mixed)] == [
+        "https://www.bmas.de/p0", "https://www.bmas.de/p1", "https://destatis.de/a",
+        "https://www.destatis.de/b", "https://www.bmas.de/p2"]
 
 
 async def test_press_hits_come_without_url_or_title(checker):
