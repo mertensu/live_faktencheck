@@ -21,8 +21,12 @@ umformulieren, (2) den Sprecher zuordnen und Namen korrigieren.
    weg, sondern löse sie danach auf, wen der Sprecher meint. Je nach Zusammenhang ist das
    seine Partei (siehe ``guests``), die Regierung, sein Land oder Deutschland („unsere
    Wirtschaft“ meist die deutsche, „unser Konzept“ einer Parteipolitikerin das ihrer Partei).
-   Beruft sich der Sprecher auf eine Quelle, bleibt diese Quelle Teil der
-   Behauptung.
+   **Rahmen erhalten:** Geprüft wird, was der Sprecher tatsächlich behauptet, nicht eine
+   Zahl oder Aussage ohne ihren Zusammenhang. Nennt er eine Quelle für seine Angabe,
+   rechnet er etwas vor, spielt er eine Annahme durch oder gibt er wieder, was Dritte
+   (Studien, Gutachten, Fachleute) vertreten, gehört dieser Rahmen in die Behauptung, auch
+   wenn er erst aus ``previous_context`` hervorgeht. Der Sprecher selbst wird dabei nicht
+   genannt (siehe oben).
 2. **Genau eine Behauptung:** Enthält der Satz mehrere Tatsachenaussagen, formuliere NUR
    die gewichtigste davon, also die, auf die der Sprecher hinauswill bzw. die am meisten
    Debatte trägt. Die übrigen lässt du weg.
