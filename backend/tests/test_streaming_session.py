@@ -672,6 +672,25 @@ class TestFragments:
         gated = "\n".join(windows)
         assert "B: Und dann haben wir" in gated and "A: Was sagen Sie dazu? Nichts." in gated
 
+    async def test_fragment_joins_a_continuation_starting_with_a_number(self, db):
+        gate, windows = _recording_gate()
+        session = StreamingSession("s1", gate, _fast_checker(), db)
+        await session.handle_turn("Eins. Wenn man das zurückkauft, dann zahlt man", end_of_turn=True,
+                                  speaker_label="B", turn_order=1)
+        await session.handle_turn("550 Euro pro Quadratmeter. Zwei.", end_of_turn=False, turn_order=2)
+        await session.stop()
+        assert any("dann zahlt man 550 Euro pro Quadratmeter." in w for w in windows)
+
+    async def test_fragment_joins_the_same_speakers_next_turn(self, db):
+        gate, windows = _recording_gate()
+        session = StreamingSession("s1", gate, _fast_checker(), db)
+        await session.handle_turn("Eins. Die Menschen haben hohe Mieten, weil der", end_of_turn=True,
+                                  speaker_label="B", turn_order=1)
+        await session.handle_turn("Leerstand niedrig ist. Zwei.", end_of_turn=True,
+                                  speaker_label="B", turn_order=2)
+        await session.stop()
+        assert any("B: Die Menschen haben hohe Mieten, weil der Leerstand niedrig ist." in w for w in windows)
+
     async def test_waiting_fragment_is_gated_at_stop(self, db):
         gate, windows = _recording_gate()
         session = StreamingSession("s1", gate, _fast_checker(), db)
