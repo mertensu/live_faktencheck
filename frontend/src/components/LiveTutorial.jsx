@@ -183,8 +183,8 @@ function ResultsStep({ onSolved }) {
         <span className="live-tutorial-chip verdict-unklar">orange</span> unklar.
       </p>
       <p className="live-tutorial-task">
-        Klicken Sie auf eine Markierung. Sie sehen eine Kurzfassung. Für das ganze Ergebnis mit
-        Begründung und Quellen klicken Sie oben rechts auf <ExpandIcon /> <em>Mehr anzeigen</em>.
+        Klicken Sie auf eine Markierung, um die Kurzfassung der Begründung samt Quellen zu sehen.
+        Für eine ausführlichere Begründung klicken Sie oben rechts auf <ExpandIcon /> <em>Mehr anzeigen</em>.
         Eine Behauptung, die so nicht gefallen ist (etwa ein Hörfehler), verwerfen Sie unten links
         mit dem Papierkorb.
       </p>
