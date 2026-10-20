@@ -112,7 +112,7 @@ EPISODES: dict[str, Episode] = {
             "Bernd Baumann (AfD, Erster Parlamentarischer Geschäftsführer der AfD-Bundestagsfraktion, Ökonom, MdB seit 2017)",
         ],
         context="Hintergrund Iran-Krieg: Am 28. Februar 2026 griffen USA und Israel den Iran mit rund 900 Angriffen an. Irans Oberster Führer Ali Chamenei sowie mehrere Militärführer wurden getötet. Iran blockierte die Straße von Hormus und startete Gegenschläge auf Israel und US-Ziele in der Region. Über 1.900 Tote im Iran, der Konflikt belastet globale Energiemärkte und treibt Spritpreise hoch. Hintergrund Steuern: Baumann (AfD) lehnt Steuererhöhungen ab, fordert Einsparungen bei Migration und Klima, langfristig einheitlicher Steuersatz. Stegner (SPD) besteht auf Besteuerung nach Leistungsfähigkeit und höheren Erbschaftssteuern für große Vermögen. SPD-Krise: Stegner sieht strukturelle Defizite jenseits von Personalfragen, kein 'Messias' in Sicht. Zusammenarbeit mit demokratiefeindlichen Kräften ausgeschlossen.",
-        publish=True,
+        publish=False,
     ),
 
     "maischberger-2025-09-19": Episode(
