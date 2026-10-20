@@ -28,6 +28,14 @@ describe('Verwerfen', () => {
     expect(screen.queryByRole('button', { name: 'Check verwerfen' })).toBeNull()
   })
 
+  it('in the guide the button is shown but does nothing', () => {
+    const { container } = render(<LiveTranscript live={live} inertDiscard />)
+    openMark(container)
+    fireEvent.click(screen.getByRole('button', { name: 'Check verwerfen' }))
+    expect(container.querySelector('[data-claim-id="7"]')).not.toBeNull()
+    expect(setFactCheckDiscarded).not.toHaveBeenCalled()
+  })
+
   it('hides the mark at once and undo brings it back', async () => {
     const { container } = render(<LiveTranscript live={live} canDiscard />)
     openMark(container)

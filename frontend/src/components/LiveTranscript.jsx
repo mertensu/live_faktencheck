@@ -322,8 +322,9 @@ function ClaimPopover({ claim, speaker, anchor, onEnter, onLeave, onExpand, onDi
 // just that passage to a guest (diarization sometimes folds a question into an answer).
 // Only voices given to a guest are checked; "Andere Stimme" marks a clip voice as none.
 // follow: keep the newest line in view (off in the guide, whose dialog scrolls, not the page).
-// canDiscard: the session owner may hide a check ("Verwerfen"); off in the guide.
-export function LiveTranscript({ live, speakers = [], follow = true, canDiscard = false }) {
+// canDiscard: the session owner may hide a check ("Verwerfen"). inertDiscard: show the
+// button without effect (the guide, whose made-up claims have no rows).
+export function LiveTranscript({ live, speakers = [], follow = true, canDiscard = false, inertDiscard = false }) {
   const { status, transcript = [], partial = '', claims = [], speakerMap = {}, assignSpeaker, assignPassage } = live || {}
   const rootRef = useRef(null)
   const endRef = useRef(null)
@@ -511,7 +512,7 @@ export function LiveTranscript({ live, speakers = [], follow = true, canDiscard 
           onEnter={cancelClose}
           onLeave={scheduleClose}
           onExpand={(d) => { setOpen(null); setDetail(d) }}
-          onDiscard={canDiscard ? () => { setOpen(null); discard(openClaim.id) } : null}
+          onDiscard={canDiscard ? () => { setOpen(null); discard(openClaim.id) } : inertDiscard ? () => {} : null}
         />
       )}
       {detail && <ClaimDetailPanel detail={detail} onClose={() => setDetail(null)} />}

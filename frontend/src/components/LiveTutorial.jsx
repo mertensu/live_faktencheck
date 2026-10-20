@@ -185,9 +185,11 @@ function ResultsStep({ onSolved }) {
       <p className="live-tutorial-task">
         Klicken Sie auf eine Markierung. Sie sehen eine Kurzfassung. Für das ganze Ergebnis mit
         Begründung und Quellen klicken Sie oben rechts auf <ExpandIcon /> <em>Mehr anzeigen</em>.
+        Eine Behauptung, die so nicht gefallen ist (etwa ein Hörfehler), verwerfen Sie unten links
+        mit dem Papierkorb.
       </p>
       <div onClickCapture={onClickCapture}>
-        <LiveTranscript live={live} speakers={SPEAKERS} follow={false} />
+        <LiveTranscript live={live} speakers={SPEAKERS} follow={false} inertDiscard />
       </div>
       {opened && !expanded && (
         <p className="live-tutorial-hint" role="status">
@@ -197,8 +199,7 @@ function ResultsStep({ onSolved }) {
       {expanded && (
         <Done>
           So öffnen Sie im Live-Check jedes Ergebnis: Kurzfassung per Klick auf die Markierung,
-          alles Weitere über <ExpandIcon />. Eine Behauptung, die so nicht gefallen ist (etwa ein
-          Hörfehler), verwerfen Sie unten links mit dem Papierkorb.
+          alles Weitere über <ExpandIcon />.
         </Done>
       )}
       <p className="live-tutorial-tip">
