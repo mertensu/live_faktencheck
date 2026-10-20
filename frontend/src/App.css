@@ -1301,7 +1301,7 @@
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 .live-bubble-name { font-size: 0.78rem; font-weight: 700; color: #4b5563; margin-bottom: 0.1rem; }
-.live-bubble-line { margin: 0; }
+.live-bubble-line, .live-bubble-text { margin: 0; }
 
 /* Bubble name as a button (live, operator): assign the diarization label to a guest. */
 .live-speaker-picker { position: relative; display: inline-block; }
@@ -1359,7 +1359,6 @@
 .live-passage-menu-follow { border-top: 1px solid var(--border-light); margin-top: 0.3rem; padding: 0.4rem 0.8rem 0.2rem; font-size: 0.8rem; color: var(--text-secondary); }
 .live-passage-menu-follow label { cursor: pointer; }
 .live-passage-menu-head { padding: 0.2rem 0.8rem 0.3rem; color: var(--text-secondary); font-size: 0.75rem; }
-.live-bubble-line + .live-bubble-line { margin-top: 0.3rem; }
 
 .live-bubble.spk-none { background: #eceff3; }
 .live-bubble.spk-none .live-bubble-name { color: #6b7280; font-style: italic; }

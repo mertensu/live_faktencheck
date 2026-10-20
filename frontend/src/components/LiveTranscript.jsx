@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { Fragment, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Begruendung, ClaimDetailPanel, DiscardButton, ExpandButton } from './ClaimCard'
 import { useDiscard } from '../hooks/useDiscard'
 import { nameAt, OTHER_VOICE } from '../hooks/useAudioStream'
@@ -450,11 +450,17 @@ export function LiveTranscript({ live, speakers = [], follow = true, canDiscard 
       {canAssign && g.label
         ? <SpeakerPicker label={g.label} fromTurn={g.fromTurn} title={g.title} current={g.name} speakers={speakers} onPick={assignSpeaker} />
         : <div className="live-bubble-name">{g.title}</div>}
-      {g.lines.map((line) => (
-        <p key={line.index} className="live-bubble-line" data-index={line.index}>
-          {renderLine(line.text, claimsBySource, markHandlers, marked)}
-        </p>
-      ))}
+      {/* One running paragraph: a turn ends at a pause, not where a paragraph would. */}
+      <p className="live-bubble-text">
+        {g.lines.map((line, li) => (
+          <Fragment key={line.index}>
+            {li > 0 && ' '}
+            <span className="live-bubble-line" data-index={line.index}>
+              {renderLine(line.text, claimsBySource, markHandlers, marked)}
+            </span>
+          </Fragment>
+        ))}
+      </p>
     </div>
   ))
   // Claims can be found before the turn ends (early sentences), so mark the interim line too.

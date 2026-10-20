@@ -183,10 +183,14 @@ def _is_complete(sentence: str) -> bool:
     return bool(re.search(r"[.!?…][\"'“”»)]*\s*$", sentence))
 
 
-def _continues(sentence: str) -> bool:
-    """True if a sentence starts in lower case: the rest of an earlier, unfinished one."""
-    m = re.search(r"[^\W\d_]", sentence)
-    return bool(m) and m.group().islower()
+def _continues(sentence: str, same_speaker: bool = False) -> bool:
+    """True if a sentence is the rest of an earlier, unfinished one: it starts in lower case
+    or with a number, or the same speaker goes on (German nouns are capitalized, so case
+    alone misses most continuations)."""
+    if same_speaker:
+        return True
+    m = re.search(r"[^\W_]", sentence)
+    return bool(m) and (m.group().isdigit() or m.group().islower())
 
 
 def _count_sentences(text: str) -> int:
@@ -634,12 +638,13 @@ class StreamingSession:
             self._sentence_count += _count_sentences(seg_text)
 
     def _join_carry(self, todo: list[tuple[str, str | None]]) -> list[tuple[str, str | None]]:
-        """Put a waiting fragment in front of the first sentence if that continues it
-        (starts in lower case); otherwise the fragment is gated on its own, as it was."""
+        """Put a waiting fragment in front of the first sentence if that continues it (see
+        ``_continues``); otherwise the fragment is gated on its own, as it was."""
         carry, self._carry = self._carry, None
         if carry is None:
             return todo
-        if todo and _continues(todo[0][0]):
+        same_speaker = bool(todo) and carry["speaker"] is not None and todo[0][1] == carry["speaker"]
+        if todo and _continues(todo[0][0], same_speaker):
             sentence, label = todo[0]
             return [(f"{carry['text']} {sentence}", label)] + todo[1:]
         self._buffer.append({"turn_order": carry["turn_order"], "speaker": carry["speaker"],
