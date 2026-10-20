@@ -1,5 +1,6 @@
 import { Fragment, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { Begruendung, ClaimDetailPanel, ExpandButton } from './ClaimCard'
+import { Begruendung, ClaimDetailPanel, DiscardButton, ExpandButton } from './ClaimCard'
+import { useDiscard } from '../hooks/useDiscard'
 import { nameAt, OTHER_VOICE } from '../hooks/useAudioStream'
 
 // Verdict → short label + modifier class for the badge and the transcript highlight.
@@ -235,7 +236,7 @@ function renderLine(text, claimsBySource, handlers, marked) {
   return out
 }
 
-function ClaimPopover({ claim, speaker, anchor, onEnter, onLeave, onExpand }) {
+function ClaimPopover({ claim, speaker, anchor, onEnter, onLeave, onExpand, onDiscard }) {
   const ref = useRef(null)
   const [pos, setPos] = useState(null)
 
@@ -304,6 +305,11 @@ function ClaimPopover({ claim, speaker, anchor, onEnter, onLeave, onExpand }) {
           })}
         </ul>
       )}
+      {onDiscard && (
+        <div className="live-popover-foot">
+          <DiscardButton onClick={onDiscard} />
+        </div>
+      )}
     </div>
   )
 }
@@ -316,7 +322,9 @@ function ClaimPopover({ claim, speaker, anchor, onEnter, onLeave, onExpand }) {
 // just that passage to a guest (diarization sometimes folds a question into an answer).
 // Only voices given to a guest are checked; "Andere Stimme" marks a clip voice as none.
 // follow: keep the newest line in view (off in the guide, whose dialog scrolls, not the page).
-export function LiveTranscript({ live, speakers = [], follow = true }) {
+// canDiscard: the session owner may hide a check ("Verwerfen"). inertDiscard: show the
+// button without effect (the guide, whose made-up claims have no rows).
+export function LiveTranscript({ live, speakers = [], follow = true, canDiscard = false, inertDiscard = false }) {
   const { status, transcript = [], partial = '', claims = [], speakerMap = {}, assignSpeaker, assignPassage } = live || {}
   const rootRef = useRef(null)
   const endRef = useRef(null)
@@ -327,6 +335,7 @@ export function LiveTranscript({ live, speakers = [], follow = true }) {
   const [detail, setDetail] = useState(null) // the full result, in ClaimDetailPanel
   const [passage, setPassage] = useState(null) // marked text awaiting a speaker: { parts, left, top }
   const closePassage = useCallback(() => setPassage(null), [])
+  const { hidden, discard, toast } = useDiscard()
 
   const active = status === 'connecting' || status === 'streaming'
   const hasContent = transcript.length > 0 || partial || claims.length > 0
@@ -397,7 +406,7 @@ export function LiveTranscript({ live, speakers = [], follow = true }) {
 
   // Latest claim wins per source sentence (a result overwrites its own processing entry).
   const claimsBySource = {}
-  for (const c of claims) if (c.source) claimsBySource[c.source] = c
+  for (const c of claims) if (c.source && !hidden.has(c.id)) claimsBySource[c.source] = c
 
   // Colour per speaker, sticky for the session. A label keeps its colour when it gets a
   // name (the name inherits it), so assigning doesn't repaint the conversation.
@@ -464,7 +473,7 @@ export function LiveTranscript({ live, speakers = [], follow = true }) {
   )
   // A claim whose sentence isn't (or no longer) visible verbatim still needs a way in.
   const orphans = Object.values(claimsBySource).filter((c) => !marked.has(c.id))
-  const openClaim = claims.find((c) => c.id === openId)
+  const openClaim = claims.find((c) => c.id === openId && !hidden.has(c.id))
 
   return (
     <div className="live-transcript" aria-live="polite" ref={rootRef}>
@@ -509,9 +518,11 @@ export function LiveTranscript({ live, speakers = [], follow = true }) {
           onEnter={cancelClose}
           onLeave={scheduleClose}
           onExpand={(d) => { setOpen(null); setDetail(d) }}
+          onDiscard={canDiscard ? () => { setOpen(null); discard(openClaim.id) } : inertDiscard ? () => {} : null}
         />
       )}
       {detail && <ClaimDetailPanel detail={detail} onClose={() => setDetail(null)} />}
+      {toast}
     </div>
   )
 }

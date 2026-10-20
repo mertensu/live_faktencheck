@@ -141,3 +141,16 @@ export async function deleteSession(sessionId) {
   }
   return data
 }
+
+// Hide one of the own session's checks from every view ("Verwerfen"), or bring it back
+// (owner code only). The row stays in the database.
+export async function setFactCheckDiscarded(id, discarded) {
+  const res = await fetch(`${BACKEND_URL}/api/fact-checks/${id}/discard`, {
+    method: 'POST', headers: authHeaders(), body: JSON.stringify({ discarded }),
+  })
+  const data = await safeJsonParse(res, 'setFactCheckDiscarded')
+  if (!res.ok) {
+    throw new Error(data?.detail || `setFactCheckDiscarded failed (${res.status})`)
+  }
+  return data
+}

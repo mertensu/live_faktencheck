@@ -10,6 +10,12 @@ const SPEAKERS = [HOST, GUEST_B, GUEST_C]
 
 const line = (label, turnOrder, text) => ({ label, turnOrder, text })
 
+// Real pages, titled as practice sources, so the result shows its sources as on air.
+const TUTORIAL_SOURCES = [
+  { url: 'https://www.deutsche-rentenversicherung.de', title: 'Quelle A (Übung): Deutsche Rentenversicherung' },
+  { url: 'https://www.destatis.de', title: 'Quelle B (Übung): Statistisches Bundesamt' },
+]
+
 const SCENES = {
   names: {
     transcript: [
@@ -43,6 +49,7 @@ const SCENES = {
         source: 'In Deutschland beziehen rund 21 Millionen Menschen eine Rente.',
         kurzfassung: 'Übungsbeispiel: Die Zahl passt zur Größenordnung der amtlichen Statistik.',
         begruendung: '**Was die Quellen sagen**\n\nÜbungsbeispiel: Im echten Check steht hier die ausführliche Begründung mit Zahlen und ihrer Herkunft.\n\n**Was offen bleibt**\n\nHier stehen Einschränkungen, etwa ob eine Zahl gerundet ist oder sich auf ein anderes Jahr bezieht. Darunter folgen die Quellen.',
+        quellen: TUTORIAL_SOURCES,
       },
       {
         id: 'tut-2', speaker: GUEST_B, label: 'B', status: 'done', consistency: 'niedrig',
@@ -50,6 +57,7 @@ const SCENES = {
         source: 'Und die Renten sind seit 2010 real gesunken.',
         kurzfassung: 'Übungsbeispiel: Die Belege sprechen gegen die Aussage.',
         begruendung: '**Was die Quellen sagen**\n\nÜbungsbeispiel: Im echten Check steht hier die ausführliche Begründung mit Zahlen und ihrer Herkunft.\n\n**Was offen bleibt**\n\nHier stehen Einschränkungen, etwa ob eine Zahl gerundet ist oder sich auf ein anderes Jahr bezieht. Darunter folgen die Quellen.',
+        quellen: TUTORIAL_SOURCES,
       },
     ],
   },
@@ -183,11 +191,13 @@ function ResultsStep({ onSolved }) {
         <span className="live-tutorial-chip verdict-unklar">orange</span> unklar.
       </p>
       <p className="live-tutorial-task">
-        Klicken Sie auf eine Markierung. Sie sehen eine Kurzfassung. Für das ganze Ergebnis mit
-        Begründung und Quellen klicken Sie oben rechts auf <ExpandIcon /> <em>Mehr anzeigen</em>.
+        Klicken Sie auf eine Markierung, um die Kurzfassung der Begründung samt Quellen zu sehen.
+        Für eine ausführlichere Begründung klicken Sie oben rechts auf <ExpandIcon /> <em>Mehr anzeigen</em>.
+        Eine Behauptung, die so nicht gefallen ist (etwa ein Hörfehler), verwerfen Sie unten links
+        mit dem Papierkorb.
       </p>
       <div onClickCapture={onClickCapture}>
-        <LiveTranscript live={live} speakers={SPEAKERS} follow={false} />
+        <LiveTranscript live={live} speakers={SPEAKERS} follow={false} inertDiscard />
       </div>
       {opened && !expanded && (
         <p className="live-tutorial-hint" role="status">

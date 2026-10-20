@@ -1448,6 +1448,27 @@
 .claim-expand:hover, .claim-expand:focus-visible { background: #eff6ff; border-color: #93c5fd; }
 .fcs-top .claim-expand { margin-left: 0; }
 
+/* "Verwerfen": small and grey, bottom left — away from the expand button top right. */
+.claim-discard {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px; padding: 0;
+  border: 1px solid transparent; border-radius: 6px;
+  background: none; color: #9ca3af; cursor: pointer;
+}
+.claim-discard:hover, .claim-discard:focus-visible { color: #b91c1c; background: #fef2f2; border-color: #fecaca; }
+.live-popover-foot { display: flex; margin-top: 0.4rem; }
+.fcs-detail-foot { display: flex; margin-top: 0.5rem; }
+.discard-toast {
+  position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); z-index: 1200;
+  display: flex; align-items: center; gap: 0.8rem;
+  max-width: calc(100vw - 32px); padding: 0.55rem 0.9rem;
+  border-radius: 8px; background: #1f2937; color: #f9fafb; font-size: 0.88rem;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+}
+.discard-toast-undo {
+  padding: 0; border: none; background: none; color: #93c5fd; font: inherit; font-weight: 600; cursor: pointer;
+}
+
 /* Full result: slides in from the right, full screen on a phone. */
 .claim-detail-backdrop {
   position: fixed; inset: 0; z-index: 1100;

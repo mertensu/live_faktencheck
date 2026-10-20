@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { getConsistencyColor, Begruendung, ClaimDetailPanel, ExpandButton, stripDateAnnotation } from './ClaimCard'
+import { getConsistencyColor, Begruendung, ClaimDetailPanel, DiscardButton, ExpandButton, stripDateAnnotation } from './ClaimCard'
+import { useDiscard } from '../hooks/useDiscard'
 
 // Live "Fokus-Stream": fact-checks as one chronological stream, newest on top in
 // full focus, older ones fading slightly downward. Tapping a card brings it into
@@ -34,7 +35,9 @@ const hhmm = (ts) => {
 
 const lastName = (name) => (name || '').trim().split(/\s+/).slice(-1)[0] || name
 
-export function FactCheckStream({ factChecks }) {
+// canDiscard: the session owner may hide a check ("Verwerfen", in the opened card).
+export function FactCheckStream({ factChecks, canDiscard = false }) {
+  const { hidden, discard, toast } = useDiscard()
   const [openKey, setOpenKey] = useState(null)
   const [detail, setDetail] = useState(null) // the full result, in ClaimDetailPanel
   const [speakers, setSpeakers] = useState(() => new Set())
@@ -52,8 +55,8 @@ export function FactCheckStream({ factChecks }) {
 
   const ordered = useMemo(() => {
     const byTime = (a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0)
-    return [...(factChecks || [])].sort(oldestFirst ? (a, b) => byTime(b, a) : byTime)
-  }, [factChecks, oldestFirst])
+    return (factChecks || []).filter((fc) => !hidden.has(fc.id)).sort(oldestFirst ? (a, b) => byTime(b, a) : byTime)
+  }, [factChecks, oldestFirst, hidden])
 
   // Speaker filter options in order of first appearance.
   const speakerNames = useMemo(() => {
@@ -300,6 +303,9 @@ export function FactCheckStream({ factChecks }) {
                           })}
                         </ul>
                       )}
+                      {canDiscard && fc.id != null && (
+                        <div className="fcs-detail-foot"><DiscardButton onClick={() => discard(fc.id)} /></div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -310,6 +316,7 @@ export function FactCheckStream({ factChecks }) {
         </div>
       )}
       {detail && <ClaimDetailPanel detail={detail} onClose={() => setDetail(null)} />}
+      {toast}
     </div>
   )
 }

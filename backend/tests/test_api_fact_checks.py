@@ -274,6 +274,50 @@ class TestDeleteFactCheckEndpoint:
         assert response.status_code == 404
         assert await db.get_fact_check_by_id(fc_id) is not None
 
+    async def test_discard_hides_and_restore_brings_back(self, client):
+        """A discarded check leaves every list but stays in the DB; restoring undoes it."""
+        db = state.get_db()
+        sid = (await client.post("/api/sessions", json={"title": "T"})).json()["session_id"]
+        fc_id = await db.add_fact_check({
+            "behauptung": "x", "consistency": "niedrig", "timestamp": "2024-01-01T10:00:00", "session_id": sid,
+        })
+
+        response = await client.post(f"/api/fact-checks/{fc_id}/discard", json={"discarded": True})
+
+        assert response.status_code == 200
+        assert (await client.get(f"/api/fact-checks?session_id={sid}")).json() == []
+        assert (await db.get_fact_check_by_id(fc_id))["discarded"] is True
+        assert (await db.list_sessions_by_owner("test-code"))[0]["claims"] == 0
+
+        await client.post(f"/api/fact-checks/{fc_id}/discard", json={"discarded": False})
+        assert [fc["id"] for fc in (await client.get(f"/api/fact-checks?session_id={sid}")).json()] == [fc_id]
+
+    async def test_discard_survives_a_later_result(self, client):
+        """A check finishing after the discard writes its result but stays hidden."""
+        db = state.get_db()
+        sid = (await client.post("/api/sessions", json={"title": "T"})).json()["session_id"]
+        fc = {"behauptung": "x", "timestamp": "2024-01-01T10:00:00", "session_id": sid, "status": "processing"}
+        fc_id = await db.add_fact_check(fc)
+        await client.post(f"/api/fact-checks/{fc_id}/discard", json={"discarded": True})
+
+        await db.update_fact_check(fc_id, {**fc, "status": "", "consistency": "hoch"})
+
+        assert (await client.get(f"/api/fact-checks?session_id={sid}")).json() == []
+        assert (await db.get_fact_check_by_id(fc_id))["consistency"] == "hoch"
+
+    async def test_discard_fact_check_of_other_owner_is_404(self, client):
+        db = state.get_db()
+        await db.add_code("other-code", "other")
+        sid = (await client.post(
+            "/api/sessions", json={"title": "T"}, headers={"X-Access-Code": "other-code"},
+        )).json()["session_id"]
+        fc_id = await db.add_fact_check({"behauptung": "x", "timestamp": "2024-01-01T10:00:00", "session_id": sid})
+
+        response = await client.post(f"/api/fact-checks/{fc_id}/discard", json={"discarded": True})
+
+        assert response.status_code == 404
+        assert (await db.get_fact_check_by_id(fc_id))["discarded"] is False
+
     async def test_delete_fact_check_of_ownerless_session_is_404(self, client):
         """Legacy rows (no session row / no owner) can't be deleted via the API."""
         db = state.get_db()
