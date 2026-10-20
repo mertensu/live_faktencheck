@@ -77,6 +77,11 @@ class EpisodesResponse(BaseModel):
     episodes: List[dict]
 
 
+class DiscardRequest(BaseModel):
+    """Hide a fact-check (``discarded=True``) or bring it back."""
+    discarded: bool = True
+
+
 class FactCheckStoredResponse(BaseModel):
     """Response for successful fact-check storage."""
     status: str

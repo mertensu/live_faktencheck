@@ -219,7 +219,7 @@ export function FactCheckPage({ showName, showKey, episodeKey, asViewer = false 
     if (factChecks.length > 0 && !showStartPanel) {
       return (
         <div className="review-view">
-          <FactCheckStream factChecks={factChecks} />
+          <FactCheckStream factChecks={factChecks} canDiscard={!isViewer} />
         </div>
       )
     }
@@ -300,7 +300,7 @@ export function FactCheckPage({ showName, showKey, episodeKey, asViewer = false 
 
       {tutorialOpen && !isViewer && !notFound && <LiveTutorial onClose={closeTutorial} />}
       <main className="main-content">
-        {showLiveTranscript && <LiveTranscript live={liveStream} speakers={speakers} />}
+        {showLiveTranscript && <LiveTranscript live={liveStream} speakers={speakers} canDiscard />}
         <BackendErrorDisplay error={backendError} />
         {/* In the live view, results open from the transcript marks, not as a list below. */}
         {!showLiveTranscript && renderResults()}

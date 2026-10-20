@@ -125,6 +125,9 @@ class Database:
             "ALTER TABLE fact_checks ADD COLUMN search_queries TEXT NOT NULL DEFAULT '[]'",
             # Short version of begruendung (agent check); '' = only the long one.
             "ALTER TABLE fact_checks ADD COLUMN kurzfassung TEXT NOT NULL DEFAULT ''",
+            # Hidden by the session owner ("Verwerfen"); kept for review. Its own column so
+            # a check finishing later (which writes status) can't bring it back.
+            "ALTER TABLE fact_checks ADD COLUMN discarded INTEGER NOT NULL DEFAULT 0",
         ]:
             try:
                 await self.db.execute(migration)
@@ -239,8 +242,9 @@ class Database:
 
     async def get_fact_checks(self, session_id: str | None = None, status: str | None = None) -> list[dict]:
         """Return fact-checks, optionally filtered by session_id and/or status.
-        Excludes discarded claims by default (unless status='discarded' is requested)."""
-        conditions = []
+        Excludes discarded claims by default (unless status='discarded' is requested);
+        claims the owner discarded are never returned."""
+        conditions = ["discarded = 0"]
         params: list = []
         if session_id:
             conditions.append("session_id = ?")
@@ -285,6 +289,14 @@ class Database:
         row = await cursor.fetchone()
         return row[0]
 
+    async def set_discarded(self, fact_check_id: int, discarded: bool) -> bool:
+        """Hide (or bring back) a fact-check without touching its content."""
+        cursor = await self.db.execute(
+            "UPDATE fact_checks SET discarded = ? WHERE id = ?", (int(discarded), fact_check_id)
+        )
+        await self.db.commit()
+        return cursor.rowcount > 0
+
     async def delete_fact_check(self, fact_check_id: int) -> bool:
         """Delete a fact-check by ID. Returns True if a row was deleted."""
         cursor = await self.db.execute(
@@ -310,6 +322,7 @@ class Database:
             "check_depth": row["check_depth"],
             "search_queries": json.loads(row["search_queries"]),
             "kurzfassung": row["kurzfassung"],
+            "discarded": bool(row["discarded"]),
         }
 
     # =========================================================================
@@ -389,7 +402,7 @@ class Database:
                    COALESCE(SUM(LOWER(f.consistency) = 'unklar'), 0)  AS unklar
             FROM sessions s
             LEFT JOIN fact_checks f
-              ON f.session_id = s.session_id AND f.status != 'discarded'
+              ON f.session_id = s.session_id AND f.status != 'discarded' AND f.discarded = 0
             WHERE s.owner_code = ?
             GROUP BY s.session_id
             ORDER BY s.created_at DESC

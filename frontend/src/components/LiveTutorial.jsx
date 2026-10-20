@@ -197,7 +197,8 @@ function ResultsStep({ onSolved }) {
       {expanded && (
         <Done>
           So öffnen Sie im Live-Check jedes Ergebnis: Kurzfassung per Klick auf die Markierung,
-          alles Weitere über <ExpandIcon />.
+          alles Weitere über <ExpandIcon />. Eine Behauptung, die so nicht gefallen ist (etwa ein
+          Hörfehler), verwerfen Sie unten links mit dem Papierkorb.
         </Done>
       )}
       <p className="live-tutorial-tip">

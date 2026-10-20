@@ -276,6 +276,9 @@ class StreamingSession:
         # AssemblyAI ends a turn at a pause, sometimes mid-sentence. Such a trailing fragment
         # waits here for the next turn: if that starts in lower case, it's the rest of it.
         self._carry: dict | None = None
+        # Rows the owner discarded: a speaker change leaves them alone (no withdraw, no
+        # re-publish) until they are restored.
+        self._discarded: set[int] = set()
         # Early sentences: per turn, the normalized sentences already taken from partials.
         self._early: dict[int, list[str]] = {}
         # Normalized source sentences of recent claims — the same sentence is checked once.
@@ -516,11 +519,23 @@ class StreamingSession:
                 logger.exception("Failed to rewrite speaker for claim %s", pid)
         await self._sync(cid)
 
+    def set_discarded(self, pid: int, discarded: bool) -> None:
+        """The owner discarded (or restored) a stored claim; the DB is already updated."""
+        if discarded:
+            self._discarded.add(pid)
+            return
+        self._discarded.discard(pid)
+        cid = next((c for c, p in self._rows.items() if p == pid), None)
+        if cid is not None:
+            self._track(self._sync(cid))  # a speaker change meanwhile may withdraw it now
+
     async def _sync(self, cid: int) -> None:
         """Publish a claim whose speaker is now a guest, withdraw one whose speaker no
         longer is. A withdrawn claim keeps its check result and comes back with it."""
         async with self._publish_lock:
             want, pid = self._publishable(cid), self._rows.get(cid)
+            if pid in self._discarded:
+                return
             if want and pid is None and self._claim_info[cid].get("deferred"):
                 self._start_reformulation(cid)
             elif want and pid is None:

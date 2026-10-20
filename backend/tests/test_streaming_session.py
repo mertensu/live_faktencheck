@@ -980,6 +980,30 @@ class TestHoldUnassigned:
         await session.stop()
         assert checker.check_claim_async.await_count == 1
 
+    async def test_discarded_claim_is_left_alone_by_a_speaker_change(self, db):
+        """A claim the owner discarded is neither withdrawn (row deleted) nor re-published
+        when its label changes; restored, it follows the label again."""
+        events, on_event = _collect()
+        session = StreamingSession("s1", _gate([[CLAIM_A]]), _fast_checker(), db, on_event=on_event,
+                                   speakers=["Dröge"])
+        await session.assign_speaker("A", "Dröge")
+        await session.handle_turn("Behauptung A. Noch ein Satz.", end_of_turn=True,
+                                  speaker_label="A", turn_order=3)
+        await _drain(session)
+        pid = (await db.get_fact_checks(session_id="s1"))[0]["id"]
+        await db.set_discarded(pid, True)
+        session.set_discarded(pid, True)
+
+        await session.assign_speaker("A", OTHER_VOICE, from_turn=3)
+        assert await db.get_fact_check_by_id(pid) is not None
+        assert {"type": "claim_withdrawn", "id": pid} not in events
+
+        await db.set_discarded(pid, False)
+        session.set_discarded(pid, False)
+        await _drain(session)
+        assert await db.get_fact_check_by_id(pid) is None  # now withdrawn: "Andere Stimme"
+        await session.stop()
+
     async def test_other_voice_is_neither_gated_nor_checked(self, db):
         gate, windows = _recording_gate()
         session = StreamingSession("s1", gate, _fast_checker(), db, speakers=["Dröge"])

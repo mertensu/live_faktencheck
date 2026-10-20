@@ -205,6 +205,27 @@ export function Begruendung({ kurz, lang, className }) {
 
 // Top-right button that opens the full result. Stops the click: stream cards open and
 // close on a tap.
+// Trash icon: hide the check ("Verwerfen"). Kept apart from ExpandButton (bottom left vs.
+// top right) so the two are hard to mix up.
+export function DiscardButton({ onClick }) {
+  const discard = (e) => { e.stopPropagation(); onClick() }
+  return (
+    <button
+      type="button"
+      className="claim-discard"
+      title="Check verwerfen"
+      aria-label="Check verwerfen"
+      onClick={discard}
+      onKeyDown={(e) => e.stopPropagation()}
+    >
+      <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+        <path d="M2.5 4h11M6.5 4V2.5h3V4M4 4l.7 9.5h6.6L12 4M6.8 6.5v4.5M9.2 6.5v4.5"
+          fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </button>
+  )
+}
+
 export function ExpandButton({ onClick }) {
   const open = (e) => { e.stopPropagation(); onClick() }
   return (
