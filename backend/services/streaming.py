@@ -374,11 +374,11 @@ class StreamingSession:
         start = -1 if from_turn is None else from_turn
         entries = [e for e in self._assignments.get(label, []) if e[0] < start]
         self._assignments[label] = entries + [(start, name)]
+        renamed = [turn_order for turn_order, turn in self._turns.items() if turn_order >= start and (
+            turn["speaker"] == label or any(lbl == label for _, lbl in turn.get("sentences", [])))]
         if name:
-            for turn_order, turn in self._turns.items():
-                if turn_order >= start and (
-                        turn["speaker"] == label or any(lbl == label for _, lbl in turn.get("sentences", []))):
-                    self._confirmed_turns.add(turn_order)
+            self._confirmed_turns.update(renamed)
+        await self._store_turns(renamed)
         logger.info(f"[stream:{self.session_id}] speaker {label} -> {name} from turn {from_turn}; "
                     f"map: {self._assignments}")
         await self._emit({"type": "speaker_map_update", "label": label, "speaker": name, "from_turn": from_turn})
@@ -441,6 +441,7 @@ class StreamingSession:
             logger.warning(f"[stream:{self.session_id}] speaker revision dropped: it merges "
                            f"{merged[1]} into {merged[0]} ({len(revisions)} turns)")
             return
+        revised = []
         for rev in revisions or []:
             turn_order = rev.get("turn_order")
             new_label = _label(rev.get("speaker_label"))
@@ -456,12 +457,14 @@ class StreamingSession:
             if turn:
                 turn["speaker"] = new_label
                 turn["sentences"] = sentence_speakers(turn["text"], rev.get("words"), new_label)
+                revised.append(turn_order)
                 await self._emit({"type": "turn_speaker_update", "turn_order": turn_order, "label": new_label,
                                   "segments": self._segment_events(turn["sentences"])})
             for cid in list(self._turn_claims.get(turn_order, [])):
                 label = self._sentence_label(turn_order, self._claim_sources.get(cid, "")) or new_label
                 self._claim_labels[cid] = label
                 await self._rewrite_speaker(cid, self._claim_display(cid))
+        await self._store_turns(revised)
 
     def _merged_label(self, revisions: list[dict]) -> tuple[str, list[str]] | None:
         """(target label, names) if the revision moves turns of two or more differently
@@ -606,6 +609,7 @@ class StreamingSession:
         # update the kept text but don't double-count it into the window.
         if turn_order is not None and turn_order in self._turns:
             self._turns[turn_order].update(speaker=speaker_label, text=text, sentences=sentences)
+            await self._store_turns([turn_order])
             stale = [e for e in self._buffer if e.get("turn_order") == turn_order and not e.get("early")]
             if stale:
                 self._buffer = [e for e in self._buffer if not any(e is x for x in stale)]
@@ -615,12 +619,40 @@ class StreamingSession:
 
         if turn_order is not None:
             self._turns[turn_order] = {"speaker": speaker_label, "text": text, "sentences": sentences}
+            await self._store_turns([turn_order])
             await self._label_early_claims(turn_order)
         for old in self._early_sources.pop(turn_order, []):
             await self._resend_source(old, self._final_source(turn_order, old))
         self._buffer_segments(turn_order, sentences)
         if self._sentence_count >= WINDOW_MIN_SENTENCES or len(self._buffer) >= WINDOW_MAX_TURNS:
             await self._flush_window()
+
+    async def _store_turns(self, turn_orders) -> None:
+        """Write these finalized turns to ``transcript_turns`` as they stand now: label,
+        the operator's name for it at that turn (``None`` while unassigned) and the
+        per-speaker segments. Partials are never stored. A failed write is logged, not
+        raised: the live lane must not stop over the transcript record."""
+        rows = []
+        for turn_order in turn_orders:
+            turn = self._turns.get(turn_order)
+            if turn is None:
+                continue
+            label = turn["speaker"]
+            rows.append({
+                "session_id": self.session_id,
+                "turn_order": turn_order,
+                "speaker_label": label,
+                "speaker_name": self._name_at(label, turn_order) if label else None,
+                "text": turn["text"],
+                "segments": [{**seg, "name": self._name_at(seg["label"], turn_order) if seg["label"] else None}
+                             for seg in self._segment_events(turn.get("sentences", []))],
+            })
+        if not rows:
+            return
+        try:
+            await self.db.upsert_transcript_turns(rows)
+        except Exception:
+            logger.exception(f"[stream:{self.session_id}] failed to store {len(rows)} transcript turn(s)")
 
     def _buffer_segments(self, turn_order: int | None, sentences) -> None:
         """Add a final turn to the window, one entry per speaker segment. Sentences already

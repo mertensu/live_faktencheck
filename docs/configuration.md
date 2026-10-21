@@ -97,6 +97,17 @@ intermediate Gemini step so the fast check falls straight through to the cross-p
 tier. (The name predates the removal of the deep checker; it now only affects the fast
 check.)
 
+## Stored transcript
+
+Every finalized live turn is stored in `transcript_turns` (label, assigned name, text; one
+row per session and `turn_order`, updated on re-emission or reclustering — partials never).
+It is the test basis for replaying shows against the gate and reformulator, read via
+`./scripts/pull-db.sh`; the app does not show it. Deleting a session deletes its transcript.
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `TRANSCRIPT_RETENTION_DAYS` | Turns are deleted this many days after they were first stored; checked at startup and every 6 h. The privacy policy (`/datenschutz`, section 5) states this period — change both together | `30` |
+
 ## Observability & frontend
 
 | Variable | Description | Default |
