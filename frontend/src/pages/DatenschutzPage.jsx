@@ -13,7 +13,7 @@ const PROCESSING_STEPS = [
   },
   {
     step: 'Behauptung bewerten',
-    service: 'Google Gemini über Vertex AI in der EU, aufgerufen über Requesty',
+    service: 'Claude von Anthropic, betrieben bei Amazon Web Services (Bedrock) oder Google (Vertex AI) in der EU, aufgerufen über Requesty',
     data: 'Behauptung, Name der sprechenden Person, Suchergebnisse',
   },
   {
