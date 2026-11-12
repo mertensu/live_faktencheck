@@ -266,6 +266,9 @@ point-in-time restores.
   The annotated upstream template is kept at `/etc/litestream.yml.dist`.
 - Retention: snapshot every 6h, kept 30 days; 24h of fine-grained history. Litestream 0.5
   defaults to 24h / 5m, which is too short to recover from a delete noticed days later.
+  The privacy policy relies on these numbers: a stored transcript (deleted from the live
+  DB after `TRANSCRIPT_RETENTION_DAYS`) can live on in snapshots for up to 30 more days.
+  Lengthening snapshot retention means changing `/datenschutz` first.
 - Status: `systemctl status litestream`, `journalctl -u litestream -f`
 
 **Restore on the server:**

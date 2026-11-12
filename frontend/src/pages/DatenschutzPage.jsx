@@ -123,10 +123,20 @@ export function DatenschutzPage() {
           deren Namen.
         </p>
         <p>
-          <strong>Was wir speichern:</strong> Das Audio speichern wir nicht. Das Transkript hält der Server nur
-          während der laufenden Sitzung im Arbeitsspeicher; dauerhaft gespeichert werden nur die geprüften Aussagen
-          (Abschnitt 7). Zur Sitzung speichern wir die Angaben, die Sie im Assistenten machen: Titel, Datum, Gäste
-          mit Partei oder Funktion und den Kontext der Sendung.
+          <strong>Was wir speichern:</strong> Das Audio speichern wir nicht; der Server leitet es nur an den
+          Transkriptionsdienst weiter. Gespeichert werden das Transkript (siehe unten), die geprüften Aussagen
+          (Abschnitt 7) und die Angaben, die Sie im Assistenten machen: Titel, Datum, Gäste mit Partei oder Funktion
+          und den Kontext der Sendung.
+        </p>
+        <p>
+          <strong>Transkript:</strong> Wir speichern das automatisch erstellte Transkript jeder Sitzung: jeden
+          abgeschlossenen Redebeitrag mit der neutralen Sprecherkennung und, sobald zugeordnet, dem Namen der
+          sprechenden Person. Wir nutzen es zur Qualitätssicherung und um die Faktenprüfung zu verbessern, etwa um
+          nachzuvollziehen, welche Aussagen erkannt wurden, und um Änderungen am Verfahren an echten Sendungen zu
+          testen. Zugriff haben nur wir als Betreiber des Dienstes. Das Transkript ist nicht öffentlich und erscheint
+          weder über Teilen-Links noch auf der Seite „Beispiele“. Wir löschen es automatisch 30 Tage nach der
+          Aufnahme, mit der Sitzung auch früher, wenn Sie diese unter „Mein Bereich“ löschen. In den
+          Sicherungskopien der Datenbank (Abschnitt 7) kann es danach noch höchstens 30 weitere Tage enthalten sein.
         </p>
         <p>
           <strong>Sprecherzuordnung:</strong> Wir verwenden keine Stimmprofile und keine biometrische Erkennung.
@@ -140,7 +150,8 @@ export function DatenschutzPage() {
         </p>
         <p>
           <strong>Rechtsgrundlage:</strong> Art. 6 Abs. 1 lit. f DSGVO. Unser berechtigtes Interesse ist die
-          öffentliche Einordnung politischer Aussagen in Fernsehsendungen. Soweit Aussagen politische Meinungen
+          öffentliche Einordnung politischer Aussagen in Fernsehsendungen; das Transkript speichern wir, um die
+          Qualität dieser Einordnung zu sichern und zu verbessern. Soweit Aussagen politische Meinungen
           erkennen lassen (Art. 9 Abs. 1 DSGVO), stützen wir uns zusätzlich auf Art. 9 Abs. 2 lit. e DSGVO: Die
           Gäste haben diese Aussagen in einer öffentlich ausgestrahlten Sendung offensichtlich selbst öffentlich
           gemacht. Soweit die Faktenprüfung journalistischen Zwecken dient, können zusätzlich die Regeln zum
@@ -252,7 +263,7 @@ export function DatenschutzPage() {
           (Art. 77 DSGVO), insbesondere bei der Behörde an Ihrem Wohnort, Ihrem Arbeitsplatz oder dem Ort des
           mutmaßlichen Verstoßes.
         </p>
-        <p className="legal-asof">Stand: 11. Oktober 2026</p>
+        <p className="legal-asof">Stand: 21. Oktober 2026</p>
       </div>
     </div>
   )

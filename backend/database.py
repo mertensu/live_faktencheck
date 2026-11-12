@@ -1,8 +1,8 @@
 """
 SQLite database module for persistent storage.
 
-Uses aiosqlite for async SQLite access. Stores fact-checks, sessions and access
-codes, with JSON serialization for complex fields (quellen, guests).
+Uses aiosqlite for async SQLite access. Stores fact-checks, sessions, access codes and
+live transcripts, with JSON serialization for complex fields (quellen, guests).
 """
 
 import json
@@ -111,6 +111,23 @@ class Database:
                 audio_seconds_used  INTEGER NOT NULL DEFAULT 0,
                 audio_seconds_limit INTEGER DEFAULT 300
             );
+
+            -- The live transcript: one row per finalized turn, updated when AssemblyAI
+            -- re-emits or reclusters it. Purged after TRANSCRIPT_RETENTION_DAYS (app.py).
+            CREATE TABLE IF NOT EXISTS transcript_turns (
+                session_id    TEXT NOT NULL,
+                turn_order    INTEGER NOT NULL,
+                speaker_label TEXT,
+                speaker_name  TEXT,
+                text          TEXT NOT NULL DEFAULT '',
+                segments      TEXT NOT NULL DEFAULT '[]',
+                created_at    TEXT NOT NULL,
+                updated_at    TEXT NOT NULL,
+                PRIMARY KEY (session_id, turn_order)
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_transcript_turns_created
+                ON transcript_turns (created_at);
         """)
         await self.db.commit()
 
@@ -454,9 +471,10 @@ class Database:
         return cursor.rowcount > 0
 
     async def delete_session(self, session_id: str) -> bool:
-        """Permanently delete a session with its fact-checks (and any legacy block rows),
-        in one transaction. Returns True if the session existed."""
+        """Permanently delete a session with its fact-checks, transcript (and any legacy
+        block rows), in one transaction. Returns True if the session existed."""
         await self.db.execute("DELETE FROM fact_checks WHERE session_id = ?", (session_id,))
+        await self.db.execute("DELETE FROM transcript_turns WHERE session_id = ?", (session_id,))
         await self.db.execute("DELETE FROM pending_claims_blocks WHERE session_id = ?", (session_id,))
         cursor = await self.db.execute("DELETE FROM sessions WHERE session_id = ?", (session_id,))
         await self.db.commit()
@@ -467,6 +485,56 @@ class Database:
         existing = await self.get_session(session["session_id"])
         if existing is None:
             await self.add_session(session)
+
+    # =========================================================================
+    # Transcript
+    # =========================================================================
+
+    async def upsert_transcript_turns(self, turns: list[dict]) -> None:
+        """Store finalized turns, one row per (session_id, turn_order): a turn seen again
+        (re-emission, reclustering, a new speaker name) overwrites its row. ``created_at``
+        stays from the first write, so retention counts from when the turn was spoken."""
+        from datetime import datetime
+        now = datetime.now().isoformat()
+        await self.db.executemany(
+            """INSERT INTO transcript_turns
+               (session_id, turn_order, speaker_label, speaker_name, text, segments, created_at, updated_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+               ON CONFLICT (session_id, turn_order) DO UPDATE SET
+                   speaker_label = excluded.speaker_label,
+                   speaker_name = excluded.speaker_name,
+                   text = excluded.text,
+                   segments = excluded.segments,
+                   updated_at = excluded.updated_at""",
+            [
+                (
+                    t["session_id"], t["turn_order"], t.get("speaker_label"), t.get("speaker_name"),
+                    t.get("text", ""), json.dumps(t.get("segments", []), ensure_ascii=False),
+                    now, now,
+                )
+                for t in turns
+            ],
+        )
+        await self.db.commit()
+
+    async def get_transcript(self, session_id: str) -> list[dict]:
+        """A session's stored turns in spoken order."""
+        cursor = await self.db.execute(
+            "SELECT * FROM transcript_turns WHERE session_id = ? ORDER BY turn_order", (session_id,)
+        )
+        return [
+            {**dict(r), "segments": json.loads(r["segments"])}
+            for r in await cursor.fetchall()
+        ]
+
+    async def purge_transcripts(self, older_than_days: int) -> int:
+        """Delete transcript turns first stored more than ``older_than_days`` ago.
+        Returns the number of rows deleted. ISO-8601 timestamps compare lexicographically."""
+        from datetime import datetime, timedelta
+        cutoff = (datetime.now() - timedelta(days=older_than_days)).isoformat()
+        cursor = await self.db.execute("DELETE FROM transcript_turns WHERE created_at < ?", (cutoff,))
+        await self.db.commit()
+        return cursor.rowcount
 
     # =========================================================================
     # Access Codes CRUD

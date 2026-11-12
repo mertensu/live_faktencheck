@@ -106,3 +106,38 @@ async def test_new_session_defaults_auto_check_false(db):
     await db.add_session({"session_id": "ac1", "title": "T", "created_at": "now"})
     s = await db.get_session("ac1")
     assert s["auto_check"] is False
+
+
+async def test_delete_session_deletes_its_transcript(db):
+    await db.add_session({"session_id": "tr1", "title": "T"})
+    await db.upsert_transcript_turns([
+        {"session_id": "tr1", "turn_order": 0, "speaker_label": "A", "text": "Satz eins."},
+        {"session_id": "tr2", "turn_order": 0, "speaker_label": "A", "text": "Andere Sitzung."},
+    ])
+    assert await db.delete_session("tr1")
+    assert await db.get_transcript("tr1") == []
+    assert len(await db.get_transcript("tr2")) == 1
+
+
+async def test_purge_transcripts_removes_old_turns_only(db):
+    from datetime import datetime, timedelta
+    await db.upsert_transcript_turns([
+        {"session_id": "p1", "turn_order": 0, "text": "Alt."},
+        {"session_id": "p1", "turn_order": 1, "text": "Neu."},
+    ])
+    old = (datetime.now() - timedelta(days=31)).isoformat()
+    await db.db.execute("UPDATE transcript_turns SET created_at = ? WHERE turn_order = 0", (old,))
+    await db.db.commit()
+
+    assert await db.purge_transcripts(30) == 1
+    assert [t["text"] for t in await db.get_transcript("p1")] == ["Neu."]
+
+
+async def test_transcript_update_keeps_created_at(db):
+    await db.upsert_transcript_turns([{"session_id": "u1", "turn_order": 0, "text": "Erst."}])
+    first = (await db.get_transcript("u1"))[0]
+    await db.upsert_transcript_turns([{"session_id": "u1", "turn_order": 0, "speaker_name": "Dröge",
+                                       "text": "Erst korrigiert."}])
+    [turn] = await db.get_transcript("u1")
+    assert turn["text"] == "Erst korrigiert." and turn["speaker_name"] == "Dröge"
+    assert turn["created_at"] == first["created_at"]

@@ -102,7 +102,7 @@ backend/
   state.py            # Shared in-memory state (DB handle, open live streams)
   models.py           # Pydantic request/response models
   auth.py             # Access-code gate (X-Access-Code), ACCESS_CODES seeding
-  database.py         # SQLite (fact_checks, sessions, codes)
+  database.py         # SQLite (fact_checks, sessions, codes, transcript_turns)
   routers/
     stream.py         # WS /api/stream — live audio in, transcript/claim events out
     sessions.py       # /api/sessions create/get/end

@@ -358,6 +358,49 @@ def _collect():
 CLAIM_A = GatedClaim(name="A", claim="Behauptung A.", source="Behauptung A.")
 
 
+class TestTranscriptStorage:
+    async def test_final_turns_stored_once_per_turn_order(self, db):
+        session = StreamingSession("s1", _gate([]), _fast_checker(), db)
+        await session.handle_turn("Ein unfertiger", end_of_turn=False, speaker_label="A", turn_order=0)
+        assert await db.get_transcript("s1") == []  # partials are never stored
+        await session.handle_turn("Ein fertiger Satz.", end_of_turn=True, speaker_label="A", turn_order=0)
+        await session.handle_turn("Ein fertiger Satz, neu formatiert.", end_of_turn=True,
+                                  speaker_label="B", turn_order=0)  # re-emission
+        await session.handle_turn("Zweiter Turn.", end_of_turn=True, speaker_label="B", turn_order=1)
+        await session.stop()
+        turns = await db.get_transcript("s1")
+        assert [(t["turn_order"], t["speaker_label"], t["text"]) for t in turns] == [
+            (0, "B", "Ein fertiger Satz, neu formatiert."), (1, "B", "Zweiter Turn.")]
+        assert turns[0]["speaker_name"] is None
+
+    async def test_speaker_revision_updates_stored_label(self, db):
+        session = StreamingSession("s1", _gate([]), _fast_checker(), db)
+        await session.handle_turn("Ein Satz.", end_of_turn=True, speaker_label="A", turn_order=0)
+        await session.handle_speaker_revision([{"turn_order": 0, "speaker_label": "B", "words": None}])
+        await session.stop()
+        [turn] = await db.get_transcript("s1")
+        assert turn["speaker_label"] == "B" and turn["segments"][0]["label"] == "B"
+
+    async def test_assignment_stores_name_from_that_turn_on(self, db):
+        session = StreamingSession("s1", _gate([]), _fast_checker(), db, speakers=["Dröge"])
+        await session.handle_turn("Erster.", end_of_turn=True, speaker_label="A", turn_order=0)
+        await session.handle_turn("Zweiter.", end_of_turn=True, speaker_label="A", turn_order=1)
+        await session.assign_speaker("A", "Dröge", from_turn=1)
+        await session.handle_turn("Dritter.", end_of_turn=True, speaker_label="A", turn_order=2)
+        await session.stop()
+        turns = await db.get_transcript("s1")
+        assert [t["speaker_name"] for t in turns] == [None, "Dröge", "Dröge"]
+        assert turns[2]["segments"] == [{"label": "A", "name": "Dröge", "text": "Dritter."}]
+
+    async def test_failed_write_does_not_stop_the_stream(self, db):
+        db.upsert_transcript_turns = AsyncMock(side_effect=RuntimeError("disk full"))
+        gate = _gate([[]])
+        session = StreamingSession("s1", gate, _fast_checker(), db)
+        await session.handle_turn("Erster Satz. Zweiter Satz.", end_of_turn=True, speaker_label="A", turn_order=0)
+        await session.stop()
+        assert gate.gate.await_count >= 1
+
+
 class TestSpeakerAssignment:
     @pytest.mark.usefixtures("no_hold")
     async def test_assignment_rewrites_stored_claims_of_that_label(self, db):

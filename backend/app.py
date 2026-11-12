@@ -8,8 +8,9 @@ FastAPI server that handles:
 """
 
 import os
+import asyncio
 import logging
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -32,6 +33,27 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
+# Stored live transcripts are deleted this many days after they were spoken (privacy
+# policy, section 5). Checked at startup and then every TRANSCRIPT_PURGE_INTERVAL_S.
+TRANSCRIPT_RETENTION_DAYS = int(os.getenv("TRANSCRIPT_RETENTION_DAYS", "30"))
+TRANSCRIPT_PURGE_INTERVAL_S = 6 * 3600
+
+
+async def purge_transcripts(db) -> None:
+    """Delete transcript turns past the retention window; never raises."""
+    try:
+        deleted = await db.purge_transcripts(TRANSCRIPT_RETENTION_DAYS)
+        if deleted:
+            logger.info(f"Purged {deleted} transcript turn(s) older than {TRANSCRIPT_RETENTION_DAYS} days")
+    except Exception:
+        logger.exception("Transcript purge failed")
+
+
+async def purge_transcripts_periodically(db, interval_s: float = TRANSCRIPT_PURGE_INTERVAL_S) -> None:
+    while True:
+        await asyncio.sleep(interval_s)
+        await purge_transcripts(db)
 
 
 async def seed_legacy_episodes(db) -> None:
@@ -70,10 +92,17 @@ async def lifespan(app: FastAPI):
             "will reject all requests until codes are seeded."
         )
 
+    # Startup: transcript retention — once now, then periodically while running
+    await purge_transcripts(db)
+    purge_task = asyncio.create_task(purge_transcripts_periodically(db))
+
     yield
 
-    # Shutdown: close database
+    # Shutdown: stop the purge task, close database
     logger.info("FastAPI server shutting down...")
+    purge_task.cancel()
+    with suppress(asyncio.CancelledError):
+        await purge_task
     await db.close()
     state.db = None
 
