@@ -23,8 +23,8 @@ covered in the [development workflow](development-workflow.md#setup); this is th
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `STREAM_SPEECH_MODEL` | AssemblyAI streaming model | `universal-3-6-pro` |
-| `STREAM_SPEAKER_REVISION_MS` | Interval for AssemblyAI speaker revisions | `120000` |
+| `STREAM_SPEECH_MODEL` | AssemblyAI streaming model (`universal-3-6-pro` is the fallback) | `assemblyai-stt-3-7-realtime` |
+| `STREAM_SPEAKER_REVISION_MS` | Interval for AssemblyAI speaker revisions (3.6 models only; 3.7 sends none) | `120000` |
 | `STREAM_MAX_SPEAKERS` | Cap on diarized speakers | unset |
 | `STREAM_EARLY_SENTENCES` | Gate settled sentences from partial turns before the turn ends | `true` |
 | `STREAM_HOLD_UNASSIGNED` | Publish only claims of voices the operator gave to a guest; others are held, and with the Jev gate reformulated and checked only once named (no effect for an episode without a speaker list) | `true` |

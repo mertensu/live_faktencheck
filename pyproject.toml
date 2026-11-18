@@ -10,7 +10,7 @@ dependencies = [
     "uvicorn[standard]>=0.40.0",
     "python-multipart>=0.0.20",
     # AI Services
-    "assemblyai>=1.6.1",
+    "assemblyai>=1.10.11",
     "google-genai>=1.0.0",
     "tavily-python>=0.5.0",
     # PydanticAI + Logfire.

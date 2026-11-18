@@ -75,13 +75,22 @@ def _in_passage(source: str, passage: str) -> bool:
 # cluster into. Left unset it is derived from the guest list (+1 for the moderator), which
 # gives the reclusterer a hint on hard single-mic TV audio. Env overrides the derivation.
 STREAM_MAX_SPEAKERS = os.getenv("STREAM_MAX_SPEAKERS")
-# AssemblyAI re-clusters speakers and sends SpeakerRevision corrections — by default only
-# once, at the end of the session. Live we want them during the show; the API's minimum
-# interval is 2 minutes (0 = end of session only).
-# Named explicitly: left out, the server picked universal-3-5-pro (seen in the Begin event),
-# not the 3.6 the docs call the default.
-STREAM_SPEECH_MODEL = os.getenv("STREAM_SPEECH_MODEL", "universal-3-6-pro")
+# Named explicitly: left out, the server picks an older model (it chose universal-3-5-pro,
+# seen in the Begin event). STT-3.7 Realtime is the model for captions/meetings (cheaper
+# than 3.6 Pro); universal-3-6-pro stays selectable via env as the fallback.
+STREAM_SPEECH_MODEL = os.getenv("STREAM_SPEECH_MODEL", "assemblyai-stt-3-7-realtime")
+# On the 3.6 models AssemblyAI re-clusters speakers and sends SpeakerRevision corrections —
+# by default only once, at the end of the session. Live we want them during the show; the
+# API's minimum interval is 2 minutes (0 = end of session only). STT-3.7 Realtime finalizes
+# labels at the end of each turn and sends no revisions, so the interval is not sent there.
 STREAM_SPEAKER_REVISION_MS = int(os.getenv("STREAM_SPEAKER_REVISION_MS", "120000"))
+
+
+def speaker_revision_interval(model: str, interval_ms: int) -> int | None:
+    """The revision interval to request, or None where the model has no revision pass."""
+    if not interval_ms or not model.startswith("universal-3-6"):
+        return None
+    return interval_ms
 # Only claims of a voice the operator gave to a guest are published. A clip (Einspieler)
 # has many voices, some of them the guests' own; checking every unnamed label put those
 # on air. A claim of an unassigned label is held back and published as soon as its label
@@ -1006,7 +1015,8 @@ class StreamingSession:
             format_turns=True,
             speaker_labels=True,
             max_speakers=self._max_speakers(),
-            speaker_labels_revision_interval_ms=STREAM_SPEAKER_REVISION_MS or None,
+            speaker_labels_revision_interval_ms=speaker_revision_interval(
+                STREAM_SPEECH_MODEL, STREAM_SPEAKER_REVISION_MS),
             keyterms_prompt=session_keyterms(self.guests, self.keyterms) or None,
         )
         await self._client.connect(params)
