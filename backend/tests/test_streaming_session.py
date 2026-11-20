@@ -947,6 +947,7 @@ class TestHoldUnassigned:
                                   speaker_label="A", turn_order=0)
         await _drain(session)
         assert checker.check_claim_async.await_count == 1  # checked in the background
+        assert checker.check_claim_async.await_args.kwargs["speaker"] == ""  # not "A"
         assert await db.get_fact_checks(session_id="s1") == []
         assert not any(e["type"].startswith("claim_") for e in events)
 
@@ -1192,3 +1193,11 @@ class TestHoldUnassigned:
                                                    "speaker": OTHER_VOICE, "from_turn": 4}))
         assert session._assignments["D"] == [(4, OTHER_VOICE)]
         await session.stop()
+
+
+def test_speaker_revision_interval_only_for_3_6_models():
+    from backend.services.streaming import speaker_revision_interval
+
+    assert speaker_revision_interval("universal-3-6-pro", 120000) == 120000
+    assert speaker_revision_interval("universal-3-6-pro", 0) is None
+    assert speaker_revision_interval("assemblyai-stt-3-7-realtime", 120000) is None
