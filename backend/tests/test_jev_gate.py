@@ -220,6 +220,26 @@ class TestJevGate:
         assert out[0].claim == out[0].source == "Unsere Steuer setzt ab der ersten Million an."
         assert out[0].context == "A: Na ja."
 
+    async def test_speaker_free_hit_of_a_speaker_not_ready_is_reformulated_now(self):
+        """No "wir"/"unser"/address: nothing to resolve from the speaker, so the claim is
+        reformulated (and checked) before the name is known."""
+        ex = _make_extractor()
+        ex.reformulate_claim_async = AsyncMock(return_value=ExtractedClaim(name="Dröge", claim="X."))
+        gate = JevGate(ex, FakeScorer({"Million": 0.9}))
+        out = await gate.gate("A: Na ja.\nB: Die Steuer setzt ab der ersten Million an.",
+                              guests=["Dröge"], ready_speakers=set())
+        assert len(out) == 1 and not out[0].deferred and out[0].claim == "X."
+        assert ex.reformulate_claim_async.await_args.kwargs["speaker"] == "B"
+
+    async def test_early_reformulate_off_defers_every_unready_hit(self, monkeypatch):
+        monkeypatch.setenv("JEV_EARLY_REFORMULATE", "false")
+        ex = _make_extractor()
+        ex.reformulate_claim_async = AsyncMock(return_value=ExtractedClaim(name="Dröge", claim="X."))
+        gate = JevGate(ex, FakeScorer({"Million": 0.9}))
+        out = await gate.gate("B: Die Steuer setzt ab der ersten Million an.",
+                              guests=["Dröge"], ready_speakers=set())
+        assert out[0].deferred and ex.reformulate_claim_async.await_count == 0
+
     async def test_hit_of_a_ready_speaker_is_reformulated(self):
         ex = _make_extractor()
         ex.reformulate_claim_async = AsyncMock(return_value=ExtractedClaim(name="Dröge", claim="X."))
@@ -282,3 +302,15 @@ class TestGreyZoneJudge:
 
     async def test_empty_sentence_is_no(self):
         assert await _make_extractor().judge_grey_zone_async("  ") is False
+
+
+def test_speaker_bound():
+    from backend.services.gate import speaker_bound
+    for bound in ["Wir haben 400.000 Wohnungen versprochen.", "Unsere Wirtschaft wächst nicht.",
+                  "Bei uns liegt die Quote bei 3 Prozent.", "Mein Vorschlag kostet nichts.",
+                  "Ich habe das 2019 beschlossen.", "Ihre Regierung hat versagt.",
+                  "Da haben Sie die Steuern erhöht."]:
+        assert speaker_bound(bound), bound
+    for free in ["Die Inflation lag bei 6 Prozent.", "Die Union sagt, sie habe gewonnen.",
+                 "Die Mieten in München sind um zehn Prozent gestiegen."]:
+        assert not speaker_bound(free), free

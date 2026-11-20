@@ -947,6 +947,7 @@ class TestHoldUnassigned:
                                   speaker_label="A", turn_order=0)
         await _drain(session)
         assert checker.check_claim_async.await_count == 1  # checked in the background
+        assert checker.check_claim_async.await_args.kwargs["speaker"] == ""  # not "A"
         assert await db.get_fact_checks(session_id="s1") == []
         assert not any(e["type"].startswith("claim_") for e in events)
 
@@ -1200,53 +1201,3 @@ def test_speaker_revision_interval_only_for_3_6_models():
     assert speaker_revision_interval("universal-3-6-pro", 120000) == 120000
     assert speaker_revision_interval("universal-3-6-pro", 0) is None
     assert speaker_revision_interval("assemblyai-stt-3-7-realtime", 120000) is None
-
-
-class TestForceEndpoint:
-    """STT-3.7 ends turns late; a long turn is cut at a sentence end (STREAM_FORCE_ENDPOINT_S)."""
-
-    def _session(self, db, monkeypatch, model="assemblyai-stt-3-7-realtime"):
-        monkeypatch.setattr(streaming_mod, "STREAM_SPEECH_MODEL", model)
-        monkeypatch.setattr(streaming_mod, "STREAM_FORCE_ENDPOINT_S", 4.0)
-        session = StreamingSession("s1", _gate([]), _fast_checker(), db)
-        session._client = MagicMock()
-        session._client.force_endpoint = AsyncMock()
-        now = {"t": 0.0}
-        session._clock = lambda: now["t"]
-        session._turn_started = 0.0
-        return session, now
-
-    async def test_forces_at_sentence_end_after_min_age(self, db, monkeypatch):
-        session, now = self._session(db, monkeypatch)
-        now["t"] = 2.0
-        await session.handle_turn("Erster Satz.", end_of_turn=False, turn_order=0)
-        now["t"] = 5.0
-        await session.handle_turn("Erster Satz. Und dann", end_of_turn=False, turn_order=0)
-        assert session._client.force_endpoint.await_count == 0  # too young, then mid-sentence
-        await session.handle_turn("Erster Satz. Und dann noch einer.", end_of_turn=False, turn_order=0)
-        await session.handle_turn("Erster Satz. Und dann noch einer. Mehr.", end_of_turn=False, turn_order=0)
-        await asyncio.sleep(0)
-        assert session._client.force_endpoint.await_count == 1  # once per turn
-        await session.stop()
-
-    async def test_clock_restarts_with_each_final(self, db, monkeypatch):
-        session, now = self._session(db, monkeypatch)
-        now["t"] = 10.0
-        await session.handle_turn("Ein Satz.", end_of_turn=True, turn_order=0, speaker_label="A")
-        now["t"] = 12.0
-        await session.handle_turn("Noch ein Satz.", end_of_turn=False, turn_order=1)
-        await asyncio.sleep(0)
-        assert session._client.force_endpoint.await_count == 0
-        now["t"] = 14.5
-        await session.handle_turn("Noch ein Satz. Und einer.", end_of_turn=False, turn_order=1)
-        await asyncio.sleep(0)
-        assert session._client.force_endpoint.await_count == 1
-        await session.stop()
-
-    async def test_not_for_3_6(self, db, monkeypatch):
-        session, now = self._session(db, monkeypatch, model="universal-3-6-pro")
-        now["t"] = 30.0
-        await session.handle_turn("Ein langer Satz.", end_of_turn=False, turn_order=0)
-        await asyncio.sleep(0)
-        assert session._client.force_endpoint.await_count == 0
-        await session.stop()

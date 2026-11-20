@@ -25,10 +25,9 @@ covered in the [development workflow](development-workflow.md#setup); this is th
 |----------|-------------|---------|
 | `STREAM_SPEECH_MODEL` | AssemblyAI streaming model (`universal-3-6-pro` is the fallback) | `assemblyai-stt-3-7-realtime` |
 | `STREAM_SPEAKER_REVISION_MS` | Interval for AssemblyAI speaker revisions (3.6 models only; 3.7 sends none) | `120000` |
-| `STREAM_FORCE_ENDPOINT_S` | STT-3.7 only: force the end of a turn at a sentence end once it has run this many seconds, so speaker labels arrive early (0 = off) | `4` |
 | `STREAM_MAX_SPEAKERS` | Cap on diarized speakers | unset |
 | `STREAM_EARLY_SENTENCES` | Gate settled sentences from partial turns before the turn ends | `true` |
-| `STREAM_HOLD_UNASSIGNED` | Publish only claims of voices the operator gave to a guest; others are held, and with the Jev gate reformulated and checked only once named (no effect for an episode without a speaker list) | `true` |
+| `STREAM_HOLD_UNASSIGNED` | Publish only claims of voices the operator gave to a guest; others are held: checked in the background, published once named (no effect for an episode without a speaker list) | `true` |
 | `CLAIM_GATE` | `jev` (per-sentence classifier via Requesty) or `extractor` (Gemini window gate) | `extractor` |
 | `GEMINI_MODEL_WINDOW_GATE` | Model for the extractor gate | `gemini-3.5-flash-lite` |
 | `JEV_MODEL` / `JEV_TIMEOUT_S` | Jev gate model and per-call timeout (s) | `typesafe/jev-1.13.0` / `5` |
@@ -37,6 +36,7 @@ covered in the [development workflow](development-workflow.md#setup); this is th
 | `JEV_GREY_ZONE` | Send grey-zone sentences to an LLM for a second opinion (off: skip them) | `true` |
 | `JEV_GREY_IMPORTANCE_THRESHOLD` | Minimum Jev importance score for the grey zone | `0.40` |
 | `GEMINI_MODEL_GREY_ZONE` / `GEMINI_THINKING_GREY_ZONE` | Grey-zone judge model + thinking level | `gemini-3.5-flash-lite` / `low` |
+| `JEV_EARLY_REFORMULATE` | Reformulate and check a hit before its speaker is named, unless it depends on the speaker ("ich", "wir", "unser…", "Sie/Ihr…"); those wait for the name. Off: every hit of an unnamed speaker waits | `true` |
 | `JEV_GATE_DEBUG` | Log per-sentence Jev scores | off |
 | `GEMINI_MODEL_REFORMULATE` / `GEMINI_THINKING_REFORMULATE` | Reformulator model + thinking level | `gpt-6-luna@eu` / `medium` |
 | `REFORMULATE_CONTEXT_SENTENCES` | Preceding sentences the reformulator sees | `4` |

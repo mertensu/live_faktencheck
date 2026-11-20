@@ -15,7 +15,6 @@ import os
 import re
 import asyncio
 import logging
-import time
 from datetime import datetime
 from difflib import SequenceMatcher
 
@@ -93,18 +92,6 @@ def speaker_revision_interval(model: str, interval_ms: int) -> int | None:
         return None
     return interval_ms
 
-
-# STT-3.7 Realtime closes a turn only "once there is enough content" — on talk-show audio
-# 40–75 s, and speaker labels arrive only with the final turn. So once a turn has run this
-# many seconds and a partial ends a sentence, we force the endpoint: the final (with labels)
-# comes back within ~0.3 s. Measured 18.11.2026 on real show audio: same speaker purity,
-# label latency median ~4 s instead of ~30 s. 0 = off. The 3.6 models end turns themselves.
-STREAM_FORCE_ENDPOINT_S = float(os.getenv("STREAM_FORCE_ENDPOINT_S", "4"))
-
-
-def forces_endpoints(model: str, after_s: float) -> bool:
-    """True if turns of this model are cut at sentence ends (see STREAM_FORCE_ENDPOINT_S)."""
-    return after_s > 0 and model.startswith("assemblyai-stt-3-7")
 # Only claims of a voice the operator gave to a guest are published. A clip (Einspieler)
 # has many voices, some of them the guests' own; checking every unnamed label put those
 # on air. A claim of an unassigned label is held back and published as soon as its label
@@ -265,11 +252,6 @@ class StreamingSession:
         self._recent_lines: list[str] = []
         self._tasks: set[asyncio.Task] = set()
         self._client = None                   # AssemblyAI AsyncStreamingClient (set in start)
-        # Forced endpoints (see STREAM_FORCE_ENDPOINT_S): when the current turn began, and
-        # the turn already forced (once per turn; the final comes back shortly).
-        self._clock = time.monotonic
-        self._turn_started = self._clock()
-        self._forced_turn: int | None = None
 
         # Speakers: AssemblyAI's diarization labels (A/B/…) are the only automatic signal.
         # Names come from the operator, who assigns a label to a guest in the live UI
@@ -619,11 +601,9 @@ class StreamingSession:
         # Live partial for the UI; its settled sentences may enter the window early.
         if not end_of_turn:
             await self._emit({"type": "partial", "text": text, "speaker": display_speaker})
-            self._maybe_force_endpoint(text, turn_order)
             if STREAM_EARLY_SENTENCES and turn_order is not None and turn_order not in self._turns:
                 await self._take_early_sentences(text, speaker_label, turn_order)
             return
-        self._turn_started = self._clock()
         # A turn can hold more than one speaker: split it where its words' speakers change.
         sentences = sentence_speakers(text, words, speaker_label)
         # turn_order + label let the UI follow a later reclustering (turn_speaker_update)
@@ -651,24 +631,6 @@ class StreamingSession:
         self._buffer_segments(turn_order, sentences)
         if self._sentence_count >= WINDOW_MIN_SENTENCES or len(self._buffer) >= WINDOW_MAX_TURNS:
             await self._flush_window()
-
-    def _maybe_force_endpoint(self, text: str, turn_order: int | None) -> None:
-        """End a long turn at a sentence end, so its speaker labels arrive (see
-        STREAM_FORCE_ENDPOINT_S)."""
-        if self._client is None or not forces_endpoints(STREAM_SPEECH_MODEL, STREAM_FORCE_ENDPOINT_S):
-            return
-        if turn_order is None or turn_order == self._forced_turn or not _is_complete(text):
-            return
-        if self._clock() - self._turn_started < STREAM_FORCE_ENDPOINT_S:
-            return
-        self._forced_turn = turn_order
-        self._track(self._force_endpoint())
-
-    async def _force_endpoint(self) -> None:
-        try:
-            await self._client.force_endpoint()
-        except Exception:
-            logger.warning(f"[stream:{self.session_id}] force_endpoint failed", exc_info=True)
 
     def _buffer_segments(self, turn_order: int | None, sentences) -> None:
         """Add a final turn to the window, one entry per speaker segment. Sentences already
@@ -954,9 +916,12 @@ class StreamingSession:
         """Run the fast check; write the result into the row if the claim is published."""
         info = self._claim_info[cid]
         speaker = self._claim_speakers[cid]
+        # A claim checked before its speaker is named: no "Unklar" or bare label for the
+        # checker to repeat in its reasoning. The row gets the name once it is published.
+        held = self._holding and speaker not in self.speakers
         try:
             result = await self.fast_checker.check_claim_async(
-                speaker=speaker, claim=info["claim"], context=self.context, episode_date=self.episode_date,
+                speaker="" if held else speaker, claim=info["claim"], context=self.context, episode_date=self.episode_date,
                 queries=info["queries"],
             )
             fc = build_fact_check_dict(result, self.session_id, speaker_fallback=speaker, claim_fallback=info["claim"])

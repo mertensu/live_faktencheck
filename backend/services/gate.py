@@ -199,6 +199,16 @@ def split_sentences(text: str) -> list[str]:
 # Window-line prefix for a line without a speaker label.
 NO_SPEAKER = "?"
 
+# A sentence whose meaning depends on who says it — or to whom: "ich", "wir", "unsere
+# Steuer", "Ihre Regierung". Only these wait for the speaker's name to be reformulated.
+_SPEAKER_BOUND = re.compile(r"\b(?:ich|mich|mir|meine?[mnrs]?|wir|uns|unsere?[mnrs]?)\b", re.IGNORECASE)
+_ADDRESS = re.compile(r"\b(?:Sie|Ihnen|Ihre?[mnrs]?)\b")  # formal address, capitalized
+
+
+def speaker_bound(sentence: str) -> bool:
+    """True if resolving the sentence needs its speaker (or addressee)."""
+    return bool(_SPEAKER_BOUND.search(sentence) or _ADDRESS.search(sentence))
+
 
 def _split_speaker(line: str) -> tuple[str, str]:
     """Split a ``"Speaker: text"`` window line into (speaker, text).
@@ -227,8 +237,11 @@ class JevGate:
          (pronouns resolved from rolling context, speaker assigned) and writes search
          queries for the fast checker. Check-worthiness is decided by then — this step
          does not re-judge it. A hit of a speaker outside ``ready_speakers`` (a label the
-         operator hasn't given to a guest) is returned unreformulated: "unsere Steuer"
-         can only be resolved once it is known who says it.
+         operator hasn't given to a guest, or no label yet) is reformulated right away, so
+         its check can run before the name is known — unless it is ``speaker_bound``:
+         "unsere Steuer" can only be resolved once it is known who says it, so such a hit
+         is returned unreformulated (``deferred``). ``JEV_EARLY_REFORMULATE=false`` defers
+         every hit of an unready speaker (the old behaviour).
     """
 
     def __init__(self, extractor: ClaimExtractor, scorer: JevScorer | None = None):
@@ -255,6 +268,9 @@ class JevGate:
         self.grey_imp = float(os.getenv("JEV_GREY_IMPORTANCE_THRESHOLD", "0.40"))
         # How many preceding sentences the reformulator sees to resolve "er", "das", …
         self.context_sentences = int(os.getenv("REFORMULATE_CONTEXT_SENTENCES", "4"))
+        # Reformulate (and so check) a hit before its speaker is named, unless it is
+        # speaker-bound. STT-3.7 labels a sentence only when its turn ends, 40–75 s later.
+        self.early_reformulate = os.getenv("JEV_EARLY_REFORMULATE", "true").strip().lower() in ("1", "true", "yes")
 
     def _verdict(self, sc: JevScore) -> str:
         """``CHECK`` (a hit), ``grey`` (ask the second opinion), or why it is skipped."""
@@ -341,7 +357,8 @@ class JevGate:
                 verdict = await self._second_opinion(sentence, names.get(speaker, speaker), context, context_before(i))
             if verdict != "CHECK":
                 return None
-            if ready_speakers is not None and speaker not in ready_speakers:
+            if ready_speakers is not None and speaker not in ready_speakers and (
+                    not self.early_reformulate or speaker_bound(sentence)):
                 return GatedClaim(name=names.get(speaker, speaker), claim=sentence, source=sentence,
                                   deferred=True, context=context_before(i))
             return await self.reformulate(sentence, names.get(speaker, speaker), guests, context,
